@@ -1,5 +1,6 @@
 /**
  * BMSG Universe PHASE3
+
  * Gradient Background v2.1 MEMBER DETAIL
  *
  * v2.0.1のPROFILE一覧とモバイル画像修正を維持し、
