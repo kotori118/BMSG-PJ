@@ -1,0 +1,31 @@
+name: Deploy to GAS
+
+on:
+  push:
+    branches:
+      - main  # mainブランチにpushされたときに実行（masterの場合は master に変更）
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install clasp
+        run: npm install -g @google/clasp
+
+      - name: Create .clasprc.json
+        run: echo '${{ secrets.CLASPRC_JSON_KEY }}' > ~/.clasprc.json
+
+      - name: Create .clasp.json
+        run: |
+          echo '{"scriptId":"${{ secrets.SCRIPT_ID }}","rootDir":"."}' > .clasp.json
+
+      - name: Push to GAS
+        run: clasp push --force
