@@ -1,6 +1,5 @@
 /**
  * BMSG Universe shared configuration.
-
  * Existing databases are read-only unless a later feature explicitly enables a write path.
  */
 const UNIVERSE_CONFIG = Object.freeze({
