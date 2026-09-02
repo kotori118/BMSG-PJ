@@ -1,0 +1,121 @@
+<script>
+  const PROFILE_VIEWS = Object.freeze({
+    home: {
+      eyebrow: 'PROFILE HOME',
+      title: 'MEMBERS',
+      copy: 'メンバー一覧をここへREAD ONLYで接続します。'
+    },
+    map: {
+      eyebrow: 'RELATION MAP',
+      title: 'MAP',
+      copy: '世代・出身地・家族構成などの相関図をここへ接続します。'
+    },
+    search: {
+      eyebrow: 'TAG SEARCH',
+      title: 'SEARCH',
+      copy: '複数条件のAND検索をここへ接続します。'
+    },
+    chemistry: {
+      eyebrow: 'TWO PEOPLE',
+      title: 'CHEMISTRY',
+      copy: '2人の共通点と動的な一致度計算をここへ接続します。'
+    },
+    discover: {
+      eyebrow: 'FIND SIMILAR',
+      title: 'DISCOVER',
+      copy: '選んだメンバーと似ている順のランキングをここへ接続します。'
+    }
+  });
+
+  const PROFILE_GROUPS = Object.freeze({
+    all: 'ALL MEMBERS',
+    befirst: 'BE:FIRST',
+    mazzel: 'MAZZEL',
+    starglow: 'STARGLOW',
+    hana: 'HANA'
+  });
+
+  let profileCurrentView = 'home';
+  let profileCurrentGroup = 'all';
+  let profileSelectedMemberId = '';
+
+  function renderProfile() {
+    const template = document.getElementById('profilePageTemplate');
+    return template ? template.innerHTML : '';
+  }
+
+  function initProfilePage() {
+    profileCurrentView = 'home';
+    profileCurrentGroup = 'all';
+    profileSelectedMemberId = '';
+    setProfileDetailMode(false);
+    updateProfileControls();
+    renderProfilePanel();
+    loadProfileMembers();
+  }
+
+  function selectProfileView(view) {
+    if (!PROFILE_VIEWS[view]) return;
+    profileSelectedMemberId = '';
+    setProfileDetailMode(false);
+    profileCurrentView = view;
+    updateProfileControls();
+    renderProfilePanel();
+  }
+
+  function selectProfileGroup(group) {
+    if (!PROFILE_GROUPS[group]) return;
+    profileSelectedMemberId = '';
+    setProfileDetailMode(false);
+    profileCurrentGroup = group;
+    updateProfileControls();
+    renderProfilePanel();
+  }
+
+  function updateProfileControls() {
+    document.querySelectorAll('[data-profile-view]').forEach(button => {
+      const active = button.dataset.profileView === profileCurrentView;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-current', active ? 'page' : 'false');
+    });
+
+    document.querySelectorAll('[data-profile-group]').forEach(button => {
+      const active = button.dataset.profileGroup === profileCurrentGroup;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-pressed', String(active));
+    });
+  }
+
+  function renderProfilePanel() {
+    const panel = document.getElementById('profilePanel');
+    const view = PROFILE_VIEWS[profileCurrentView];
+    if (!panel || !view) return;
+
+    if (profileCurrentView === 'home') {
+      if (profileSelectedMemberId) {
+        renderProfileMemberDetail();
+        return;
+      }
+      renderProfileMembersPanel();
+      return;
+    }
+
+    const selectedGroup = PROFILE_GROUPS[profileCurrentGroup];
+
+    panel.innerHTML = `
+      <article class="profile-panel-card">
+        <div>
+          <p class="profile-panel-eyebrow">${escapeHtml(view.eyebrow)}</p>
+          <h2 class="profile-panel-title">${escapeHtml(view.title)}</h2>
+        </div>
+        <p class="profile-panel-copy">${escapeHtml(view.copy)}</p>
+        <div class="profile-panel-status">${escapeHtml(selectedGroup)} / UI SHELL READY</div>
+      </article>
+    `;
+  }
+
+  function setProfileDetailMode(active) {
+    const page = document.querySelector('.profile-page');
+    if (page) page.classList.toggle('profile-page-detail-mode', Boolean(active));
+  }
+</script>

@@ -1,0 +1,180 @@
+<script>
+    function openStateCheck() {
+      stateCheckOverlay.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeStateCheck() {
+      stateCheckOverlay.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    function closeOnBackdrop(event, id) {
+      if (event.target && event.target.id === id) {
+        if (id === 'settingsOverlay') closeSettings();
+        if (id === 'stateCheckOverlay') closeStateCheck();
+      }
+    }
+
+    function showLoadingState() {
+      closeStateCheck();
+      stateContent.innerHTML = `
+        <div class="loading-space">
+          <svg
+            class="loading-svg"
+            viewBox="0 0 220 220"
+            role="img"
+            aria-label="Loading Universe"
+          >
+            <defs>
+              <path
+                id="loadingStarMotionPath"
+                d="M110 34 L128 86 L182 86 L138 118 L155 171 L110 139 L65 171 L82 118 L38 86 L92 86 Z"
+              ></path>
+            </defs>
+
+            <!-- star outline -->
+            <path class="loading-star-segment" d="M110 34 L128 86"></path>
+            <path class="loading-star-segment" d="M128 86 L182 86"></path>
+            <path class="loading-star-segment" d="M182 86 L138 118"></path>
+            <path class="loading-star-segment" d="M138 118 L155 171"></path>
+            <path class="loading-star-segment thick" d="M155 171 L110 139"></path>
+            <path class="loading-star-segment thick" d="M110 139 L65 171"></path>
+            <path class="loading-star-segment" d="M65 171 L82 118"></path>
+            <path class="loading-star-segment" d="M82 118 L38 86"></path>
+            <path class="loading-star-segment" d="M38 86 L92 86"></path>
+            <path class="loading-star-segment" d="M92 86 L110 34"></path>
+
+            <!-- moving light bar -->
+            <g>
+              <g>
+                <rect
+                  class="loading-light-bar"
+                  x="-10"
+                  y="-2.1"
+                  width="20"
+                  height="4.2"
+                  rx="2.1"
+                ></rect>
+                <rect
+                  class="loading-light-core"
+                  x="-4.8"
+                  y="-1.05"
+                  width="9.6"
+                  height="2.1"
+                  rx="1.05"
+                ></rect>
+
+                <animateMotion
+                  dur="2.1s"
+                  repeatCount="indefinite"
+                  rotate="auto"
+                  keyPoints="0;1"
+                  keyTimes="0;1"
+                  calcMode="linear"
+                >
+                  <mpath href="#loadingStarMotionPath"></mpath>
+                </animateMotion>
+              </g>
+            </g>
+          </svg>
+
+          <div class="loading-label">LOADING UNIVERSE</div>
+        </div>
+      `;
+      stateOverlay.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function showInfoState(title, copy) {
+      closeStateCheck();
+      stateContent.innerHTML = `
+        <section class="state-card">
+          <p class="state-eyebrow">BMSG UNIVERSE</p>
+          <h2 class="state-title">${escapeHtml(title)}</h2>
+          <p class="state-copy">${escapeHtml(copy)}</p>
+          <button class="state-close" onclick="closeStateOverlay()">CLOSE</button>
+        </section>
+      `;
+      stateOverlay.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeStateOverlay() {
+      stateOverlay.classList.remove('open');
+      document.body.style.overflow = '';
+      stateContent.innerHTML = '';
+    }
+
+    function renderSkeletonPage(route) {
+      const isHome = route === 'home';
+
+      let cardCount = 3;
+      if (route === 'home') cardCount = 2;
+      if (route === 'lab') cardCount = 4;
+
+      const cards = Array.from({ length: cardCount }, () => `
+        <div class="skeleton-block skeleton-card"></div>
+      `).join('');
+
+      return `
+        <section class="view ${isHome ? 'skeleton-home' : 'skeleton-page'}">
+          <div class="skeleton-heading-wrap">
+            <div class="skeleton-block skeleton-title"></div>
+            <div class="skeleton-block skeleton-copy"></div>
+          </div>
+
+          <div class="skeleton-cards">
+            ${cards}
+          </div>
+        </section>
+      `;
+    }
+
+    function showSkeletonState() {
+      closeStateCheck();
+
+      if (skeletonTimer) {
+        clearTimeout(skeletonTimer);
+        skeletonTimer = null;
+      }
+
+      const routeToRestore = currentRoute;
+
+      window.scrollTo(0, 0);
+      pageContent.innerHTML = renderSkeletonPage(routeToRestore);
+
+      skeletonTimer = setTimeout(() => {
+        skeletonTimer = null;
+        renderRoute(routeToRestore);
+      }, 2200);
+    }
+
+    function showToast(message = '保存しました') {
+      if (!toastRegion) return;
+
+      if (toastTimer) {
+        clearTimeout(toastTimer);
+        toastTimer = null;
+      }
+
+      toastRegion.innerHTML = `
+        <div class="universe-toast" role="status">
+          ${escapeHtml(message)}
+        </div>
+      `;
+
+      toastTimer = setTimeout(() => {
+        const toast = toastRegion.querySelector('.universe-toast');
+        if (!toast) return;
+
+        toast.classList.add('toast-out');
+
+        setTimeout(() => {
+          toastRegion.innerHTML = '';
+          toastTimer = null;
+        }, 180);
+      }, 1800);
+    }
+
+</script>

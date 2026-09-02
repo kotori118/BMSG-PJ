@@ -1,0 +1,70 @@
+<script>
+    const SEARCHABLE_PAGES = [
+      ['data', 'DATA'],
+      ['lab', 'LAB'],
+      ['profile', 'PROFILE'],
+      ['lyrics', 'LYRICS'],
+      ['analysis', 'ANALYSIS'],
+      ['quiz', 'QUIZ'],
+      ['cards', 'TRADING CARD'],
+      ['poker', 'POKER'],
+      ['cover', 'COVER MAKER']
+    ];
+
+    function renderPageDirectory(query = '') {
+      const q = String(query || '').trim().toLowerCase();
+      const status = document.getElementById('searchStatus');
+      const results = document.getElementById('searchResults');
+
+      const matches = SEARCHABLE_PAGES.filter(([route, title]) =>
+        route.toLowerCase().includes(q) ||
+        title.toLowerCase().includes(q)
+      );
+
+      status.textContent = q
+        ? `${matches.length} RESULT${matches.length === 1 ? '' : 'S'}`
+        : 'PAGES';
+
+      if (!matches.length) {
+        results.innerHTML = `
+          <div class="search-no-results">
+            <h3 class="search-no-results-title">NO RESULTS</h3>
+            <p class="search-no-results-copy">一致するページがありません。</p>
+          </div>
+        `;
+        return;
+      }
+
+      results.innerHTML = matches.map(([route, title]) => `
+        <button class="search-result" onclick="navigateFromSearch('${route}')">
+          <span class="search-result-name">${escapeHtml(title)}</span>
+        </button>
+      `).join('');
+    }
+
+    function openSearch() {
+      searchOverlay.classList.add('open');
+      document.body.style.overflow = 'hidden';
+
+      const input = document.getElementById('globalSearchInput');
+      input.value = '';
+      renderPageDirectory('');
+
+      setTimeout(() => input.focus(), 80);
+    }
+
+    function closeSearch() {
+      searchOverlay.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    function runPageSearch(value) {
+      renderPageDirectory(value);
+    }
+
+    function navigateFromSearch(route) {
+      closeSearch();
+      navigateTo(route);
+    }
+
+</script>

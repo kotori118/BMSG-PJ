@@ -1,0 +1,82 @@
+    <section id="searchOverlay" class="screen-overlay" aria-label="Search">
+      <div class="overlay-inner">
+        <header class="overlay-head">
+          <h2 class="overlay-title">SEARCH</h2>
+          <button class="overlay-close" onclick="closeSearch()" aria-label="Close search">×</button>
+        </header>
+
+        <label class="search-field">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="10.8" cy="10.8" r="6.2"></circle>
+            <path d="M15.4 15.4L20 20"></path>
+          </svg>
+          <input
+            id="globalSearchInput"
+            class="search-input"
+            type="search"
+            placeholder="Search BMSG Universe"
+            autocomplete="off"
+            oninput="runPageSearch(this.value)"
+          >
+        </label>
+
+        <div id="searchStatus" class="search-status">PAGES</div>
+        <div id="searchResults" class="search-results"></div>
+      </div>
+    </section>
+
+    <div id="settingsOverlay" class="modal-overlay" onclick="closeOnBackdrop(event, 'settingsOverlay')">
+      <section class="settings-panel" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+        <header class="modal-head">
+          <h2 id="settingsTitle" class="modal-title">SETTINGS</h2>
+          <button class="overlay-close" onclick="closeSettings()" aria-label="Close settings">×</button>
+        </header>
+
+        <div class="settings-user-card">
+          <p class="settings-label">現在のユーザー</p>
+          <div class="settings-user-row">
+            <span id="settingsUserName" class="settings-user">ももたん</span>
+            <button class="settings-change" onclick="cycleDemoUser()">変更</button>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <p class="settings-section-title">TOOLS</p>
+          <button class="tool-button" onclick="openPerformanceTool()">
+            <span class="tool-name">歌唱・センター秒数計測</span>
+            <span class="tool-status">PHASE 3 PLACEHOLDER</span>
+          </button>
+        </div>
+
+        <p class="settings-note">現在の検証版ではユーザー変更とツール導線を確認できます。</p>
+      </section>
+    </div>
+
+    <div id="stateCheckOverlay" class="modal-overlay" onclick="closeOnBackdrop(event, 'stateCheckOverlay')">
+      <section class="state-panel" role="dialog" aria-modal="true" aria-labelledby="stateCheckTitle">
+        <header class="modal-head">
+          <h2 id="stateCheckTitle" class="modal-title">STATE CHECK</h2>
+          <button class="overlay-close" onclick="closeStateCheck()" aria-label="Close state check">×</button>
+        </header>
+
+        <div class="state-actions">
+          <button class="state-test-btn" onclick="showLoadingState()">LOADING</button>
+          <button class="state-test-btn" onclick="showInfoState('NO DATA', 'まだデータがありません。')">NO DATA</button>
+          <button class="state-test-btn" onclick="showInfoState('NO RESULTS', '条件に一致する結果がありません。')">NO RESULTS</button>
+          <button class="state-test-btn" onclick="showInfoState('ERROR', '読み込みに失敗しました。もう一度お試しください。')">ERROR</button>
+          <button class="state-test-btn" onclick="showSkeletonState()">SKELETON</button>
+          <button class="state-test-btn" onclick="showToast()">TOAST</button>
+        </div>
+      </section>
+    </div>
+
+    <div id="stateOverlay" class="state-overlay">
+      <div id="stateContent"></div>
+    </div>
+
+    <div
+      id="toastRegion"
+      class="toast-region"
+      aria-live="polite"
+      aria-atomic="true"
+    ></div>

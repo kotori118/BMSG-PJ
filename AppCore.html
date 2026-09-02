@@ -1,0 +1,107 @@
+<script>
+    const ROUTES = Object.freeze({
+      home: {
+        title: 'BMSG UNIVERSE',
+        parent: 'home',
+        theme: 'dark'
+      },
+      data: {
+        title: 'DATA',
+        parent: 'data',
+        theme: 'dark'
+      },
+      profile: {
+        title: 'PROFILE',
+        parent: 'data',
+        theme: 'dark'
+      },
+      lyrics: {
+        title: 'LYRICS / KARAOKE',
+        parent: 'data',
+        theme: 'light'
+      },
+      analysis: {
+        title: 'ANALYSIS',
+        parent: 'data',
+        theme: 'dark'
+      },
+      lab: {
+        title: 'LAB',
+        parent: 'lab',
+        theme: 'dark'
+      },
+      quiz: {
+        title: 'QUIZ',
+        parent: 'lab',
+        theme: 'dark'
+      },
+      cards: {
+        title: 'TRADING CARD',
+        parent: 'lab',
+        theme: 'dark'
+      },
+      poker: {
+        title: 'POKER',
+        parent: 'lab',
+        theme: 'dark'
+      },
+      cover: {
+        title: 'COVER MAKER',
+        parent: 'lab',
+        theme: 'dark'
+      },
+      metrics: {
+        title: 'PERFORMANCE TIMER',
+        parent: 'settings',
+        theme: 'dark'
+      }
+    });
+
+    const pageContent = document.getElementById('pageContent');
+    const searchOverlay = document.getElementById('searchOverlay');
+    const settingsOverlay = document.getElementById('settingsOverlay');
+    const stateCheckOverlay = document.getElementById('stateCheckOverlay');
+    const stateOverlay = document.getElementById('stateOverlay');
+    const stateContent = document.getElementById('stateContent');
+    const starField = document.getElementById('starField');
+    const toastRegion = document.getElementById('toastRegion');
+
+    let homeIntroPlayed = false;
+    let toastTimer = null;
+    let currentRoute = 'home';
+    let skeletonTimer = null;
+
+    function buildMinimalStarField() {
+      if (!starField || starField.childElementCount) return;
+
+      // Deterministic pseudo-random field so it does not "jump" on every render.
+      let seed = 1988;
+      function rand() {
+        seed = (seed * 9301 + 49297) % 233280;
+        return seed / 233280;
+      }
+
+      const fragment = document.createDocumentFragment();
+      const count = window.innerWidth < 560 ? 52 : 76;
+
+      for (let i = 0; i < count; i++) {
+        const star = document.createElement('span');
+        const size = 0.7 + rand() * 1.25;
+        const alpha = 0.20 + rand() * 0.42;
+        const glow = 2 + rand() * 5;
+
+        star.className = 'space-star' + (i % 11 === 0 ? ' star-cyan' : '');
+        star.style.left = `${rand() * 100}%`;
+        star.style.top = `${rand() * 100}%`;
+        star.style.setProperty('--star-size', `${size}px`);
+        star.style.setProperty('--star-alpha', alpha.toFixed(2));
+        star.style.setProperty('--star-glow', `${glow}px`);
+        fragment.appendChild(star);
+      }
+
+      starField.appendChild(fragment);
+    }
+
+    buildMinimalStarField();
+
+</script>

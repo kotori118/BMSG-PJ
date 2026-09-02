@@ -1,0 +1,22 @@
+<script>
+    function openSettings() {
+      settingsOverlay.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function openPerformanceTool() {
+      closeSettings();
+      navigateTo('metrics');
+    }
+
+    function closeSettings() {
+      settingsOverlay.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    function cycleDemoUser() {
+      demoUserIndex = (demoUserIndex + 1) % DEMO_USERS.length;
+      document.getElementById('settingsUserName').textContent = DEMO_USERS[demoUserIndex];
+    }
+
+</script>

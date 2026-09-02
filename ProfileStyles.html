@@ -1,0 +1,587 @@
+<style>
+  .profile-page {
+    min-height: 100dvh;
+    padding: max(82px, calc(env(safe-area-inset-top) + 70px)) 0 max(34px, env(safe-area-inset-bottom));
+    color: var(--white);
+  }
+
+  .profile-header {
+    display: grid;
+    gap: clamp(30px, 8vw, 56px);
+  }
+
+  .profile-universe-home {
+    width: fit-content;
+    min-height: 44px;
+    padding: 0 15px 0 11px;
+    border: 1px solid rgba(194, 232, 244, .13);
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: rgba(232, 246, 251, .78);
+    background: rgba(4, 9, 16, .62);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    font-family: "Exo 2", Roboto, sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .16em;
+    cursor: pointer;
+  }
+
+  .profile-universe-home svg {
+    width: 17px;
+    height: 17px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .profile-heading {
+    display: grid;
+    gap: 9px;
+  }
+
+  .profile-panel-eyebrow {
+    margin: 0;
+    color: var(--cyan);
+    font-family: "Exo 2", Roboto, sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .18em;
+  }
+
+  .profile-title {
+    margin: 0;
+    color: var(--white);
+    font-family: Orbitron, "Exo 2", sans-serif;
+    font-size: clamp(39px, 10vw, 72px);
+    font-weight: 600;
+    line-height: .94;
+    letter-spacing: -.025em;
+  }
+
+  .profile-copy {
+    margin: 0;
+    color: rgba(232, 242, 247, .50);
+    font-family: Roboto, "Zen Kaku Gothic New", sans-serif;
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .profile-group-bar {
+    position: sticky;
+    top: max(10px, env(safe-area-inset-top));
+    z-index: 18;
+    margin: clamp(30px, 7vw, 48px) calc(clamp(16px, 4vw, 34px) * -1) 0;
+    padding: 9px clamp(16px, 4vw, 34px);
+    background: linear-gradient(180deg, rgba(3, 7, 13, .96), rgba(3, 7, 13, .82));
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+  }
+
+  .profile-group-scroll,
+  .profile-local-nav {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .profile-group-scroll::-webkit-scrollbar,
+  .profile-local-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .profile-group-chip {
+    flex: 0 0 auto;
+    min-height: 38px;
+    padding: 0 14px;
+    border: 1px solid rgba(194, 232, 244, .10);
+    border-radius: 999px;
+    color: rgba(232, 242, 247, .48);
+    background: rgba(255, 255, 255, .025);
+    font-family: "Exo 2", Roboto, sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  .profile-group-chip.active {
+    border-color: rgba(156, 236, 255, .36);
+    color: #eafaff;
+    background: rgba(91, 193, 217, .13);
+    box-shadow: inset 0 0 0 1px rgba(156, 236, 255, .025);
+  }
+
+  .profile-local-nav {
+    margin-top: 18px;
+    padding-bottom: 2px;
+    border-bottom: 1px solid rgba(194, 232, 244, .09);
+    display: grid;
+    grid-template-columns: repeat(5, auto);
+    justify-content: space-between;
+    gap: 0;
+    width: 100%;
+  }
+
+  .profile-local-tab {
+    position: relative;
+    flex: 0 0 auto;
+    min-height: 44px;
+    padding: 0 4px 12px;
+    border: 0;
+    color: rgba(232, 242, 247, .38);
+    background: transparent;
+    font-family: "Exo 2", Roboto, sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .10em;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  .profile-local-tab::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 1px;
+    transform: scaleX(0);
+    background: var(--cyan);
+    box-shadow: 0 0 12px rgba(156, 236, 255, .36);
+    transition: transform var(--fast) var(--ease);
+  }
+
+  .profile-local-tab.active {
+    color: rgba(238, 250, 253, .88);
+  }
+
+  .profile-local-tab.active::after {
+    transform: scaleX(1);
+  }
+
+  .profile-panel {
+    padding-top: clamp(28px, 7vw, 48px);
+  }
+
+  .profile-panel-card {
+    min-height: 230px;
+    padding: clamp(24px, 6vw, 34px);
+    border: 1px solid rgba(194, 232, 244, .12);
+    border-radius: clamp(22px, 5vw, 30px);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 34px;
+    background: linear-gradient(145deg, rgba(255, 255, 255, .042), rgba(255, 255, 255, .016));
+    box-shadow: 0 24px 70px rgba(0, 0, 0, .14);
+  }
+
+  .profile-panel-title {
+    margin: 8px 0 0;
+    color: var(--white);
+    font-family: Orbitron, "Exo 2", sans-serif;
+    font-size: clamp(24px, 7vw, 42px);
+    font-weight: 600;
+    line-height: 1;
+  }
+
+  .profile-panel-copy {
+    max-width: 35em;
+    margin: 0;
+    color: rgba(232, 242, 247, .48);
+    font-family: "Zen Kaku Gothic New", Roboto, sans-serif;
+    font-size: 13px;
+    line-height: 1.8;
+  }
+
+  .profile-panel-status {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    color: rgba(156, 236, 255, .62);
+    font-family: "Exo 2", Roboto, sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: .15em;
+  }
+
+  .profile-panel-status::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    box-shadow: 0 0 10px currentColor;
+  }
+
+  .profile-members-head {
+    margin-bottom: 18px;
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 20px;
+  }
+
+  .profile-members-title,
+  .profile-members-state-title {
+    margin: 7px 0 0;
+    color: var(--white);
+    font-family: Orbitron, "Exo 2", sans-serif;
+    font-size: clamp(25px, 7vw, 42px);
+    font-weight: 600;
+    line-height: 1;
+  }
+
+  .profile-members-count {
+    color: rgba(232, 242, 247, .34);
+    font-family: "Exo 2", Roboto, sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .12em;
+  }
+
+  .profile-member-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .profile-member-card {
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid rgba(194, 232, 244, .11);
+    border-radius: 22px;
+    background: linear-gradient(145deg, rgba(255, 255, 255, .042), rgba(255, 255, 255, .015));
+    cursor: pointer;
+    transition: transform var(--fast) var(--ease), border-color var(--fast) var(--ease);
+  }
+
+  .profile-member-card:active {
+    transform: scale(.985);
+  }
+
+  .profile-member-card:focus-visible {
+    outline: 1px solid var(--member-accent);
+    outline-offset: 3px;
+    border-color: color-mix(in srgb, var(--member-accent) 45%, transparent);
+  }
+
+  .profile-member-visual {
+    position: relative;
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    background:
+      radial-gradient(circle at 50% 25%, color-mix(in srgb, var(--member-accent) 17%, transparent), transparent 55%),
+      linear-gradient(180deg, rgba(255, 255, 255, .035), rgba(255, 255, 255, .008));
+  }
+
+  .profile-member-visual img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center top;
+    display: block;
+  }
+
+  .profile-member-fallback {
+    color: color-mix(in srgb, var(--member-accent) 62%, white);
+    font-family: Orbitron, "Exo 2", sans-serif;
+    font-size: clamp(34px, 12vw, 64px);
+    font-weight: 600;
+    opacity: .36;
+  }
+
+  .profile-member-accent {
+    position: absolute;
+    left: 14px;
+    bottom: 12px;
+    width: 23px;
+    height: 2px;
+    border-radius: 999px;
+    background: var(--member-accent);
+    box-shadow: 0 0 12px color-mix(in srgb, var(--member-accent) 70%, transparent);
+  }
+
+  .profile-member-body {
+    min-width: 0;
+    padding: 15px 15px 17px;
+  }
+
+  .profile-member-group {
+    margin: 0 0 7px;
+    overflow: hidden;
+    color: rgba(232, 242, 247, .34);
+    font-family: "Exo 2", Roboto, sans-serif;
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .profile-member-name {
+    margin: 0;
+    overflow-wrap: anywhere;
+    color: rgba(247, 251, 255, .90);
+    font-family: "Exo 2", "Zen Kaku Gothic New", sans-serif;
+    font-size: clamp(14px, 4vw, 18px);
+    font-weight: 600;
+    line-height: 1.15;
+    letter-spacing: .025em;
+  }
+
+  .profile-members-state {
+    min-height: 230px;
+    padding: clamp(24px, 6vw, 34px);
+    border: 1px solid rgba(194, 232, 244, .12);
+    border-radius: clamp(22px, 5vw, 30px);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 20px;
+    background: linear-gradient(145deg, rgba(255, 255, 255, .042), rgba(255, 255, 255, .016));
+  }
+
+  .profile-page-detail-mode .profile-heading,
+  .profile-page-detail-mode .profile-group-bar,
+  .profile-page-detail-mode .profile-local-nav {
+    display: none;
+  }
+
+  .profile-page-detail-mode .profile-header {
+    gap: 0;
+  }
+
+  .profile-page-detail-mode .profile-panel {
+    padding-top: clamp(28px, 7vw, 48px);
+  }
+
+  .profile-member-detail {
+    display: grid;
+    gap: 22px;
+  }
+
+  .profile-detail-back {
+    width: fit-content;
+    min-height: 42px;
+    padding: 0 14px 0 10px;
+    border: 1px solid rgba(194, 232, 244, .13);
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: rgba(232, 246, 251, .72);
+    background: rgba(4, 9, 16, .58);
+    font-family: "Exo 2", Roboto, sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: .14em;
+    cursor: pointer;
+  }
+
+  .profile-detail-back svg {
+    width: 17px;
+    height: 17px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .profile-detail-hero {
+    overflow: hidden;
+    border: 1px solid rgba(194, 232, 244, .12);
+    border-radius: clamp(24px, 6vw, 34px);
+    background: linear-gradient(145deg, rgba(255, 255, 255, .045), rgba(255, 255, 255, .012));
+  }
+
+  .profile-detail-visual {
+    position: relative;
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    background:
+      radial-gradient(circle at 50% 24%, color-mix(in srgb, var(--member-accent) 18%, transparent), transparent 56%),
+      linear-gradient(180deg, rgba(255, 255, 255, .035), rgba(255, 255, 255, .008));
+  }
+
+  .profile-detail-visual img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center top;
+    display: block;
+  }
+
+  .profile-detail-line {
+    position: absolute;
+    left: 22px;
+    bottom: 18px;
+    width: 42px;
+    height: 2px;
+    border-radius: 999px;
+    background: var(--member-accent);
+    box-shadow: 0 0 14px color-mix(in srgb, var(--member-accent) 74%, transparent);
+  }
+
+  .profile-detail-identity {
+    padding: 22px clamp(22px, 6vw, 34px) clamp(27px, 7vw, 40px);
+  }
+
+  .profile-detail-group {
+    margin: 0 0 9px;
+    color: color-mix(in srgb, var(--member-accent) 68%, white);
+    font-family: "Exo 2", Roboto, sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: .16em;
+  }
+
+  .profile-detail-name {
+    margin: 0;
+    overflow-wrap: anywhere;
+    color: rgba(247, 251, 255, .94);
+    font-family: Orbitron, "Exo 2", "Zen Kaku Gothic New", sans-serif;
+    font-size: clamp(34px, 11vw, 68px);
+    font-weight: 600;
+    line-height: .98;
+    letter-spacing: -.025em;
+  }
+
+  .profile-retry-button {
+    min-height: 44px;
+    padding: 0 18px;
+    border: 1px solid rgba(156, 236, 255, .28);
+    border-radius: 999px;
+    color: rgba(233, 250, 253, .88);
+    background: rgba(91, 193, 217, .10);
+    font-family: "Exo 2", Roboto, sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .13em;
+    cursor: pointer;
+  }
+
+  .profile-member-skeleton {
+    position: relative;
+    overflow: hidden;
+    display: block;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .06);
+  }
+
+  .profile-member-skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-110%);
+    background: linear-gradient(90deg, transparent, rgba(156, 236, 255, .08), transparent);
+    animation: skeleton-scan 1.3s ease-in-out infinite;
+  }
+
+  .profile-member-skeleton-label {
+    width: 88px;
+    height: 8px;
+    margin-bottom: 10px;
+  }
+
+  .profile-member-skeleton-heading {
+    width: 145px;
+    height: 28px;
+  }
+
+  .profile-member-skeleton-image {
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    border-radius: 0;
+  }
+
+  .profile-member-skeleton-copy {
+    width: 54px;
+    height: 7px;
+    margin-bottom: 9px;
+  }
+
+  .profile-member-skeleton-name {
+    width: 72%;
+    height: 15px;
+  }
+
+  @keyframes skeleton-scan {
+    to { transform: translateX(110%); }
+  }
+
+  @media (min-width: 720px) {
+    .profile-member-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .profile-detail-hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr);
+      align-items: stretch;
+    }
+
+    .profile-detail-identity {
+      display: flex;
+      flex-direction: column;
+      justify-content: end;
+      padding: 42px;
+    }
+  }
+
+  @media (max-width: 350px) {
+    .profile-local-tab {
+      padding-left: 2px;
+      padding-right: 2px;
+      font-size: 9px;
+      letter-spacing: .06em;
+    }
+  }
+
+  @media (min-width: 720px) {
+    .profile-page {
+      padding-top: max(96px, calc(env(safe-area-inset-top) + 80px));
+    }
+
+    .profile-group-bar {
+      border-radius: 18px;
+      margin-left: 0;
+      margin-right: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .profile-local-tab::after {
+      transition: none;
+    }
+
+    .profile-member-skeleton::after {
+      display: none;
+      animation: none;
+    }
+
+    .profile-member-card {
+      transition: none;
+    }
+  }
+</style>

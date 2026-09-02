@@ -1,0 +1,48 @@
+<script>
+    document.addEventListener('keydown', function(event) {
+      if (event.key !== 'Escape') return;
+      if (stateOverlay.classList.contains('open')) return closeStateOverlay();
+      if (stateCheckOverlay.classList.contains('open')) return closeStateCheck();
+      if (settingsOverlay.classList.contains('open')) return closeSettings();
+      if (searchOverlay.classList.contains('open')) return closeSearch();
+    });
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    function setTheme(theme) {
+      document.body.classList.toggle(
+        'theme-light',
+        theme === 'light'
+      );
+    }
+
+    function setPageAtmosphere(route) {
+      document.body.classList.toggle(
+        'is-home',
+        route === 'home'
+      );
+
+      const bottomNavRoutes = ['home', 'data', 'lab'];
+      document.body.classList.toggle(
+        'nav-hidden',
+        !bottomNavRoutes.includes(route)
+      );
+    }
+
+    function setActiveNav(parent) {
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.toggle(
+          'active',
+          btn.dataset.nav === parent
+        );
+      });
+    }
+
+</script>

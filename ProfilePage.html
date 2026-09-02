@@ -1,0 +1,37 @@
+<template id="profilePageTemplate">
+  <section class="view profile-page">
+    <header class="profile-header">
+      <button class="profile-universe-home" type="button" onclick="navigateTo('home')">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M14.5 5.5L8 12l6.5 6.5"></path>
+        </svg>
+        <span>HOME</span>
+      </button>
+
+      <div class="profile-heading">
+        <h1 class="profile-title">PROFILE</h1>
+        <p class="profile-copy">Discover the people of BMSG.</p>
+      </div>
+    </header>
+
+    <div class="profile-group-bar" aria-label="Main group filter">
+      <div class="profile-group-scroll">
+        <button class="profile-group-chip active" type="button" data-profile-group="all" onclick="selectProfileGroup('all')">ALL</button>
+        <button class="profile-group-chip" type="button" data-profile-group="befirst" onclick="selectProfileGroup('befirst')">BE:FIRST</button>
+        <button class="profile-group-chip" type="button" data-profile-group="mazzel" onclick="selectProfileGroup('mazzel')">MAZZEL</button>
+        <button class="profile-group-chip" type="button" data-profile-group="starglow" onclick="selectProfileGroup('starglow')">STARGLOW</button>
+        <button class="profile-group-chip" type="button" data-profile-group="hana" onclick="selectProfileGroup('hana')">HANA</button>
+      </div>
+    </div>
+
+    <nav class="profile-local-nav" aria-label="Profile navigation">
+      <button class="profile-local-tab active" type="button" data-profile-view="home" onclick="selectProfileView('home')">HOME</button>
+      <button class="profile-local-tab" type="button" data-profile-view="map" onclick="selectProfileView('map')">MAP</button>
+      <button class="profile-local-tab" type="button" data-profile-view="search" onclick="selectProfileView('search')">SEARCH</button>
+      <button class="profile-local-tab" type="button" data-profile-view="chemistry" onclick="selectProfileView('chemistry')">CHEMISTRY</button>
+      <button class="profile-local-tab" type="button" data-profile-view="discover" onclick="selectProfileView('discover')">DISCOVER</button>
+    </nav>
+
+    <div id="profilePanel" class="profile-panel" aria-live="polite"></div>
+  </section>
+</template>

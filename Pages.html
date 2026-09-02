@@ -1,0 +1,193 @@
+<script>
+    function renderHome() {
+      return `
+        <section class="view home ${homeIntroPlayed ? '' : 'home-intro'}">
+          <div class="home-title-wrap">
+            <p class="home-kicker">BMSG</p>
+
+            <h1 class="home-title" aria-label="BMSG UNIVERSE">
+              <span class="line">BMSG</span>
+              <span class="line">UNIVERSE</span>
+            </h1>
+
+            <div class="home-divider" aria-hidden="true"></div>
+          </div>
+
+          <div class="home-actions">
+            <button
+              class="home-card"
+              onclick="navigateTo('data')"
+              aria-label="Open DATA"
+            >
+              <span class="home-card-content">
+                <span class="home-card-index">01</span>
+                <span class="home-card-bottom">
+                  <span class="home-card-name">DATA</span>
+                  <span class="card-symbol">${iconSvg('data')}</span>
+                </span>
+              </span>
+            </button>
+
+            <button
+              class="home-card"
+              onclick="navigateTo('lab')"
+              aria-label="Open LAB"
+            >
+              <span class="home-card-content">
+                <span class="home-card-index">02</span>
+                <span class="home-card-bottom">
+                  <span class="home-card-name">LAB</span>
+                  <span class="card-symbol">${iconSvg('lab')}</span>
+                </span>
+              </span>
+            </button>
+          </div>
+
+          <button class="state-check-trigger" onclick="openStateCheck()">STATE CHECK</button>
+        </section>
+      `;
+    }
+
+    function renderData() {
+      return `
+        <section class="view category-page">
+          <header class="category-header">
+            <h1 class="category-title">DATA</h1>
+            <p class="category-copy">Explore BMSG.</p>
+          </header>
+
+          <div class="category-cards data-grid">
+            <button class="category-card" onclick="navigateTo('profile')">
+              <span class="category-card-inner">
+                <span class="category-card-meta">
+                  <span class="category-card-name">PROFILE</span>
+                </span>
+                <span class="category-card-symbol">${iconSvg('profile')}</span>
+              </span>
+            </button>
+
+            <button class="category-card" onclick="navigateTo('lyrics')">
+              <span class="category-card-inner">
+                <span class="category-card-meta">
+                  <span class="category-card-name">LYRICS</span>
+                </span>
+                <span class="category-card-symbol">${iconSvg('lyrics')}</span>
+              </span>
+            </button>
+
+            <button class="category-card" onclick="navigateTo('analysis')">
+              <span class="category-card-inner">
+                <span class="category-card-meta">
+                  <span class="category-card-name">ANALYSIS</span>
+                </span>
+                <span class="category-card-symbol">${iconSvg('analysis')}</span>
+              </span>
+            </button>
+          </div>
+        </section>
+      `;
+    }
+
+    function renderLab() {
+      return `
+        <section class="view category-page">
+          <header class="category-header">
+            <h1 class="category-title">LAB</h1>
+            <p class="category-copy">Play with BMSG.</p>
+          </header>
+
+          <div class="category-cards lab-grid">
+            <button class="category-card" onclick="navigateTo('quiz')">
+              <span class="category-card-inner">
+                <span class="category-card-meta">
+                  <span class="category-card-name">QUIZ</span>
+                </span>
+                <span class="category-card-symbol">${iconSvg('quiz')}</span>
+              </span>
+            </button>
+
+            <button class="category-card" onclick="navigateTo('cards')">
+              <span class="category-card-inner">
+                <span class="category-card-meta">
+                  <span class="category-card-name">TRADING CARD</span>
+                </span>
+                <span class="category-card-symbol">${iconSvg('profile')}</span>
+              </span>
+            </button>
+
+            <button class="category-card" onclick="navigateTo('poker')">
+              <span class="category-card-inner">
+                <span class="category-card-meta">
+                  <span class="category-card-name">POKER</span>
+                </span>
+                <span class="category-card-symbol">${iconSvg('poker')}</span>
+              </span>
+            </button>
+
+            <button class="category-card" onclick="navigateTo('cover')">
+              <span class="category-card-inner">
+                <span class="category-card-meta">
+                  <span class="category-card-name">COVER MAKER</span>
+                </span>
+                <span class="category-card-symbol">${iconSvg('cover')}</span>
+              </span>
+            </button>
+          </div>
+        </section>
+      `;
+    }
+
+    function renderPerformanceToolPlaceholder() {
+      return `
+        <section class="view tool-placeholder">
+          <p class="eyebrow">TOOLS</p>
+          <h1 class="title">PERFORMANCE<br>TIMER</h1>
+          <p class="tool-placeholder-copy">
+            歌唱秒数・センター秒数の計測ツールをここへ接続します。
+          </p>
+          <button class="tool-back" onclick="openSettings()">SETTINGS</button>
+        </section>
+      `;
+    }
+
+    function renderPlaceholder(route) {
+      const meta = ROUTES[route];
+
+      return `
+        <section class="view">
+          <div class="section-head">
+            <p class="eyebrow">${escapeHtml(meta.parent)}</p>
+            <h1 class="title">${escapeHtml(meta.title)}</h1>
+          </div>
+
+          <div class="placeholder">
+            <p>PHASE3 routing / UI test page.</p>
+          </div>
+        </section>
+      `;
+    }
+
+    function render404(pageValue) {
+      return `
+        <section class="view">
+          <div class="section-head">
+            <p class="eyebrow">404</p>
+            <h1 class="title">NOT<br>FOUND</h1>
+          </div>
+
+          <div class="placeholder">
+            <p>
+              Unknown page:
+              ${escapeHtml(pageValue || '(empty)')}
+            </p>
+
+            <button
+              class="home-link"
+              onclick="navigateTo('home')"
+            >HOMEへ戻る</button>
+          </div>
+        </section>
+      `;
+    }
+
+</script>
