@@ -1,5 +1,5 @@
 /**
- * READ ONLY API for the first PROFILE connection step.
+ * READ ONLY API for PROFILE.
  */
 function getProfileMembers() {
   try {
@@ -7,22 +7,10 @@ function getProfileMembers() {
     const cacheKey = 'PROFILE_MEMBERS_V2_0_1';
     const cached = cache.get(cacheKey);
 
-    if (cached) {
-      return JSON.parse(cached);
-    }
+    if (cached) return JSON.parse(cached);
 
-    const payload = buildProfileMembersPayload_();
-    const response = {
-      ok: true,
-      data: payload
-    };
-
-    cache.put(
-      cacheKey,
-      JSON.stringify(response),
-      UNIVERSE_CONFIG.PROFILE_CACHE_SECONDS
-    );
-
+    const response = { ok: true, data: buildProfileMembersPayload_() };
+    cache.put(cacheKey, JSON.stringify(response), UNIVERSE_CONFIG.PROFILE_CACHE_SECONDS);
     return response;
   } catch (error) {
     console.error(error);
@@ -34,6 +22,104 @@ function getProfileMembers() {
       }
     };
   }
+}
+
+/**
+ * Fetches one member only when the detail screen is opened.
+ * Active settings are read dynamically, so future P016/P017... fields appear
+ * without a code change when they are added to both sheets and activated.
+ */
+function getProfileMemberDetail(memberId) {
+  try {
+    const normalizedMemberId = asId_(memberId);
+    if (!normalizedMemberId) throw new Error('MemberID is required.');
+
+    const cache = CacheService.getScriptCache();
+    const cacheKey = 'PROFILE_MEMBER_DETAIL_V1_' + normalizedMemberId;
+    const cached = cache.get(cacheKey);
+    if (cached) return JSON.parse(cached);
+
+    const response = {
+      ok: true,
+      data: buildProfileMemberDetailPayload_(normalizedMemberId)
+    };
+    cache.put(cacheKey, JSON.stringify(response), UNIVERSE_CONFIG.PROFILE_CACHE_SECONDS);
+    return response;
+  } catch (error) {
+    console.error(error);
+    return {
+      ok: false,
+      error: {
+        code: 'PROFILE_MEMBER_DETAIL_LOAD_FAILED',
+        message: 'プロフィール詳細の読み込みに失敗しました。'
+      }
+    };
+  }
+}
+
+function buildProfileMemberDetailPayload_(memberId) {
+  const profiles = readProfileSheetObjects_(
+    UNIVERSE_CONFIG.CORE_DB_ID,
+    UNIVERSE_CONFIG.SHEETS.PROFILES
+  );
+  const settings = readProfileSheetObjects_(
+    UNIVERSE_CONFIG.LOG_DB_ID,
+    UNIVERSE_CONFIG.SHEETS.PROFILE_SETTINGS
+  );
+  const profile = profiles.find(function(row) {
+    return asId_(row.MemberID) === memberId;
+  });
+
+  if (!profile) throw new Error('Profile not found: ' + memberId);
+
+  const fields = settings.filter(function(setting) {
+    return asBoolean_(setting.IsActive) && asId_(setting.ProfileID);
+  }).sort(function(a, b) {
+    return asNumber_(a.DisplayOrder, 9999) - asNumber_(b.DisplayOrder, 9999);
+  }).map(function(setting) {
+    const profileId = asId_(setting.ProfileID);
+    const rawValue = profile[profileId];
+    return {
+      profileId: profileId,
+      label: String(setting.FieldName || profileId).trim(),
+      displayGroup: String(setting.DisplayGroup || 'PROFILE').trim(),
+      displayOrder: asNumber_(setting.DisplayOrder, 9999),
+      value: formatProfileDetailValue_(rawValue, setting.DataType, setting.IsMultiValue)
+    };
+  });
+
+  return { memberId: memberId, fields: fields };
+}
+
+function readProfileSheetObjects_(spreadsheetId, sheetName) {
+  const sheet = SpreadsheetApp.openById(spreadsheetId).getSheetByName(sheetName);
+  if (!sheet) throw new Error('Sheet not found: ' + sheetName);
+
+  const values = sheet.getDataRange().getDisplayValues();
+  if (values.length < 2) return [];
+
+  const headers = values[0].map(function(value) { return String(value).trim(); });
+  return values.slice(1).filter(function(row) {
+    return row.some(function(value) { return String(value).trim() !== ''; });
+  }).map(function(row) {
+    return headers.reduce(function(object, header, index) {
+      if (header) object[header] = row[index];
+      return object;
+    }, {});
+  });
+}
+
+function formatProfileDetailValue_(value, dataType, isMultiValue) {
+  const text = String(value == null ? '' : value).trim();
+  if (!text) return '—';
+
+  if (asBoolean_(isMultiValue)) {
+    return text.split(/[,、|｜\n]/).map(function(item) {
+      return item.trim();
+    }).filter(String).join(' / ') || '—';
+  }
+
+  return text;
 }
 
 function buildProfileMembersPayload_() {
@@ -52,7 +138,6 @@ function buildProfileMembersPayload_() {
     const memberId = asId_(membership.MemberID);
     const groupId = asId_(membership.GroupID);
     if (!memberId || !groupId) return map;
-
     if (!map[memberId]) map[memberId] = [];
     map[memberId].push({
       groupId: groupId,
@@ -72,12 +157,9 @@ function buildProfileMembersPayload_() {
       isProfileMain: asBoolean_(image.IsProfileMain),
       displayOrder: asNumber_(image.DisplayOrder, 9999)
     };
-
     const current = map[memberId];
     const candidateRank = candidate.isProfileMain ? 0 : candidate.rarity === 'SSR' ? 1 : 2;
-    const currentRank = current
-      ? current.isProfileMain ? 0 : current.rarity === 'SSR' ? 1 : 2
-      : 99;
+    const currentRank = current ? current.isProfileMain ? 0 : current.rarity === 'SSR' ? 1 : 2 : 99;
 
     if (!current || candidateRank < currentRank ||
         (candidateRank === currentRank && candidate.displayOrder < current.displayOrder)) {
@@ -113,10 +195,7 @@ function buildProfileMembersPayload_() {
     });
     const image = imagesByMemberId[memberId];
     const groupIds = memberships.map(function(item) { return item.groupId; });
-
-    if (primaryGroupId && groupIds.indexOf(primaryGroupId) < 0) {
-      groupIds.unshift(primaryGroupId);
-    }
+    if (primaryGroupId && groupIds.indexOf(primaryGroupId) < 0) groupIds.unshift(primaryGroupId);
 
     const groupOrders = memberships.reduce(function(map, item) {
       map[item.groupId] = item.displayOrder;
@@ -153,15 +232,10 @@ function buildProfileMembersPayload_() {
   return {
     groups: mainGroups,
     members: memberPayload,
-    counts: {
-      members: memberPayload.length,
-      mainGroups: mainGroups.length
-    }
+    counts: { members: memberPayload.length, mainGroups: mainGroups.length }
   };
 }
 
 function profileGroupKey_(groupName) {
-  return String(groupName || '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, '');
+  return String(groupName || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 }

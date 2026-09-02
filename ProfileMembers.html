@@ -1,67 +1,45 @@
 <script>
   let profileMembersState = {
-    status: 'idle',
-    groups: [],
-    members: [],
-    error: ''
+    status: 'idle', groups: [], members: [], error: '',
+    detailStatus: 'idle', detailMemberId: '', detailFields: [], detailError: ''
   };
 
   function loadProfileMembers(forceReload = false) {
     if (!forceReload && (profileMembersState.status === 'loading' || profileMembersState.status === 'ready')) {
-      renderProfileMembersPanel();
-      return;
+      renderProfileMembersPanel(); return;
     }
-
-    profileMembersState.status = 'loading';
-    profileMembersState.error = '';
+    profileMembersState.status = 'loading'; profileMembersState.error = '';
     renderProfileMembersPanel();
-
-    google.script.run
-      .withSuccessHandler(handleProfileMembersSuccess)
-      .withFailureHandler(handleProfileMembersFailure)
-      .getProfileMembers();
+    google.script.run.withSuccessHandler(handleProfileMembersSuccess)
+      .withFailureHandler(handleProfileMembersFailure).getProfileMembers();
   }
 
   function handleProfileMembersSuccess(response) {
     if (!response || !response.ok || !response.data) {
-      handleProfileMembersFailure(
-        response && response.error ? response.error.message : 'プロフィールの読み込みに失敗しました。'
-      );
+      handleProfileMembersFailure(response && response.error ? response.error.message : 'プロフィールの読み込みに失敗しました。');
       return;
     }
-
-    profileMembersState = {
-      status: 'ready',
-      groups: Array.isArray(response.data.groups) ? response.data.groups : [],
-      members: Array.isArray(response.data.members) ? response.data.members : [],
-      error: ''
-    };
+    profileMembersState.status = 'ready';
+    profileMembersState.groups = Array.isArray(response.data.groups) ? response.data.groups : [];
+    profileMembersState.members = Array.isArray(response.data.members) ? response.data.members : [];
+    profileMembersState.error = '';
     renderProfileMembersPanel();
   }
 
   function handleProfileMembersFailure(error) {
     profileMembersState.status = 'error';
-    profileMembersState.error = error && error.message
-      ? error.message
-      : String(error || 'プロフィールの読み込みに失敗しました。');
+    profileMembersState.error = error && error.message ? error.message : String(error || 'プロフィールの読み込みに失敗しました。');
     renderProfileMembersPanel();
   }
 
   function getVisibleProfileMembers() {
     const members = profileMembersState.members.slice();
-
-    if (profileCurrentGroup === 'all') {
-      return members.sort((a, b) => a.displayOrder - b.displayOrder);
-    }
-
+    if (profileCurrentGroup === 'all') return members.sort((a, b) => a.displayOrder - b.displayOrder);
     const selectedGroup = profileMembersState.groups.find(group => group.key === profileCurrentGroup);
     if (!selectedGroup) return [];
-
-    return members.filter(member => member.groupIds.includes(selectedGroup.groupId)).sort((a, b) => {
-      const orderA = Number(memberGroupOrder(a, selectedGroup.groupId));
-      const orderB = Number(memberGroupOrder(b, selectedGroup.groupId));
-      return orderA - orderB || a.displayOrder - b.displayOrder;
-    });
+    return members.filter(member => member.groupIds.includes(selectedGroup.groupId)).sort((a, b) =>
+      Number(memberGroupOrder(a, selectedGroup.groupId)) - Number(memberGroupOrder(b, selectedGroup.groupId)) || a.displayOrder - b.displayOrder
+    );
   }
 
   function memberGroupOrder(member, groupId) {
@@ -73,198 +51,126 @@
   function renderProfileMembersPanel() {
     const panel = document.getElementById('profilePanel');
     if (!panel || profileCurrentView !== 'home') return;
-
     if (profileMembersState.status === 'loading' || profileMembersState.status === 'idle') {
-      panel.innerHTML = renderProfileMemberSkeletons();
-      return;
+      panel.innerHTML = renderProfileMemberSkeletons(); return;
     }
-
     if (profileMembersState.status === 'error') {
-      panel.innerHTML = `
-        <article class="profile-members-state">
-          <p class="profile-panel-eyebrow">CONNECTION ERROR</p>
-          <h2 class="profile-members-state-title">ERROR</h2>
-          <p class="profile-panel-copy">${escapeHtml(profileMembersState.error)}</p>
-          <button class="profile-retry-button" type="button" onclick="loadProfileMembers(true)">RETRY</button>
-        </article>
-      `;
+      panel.innerHTML = `<article class="profile-members-state"><p class="profile-panel-eyebrow">CONNECTION ERROR</p><h2 class="profile-members-state-title">ERROR</h2><p class="profile-panel-copy">${escapeHtml(profileMembersState.error)}</p><button class="profile-retry-button" type="button" onclick="loadProfileMembers(true)">RETRY</button></article>`;
       return;
     }
-
     const members = getVisibleProfileMembers();
     if (!members.length) {
-      panel.innerHTML = `
-        <article class="profile-members-state">
-          <p class="profile-panel-eyebrow">PROFILE HOME</p>
-          <h2 class="profile-members-state-title">NO DATA</h2>
-          <p class="profile-panel-copy">表示できるメンバーがいません。</p>
-        </article>
-      `;
+      panel.innerHTML = `<article class="profile-members-state"><p class="profile-panel-eyebrow">PROFILE HOME</p><h2 class="profile-members-state-title">NO DATA</h2><p class="profile-panel-copy">表示できるメンバーがいません。</p></article>`;
       return;
     }
-
-    panel.innerHTML = `
-      <div class="profile-members-head">
-        <div>
-          <p class="profile-panel-eyebrow">PROFILE HOME</p>
-          <h2 class="profile-members-title">MEMBERS</h2>
-        </div>
-        <span class="profile-members-count">${members.length}</span>
-      </div>
-      <div class="profile-member-grid">
-        ${members.map(renderProfileMemberCard).join('')}
-      </div>
-    `;
+    panel.innerHTML = `<div class="profile-members-head"><div><p class="profile-panel-eyebrow">PROFILE HOME</p><h2 class="profile-members-title">MEMBERS</h2></div><span class="profile-members-count">${members.length}</span></div><div class="profile-member-grid">${members.map(renderProfileMemberCard).join('')}</div>`;
   }
 
   function renderProfileMemberCard(member) {
     const initial = String(member.displayName || '?').slice(0, 1).toUpperCase();
-    const accent = /^#[0-9a-f]{6}$/i.test(member.colorHex || '')
-      ? member.colorHex
-      : '#9cecff';
-    const image = member.imageUrl
-      ? `<img
-          src="${escapeHtml(member.imageUrl)}"
-          data-fallback-src="${escapeHtml(member.imageFallbackUrl || '')}"
-          alt=""
-          loading="lazy"
-          decoding="async"
-          referrerpolicy="no-referrer"
-          onerror="handleProfileImageError(this)"
-        >`
-      : '';
-
-    return `
-      <article
-        class="profile-member-card"
-        style="--member-accent:${escapeHtml(accent)}"
-        role="button"
-        tabindex="0"
-        data-member-id="${escapeHtml(member.memberId)}"
-        aria-label="${escapeHtml(member.displayName)}のプロフィールを開く"
-        onclick="openProfileMemberDetail(this.dataset.memberId)"
-        onkeydown="handleProfileMemberCardKey(event, this.dataset.memberId)"
-      >
-        <div class="profile-member-visual">
-          <span class="profile-member-fallback" aria-hidden="true">${escapeHtml(initial)}</span>
-          ${image}
-          <span class="profile-member-accent" aria-hidden="true"></span>
-        </div>
-        <div class="profile-member-body">
-          <p class="profile-member-group">${escapeHtml(member.primaryGroupName || 'SOLO')}</p>
-          <h3 class="profile-member-name">${escapeHtml(member.displayName)}</h3>
-        </div>
-      </article>
-    `;
+    const accent = /^#[0-9a-f]{6}$/i.test(member.colorHex || '') ? member.colorHex : '#9cecff';
+    const image = member.imageUrl ? `<img src="${escapeHtml(member.imageUrl)}" data-fallback-src="${escapeHtml(member.imageFallbackUrl || '')}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="handleProfileImageError(this)">` : '';
+    return `<article class="profile-member-card" style="--member-accent:${escapeHtml(accent)}" role="button" tabindex="0" data-member-id="${escapeHtml(member.memberId)}" aria-label="${escapeHtml(member.displayName)}のプロフィールを開く" onclick="openProfileMemberDetail(this.dataset.memberId)" onkeydown="handleProfileMemberCardKey(event, this.dataset.memberId)"><div class="profile-member-visual"><span class="profile-member-fallback" aria-hidden="true">${escapeHtml(initial)}</span>${image}<span class="profile-member-accent" aria-hidden="true"></span></div><div class="profile-member-body"><p class="profile-member-group">${escapeHtml(member.primaryGroupName || 'SOLO')}</p><h3 class="profile-member-name">${escapeHtml(member.displayName)}</h3></div></article>`;
   }
 
   function handleProfileMemberCardKey(event, memberId) {
     if (!event || (event.key !== 'Enter' && event.key !== ' ')) return;
-    event.preventDefault();
-    openProfileMemberDetail(memberId);
+    event.preventDefault(); openProfileMemberDetail(memberId);
   }
 
   function openProfileMemberDetail(memberId) {
     const member = profileMembersState.members.find(item => item.memberId === memberId);
     if (!member) return;
-
     profileSelectedMemberId = memberId;
-    setProfileDetailMode(true);
-    renderProfileMemberDetail();
+    profileMembersState.detailStatus = 'loading';
+    profileMembersState.detailMemberId = memberId;
+    profileMembersState.detailFields = [];
+    profileMembersState.detailError = '';
+    setProfileDetailMode(true); renderProfileMemberDetail();
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    google.script.run.withSuccessHandler(response => handleProfileMemberDetailSuccess(memberId, response))
+      .withFailureHandler(error => handleProfileMemberDetailFailure(memberId, error))
+      .getProfileMemberDetail(memberId);
+  }
+
+  function handleProfileMemberDetailSuccess(memberId, response) {
+    if (profileSelectedMemberId !== memberId) return;
+    if (!response || !response.ok || !response.data) {
+      handleProfileMemberDetailFailure(memberId, response && response.error ? response.error.message : 'プロフィール詳細の読み込みに失敗しました。'); return;
+    }
+    profileMembersState.detailStatus = 'ready';
+    profileMembersState.detailFields = Array.isArray(response.data.fields) ? response.data.fields : [];
+    profileMembersState.detailError = '';
+    renderProfileMemberDetail();
+  }
+
+  function handleProfileMemberDetailFailure(memberId, error) {
+    if (profileSelectedMemberId !== memberId) return;
+    profileMembersState.detailStatus = 'error';
+    profileMembersState.detailError = error && error.message ? error.message : String(error || 'プロフィール詳細の読み込みに失敗しました。');
+    renderProfileMemberDetail();
   }
 
   function closeProfileMemberDetail() {
     profileSelectedMemberId = '';
-    setProfileDetailMode(false);
-    renderProfileMembersPanel();
+    profileMembersState.detailStatus = 'idle';
+    profileMembersState.detailMemberId = '';
+    profileMembersState.detailFields = [];
+    profileMembersState.detailError = '';
+    setProfileDetailMode(false); renderProfileMembersPanel();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   function renderProfileMemberDetail() {
     const panel = document.getElementById('profilePanel');
     if (!panel) return;
-
     const member = profileMembersState.members.find(item => item.memberId === profileSelectedMemberId);
-    if (!member) {
-      closeProfileMemberDetail();
-      return;
-    }
-
+    if (!member) { closeProfileMemberDetail(); return; }
     const initial = String(member.displayName || '?').slice(0, 1).toUpperCase();
-    const accent = /^#[0-9a-f]{6}$/i.test(member.colorHex || '')
-      ? member.colorHex
-      : '#9cecff';
-    const image = member.imageUrl
-      ? `<img
-          src="${escapeHtml(member.imageUrl)}"
-          data-fallback-src="${escapeHtml(member.imageFallbackUrl || '')}"
-          alt="${escapeHtml(member.displayName)}"
-          decoding="async"
-          referrerpolicy="no-referrer"
-          onerror="handleProfileImageError(this)"
-        >`
-      : '';
+    const accent = /^#[0-9a-f]{6}$/i.test(member.colorHex || '') ? member.colorHex : '#9cecff';
+    const image = member.imageUrl ? `<img src="${escapeHtml(member.imageUrl)}" data-fallback-src="${escapeHtml(member.imageFallbackUrl || '')}" alt="${escapeHtml(member.displayName)}" decoding="async" referrerpolicy="no-referrer" onerror="handleProfileImageError(this)">` : '';
+    panel.innerHTML = `<article class="profile-member-detail" style="--member-accent:${escapeHtml(accent)}"><button class="profile-detail-back" type="button" onclick="closeProfileMemberDetail()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5L8 12l6.5 6.5"></path></svg><span>MEMBERS</span></button><div class="profile-detail-hero"><div class="profile-detail-visual"><span class="profile-member-fallback" aria-hidden="true">${escapeHtml(initial)}</span>${image}<span class="profile-detail-line" aria-hidden="true"></span></div><div class="profile-detail-identity"><p class="profile-detail-group">${escapeHtml(member.primaryGroupName || 'SOLO')}</p><h2 class="profile-detail-name">${escapeHtml(member.displayName)}</h2></div></div>${renderProfileDetailContent()}</article>`;
+  }
 
-    panel.innerHTML = `
-      <article class="profile-member-detail" style="--member-accent:${escapeHtml(accent)}">
-        <button class="profile-detail-back" type="button" onclick="closeProfileMemberDetail()">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M14.5 5.5L8 12l6.5 6.5"></path>
-          </svg>
-          <span>MEMBERS</span>
-        </button>
-
-        <div class="profile-detail-hero">
-          <div class="profile-detail-visual">
-            <span class="profile-member-fallback" aria-hidden="true">${escapeHtml(initial)}</span>
-            ${image}
-            <span class="profile-detail-line" aria-hidden="true"></span>
-          </div>
-
-          <div class="profile-detail-identity">
-            <p class="profile-detail-group">${escapeHtml(member.primaryGroupName || 'SOLO')}</p>
-            <h2 class="profile-detail-name">${escapeHtml(member.displayName)}</h2>
-          </div>
-        </div>
-      </article>
-    `;
+  function renderProfileDetailContent() {
+    if (profileMembersState.detailStatus === 'loading') return `<div class="profile-detail-loading" aria-live="polite"><span class="profile-detail-spinner"></span><span>LOADING PROFILE...</span></div>`;
+    if (profileMembersState.detailStatus === 'error') return `<div class="profile-detail-message"><p>${escapeHtml(profileMembersState.detailError)}</p><button class="profile-retry-button" type="button" onclick="openProfileMemberDetail(profileSelectedMemberId)">RETRY</button></div>`;
+    const fields = profileMembersState.detailFields || [];
+    if (!fields.length) return `<div class="profile-detail-message"><p>表示できるプロフィール項目がありません。</p></div>`;
+    const groups = [];
+    fields.forEach(field => {
+      const name = String(field.displayGroup || 'PROFILE');
+      let group = groups.find(item => item.name === name);
+      if (!group) { group = { name, fields: [] }; groups.push(group); }
+      group.fields.push(field);
+    });
+    return `<div class="profile-detail-sections">${groups.map(group => `<section class="profile-detail-section"><h3 class="profile-detail-section-title">${escapeHtml(group.name)}</h3><dl class="profile-detail-list">${group.fields.map(field => `<div class="profile-detail-row"><dt>${escapeHtml(field.label || field.profileId)}</dt><dd>${escapeHtml(field.value || '—')}</dd></div>`).join('')}</dl></section>`).join('')}</div>`;
   }
 
   function handleProfileImageError(image) {
     if (!image) return;
-
     const fallback = image.dataset.fallbackSrc || '';
     const fallbackTried = image.dataset.fallbackTried === 'true';
-
-    if (fallback && !fallbackTried) {
-      image.dataset.fallbackTried = 'true';
-      image.src = fallback;
-      return;
-    }
-
+    if (fallback && !fallbackTried) { image.dataset.fallbackTried = 'true'; image.src = fallback; return; }
     image.style.display = 'none';
   }
 
   function renderProfileMemberSkeletons() {
-    return `
-      <div class="profile-members-head profile-members-head-loading">
-        <div>
-          <span class="profile-member-skeleton profile-member-skeleton-label"></span>
-          <span class="profile-member-skeleton profile-member-skeleton-heading"></span>
-        </div>
-      </div>
-      <div class="profile-member-grid">
-        ${Array.from({ length: 6 }, () => `
-          <div class="profile-member-card profile-member-card-loading">
-            <div class="profile-member-skeleton profile-member-skeleton-image"></div>
-            <div class="profile-member-body">
-              <span class="profile-member-skeleton profile-member-skeleton-copy"></span>
-              <span class="profile-member-skeleton profile-member-skeleton-name"></span>
-            </div>
-          </div>
-        `).join('')}
-      </div>
-    `;
+    return `<div class="profile-members-head profile-members-head-loading"><div><span class="profile-member-skeleton profile-member-skeleton-label"></span><span class="profile-member-skeleton profile-member-skeleton-heading"></span></div></div><div class="profile-member-grid">${Array.from({ length: 6 }, () => `<div class="profile-member-card profile-member-card-loading"><div class="profile-member-skeleton profile-member-skeleton-image"></div><div class="profile-member-body"><span class="profile-member-skeleton profile-member-skeleton-copy"></span><span class="profile-member-skeleton profile-member-skeleton-name"></span></div></div>`).join('')}</div>`;
   }
 </script>
+
+<style>
+  .profile-detail-sections { display: grid; gap: 18px; margin-top: 24px; }
+  .profile-detail-section { border: 1px solid rgba(156,236,255,.16); background: rgba(255,255,255,.025); padding: 18px; }
+  .profile-detail-section-title { margin: 0 0 12px; color: var(--member-accent); font-family: Orbitron, sans-serif; font-size: 12px; letter-spacing: .14em; }
+  .profile-detail-list { margin: 0; }
+  .profile-detail-row { display: grid; grid-template-columns: minmax(105px, 34%) 1fr; gap: 14px; padding: 11px 0; border-top: 1px solid rgba(255,255,255,.08); }
+  .profile-detail-row:first-child { border-top: 0; }
+  .profile-detail-row dt { color: rgba(255,255,255,.56); font-size: 12px; }
+  .profile-detail-row dd { margin: 0; color: #fff; font-size: 14px; line-height: 1.65; overflow-wrap: anywhere; }
+  .profile-detail-loading, .profile-detail-message { display: flex; align-items: center; justify-content: center; gap: 12px; min-height: 140px; margin-top: 24px; color: rgba(255,255,255,.68); font-family: Orbitron, sans-serif; font-size: 11px; letter-spacing: .12em; }
+  .profile-detail-spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,.18); border-top-color: var(--member-accent); border-radius: 50%; animation: profileDetailSpin .8s linear infinite; }
+  @keyframes profileDetailSpin { to { transform: rotate(360deg); } }
+  @media (max-width: 560px) { .profile-detail-section { padding: 15px; } .profile-detail-row { grid-template-columns: 96px 1fr; gap: 10px; } }
+</style>
