@@ -9,7 +9,7 @@
       renderProfileMembersPanel(); return;
     }
     profileMembersState.status = 'loading'; profileMembersState.error = '';
-    renderProfileMembersPanel();
+    renderProfilePanel();
     google.script.run.withSuccessHandler(handleProfileMembersSuccess)
       .withFailureHandler(handleProfileMembersFailure).getProfileMembers();
   }
@@ -23,7 +23,7 @@
     profileMembersState.groups = Array.isArray(response.data.groups) ? response.data.groups : [];
     profileMembersState.members = Array.isArray(response.data.members) ? response.data.members : [];
     profileMembersState.error = '';
-    renderProfileMembersPanel();
+    renderProfilePanel();
   }
 
   function handleProfileMembersFailure(error) {
@@ -81,6 +81,7 @@
   function openProfileMemberDetail(memberId) {
     const member = profileMembersState.members.find(item => item.memberId === memberId);
     if (!member) return;
+    profileDetailReturnView = profileCurrentView;
     profileSelectedMemberId = memberId;
     profileMembersState.detailStatus = 'loading';
     profileMembersState.detailMemberId = memberId;
@@ -117,7 +118,11 @@
     profileMembersState.detailMemberId = '';
     profileMembersState.detailFields = [];
     profileMembersState.detailError = '';
-    setProfileDetailMode(false); renderProfileMembersPanel();
+    setProfileDetailMode(false);
+    profileCurrentView = profileDetailReturnView || 'home';
+    profileDetailReturnView = 'home';
+    updateProfileControls();
+    renderProfilePanel();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
