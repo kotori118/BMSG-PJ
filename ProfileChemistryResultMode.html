@@ -39,6 +39,30 @@
     return row.valueA === row.valueB;
   }
 
+  function getProfileChemistryDetailRows(memberA, memberB) {
+    const detailA = profileChemistryState.detailsByMemberId[memberA.memberId] || [];
+    const detailB = profileChemistryState.detailsByMemberId[memberB.memberId] || [];
+    const byIdA = detailA.reduce((map, field) => { map[field.profileId] = field; return map; }, {});
+    const byIdB = detailB.reduce((map, field) => { map[field.profileId] = field; return map; }, {});
+    const ids = [...new Set(detailA.concat(detailB).filter(field => field && field.profileId).map(field => field.profileId))];
+
+    return ids.map(profileId => {
+      const fieldA = byIdA[profileId] || {};
+      const fieldB = byIdB[profileId] || {};
+      const orderA = Number(fieldA.displayOrder);
+      const orderB = Number(fieldB.displayOrder);
+      const displayOrder = Number.isFinite(orderA) ? orderA : Number.isFinite(orderB) ? orderB : 9999;
+      return {
+        profileId,
+        label: fieldA.label || fieldB.label || profileId,
+        displayGroup: fieldA.displayGroup || fieldB.displayGroup || 'PROFILE',
+        displayOrder,
+        valueA: fieldA.value || '—',
+        valueB: fieldB.value || '—'
+      };
+    }).sort((a, b) => a.displayOrder - b.displayOrder || a.profileId.localeCompare(b.profileId));
+  }
+
   function resetProfileChemistrySelection() {
     profileChemistryState.memberA = '';
     profileChemistryState.memberB = '';
