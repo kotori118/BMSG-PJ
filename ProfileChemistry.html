@@ -1,6 +1,7 @@
 <script>
   const profileChemistryState = {
-    status: 'idle', fields: [], valuesByMemberId: {}, memberA: '', memberB: '', activeSlot: 'a', error: ''
+    status: 'idle', fields: [], valuesByMemberId: {}, memberA: '', memberB: '', activeSlot: 'a', error: '',
+    detailsByMemberId: {}, detailLoadingByMemberId: {}, detailErrorByMemberId: {}
   };
 
   function loadProfileChemistry(forceReload = false) {
@@ -63,6 +64,7 @@
     if (profileChemistryState[otherKey] === memberId) profileChemistryState[otherKey] = '';
     profileChemistryState[slotKey] = memberId;
     profileChemistryState.activeSlot = otherSlot;
+    loadProfileChemistryDetail(memberId);
     renderProfileChemistry();
     if (profileChemistryState.memberA && profileChemistryState.memberB) {
       requestAnimationFrame(() => {
@@ -70,6 +72,35 @@
         if (result) result.scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
     }
+  }
+
+  function loadProfileChemistryDetail(memberId, forceReload = false) {
+    if (!memberId) return;
+    if (!forceReload && profileChemistryState.detailsByMemberId[memberId]) return;
+    if (!forceReload && profileChemistryState.detailLoadingByMemberId[memberId]) return;
+
+    profileChemistryState.detailLoadingByMemberId[memberId] = true;
+    delete profileChemistryState.detailErrorByMemberId[memberId];
+    google.script.run
+      .withSuccessHandler(response => handleProfileChemistryDetailSuccess(memberId, response))
+      .withFailureHandler(error => handleProfileChemistryDetailFailure(memberId, error))
+      .getProfileMemberDetail(memberId);
+  }
+
+  function handleProfileChemistryDetailSuccess(memberId, response) {
+    profileChemistryState.detailLoadingByMemberId[memberId] = false;
+    if (!response || !response.ok || !response.data) {
+      return handleProfileChemistryDetailFailure(memberId, response && response.error ? response.error.message : 'プロフィール詳細の読み込みに失敗しました。');
+    }
+    profileChemistryState.detailsByMemberId[memberId] = Array.isArray(response.data.fields) ? response.data.fields : [];
+    delete profileChemistryState.detailErrorByMemberId[memberId];
+    if (profileCurrentView === 'chemistry') renderProfileChemistry();
+  }
+
+  function handleProfileChemistryDetailFailure(memberId, error) {
+    profileChemistryState.detailLoadingByMemberId[memberId] = false;
+    profileChemistryState.detailErrorByMemberId[memberId] = error && error.message ? error.message : String(error || 'プロフィール詳細の読み込みに失敗しました。');
+    if (profileCurrentView === 'chemistry') renderProfileChemistry();
   }
 
   function clearProfileChemistryMember(slot, event) {
@@ -151,15 +182,58 @@
     };
   }
 
+  function getProfileChemistryDetailRows(memberA, memberB) {
+    const detailA = profileChemistryState.detailsByMemberId[memberA.memberId] || [];
+    const detailB = profileChemistryState.detailsByMemberId[memberB.memberId] || [];
+    const byIdA = detailA.reduce((map, field) => { map[field.profileId] = field; return map; }, {});
+    const byIdB = detailB.reduce((map, field) => { map[field.profileId] = field; return map; }, {});
+    const orderedIds = [];
+    detailA.concat(detailB).forEach(field => {
+      if (field && field.profileId && !orderedIds.includes(field.profileId)) orderedIds.push(field.profileId);
+    });
+    return orderedIds.map(profileId => {
+      const fieldA = byIdA[profileId] || {};
+      const fieldB = byIdB[profileId] || {};
+      return {
+        profileId,
+        label: fieldA.label || fieldB.label || profileId,
+        displayGroup: fieldA.displayGroup || fieldB.displayGroup || 'PROFILE',
+        valueA: fieldA.value || '—',
+        valueB: fieldB.value || '—'
+      };
+    });
+  }
+
   function renderProfileChemistryResult(memberA, memberB) {
     const result = getProfileChemistryComparison(memberA, memberB);
-    const common = result.matched.map(item => `<div class="profile-chemistry-common-row"><dt>${escapeHtml(item.field.label || item.field.profileId)}</dt><dd>${item.values.map(escapeHtml).join(' / ')}</dd></div>`).join('');
-    return `<section id="profileChemistryResult" class="profile-chemistry-result"><div class="profile-chemistry-score" style="--score:${result.score}"><div><strong>${result.score}</strong><span>%</span></div></div><div class="profile-chemistry-result-copy"><p>MATCH</p><h3>${escapeHtml(memberA.displayName)} × ${escapeHtml(memberB.displayName)}</h3><small>${result.matched.length} / ${result.comparedCount}</small></div><div class="profile-chemistry-common"><div class="profile-chemistry-section-head"><h3>COMMON</h3><span>${result.matched.length}</span></div><dl>${common || '<div class="profile-chemistry-empty">NO MATCH</div>'}</dl></div></section>`;
+    const detailA = profileChemistryState.detailsByMemberId[memberA.memberId];
+    const detailB = profileChemistryState.detailsByMemberId[memberB.memberId];
+    const errorA = profileChemistryState.detailErrorByMemberId[memberA.memberId];
+    const errorB = profileChemistryState.detailErrorByMemberId[memberB.memberId];
+    const loading = !detailA || !detailB;
+
+    if (loading && !profileChemistryState.detailLoadingByMemberId[memberA.memberId] && !errorA) loadProfileChemistryDetail(memberA.memberId);
+    if (loading && !profileChemistryState.detailLoadingByMemberId[memberB.memberId] && !errorB) loadProfileChemistryDetail(memberB.memberId);
+
+    let comparisonBody = '';
+    if (errorA || errorB) {
+      comparisonBody = `<div class="profile-chemistry-detail-error"><p>${escapeHtml(errorA || errorB)}</p><button type="button" onclick="loadProfileChemistryDetail('${escapeHtml(errorA ? memberA.memberId : memberB.memberId)}', true)">RETRY</button></div>`;
+    } else if (loading) {
+      comparisonBody = `<div class="profile-chemistry-detail-loading"><span class="profile-detail-spinner"></span><span>LOADING PROFILES...</span></div>`;
+    } else {
+      const rows = getProfileChemistryDetailRows(memberA, memberB);
+      comparisonBody = `<div class="profile-chemistry-compare-head"><span>PROFILE</span><strong>${escapeHtml(memberA.displayName)}</strong><strong>${escapeHtml(memberB.displayName)}</strong></div><div class="profile-chemistry-compare-rows">${rows.map(row => {
+        const same = row.valueA !== '—' && row.valueA === row.valueB;
+        return `<div class="profile-chemistry-compare-row${same ? ' match' : ''}"><dt>${escapeHtml(row.label)}</dt><dd>${escapeHtml(row.valueA)}</dd><dd>${escapeHtml(row.valueB)}</dd></div>`;
+      }).join('')}</div>`;
+    }
+
+    return `<section id="profileChemistryResult" class="profile-chemistry-result"><div class="profile-chemistry-score" style="--score:${result.score}"><div><strong>${result.score}</strong><span>%</span></div></div><div class="profile-chemistry-result-copy"><p>MATCH</p><h3>${escapeHtml(memberA.displayName)} × ${escapeHtml(memberB.displayName)}</h3><small>${result.matched.length} / ${result.comparedCount}</small></div><div class="profile-chemistry-compare"><div class="profile-chemistry-section-head"><h3>PROFILE COMPARE</h3><span>ALL</span></div>${comparisonBody}</div></section>`;
   }
 </script>
 
 <style>
-  .profile-chemistry-head{margin-bottom:22px}.profile-chemistry-title{margin:7px 0 0;color:var(--white);font:600 clamp(28px,7.5vw,44px)/1 Orbitron,"Exo 2",sans-serif}.profile-chemistry-slots{display:grid;grid-template-columns:minmax(0,1fr) 18px minmax(0,1fr);align-items:center;gap:7px}.profile-chemistry-cross{color:rgba(156,236,255,.48);font:500 17px Orbitron,sans-serif;text-align:center}.profile-chemistry-slot{position:relative;min-width:0;min-height:132px;padding:15px 12px;border:1px solid rgba(194,232,244,.12);border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;color:rgba(238,248,252,.54);background:rgba(255,255,255,.025);cursor:pointer}.profile-chemistry-slot.active{border-color:rgba(156,236,255,.48);background:rgba(91,193,217,.09);box-shadow:inset 0 0 0 1px rgba(156,236,255,.04)}.profile-chemistry-slot-number{position:absolute;top:11px;left:12px;color:rgba(156,236,255,.52);font:700 9px "Exo 2",sans-serif;letter-spacing:.12em}.profile-chemistry-slot-empty{font:700 12px "Exo 2",sans-serif;letter-spacing:.14em}.profile-chemistry-slot-plus{font:400 25px/1 "Exo 2",sans-serif}.profile-chemistry-slot-avatar{position:relative;width:58px;height:58px;overflow:hidden;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.05)}.profile-chemistry-slot-avatar img,.profile-chemistry-member img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;z-index:1}.profile-chemistry-slot-avatar i,.profile-chemistry-member i{font:600 14px Orbitron,sans-serif;color:var(--member-accent);font-style:normal;opacity:.64}.profile-chemistry-slot-name{max-width:100%;overflow:hidden;color:rgba(247,251,255,.92);font:600 14px "Exo 2","Zen Kaku Gothic New",sans-serif;text-overflow:ellipsis;white-space:nowrap}.profile-chemistry-slot-remove{position:absolute;top:8px;right:8px;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;color:rgba(238,248,252,.54);font:400 17px/1 sans-serif}.profile-chemistry-picker{margin-top:25px;padding-top:21px;border-top:1px solid rgba(194,232,244,.10)}.profile-chemistry-section-head{margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px}.profile-chemistry-section-head h3{margin:0;color:rgba(238,248,252,.58);font:700 12px "Exo 2",sans-serif;letter-spacing:.14em}.profile-chemistry-section-head span{color:var(--cyan);font:700 12px "Exo 2",sans-serif}.profile-chemistry-member-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.profile-chemistry-member{position:relative;min-width:0;min-height:60px;padding:8px 36px 8px 8px;border:1px solid rgba(194,232,244,.11);border-radius:17px;display:grid;grid-template-columns:42px minmax(0,1fr);align-items:center;gap:10px;color:rgba(247,251,255,.82);background:rgba(255,255,255,.025);font:600 13px "Exo 2","Zen Kaku Gothic New",sans-serif;text-align:left;cursor:pointer}.profile-chemistry-member>img,.profile-chemistry-member>i{position:relative;grid-column:1;width:42px;height:42px;border-radius:50%;object-fit:cover}.profile-chemistry-member>i{display:grid;place-items:center;background:rgba(255,255,255,.05)}.profile-chemistry-member>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.profile-chemistry-member>b{position:absolute;right:10px;top:50%;transform:translateY(-50%);width:22px;height:22px;border-radius:50%;display:grid;place-items:center;color:#061019;background:var(--member-accent);font:700 9px "Exo 2",sans-serif}.profile-chemistry-member.selected{border-color:color-mix(in srgb,var(--member-accent) 45%,transparent);background:color-mix(in srgb,var(--member-accent) 9%,transparent)}.profile-chemistry-result{margin-top:28px;padding:21px 18px;border:1px solid rgba(156,236,255,.17);border-radius:22px;display:grid;grid-template-columns:92px minmax(0,1fr);align-items:center;gap:18px;background:linear-gradient(145deg,rgba(91,193,217,.075),rgba(255,255,255,.018));scroll-margin-top:20px}.profile-chemistry-score{--score:0;width:92px;height:92px;padding:6px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--cyan) calc(var(--score)*1%),rgba(255,255,255,.07) 0)}.profile-chemistry-score>div{width:100%;height:100%;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#071019}.profile-chemistry-score strong{color:#f5fbfd;font:600 27px Orbitron,sans-serif}.profile-chemistry-score span{margin:7px 0 0 2px;color:var(--cyan);font:700 10px "Exo 2",sans-serif}.profile-chemistry-result-copy{min-width:0}.profile-chemistry-result-copy p{margin:0 0 7px;color:var(--cyan);font:700 9px "Exo 2",sans-serif;letter-spacing:.16em}.profile-chemistry-result-copy h3{margin:0;overflow-wrap:anywhere;color:rgba(247,251,255,.92);font:600 17px/1.25 "Exo 2","Zen Kaku Gothic New",sans-serif}.profile-chemistry-result-copy small{display:block;margin-top:8px;color:rgba(238,248,252,.40);font:700 10px "Exo 2",sans-serif;letter-spacing:.10em}.profile-chemistry-common{grid-column:1/-1;margin-top:5px;padding-top:20px;border-top:1px solid rgba(255,255,255,.08)}.profile-chemistry-common dl{margin:0}.profile-chemistry-common-row{display:grid;grid-template-columns:minmax(92px,34%) 1fr;gap:12px;padding:11px 0;border-top:1px solid rgba(255,255,255,.07)}.profile-chemistry-common-row:first-child{border-top:0}.profile-chemistry-common-row dt{color:rgba(238,248,252,.48);font-size:12px}.profile-chemistry-common-row dd{margin:0;color:#f5fbfd;font-size:14px;line-height:1.55;overflow-wrap:anywhere}.profile-chemistry-empty{min-height:80px;display:grid;place-items:center;color:rgba(238,248,252,.38);font:700 12px "Exo 2",sans-serif;letter-spacing:.13em}.profile-chemistry-loading{min-height:240px;display:flex;align-items:center;justify-content:center;gap:12px;color:rgba(255,255,255,.60);font:600 12px "Exo 2",sans-serif;letter-spacing:.12em}
-  @media(max-width:360px){.profile-chemistry-member-grid{grid-template-columns:1fr}}
-  @media(min-width:720px){.profile-chemistry-member-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.profile-chemistry-slots{max-width:620px}.profile-chemistry-result{grid-template-columns:112px minmax(0,1fr);padding:28px}.profile-chemistry-score{width:112px;height:112px}}
+  .profile-chemistry-head{margin-bottom:22px}.profile-chemistry-title{margin:7px 0 0;color:var(--white);font:600 clamp(28px,7.5vw,44px)/1 Orbitron,"Exo 2",sans-serif}.profile-chemistry-slots{display:grid;grid-template-columns:minmax(0,1fr) 18px minmax(0,1fr);align-items:center;gap:7px}.profile-chemistry-cross{color:rgba(156,236,255,.48);font:500 17px Orbitron,sans-serif;text-align:center}.profile-chemistry-slot{position:relative;min-width:0;min-height:132px;padding:15px 12px;border:1px solid rgba(194,232,244,.12);border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;color:rgba(238,248,252,.54);background:rgba(255,255,255,.025);cursor:pointer}.profile-chemistry-slot.active{border-color:rgba(156,236,255,.48);background:rgba(91,193,217,.09);box-shadow:inset 0 0 0 1px rgba(156,236,255,.04)}.profile-chemistry-slot-number{position:absolute;top:11px;left:12px;color:rgba(156,236,255,.52);font:700 9px "Exo 2",sans-serif;letter-spacing:.12em}.profile-chemistry-slot-empty{font:700 12px "Exo 2",sans-serif;letter-spacing:.14em}.profile-chemistry-slot-plus{font:400 25px/1 "Exo 2",sans-serif}.profile-chemistry-slot-avatar{position:relative;width:58px;height:58px;overflow:hidden;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.05)}.profile-chemistry-slot-avatar img,.profile-chemistry-member img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;z-index:1}.profile-chemistry-slot-avatar i,.profile-chemistry-member i{font:600 14px Orbitron,sans-serif;color:var(--member-accent);font-style:normal;opacity:.64}.profile-chemistry-slot-name{max-width:100%;overflow:hidden;color:rgba(247,251,255,.92);font:600 14px "Exo 2","Zen Kaku Gothic New",sans-serif;text-overflow:ellipsis;white-space:nowrap}.profile-chemistry-slot-remove{position:absolute;top:8px;right:8px;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;color:rgba(238,248,252,.54);font:400 17px/1 sans-serif}.profile-chemistry-picker{margin-top:25px;padding-top:21px;border-top:1px solid rgba(194,232,244,.10)}.profile-chemistry-section-head{margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px}.profile-chemistry-section-head h3{margin:0;color:rgba(238,248,252,.58);font:700 12px "Exo 2",sans-serif;letter-spacing:.14em}.profile-chemistry-section-head span{color:var(--cyan);font:700 12px "Exo 2",sans-serif}.profile-chemistry-member-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.profile-chemistry-member{position:relative;min-width:0;min-height:60px;padding:8px 36px 8px 8px;border:1px solid rgba(194,232,244,.11);border-radius:17px;display:grid;grid-template-columns:42px minmax(0,1fr);align-items:center;gap:10px;color:rgba(247,251,255,.82);background:rgba(255,255,255,.025);font:600 13px "Exo 2","Zen Kaku Gothic New",sans-serif;text-align:left;cursor:pointer}.profile-chemistry-member>img,.profile-chemistry-member>i{position:relative;grid-column:1;width:42px;height:42px;border-radius:50%;object-fit:cover}.profile-chemistry-member>i{display:grid;place-items:center;background:rgba(255,255,255,.05)}.profile-chemistry-member>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.profile-chemistry-member>b{position:absolute;right:10px;top:50%;transform:translateY(-50%);width:22px;height:22px;border-radius:50%;display:grid;place-items:center;color:#061019;background:var(--member-accent);font:700 9px "Exo 2",sans-serif}.profile-chemistry-member.selected{border-color:color-mix(in srgb,var(--member-accent) 45%,transparent);background:color-mix(in srgb,var(--member-accent) 9%,transparent)}.profile-chemistry-result{margin-top:28px;padding:21px 18px;border:1px solid rgba(156,236,255,.17);border-radius:22px;display:grid;grid-template-columns:92px minmax(0,1fr);align-items:center;gap:18px;background:linear-gradient(145deg,rgba(91,193,217,.075),rgba(255,255,255,.018));scroll-margin-top:20px}.profile-chemistry-score{--score:0;width:92px;height:92px;padding:6px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--cyan) calc(var(--score)*1%),rgba(255,255,255,.07) 0)}.profile-chemistry-score>div{width:100%;height:100%;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#071019}.profile-chemistry-score strong{color:#f5fbfd;font:600 27px Orbitron,sans-serif}.profile-chemistry-score span{margin:7px 0 0 2px;color:var(--cyan);font:700 10px "Exo 2",sans-serif}.profile-chemistry-result-copy{min-width:0}.profile-chemistry-result-copy p{margin:0 0 7px;color:var(--cyan);font:700 9px "Exo 2",sans-serif;letter-spacing:.16em}.profile-chemistry-result-copy h3{margin:0;overflow-wrap:anywhere;color:rgba(247,251,255,.92);font:600 17px/1.25 "Exo 2","Zen Kaku Gothic New",sans-serif}.profile-chemistry-result-copy small{display:block;margin-top:8px;color:rgba(238,248,252,.40);font:700 10px "Exo 2",sans-serif;letter-spacing:.10em}.profile-chemistry-compare{grid-column:1/-1;margin-top:5px;padding-top:20px;border-top:1px solid rgba(255,255,255,.08)}.profile-chemistry-compare-head,.profile-chemistry-compare-row{display:grid;grid-template-columns:minmax(76px,.82fr) minmax(0,1fr) minmax(0,1fr);gap:10px}.profile-chemistry-compare-head{padding:0 0 10px;border-bottom:1px solid rgba(156,236,255,.16);align-items:end}.profile-chemistry-compare-head span{color:rgba(238,248,252,.38);font:700 9px "Exo 2",sans-serif;letter-spacing:.12em}.profile-chemistry-compare-head strong{min-width:0;color:rgba(247,251,255,.78);font:700 11px "Exo 2","Zen Kaku Gothic New",sans-serif;overflow-wrap:anywhere}.profile-chemistry-compare-row{padding:12px 0;border-bottom:1px solid rgba(255,255,255,.065);align-items:start}.profile-chemistry-compare-row dt{color:rgba(238,248,252,.46);font-size:11px;line-height:1.55;overflow-wrap:anywhere}.profile-chemistry-compare-row dd{margin:0;color:#f5fbfd;font-size:13px;line-height:1.55;overflow-wrap:anywhere}.profile-chemistry-compare-row.match dd{color:var(--cyan)}.profile-chemistry-detail-loading{min-height:120px;display:flex;align-items:center;justify-content:center;gap:12px;color:rgba(255,255,255,.55);font:600 11px "Exo 2",sans-serif;letter-spacing:.10em}.profile-chemistry-detail-error{min-height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center}.profile-chemistry-detail-error p{margin:0;color:rgba(255,255,255,.65);font-size:12px}.profile-chemistry-detail-error button{min-height:38px;padding:0 16px;border:1px solid rgba(156,236,255,.3);border-radius:999px;color:var(--cyan);background:rgba(156,236,255,.06);font:700 10px "Exo 2",sans-serif;letter-spacing:.10em}.profile-chemistry-empty{min-height:80px;display:grid;place-items:center;color:rgba(238,248,252,.38);font:700 12px "Exo 2",sans-serif;letter-spacing:.13em}.profile-chemistry-loading{min-height:240px;display:flex;align-items:center;justify-content:center;gap:12px;color:rgba(255,255,255,.60);font:600 12px "Exo 2",sans-serif;letter-spacing:.12em}
+  @media(max-width:360px){.profile-chemistry-member-grid{grid-template-columns:1fr}.profile-chemistry-compare-head,.profile-chemistry-compare-row{grid-template-columns:minmax(66px,.72fr) minmax(0,1fr) minmax(0,1fr);gap:7px}.profile-chemistry-compare-row dd{font-size:12px}}
+  @media(min-width:720px){.profile-chemistry-member-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.profile-chemistry-slots{max-width:620px}.profile-chemistry-result{grid-template-columns:112px minmax(0,1fr);padding:28px}.profile-chemistry-score{width:112px;height:112px}.profile-chemistry-compare-head,.profile-chemistry-compare-row{grid-template-columns:minmax(120px,.7fr) minmax(0,1fr) minmax(0,1fr);gap:18px}.profile-chemistry-compare-row dt{font-size:12px}.profile-chemistry-compare-row dd{font-size:14px}}
 </style>
