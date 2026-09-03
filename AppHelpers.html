@@ -28,6 +28,10 @@
         'is-home',
         route === 'home'
       );
+      document.body.classList.toggle(
+        'is-section-root',
+        ['home', 'data', 'lab'].includes(route)
+      );
 
       const bottomNavRoutes = ['home', 'data', 'lab'];
       document.body.classList.toggle(

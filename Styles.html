@@ -39,6 +39,8 @@
     html {
       min-height: 100%;
       background: var(--starry-black);
+      scroll-behavior: smooth;
+      overscroll-behavior: none;
     }
 
     body {
@@ -47,6 +49,8 @@
       min-height: 100vh;
       min-height: 100dvh;
       overflow-x: hidden;
+      overscroll-behavior: none;
+      -webkit-overflow-scrolling: touch;
       color: var(--white);
       background: var(--starry-black);
       font-family: Roboto, "Zen Kaku Gothic New", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -823,7 +827,7 @@
       margin-right: auto;
     }
 
-    body.is-home .utility-home {
+    body.is-section-root .utility-home {
       display: none;
     }
 
@@ -2202,6 +2206,31 @@
       .skeleton-block::after {
         animation: none !important;
         display: none;
+      }
+    }
+
+    @media (hover: none) and (pointer: coarse) {
+      button,
+      [role="button"],
+      .home-card,
+      .category-card,
+      .route-card {
+        touch-action: manipulation;
+        transition:
+          transform 160ms var(--ease),
+          filter 160ms var(--ease),
+          opacity 160ms var(--ease) !important;
+        will-change: transform, filter, opacity;
+      }
+
+      button:active,
+      [role="button"]:active,
+      .home-card:active,
+      .category-card:active,
+      .route-card:active {
+        transform: scale(.975) !important;
+        filter: brightness(1.16);
+        opacity: .82;
       }
     }
 
