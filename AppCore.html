@@ -102,6 +102,27 @@
       starField.appendChild(fragment);
     }
 
+
+    function lockAppOverscroll() {
+      const scroller = document.querySelector('.page-wrap');
+      if (!scroller || scroller.dataset.overscrollLocked === 'true') return;
+      scroller.dataset.overscrollLocked = 'true';
+
+      let touchStartY = 0;
+      scroller.addEventListener('touchstart', event => {
+        if (event.touches.length === 1) touchStartY = event.touches[0].clientY;
+      }, { passive: true });
+
+      scroller.addEventListener('touchmove', event => {
+        if (event.touches.length !== 1) return;
+        const deltaY = event.touches[0].clientY - touchStartY;
+        const atTop = scroller.scrollTop <= 0;
+        const atBottom = Math.ceil(scroller.scrollTop + scroller.clientHeight) >= scroller.scrollHeight;
+        if ((atTop && deltaY > 0) || (atBottom && deltaY < 0)) event.preventDefault();
+      }, { passive: false });
+    }
+
     buildMinimalStarField();
+    lockAppOverscroll();
 
 </script>

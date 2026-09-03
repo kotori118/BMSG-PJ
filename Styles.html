@@ -84,6 +84,7 @@
       height: 100vh;
       height: 100dvh;
       overflow: hidden;
+      background: #03070d;
     }
 
     /* =========================================================
@@ -193,10 +194,16 @@
       overscroll-behavior: none;
       -webkit-overflow-scrolling: touch;
       scroll-behavior: smooth;
+      background: #03070d;
       padding:
         max(24px, env(safe-area-inset-top))
         clamp(16px, 4vw, 34px)
         calc(var(--nav-height) + 34px + env(safe-area-inset-bottom));
+    }
+
+    body.theme-light .app-shell,
+    body.theme-light .page-wrap {
+      background: var(--star-off-white);
     }
 
     .page-content {
@@ -830,6 +837,7 @@
         12px;
       display: flex;
       align-items: flex-end;
+      justify-content: flex-end;
       gap: 10px;
       background: transparent;
       box-shadow: none;
