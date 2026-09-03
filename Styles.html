@@ -803,7 +803,7 @@
 
     /* top utility actions */
     .utility-actions {
-      position: fixed;
+      position: absolute;
       inset: 0 0 auto;
       z-index: 40;
       min-height: max(82px, calc(env(safe-area-inset-top) + 70px));
@@ -815,12 +815,16 @@
       display: flex;
       align-items: flex-end;
       gap: 10px;
-      background: #03070d;
-      box-shadow: 0 10px 24px rgba(3, 7, 13, .48);
+      background: transparent;
+      box-shadow: none;
     }
 
     .utility-home {
       margin-right: auto;
+    }
+
+    body.is-home .utility-home {
+      display: none;
     }
 
     .utility-btn {

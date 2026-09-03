@@ -73,13 +73,13 @@
   }
 
   .profile-group-bar {
-    position: sticky;
-    top: max(82px, calc(env(safe-area-inset-top) + 70px));
+    position: relative;
+    top: auto;
     z-index: 18;
     margin: clamp(30px, 7vw, 48px) calc(clamp(16px, 4vw, 34px) * -1) 0;
     padding: 9px clamp(16px, 4vw, 34px);
-    background: #03070d;
-    box-shadow: 0 -24px 0 #03070d, 0 12px 24px rgba(3, 7, 13, .92);
+    background: transparent;
+    box-shadow: none;
   }
 
   .profile-group-scroll,
