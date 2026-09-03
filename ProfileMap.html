@@ -1,0 +1,132 @@
+<script>
+  const profileMapState = {
+    status: 'idle', categories: [], members: [], selectedCategory: 'generation', error: ''
+  };
+
+  function loadProfileMap(forceReload = false) {
+    if (profileCurrentView !== 'map') return;
+    if (!forceReload && profileMapState.status === 'ready') {
+      renderProfileMap();
+      return;
+    }
+    if (!forceReload && profileMapState.status === 'loading') {
+      renderProfileMapLoading();
+      return;
+    }
+
+    profileMapState.status = 'loading';
+    profileMapState.error = '';
+    renderProfileMapLoading();
+    google.script.run
+      .withSuccessHandler(handleProfileMapSuccess)
+      .withFailureHandler(handleProfileMapFailure)
+      .getProfileMapData();
+  }
+
+  function handleProfileMapSuccess(response) {
+    if (!response || !response.ok || !response.data) {
+      handleProfileMapFailure(response && response.error ? response.error.message : '相関図の読み込みに失敗しました。');
+      return;
+    }
+    profileMapState.status = 'ready';
+    profileMapState.categories = Array.isArray(response.data.categories) ? response.data.categories : [];
+    profileMapState.members = Array.isArray(response.data.members) ? response.data.members : [];
+    profileMapState.error = '';
+    if (profileCurrentView === 'map') renderProfileMap();
+  }
+
+  function handleProfileMapFailure(error) {
+    profileMapState.status = 'error';
+    profileMapState.error = error && error.message ? error.message : String(error || '相関図の読み込みに失敗しました。');
+    if (profileCurrentView === 'map') renderProfileMap();
+  }
+
+  function selectProfileMapCategory(key) {
+    if (!profileMapState.categories.some(category => category.key === key)) return;
+    profileMapState.selectedCategory = key;
+    renderProfileMap();
+  }
+
+  function getProfileMapVisibleMembers() {
+    const visibleIds = new Set(getVisibleProfileMembers().map(member => member.memberId));
+    return profileMapState.members.filter(member => visibleIds.has(member.memberId));
+  }
+
+  function getProfileMapValues(member, key) {
+    const raw = member && member.values ? member.values[key] : '';
+    if (Array.isArray(raw)) return raw.filter(Boolean);
+    return raw ? [String(raw)] : [];
+  }
+
+  function sortProfileMapLabels(key, labels) {
+    const unique = [...new Set(labels.filter(Boolean))];
+    if (['generation', 'height', 'birthMonth'].includes(key)) {
+      return unique.sort((a, b) => parseFloat(a) - parseFloat(b));
+    }
+    return unique.sort((a, b) => String(a).localeCompare(String(b), 'ja'));
+  }
+
+  function renderProfileMapLoading() {
+    const panel = document.getElementById('profilePanel');
+    if (!panel || profileCurrentView !== 'map') return;
+    panel.innerHTML = `<div class="profile-map-head"><div><p class="profile-panel-eyebrow">RELATION MAP</p><h2 class="profile-map-title">MAP</h2></div></div><div class="profile-map-loading" aria-live="polite"><span class="profile-map-spinner"></span><span>LOADING MAP...</span></div>`;
+  }
+
+  function renderProfileMap() {
+    const panel = document.getElementById('profilePanel');
+    if (!panel || profileCurrentView !== 'map') return;
+
+    if (profileMapState.status === 'loading' || profileMapState.status === 'idle') {
+      renderProfileMapLoading();
+      return;
+    }
+    if (profileMapState.status === 'error') {
+      panel.innerHTML = `<article class="profile-members-state"><p class="profile-panel-eyebrow">CONNECTION ERROR</p><h2 class="profile-members-state-title">ERROR</h2><p class="profile-panel-copy">${escapeHtml(profileMapState.error)}</p><button class="profile-retry-button" type="button" onclick="loadProfileMap(true)">RETRY</button></article>`;
+      return;
+    }
+
+    const category = profileMapState.categories.find(item => item.key === profileMapState.selectedCategory) || profileMapState.categories[0];
+    if (!category) return;
+    profileMapState.selectedCategory = category.key;
+    const visibleMembers = getProfileMapVisibleMembers();
+    const labels = sortProfileMapLabels(category.key, visibleMembers.flatMap(member => getProfileMapValues(member, category.key)));
+
+    panel.innerHTML = `<div class="profile-map-head"><div><p class="profile-panel-eyebrow">RELATION MAP</p><h2 class="profile-map-title">MAP</h2><p class="profile-map-copy">同じプロフィールでつながるメンバー。</p></div><label class="profile-map-select-label"><span>CATEGORY</span><select onchange="selectProfileMapCategory(this.value)">${profileMapState.categories.map(item => `<option value="${escapeHtml(item.key)}"${item.key === category.key ? ' selected' : ''}>${escapeHtml(item.label)}</option>`).join('')}</select></label></div><div class="profile-map-groups">${labels.map(label => renderProfileMapGroup(label, category.key, visibleMembers)).join('') || `<div class="profile-map-empty">表示できるデータがありません。</div>`}</div>`;
+  }
+
+  function renderProfileMapGroup(label, key, mapMembers) {
+    const memberIds = new Set(mapMembers.filter(member => getProfileMapValues(member, key).includes(label)).map(member => member.memberId));
+    const members = getVisibleProfileMembers().filter(member => memberIds.has(member.memberId));
+    return `<section class="profile-map-group"><h3><span>${escapeHtml(label)}</span><b>${members.length}</b></h3><div class="profile-map-member-list">${members.map(renderProfileMapMember).join('')}</div></section>`;
+  }
+
+  function renderProfileMapMember(member) {
+    const accent = /^#[0-9a-f]{6}$/i.test(member.colorHex || '') ? member.colorHex : '#9cecff';
+    const initial = String(member.displayName || '?').slice(0, 1).toUpperCase();
+    const image = member.imageUrl ? `<img src="${escapeHtml(member.imageUrl)}" data-fallback-src="${escapeHtml(member.imageFallbackUrl || '')}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="handleProfileImageError(this)">` : `<span>${escapeHtml(initial)}</span>`;
+    return `<button class="profile-map-member" style="--member-accent:${escapeHtml(accent)}" type="button" onclick="openProfileMemberDetail('${escapeHtml(member.memberId)}')"><span class="profile-map-avatar">${image}</span><span class="profile-map-member-name">${escapeHtml(member.displayName)}</span></button>`;
+  }
+</script>
+
+<style>
+  .profile-map-head { margin-bottom: 22px; display: flex; align-items: end; justify-content: space-between; gap: 18px; }
+  .profile-map-title { margin: 7px 0 0; color: var(--white); font-family: Orbitron, "Exo 2", sans-serif; font-size: clamp(25px, 7vw, 42px); font-weight: 600; line-height: 1; }
+  .profile-map-copy { margin: 12px 0 0; color: rgba(232,242,247,.48); font-family: "Zen Kaku Gothic New", Roboto, sans-serif; font-size: 12px; }
+  .profile-map-select-label { min-width: 118px; display: grid; gap: 6px; color: rgba(156,236,255,.62); font-family: "Exo 2", Roboto, sans-serif; font-size: 8px; font-weight: 700; letter-spacing: .14em; }
+  .profile-map-select-label select { min-height: 44px; padding: 0 34px 0 13px; border: 1px solid rgba(156,236,255,.20); border-radius: 13px; color: rgba(244,251,253,.90); background: #0a111a; font: 600 12px "Zen Kaku Gothic New", Roboto, sans-serif; }
+  .profile-map-groups { display: grid; gap: 13px; }
+  .profile-map-group { padding: 17px; border: 1px solid rgba(194,232,244,.11); border-radius: 20px; background: linear-gradient(145deg, rgba(255,255,255,.038), rgba(255,255,255,.012)); }
+  .profile-map-group h3 { margin: 0 0 13px; display: flex; align-items: center; justify-content: space-between; gap: 12px; color: rgba(247,251,255,.88); font: 600 14px "Zen Kaku Gothic New", Roboto, sans-serif; }
+  .profile-map-group h3 b { color: var(--cyan); font: 700 10px "Exo 2", Roboto, sans-serif; letter-spacing: .10em; }
+  .profile-map-member-list { display: flex; flex-wrap: wrap; gap: 8px; }
+  .profile-map-member { min-height: 42px; padding: 4px 12px 4px 4px; border: 1px solid rgba(194,232,244,.09); border-radius: 999px; display: inline-flex; align-items: center; gap: 8px; color: rgba(244,251,253,.86); background: rgba(255,255,255,.025); cursor: pointer; }
+  .profile-map-avatar { width: 32px; height: 32px; overflow: hidden; border-radius: 50%; display: grid; place-items: center; color: var(--member-accent); background: color-mix(in srgb, var(--member-accent) 12%, #07101a); font: 600 11px Orbitron, sans-serif; }
+  .profile-map-avatar img { width: 100%; height: 100%; object-fit: cover; object-position: center top; display: block; }
+  .profile-map-member-name { font: 600 11px "Exo 2", "Zen Kaku Gothic New", sans-serif; }
+  .profile-map-loading { min-height: 220px; display: flex; align-items: center; justify-content: center; gap: 12px; color: rgba(255,255,255,.60); font: 600 10px "Exo 2", sans-serif; letter-spacing: .12em; }
+  .profile-map-spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,.16); border-top-color: var(--cyan); border-radius: 50%; animation: profileMapSpin .8s linear infinite; }
+  .profile-map-empty { min-height: 160px; display: grid; place-items: center; color: rgba(232,242,247,.45); font-size: 12px; }
+  @keyframes profileMapSpin { to { transform: rotate(360deg); } }
+  @media (max-width: 560px) { .profile-map-head { align-items: stretch; flex-direction: column; } .profile-map-select-label { width: 100%; } .profile-map-group { padding: 15px; } }
+  @media (prefers-reduced-motion: reduce) { .profile-map-spinner { animation: none; } }
+</style>
