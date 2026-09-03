@@ -23,25 +23,28 @@
     if (profileChemistryState.status === 'loading') return;
     profileChemistryState.status = 'loading';
     profileChemistryState.error = '';
-    google.script.run.withSuccessHandler(response => {
-      if (!response || !response.ok || !response.data) {
+    google.script.run
+      .withSuccessHandler(response => {
+        if (!response || !response.ok || !response.data) {
+          profileChemistryState.status = 'error';
+          profileChemistryState.error = response && response.error ? response.error.message : 'Failed to load comparison data.';
+        } else {
+          profileChemistryState.status = 'ready';
+          profileChemistryState.fields = Array.isArray(response.data.fields) ? response.data.fields : [];
+          profileChemistryState.valuesByMemberId = (Array.isArray(response.data.members) ? response.data.members : []).reduce((map, member) => {
+            map[member.memberId] = member.values || {};
+            return map;
+          }, {});
+          profileChemistryState.error = '';
+        }
+        if (profileCurrentView === 'discover') renderProfileDiscover();
+      })
+      .withFailureHandler(error => {
         profileChemistryState.status = 'error';
-        profileChemistryState.error = response && response.error ? response.error.message : '比較データの読み込みに失敗しました。';
-      } else {
-        profileChemistryState.status = 'ready';
-        profileChemistryState.fields = Array.isArray(response.data.fields) ? response.data.fields : [];
-        profileChemistryState.valuesByMemberId = (Array.isArray(response.data.members) ? response.data.members : []).reduce((map, member) => {
-          map[member.memberId] = member.values || {};
-          return map;
-        }, {});
-        profileChemistryState.error = '';
-      }
-      if (profileCurrentView === 'discover') renderProfileDiscover();
-    }).withFailureHandler(error => {
-      profileChemistryState.status = 'error';
-      profileChemistryState.error = error && error.message ? error.message : String(error || '比較データの読み込みに失敗しました。');
-      if (profileCurrentView === 'discover') renderProfileDiscover();
-    }).getProfileSearchData();
+        profileChemistryState.error = error && error.message ? error.message : String(error || 'Failed to load comparison data.');
+        if (profileCurrentView === 'discover') renderProfileDiscover();
+      })
+      .getProfileSearchData();
   }
 
   function renderProfileDiscoverLoading() {
@@ -53,7 +56,10 @@
   function renderProfileDiscover() {
     const panel = document.getElementById('profilePanel');
     if (!panel || profileCurrentView !== 'discover') return;
-    if (profileMembersState.status !== 'ready' || profileChemistryState.status === 'idle' || profileChemistryState.status === 'loading') return renderProfileDiscoverLoading();
+    if (profileMembersState.status !== 'ready' || profileChemistryState.status === 'idle' || profileChemistryState.status === 'loading') {
+      renderProfileDiscoverLoading();
+      return;
+    }
     if (profileChemistryState.status === 'error') {
       panel.innerHTML = `<article class="profile-members-state"><p class="profile-panel-eyebrow">CONNECTION ERROR</p><h2 class="profile-members-state-title">ERROR</h2><p class="profile-panel-copy">${escapeHtml(profileChemistryState.error)}</p><button class="profile-retry-button" type="button" onclick="loadProfileChemistryForDiscover()">RETRY</button></article>`;
       return;
@@ -61,24 +67,31 @@
 
     const baseMember = getProfileChemistryMember(profileDiscoverState.baseMemberId);
     if (!baseMember) {
-      const members = getVisibleProfileMembers();
-      panel.innerHTML = `<div class="profile-members-head"><div><p class="profile-panel-eyebrow">FIND SIMILAR</p><h2 class="profile-members-title">DISCOVER</h2></div><span class="profile-members-count">${members.length}</span></div><p class="profile-panel-copy">基準となるメンバーを1名選んでください。</p><div class="profile-member-grid">${members.map(renderProfileDiscoverMemberCard).join('')}</div>`;
+      renderProfileDiscoverPicker(panel);
       return;
     }
+    renderProfileDiscoverRanking(panel, baseMember);
+  }
 
+  function renderProfileDiscoverPicker(panel) {
+    const members = getVisibleProfileMembers();
+    panel.innerHTML = `<div class="profile-discover-head"><p class="profile-panel-eyebrow">FIND SIMILAR</p><h2 class="profile-members-title">DISCOVER</h2><p class="profile-discover-sub">SELECT A MEMBER</p></div><div class="profile-member-grid">${members.map(renderProfileDiscoverMemberCard).join('')}</div>`;
+  }
+
+  function renderProfileDiscoverRanking(panel, baseMember) {
     const ranking = profileMembersState.members
       .filter(member => member.memberId !== baseMember.memberId)
       .map(member => ({ member, result: getProfileChemistryComparison(baseMember, member) }))
       .sort((a, b) => b.result.score - a.result.score || Number(a.member.displayOrder) - Number(b.member.displayOrder));
 
-    panel.innerHTML = `<div class="profile-members-head"><div><p class="profile-panel-eyebrow">FIND SIMILAR</p><h2 class="profile-members-title">${escapeHtml(baseMember.displayName)} DISCOVER</h2></div><button class="profile-retry-button" type="button" onclick="changeProfileDiscoverMember()">CHANGE</button></div><div class="profile-member-grid">${ranking.map((item, index) => renderProfileDiscoverRankingCard(item, index + 1, baseMember)).join('')}</div>`;
+    panel.innerHTML = `<div class="profile-discover-head profile-discover-ranking-head"><div><p class="profile-panel-eyebrow">FIND SIMILAR</p><h2 class="profile-members-title">${escapeHtml(baseMember.displayName)}</h2><p class="profile-discover-sub">MATCH RANKING</p></div><button class="profile-retry-button" type="button" onclick="changeProfileDiscoverMember()">CHANGE</button></div><div class="profile-discover-ranking">${ranking.map((item, index) => renderProfileDiscoverRankingCard(item, index + 1, baseMember)).join('')}</div>`;
   }
 
   function renderProfileDiscoverMemberCard(member) {
     const initial = String(member.displayName || '?').slice(0, 1).toUpperCase();
     const accent = /^#[0-9a-f]{6}$/i.test(member.colorHex || '') ? member.colorHex : '#9cecff';
     const image = member.imageUrl ? `<img src="${escapeHtml(member.imageUrl)}" data-fallback-src="${escapeHtml(member.imageFallbackUrl || '')}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="handleProfileImageError(this)">` : '';
-    return `<article class="profile-member-card" style="--member-accent:${escapeHtml(accent)}" role="button" tabindex="0" data-member-id="${escapeHtml(member.memberId)}" onclick="selectProfileDiscoverMember(this.dataset.memberId)" onkeydown="handleProfileDiscoverCardKey(event, this.dataset.memberId)"><div class="profile-member-visual"><span class="profile-member-fallback" aria-hidden="true">${escapeHtml(initial)}</span>${image}<span class="profile-member-accent" aria-hidden="true"></span></div><div class="profile-member-body"><p class="profile-member-group">${escapeHtml(member.primaryGroupName || 'SOLO')}</p><h3 class="profile-member-name">${escapeHtml(member.displayName)}</h3></div></article>`;
+    return `<article class="profile-member-card" style="--member-accent:${escapeHtml(accent)}" role="button" tabindex="0" data-member-id="${escapeHtml(member.memberId)}" aria-label="Select ${escapeHtml(member.displayName)}" onclick="selectProfileDiscoverMember(this.dataset.memberId)" onkeydown="handleProfileDiscoverCardKey(event, this.dataset.memberId)"><div class="profile-member-visual"><span class="profile-member-fallback" aria-hidden="true">${escapeHtml(initial)}</span>${image}<span class="profile-member-accent" aria-hidden="true"></span></div><div class="profile-member-body"><p class="profile-member-group">${escapeHtml(member.primaryGroupName || 'SOLO')}</p><h3 class="profile-member-name">${escapeHtml(member.displayName)}</h3></div></article>`;
   }
 
   function renderProfileDiscoverRankingCard(item, rank, baseMember) {
@@ -87,7 +100,7 @@
     const initial = String(member.displayName || '?').slice(0, 1).toUpperCase();
     const accent = /^#[0-9a-f]{6}$/i.test(member.colorHex || '') ? member.colorHex : '#9cecff';
     const image = member.imageUrl ? `<img src="${escapeHtml(member.imageUrl)}" data-fallback-src="${escapeHtml(member.imageFallbackUrl || '')}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="handleProfileImageError(this)">` : '';
-    return `<article class="profile-member-card" style="--member-accent:${escapeHtml(accent)}" role="button" tabindex="0" data-member-id="${escapeHtml(member.memberId)}" onclick="openProfileDiscoverChemistry('${escapeHtml(baseMember.memberId)}', this.dataset.memberId)" onkeydown="handleProfileDiscoverRankingKey(event, '${escapeHtml(baseMember.memberId)}', this.dataset.memberId)"><div class="profile-member-visual"><span class="profile-member-fallback" aria-hidden="true">${escapeHtml(initial)}</span>${image}<span class="profile-member-accent" aria-hidden="true"></span></div><div class="profile-member-body"><p class="profile-member-group">#${rank} · MATCH ${result.score}%</p><h3 class="profile-member-name">${escapeHtml(member.displayName)}</h3><p class="profile-member-group">${result.matched.length}項目一致</p></div></article>`;
+    return `<button class="profile-discover-rank-card" style="--member-accent:${escapeHtml(accent)}" type="button" data-member-id="${escapeHtml(member.memberId)}" onclick="openProfileDiscoverChemistry('${escapeHtml(baseMember.memberId)}', this.dataset.memberId)"><span class="profile-discover-rank">${rank}</span><span class="profile-discover-avatar"><span class="profile-member-fallback" aria-hidden="true">${escapeHtml(initial)}</span>${image}</span><span class="profile-discover-member"><strong>${escapeHtml(member.displayName)}</strong><small>${escapeHtml(member.primaryGroupName || 'SOLO')}</small></span><span class="profile-discover-match"><strong>${result.score}%</strong><small>MATCH</small></span><span class="profile-discover-count"><strong>${result.matched.length}</strong><small>COMMON</small></span></button>`;
   }
 
   function selectProfileDiscoverMember(memberId) {
@@ -99,6 +112,7 @@
 
   function changeProfileDiscoverMember() {
     profileDiscoverState.baseMemberId = '';
+    profileDiscoverState.returnFromChemistry = false;
     renderProfileDiscover();
     scrollAppToTop('smooth');
   }
@@ -135,10 +149,8 @@
     event.preventDefault();
     selectProfileDiscoverMember(memberId);
   }
-
-  function handleProfileDiscoverRankingKey(event, baseMemberId, targetMemberId) {
-    if (!event || (event.key !== 'Enter' && event.key !== ' ')) return;
-    event.preventDefault();
-    openProfileDiscoverChemistry(baseMemberId, targetMemberId);
-  }
 </script>
+
+<style>
+  .profile-discover-head{margin-bottom:22px}.profile-discover-head .profile-members-title{margin-top:7px}.profile-discover-sub{margin:10px 0 0;color:rgba(238,248,252,.46);font:700 10px "Exo 2",sans-serif;letter-spacing:.16em}.profile-discover-ranking-head{display:flex;align-items:flex-end;justify-content:space-between;gap:18px}.profile-discover-ranking{display:grid;gap:10px}.profile-discover-rank-card{width:100%;min-height:82px;padding:10px 12px;border:1px solid rgba(156,236,255,.13);border-radius:18px;background:rgba(255,255,255,.025);display:grid;grid-template-columns:30px 58px minmax(0,1fr) 58px 48px;align-items:center;gap:10px;color:#f5fbfd;text-align:left;cursor:pointer}.profile-discover-rank{color:var(--member-accent);font:700 18px Orbitron,sans-serif;text-align:center}.profile-discover-avatar{position:relative;width:58px;height:58px;overflow:hidden;border-radius:14px;background:rgba(255,255,255,.05)}.profile-discover-avatar img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}.profile-discover-avatar .profile-member-fallback{position:absolute;inset:0;display:grid;place-items:center}.profile-discover-member{min-width:0;display:flex;flex-direction:column;gap:4px}.profile-discover-member strong{overflow:hidden;text-overflow:ellipsis;color:#fff;font:700 15px "Exo 2","Zen Kaku Gothic New",sans-serif;white-space:nowrap}.profile-discover-member small,.profile-discover-match small,.profile-discover-count small{color:rgba(238,248,252,.38);font:700 8px "Exo 2",sans-serif;letter-spacing:.11em}.profile-discover-match,.profile-discover-count{display:flex;flex-direction:column;align-items:flex-end;gap:3px}.profile-discover-match strong{color:var(--cyan);font:700 16px Orbitron,sans-serif}.profile-discover-count strong{color:#fff;font:700 14px Orbitron,sans-serif}@media(max-width:420px){.profile-discover-rank-card{grid-template-columns:24px 52px minmax(0,1fr) 52px 42px;gap:8px;padding:9px}.profile-discover-avatar{width:52px;height:52px}.profile-discover-member strong{font-size:14px}.profile-discover-match strong{font-size:14px}}
+</style>
