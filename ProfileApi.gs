@@ -57,6 +57,115 @@ function getProfileMemberDetail(memberId) {
   }
 }
 
+/**
+ * Loads only the values required by the eight MAP categories.
+ * Called lazily when MAP is opened; no Spreadsheet writes are performed.
+ */
+function getProfileMapData() {
+  try {
+    const cache = CacheService.getScriptCache();
+    const cacheKey = 'PROFILE_MAP_V1';
+    const cached = cache.get(cacheKey);
+    if (cached) return JSON.parse(cached);
+
+    const response = { ok: true, data: buildProfileMapPayload_() };
+    cache.put(cacheKey, JSON.stringify(response), UNIVERSE_CONFIG.PROFILE_CACHE_SECONDS);
+    return response;
+  } catch (error) {
+    console.error(error);
+    return {
+      ok: false,
+      error: {
+        code: 'PROFILE_MAP_LOAD_FAILED',
+        message: '相関図の読み込みに失敗しました。'
+      }
+    };
+  }
+}
+
+function buildProfileMapPayload_() {
+  const profiles = readProfileSheetObjects_(
+    UNIVERSE_CONFIG.CORE_DB_ID,
+    UNIVERSE_CONFIG.SHEETS.PROFILES
+  );
+
+  const members = profiles.map(function(profile) {
+    const memberId = asId_(profile.MemberID);
+    const birthday = parseProfileBirthday_(profile.P002);
+
+    return {
+      memberId: memberId,
+      values: {
+        generation: birthday ? birthday.year + '年' : '',
+        origin: splitProfileMapValue_(profile.P005),
+        sibling: splitProfileMapValue_(profile.P008),
+        height: normalizeProfileHeight_(profile.P006),
+        birthMonth: birthday ? birthday.month + '月' : '',
+        zodiac: birthday ? getProfileZodiac_(birthday.month, birthday.day) : '',
+        chineseZodiac: birthday ? getProfileChineseZodiac_(birthday.year) : '',
+        sports: splitProfileMapValue_(profile.P011)
+      }
+    };
+  }).filter(function(member) {
+    return member.memberId;
+  });
+
+  return {
+    categories: [
+      { key: 'generation', label: '世代' },
+      { key: 'origin', label: '出身地' },
+      { key: 'sibling', label: '兄弟区分' },
+      { key: 'height', label: '身長' },
+      { key: 'birthMonth', label: '誕生月' },
+      { key: 'zodiac', label: '星座' },
+      { key: 'chineseZodiac', label: '干支' },
+      { key: 'sports', label: 'スポーツ' }
+    ],
+    members: members
+  };
+}
+
+function parseProfileBirthday_(value) {
+  const text = String(value == null ? '' : value).trim();
+  if (!text) return null;
+
+  const normalized = text.replace(/[年月.\-]/g, '/').replace(/日/g, '');
+  const match = normalized.match(/(\d{4})\s*\/\s*(\d{1,2})\s*\/\s*(\d{1,2})/);
+  if (!match) return null;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+  return { year: year, month: month, day: day };
+}
+
+function splitProfileMapValue_(value) {
+  return String(value == null ? '' : value)
+    .split(/[\n\r、,，|｜／/]+/)
+    .map(function(item) { return item.trim(); })
+    .filter(String);
+}
+
+function normalizeProfileHeight_(value) {
+  const text = String(value == null ? '' : value).trim();
+  if (!text) return '';
+  const match = text.match(/\d+(?:\.\d+)?/);
+  return match ? match[0] + 'cm' : text;
+}
+
+function getProfileZodiac_(month, day) {
+  const boundaries = [20, 19, 21, 20, 21, 22, 23, 23, 23, 24, 23, 22];
+  const signs = ['山羊座', '水瓶座', '魚座', '牡羊座', '牡牛座', '双子座',
+    '蟹座', '獅子座', '乙女座', '天秤座', '蠍座', '射手座', '山羊座'];
+  return day < boundaries[month - 1] ? signs[month - 1] : signs[month];
+}
+
+function getProfileChineseZodiac_(year) {
+  const signs = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+  return signs[((year - 4) % 12 + 12) % 12];
+}
+
 function buildProfileMemberDetailPayload_(memberId) {
   const profiles = readProfileSheetObjects_(
     UNIVERSE_CONFIG.CORE_DB_ID,

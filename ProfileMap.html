@@ -1,6 +1,6 @@
 <script>
   const profileMapState = {
-    status: 'idle', categories: [], members: [], selectedCategory: 'generation', error: ''
+    status: 'idle', categories: [], members: [], selectedCategory: 'generation', error: '', requestId: ''
   };
 
   function loadProfileMap(forceReload = false) {
@@ -16,10 +16,23 @@
 
     profileMapState.status = 'loading';
     profileMapState.error = '';
+    const requestId = String(Date.now());
+    profileMapState.requestId = requestId;
     renderProfileMapLoading();
+
+    window.setTimeout(() => {
+      if (profileMapState.status === 'loading' && profileMapState.requestId === requestId) {
+        handleProfileMapFailure('相関図の読み込みがタイムアウトしました。もう一度お試しください。');
+      }
+    }, 20000);
+
     google.script.run
-      .withSuccessHandler(handleProfileMapSuccess)
-      .withFailureHandler(handleProfileMapFailure)
+      .withSuccessHandler(response => {
+        if (profileMapState.requestId === requestId) handleProfileMapSuccess(response);
+      })
+      .withFailureHandler(error => {
+        if (profileMapState.requestId === requestId) handleProfileMapFailure(error);
+      })
       .getProfileMapData();
   }
 
