@@ -3,7 +3,8 @@ name: Deploy to GAS
 on:
   push:
     branches:
-      - main  # ブランチ名が master の場合は master に変更してください
+      - main
+      - メイン
 
 jobs:
   deploy:
