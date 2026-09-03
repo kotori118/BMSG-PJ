@@ -80,6 +80,10 @@
       loadProfileMap();
       return;
     }
+    if (profileCurrentView === 'search') {
+      loadProfileSearch();
+      return;
+    }
 
     const selectedGroup = PROFILE_GROUPS[profileCurrentGroup];
     panel.innerHTML = `<article class="profile-panel-card"><div><p class="profile-panel-eyebrow">${escapeHtml(view.eyebrow)}</p><h2 class="profile-panel-title">${escapeHtml(view.title)}</h2></div><p class="profile-panel-copy">${escapeHtml(view.copy)}</p><div class="profile-panel-status">${escapeHtml(selectedGroup)} / UI SHELL READY</div></article>`;

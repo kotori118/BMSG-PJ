@@ -166,6 +166,66 @@ function getProfileChineseZodiac_(year) {
   return signs[((year - 4) % 12 + 12) % 12];
 }
 
+/**
+ * Returns active, comparable profile fields for the PROFILE tag search.
+ * Values are read only and all selected tags are matched with AND semantics.
+ */
+function getProfileSearchData() {
+  try {
+    const cache = CacheService.getScriptCache();
+    const cacheKey = 'PROFILE_SEARCH_V1';
+    const cached = cache.get(cacheKey);
+    if (cached) return JSON.parse(cached);
+    const response = { ok: true, data: buildProfileSearchPayload_() };
+    cache.put(cacheKey, JSON.stringify(response), UNIVERSE_CONFIG.PROFILE_CACHE_SECONDS);
+    return response;
+  } catch (error) {
+    console.error(error);
+    return { ok: false, error: { code: 'PROFILE_SEARCH_LOAD_FAILED', message: '検索データの読み込みに失敗しました。' } };
+  }
+}
+
+function buildProfileSearchPayload_() {
+  const profiles = readProfileSheetObjects_(UNIVERSE_CONFIG.CORE_DB_ID, UNIVERSE_CONFIG.SHEETS.PROFILES);
+  const settings = readProfileSheetObjects_(UNIVERSE_CONFIG.LOG_DB_ID, UNIVERSE_CONFIG.SHEETS.PROFILE_SETTINGS)
+    .filter(function(setting) {
+      return asBoolean_(setting.IsActive) && asBoolean_(setting.IsCompareTarget) && asId_(setting.ProfileID);
+    })
+    .sort(function(a, b) {
+      return asNumber_(a.DisplayOrder, 9999) - asNumber_(b.DisplayOrder, 9999);
+    });
+
+  const fields = settings.map(function(setting) {
+    return {
+      profileId: asId_(setting.ProfileID),
+      label: String(setting.FieldName || setting.ProfileID).trim(),
+      displayGroup: String(setting.DisplayGroup || 'PROFILE').trim(),
+      displayOrder: asNumber_(setting.DisplayOrder, 9999)
+    };
+  });
+
+  const members = profiles.map(function(profile) {
+    const memberId = asId_(profile.MemberID);
+    const values = {};
+    settings.forEach(function(setting) {
+      const profileId = asId_(setting.ProfileID);
+      values[profileId] = normalizeProfileSearchValues_(profile[profileId], setting.IsMultiValue);
+    });
+    return { memberId: memberId, values: values };
+  }).filter(function(member) { return member.memberId; });
+
+  return { fields: fields, members: members };
+}
+
+function normalizeProfileSearchValues_(value, isMultiValue) {
+  const text = String(value == null ? '' : value).trim();
+  if (!text) return [];
+  if (!asBoolean_(isMultiValue)) return [text];
+  return text.split(/[\n\r、,，|｜／/]+/)
+    .map(function(item) { return item.trim(); })
+    .filter(String);
+}
+
 function buildProfileMemberDetailPayload_(memberId) {
   const profiles = readProfileSheetObjects_(
     UNIVERSE_CONFIG.CORE_DB_ID,

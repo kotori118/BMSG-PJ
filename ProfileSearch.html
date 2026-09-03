@@ -1,0 +1,129 @@
+<script>
+  const profileSearchState = { status: 'idle', fields: [], members: [], selected: [], query: '', error: '' };
+
+  function loadProfileSearch(forceReload = false) {
+    if (profileCurrentView !== 'search') return;
+    if (!forceReload && profileSearchState.status === 'ready') return renderProfileSearch();
+    if (!forceReload && profileSearchState.status === 'loading') return renderProfileSearchLoading();
+    profileSearchState.status = 'loading';
+    profileSearchState.error = '';
+    renderProfileSearchLoading();
+    google.script.run.withSuccessHandler(handleProfileSearchSuccess)
+      .withFailureHandler(handleProfileSearchFailure).getProfileSearchData();
+  }
+
+  function handleProfileSearchSuccess(response) {
+    if (!response || !response.ok || !response.data) {
+      return handleProfileSearchFailure(response && response.error ? response.error.message : '検索データの読み込みに失敗しました。');
+    }
+    profileSearchState.status = 'ready';
+    profileSearchState.fields = Array.isArray(response.data.fields) ? response.data.fields : [];
+    profileSearchState.members = Array.isArray(response.data.members) ? response.data.members : [];
+    profileSearchState.error = '';
+    if (profileCurrentView === 'search') renderProfileSearch();
+  }
+
+  function handleProfileSearchFailure(error) {
+    profileSearchState.status = 'error';
+    profileSearchState.error = error && error.message ? error.message : String(error || '検索データの読み込みに失敗しました。');
+    if (profileCurrentView === 'search') renderProfileSearch();
+  }
+
+  function renderProfileSearchLoading() {
+    const panel = document.getElementById('profilePanel');
+    if (!panel || profileCurrentView !== 'search') return;
+    panel.innerHTML = `<div class="profile-search-head"><p class="profile-panel-eyebrow">TAG SEARCH</p><h2 class="profile-search-title">SEARCH</h2></div><div class="profile-search-loading" aria-live="polite"><span class="profile-detail-spinner"></span><span>LOADING SEARCH...</span></div>`;
+  }
+
+  function setProfileSearchQuery(value) {
+    profileSearchState.query = String(value || '');
+    renderProfileSearch();
+    const input = document.getElementById('profileSearchInput');
+    if (input) {
+      input.focus({ preventScroll: true });
+      input.setSelectionRange(input.value.length, input.value.length);
+    }
+  }
+
+  function toggleProfileSearchTag(button) {
+    const profileId = button && button.dataset ? button.dataset.profileId : '';
+    const value = button && button.dataset ? button.dataset.value : '';
+    if (!profileId || !value) return;
+    const index = profileSearchState.selected.findIndex(item => item.profileId === profileId && item.value === value);
+    if (index >= 0) profileSearchState.selected.splice(index, 1);
+    else profileSearchState.selected.push({ profileId, value });
+    renderProfileSearch();
+  }
+
+  function clearProfileSearchTags() {
+    profileSearchState.selected = [];
+    renderProfileSearch();
+  }
+
+  function getProfileSearchDataView() {
+    const visibleMembers = getVisibleProfileMembers();
+    const visibleIds = new Set(visibleMembers.map(member => member.memberId));
+    const valuesByMemberId = new Map(profileSearchState.members.map(member => [member.memberId, member.values || {}]));
+    const query = profileSearchState.query.trim().toLocaleLowerCase('ja');
+    const results = visibleMembers.filter(member => {
+      const values = valuesByMemberId.get(member.memberId) || {};
+      if (!profileSearchState.selected.every(tag => Array.isArray(values[tag.profileId]) && values[tag.profileId].includes(tag.value))) return false;
+      if (!query || String(member.displayName || '').toLocaleLowerCase('ja').includes(query)) return true;
+      return Object.values(values).flat().some(value => String(value || '').toLocaleLowerCase('ja').includes(query));
+    });
+    return { visibleIds, results, query };
+  }
+
+  function getProfileSearchOptions(field, visibleIds) {
+    const values = [];
+    profileSearchState.members.forEach(member => {
+      if (!visibleIds.has(member.memberId)) return;
+      const list = member.values && Array.isArray(member.values[field.profileId]) ? member.values[field.profileId] : [];
+      list.forEach(value => { if (value && !values.includes(value)) values.push(value); });
+    });
+    return values.sort((a, b) => String(a).localeCompare(String(b), 'ja', { numeric: true }));
+  }
+
+  function isProfileSearchTagSelected(profileId, value) {
+    return profileSearchState.selected.some(item => item.profileId === profileId && item.value === value);
+  }
+
+  function renderProfileSearch() {
+    const panel = document.getElementById('profilePanel');
+    if (!panel || profileCurrentView !== 'search') return;
+    if (profileSearchState.status === 'loading' || profileSearchState.status === 'idle') return renderProfileSearchLoading();
+    if (profileSearchState.status === 'error') {
+      panel.innerHTML = `<article class="profile-members-state"><p class="profile-panel-eyebrow">CONNECTION ERROR</p><h2 class="profile-members-state-title">ERROR</h2><p class="profile-panel-copy">${escapeHtml(profileSearchState.error)}</p><button class="profile-retry-button" type="button" onclick="loadProfileSearch(true)">RETRY</button></article>`;
+      return;
+    }
+
+    const data = getProfileSearchDataView();
+    const fields = profileSearchState.fields.map(field => {
+      const options = getProfileSearchOptions(field, data.visibleIds).filter(value =>
+        !data.query || String(value).toLocaleLowerCase('ja').includes(data.query) || isProfileSearchTagSelected(field.profileId, value)
+      );
+      if (!options.length) return '';
+      return `<section class="profile-search-field"><h3>${escapeHtml(field.label || field.profileId)}</h3><div class="profile-search-tags">${options.map(value => `<button class="profile-search-tag${isProfileSearchTagSelected(field.profileId, value) ? ' active' : ''}" type="button" data-profile-id="${escapeHtml(field.profileId)}" data-value="${escapeHtml(value)}" aria-pressed="${isProfileSearchTagSelected(field.profileId, value)}" onclick="toggleProfileSearchTag(this)">${escapeHtml(value)}</button>`).join('')}</div></section>`;
+    }).join('');
+    const selected = profileSearchState.selected;
+
+    panel.innerHTML = `<div class="profile-search-head"><div><p class="profile-panel-eyebrow">TAG SEARCH</p><h2 class="profile-search-title">SEARCH</h2></div><span class="profile-search-result-count">${data.results.length}</span></div>
+      <label class="profile-search-box"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.2"></circle><path d="M15.4 15.4L20 20"></path></svg><input id="profileSearchInput" type="search" value="${escapeHtml(profileSearchState.query)}" placeholder="SEARCH TAGS / MEMBERS" autocomplete="off" oninput="setProfileSearchQuery(this.value)"></label>
+      ${selected.length ? `<div class="profile-search-selected"><div class="profile-search-selected-head"><span>SELECTED</span><button type="button" onclick="clearProfileSearchTags()">CLEAR</button></div><div class="profile-search-tags">${selected.map(tag => `<button class="profile-search-tag active" type="button" data-profile-id="${escapeHtml(tag.profileId)}" data-value="${escapeHtml(tag.value)}" onclick="toggleProfileSearchTag(this)">${escapeHtml(tag.value)}<span aria-hidden="true">×</span></button>`).join('')}</div></div>` : ''}
+      <div class="profile-search-fields">${fields || '<div class="profile-search-empty">NO TAGS</div>'}</div>
+      <section class="profile-search-results"><div class="profile-search-results-head"><h3>RESULTS</h3><span>${data.results.length}</span></div><div class="profile-search-result-list">${data.results.map(renderProfileSearchMember).join('') || '<div class="profile-search-empty">NO RESULTS</div>'}</div></section>`;
+  }
+
+  function renderProfileSearchMember(member) {
+    const accent = /^#[0-9a-f]{6}$/i.test(member.colorHex || '') ? member.colorHex : '#9cecff';
+    const initial = String(member.displayName || '?').slice(0, 1).toUpperCase();
+    const image = member.imageUrl ? `<img src="${escapeHtml(member.imageUrl)}" data-fallback-src="${escapeHtml(member.imageFallbackUrl || '')}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="handleProfileImageError(this)">` : escapeHtml(initial);
+    return `<button class="profile-search-member" style="--member-accent:${escapeHtml(accent)}" type="button" onclick="openProfileMemberDetail('${escapeHtml(member.memberId)}')"><span class="profile-search-avatar">${image}</span><span class="profile-search-member-copy"><b>${escapeHtml(member.displayName)}</b><small>${escapeHtml(member.primaryGroupName || 'SOLO')}</small></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 5.5L16 12l-6.5 6.5"></path></svg></button>`;
+  }
+</script>
+
+<style>
+  .profile-search-head{margin-bottom:22px;display:flex;align-items:end;justify-content:space-between;gap:18px}.profile-search-title{margin:7px 0 0;color:var(--white);font-family:Orbitron,"Exo 2",sans-serif;font-size:clamp(30px,8vw,44px);font-weight:600;line-height:1}.profile-search-result-count{color:var(--cyan);font:700 14px "Exo 2",sans-serif;letter-spacing:.12em}.profile-search-box{min-height:56px;padding:0 17px;border:1px solid rgba(156,236,255,.22);border-radius:17px;display:flex;align-items:center;gap:12px;background:#09111a}.profile-search-box svg{width:23px;height:23px;flex:0 0 auto;fill:none;stroke:rgba(156,236,255,.72);stroke-width:1.8;stroke-linecap:round}.profile-search-box input{width:100%;min-width:0;border:0;outline:0;color:#f5fbfd;background:transparent;font:600 16px "Exo 2","Zen Kaku Gothic New",sans-serif;letter-spacing:.035em}.profile-search-box input::placeholder{color:rgba(232,242,247,.38)}.profile-search-selected{margin-top:18px;padding:17px;border:1px solid rgba(156,236,255,.20);border-radius:18px;background:rgba(91,193,217,.06)}.profile-search-selected-head,.profile-search-results-head{margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;color:rgba(232,242,247,.58);font:700 12px "Exo 2",sans-serif;letter-spacing:.13em}.profile-search-selected-head button{min-height:44px;padding:0 12px;border:0;color:var(--cyan);background:transparent;font:700 12px "Exo 2",sans-serif;letter-spacing:.10em}.profile-search-fields{margin-top:20px;display:grid;gap:14px}.profile-search-field{padding:19px;border:1px solid rgba(194,232,244,.12);border-radius:20px;background:rgba(255,255,255,.022)}.profile-search-field h3{margin:0 0 15px;color:rgba(247,251,255,.88);font:600 16px "Zen Kaku Gothic New",sans-serif}.profile-search-tags{display:flex;flex-wrap:wrap;gap:9px}.profile-search-tag{min-height:46px;padding:0 16px;border:1px solid rgba(194,232,244,.13);border-radius:999px;color:rgba(241,248,251,.76);background:rgba(255,255,255,.035);font:600 14px "Zen Kaku Gothic New","Exo 2",sans-serif;cursor:pointer}.profile-search-tag.active{border-color:rgba(156,236,255,.55);color:#f3fcff;background:rgba(91,193,217,.18)}.profile-search-tag span{margin-left:8px;color:var(--cyan)}.profile-search-results{margin-top:26px;padding-top:22px;border-top:1px solid rgba(194,232,244,.10)}.profile-search-result-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.profile-search-member{min-width:0;min-height:72px;padding:10px 11px;border:1px solid rgba(194,232,244,.11);border-radius:19px;display:grid;grid-template-columns:50px minmax(0,1fr) 18px;align-items:center;gap:11px;color:#fff;background:rgba(255,255,255,.025);text-align:left;cursor:pointer}.profile-search-avatar{width:50px;height:50px;overflow:hidden;border-radius:50%;display:grid;place-items:center;color:var(--member-accent);background:color-mix(in srgb,var(--member-accent) 12%,#07101a);font:600 15px Orbitron,sans-serif}.profile-search-avatar img{width:100%;height:100%;object-fit:cover;object-position:center top;display:block}.profile-search-member-copy{min-width:0;display:grid;gap:5px}.profile-search-member-copy b{overflow:hidden;color:rgba(247,251,255,.92);font:600 15px "Exo 2","Zen Kaku Gothic New",sans-serif;text-overflow:ellipsis;white-space:nowrap}.profile-search-member-copy small{overflow:hidden;color:rgba(232,242,247,.44);font:700 10px "Exo 2",sans-serif;letter-spacing:.08em;text-overflow:ellipsis;white-space:nowrap}.profile-search-member>svg{width:18px;height:18px;fill:none;stroke:rgba(156,236,255,.52);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.profile-search-empty{min-height:120px;display:grid;place-items:center;color:rgba(232,242,247,.42);font:700 13px "Exo 2",sans-serif;letter-spacing:.12em}.profile-search-loading{min-height:240px;display:flex;align-items:center;justify-content:center;gap:12px;color:rgba(255,255,255,.60);font:600 12px "Exo 2",sans-serif;letter-spacing:.12em}
+  @media(max-width:560px){.profile-search-result-list{grid-template-columns:1fr}.profile-search-field{padding:17px}}
+  @media(min-width:720px){.profile-search-result-list{grid-template-columns:repeat(3,minmax(0,1fr))}}
+</style>

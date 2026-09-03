@@ -75,3 +75,13 @@ drive.google.com/thumbnail直読みによる認証／Cookie／配信相性の可
 - タッチ端末の全ボタンは、押下中に縮小・明度・透明度が滑らかに変化する
 - prefers-reduced-motion指定時は動きを最小化する
 
+【PROFILE SEARCH v1 2026-09-03】
+- ProfileSettingsのIsActiveかつIsCompareTarget項目をDisplayOrder順で動的取得
+- 複数タグはAND検索
+- グループ絞り込みと連動
+- タグ・メンバー名・プロフィール値の文字検索に対応
+- 検索結果からメンバー詳細へ遷移
+- 16px入力、14pxタグ、15px結果名、50px画像をスマホ基準とする
+- 補足的な日本語説明文は置かない
+- SpreadsheetはREAD ONLY
+
