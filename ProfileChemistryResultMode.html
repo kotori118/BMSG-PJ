@@ -29,8 +29,18 @@
     return match ? String(Number(match[1])) : '';
   }
 
+  function isProfileChemistryComparableDetailProfileId(profileId) {
+    if (!profileId) return false;
+    return profileChemistryState.fields.some(field => {
+      if (!field || !field.profileId) return false;
+      if (field.profileId === '_zodiac' || field.profileId === '_chineseZodiac') return false;
+      if (field.profileId === '_birthMonth') return profileId === 'P002';
+      return field.profileId === profileId;
+    });
+  }
+
   function isProfileChemistryDetailRowMatch(row) {
-    if (!row || row.valueA === '—' || row.valueB === '—') return false;
+    if (!row || !isProfileChemistryComparableDetailProfileId(row.profileId) || row.valueA === '—' || row.valueB === '—') return false;
     if (row.profileId === 'P002') {
       const monthA = getProfileChemistryBirthdayMonth(row.valueA);
       const monthB = getProfileChemistryBirthdayMonth(row.valueB);
@@ -44,7 +54,9 @@
     const detailB = profileChemistryState.detailsByMemberId[memberB.memberId] || [];
     const byIdA = detailA.reduce((map, field) => { map[field.profileId] = field; return map; }, {});
     const byIdB = detailB.reduce((map, field) => { map[field.profileId] = field; return map; }, {});
-    const ids = [...new Set(detailA.concat(detailB).filter(field => field && field.profileId).map(field => field.profileId))];
+    const ids = [...new Set(detailA.concat(detailB)
+      .filter(field => field && field.profileId && isProfileChemistryComparableDetailProfileId(field.profileId))
+      .map(field => field.profileId))];
 
     return ids.map(profileId => {
       const fieldA = byIdA[profileId] || {};
