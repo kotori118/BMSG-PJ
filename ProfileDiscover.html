@@ -84,7 +84,15 @@
       .map(member => ({ member, result: getProfileChemistryComparison(baseMember, member) }))
       .sort((a, b) => b.result.score - a.result.score || Number(a.member.displayOrder) - Number(b.member.displayOrder));
 
-    panel.innerHTML = `<div class="profile-discover-head profile-discover-ranking-head"><div><p class="profile-panel-eyebrow">FIND SIMILAR</p><h2 class="profile-members-title">${escapeHtml(baseMember.displayName)}</h2><p class="profile-discover-sub">MATCH RANKING</p></div><button class="profile-retry-button" type="button" onclick="changeProfileDiscoverMember()">CHANGE</button></div><div class="profile-discover-ranking">${ranking.map((item, index) => renderProfileDiscoverRankingCard(item, index + 1, baseMember)).join('')}</div>`;
+    let previousScore = null;
+    let currentRank = 0;
+    const rankedItems = ranking.map((item, index) => {
+      if (previousScore === null || item.result.score !== previousScore) currentRank = index + 1;
+      previousScore = item.result.score;
+      return { item, rank: currentRank };
+    });
+
+    panel.innerHTML = `<div class="profile-discover-head profile-discover-ranking-head"><div><p class="profile-panel-eyebrow">FIND SIMILAR</p><h2 class="profile-members-title">${escapeHtml(baseMember.displayName)}</h2><p class="profile-discover-sub">MATCH RANKING</p></div><button class="profile-retry-button" type="button" onclick="changeProfileDiscoverMember()">CHANGE</button></div><div class="profile-discover-ranking">${rankedItems.map(({ item, rank }) => renderProfileDiscoverRankingCard(item, rank, baseMember)).join('')}</div>`;
   }
 
   function renderProfileDiscoverMemberCard(member) {
