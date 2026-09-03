@@ -1,4 +1,44 @@
 <script>
+  function getProfileChemistryComparison(memberA, memberB) {
+    const valuesA = profileChemistryState.valuesByMemberId[memberA.memberId] || {};
+    const valuesB = profileChemistryState.valuesByMemberId[memberB.memberId] || {};
+    const scoreFields = profileChemistryState.fields.filter(field =>
+      field && field.profileId !== '_zodiac' && field.profileId !== '_chineseZodiac'
+    );
+    const matched = [];
+
+    scoreFields.forEach(field => {
+      const listA = Array.isArray(valuesA[field.profileId]) ? valuesA[field.profileId].filter(Boolean) : [];
+      const listB = Array.isArray(valuesB[field.profileId]) ? valuesB[field.profileId].filter(Boolean) : [];
+      const common = listA.filter(value => listB.includes(value));
+      if (common.length) matched.push({ field, values: [...new Set(common)] });
+    });
+
+    return {
+      score: scoreFields.length ? Math.round(matched.length / scoreFields.length * 100) : 0,
+      comparedCount: scoreFields.length,
+      matched
+    };
+  }
+
+  function getProfileChemistryBirthdayMonth(value) {
+    const text = String(value == null ? '' : value).trim();
+    if (!text || text === '—') return '';
+    const normalized = text.replace(/[年月.\-]/g, '/').replace(/日/g, '');
+    const match = normalized.match(/(?:\d{4}\s*\/\s*)?(\d{1,2})\s*\/\s*\d{1,2}/);
+    return match ? String(Number(match[1])) : '';
+  }
+
+  function isProfileChemistryDetailRowMatch(row) {
+    if (!row || row.valueA === '—' || row.valueB === '—') return false;
+    if (row.profileId === 'P002') {
+      const monthA = getProfileChemistryBirthdayMonth(row.valueA);
+      const monthB = getProfileChemistryBirthdayMonth(row.valueB);
+      return Boolean(monthA && monthB && monthA === monthB);
+    }
+    return row.valueA === row.valueB;
+  }
+
   function resetProfileChemistrySelection() {
     profileChemistryState.memberA = '';
     profileChemistryState.memberB = '';
@@ -54,7 +94,7 @@
     } else {
       const rows = getProfileChemistryDetailRows(memberA, memberB);
       comparisonBody = `<div class="profile-chemistry-compare-head"><strong>${escapeHtml(memberA.displayName)}</strong><span>PROFILE</span><strong>${escapeHtml(memberB.displayName)}</strong></div><div class="profile-chemistry-compare-rows">${rows.map(row => {
-        const same = row.valueA !== '—' && row.valueA === row.valueB;
+        const same = isProfileChemistryDetailRowMatch(row);
         return `<div class="profile-chemistry-compare-row${same ? ' match' : ''}"><dd>${escapeHtml(row.valueA)}</dd><dt>${escapeHtml(row.label)}</dt><dd>${escapeHtml(row.valueB)}</dd></div>`;
       }).join('')}</div>`;
     }
