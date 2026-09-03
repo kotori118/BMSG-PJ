@@ -64,6 +64,7 @@
   }
 
   function resetProfileChemistrySelection() {
+    if (typeof returnProfileChemistryToDiscover === 'function' && returnProfileChemistryToDiscover()) return;
     profileChemistryState.memberA = '';
     profileChemistryState.memberB = '';
     profileChemistryState.activeSlot = 'a';
