@@ -88,3 +88,8 @@ drive.google.com/thumbnail直読みによる認証／Cookie／配信相性の可
 - 補足的な日本語説明文は置かない
 - SpreadsheetはREAD ONLY
 
+
+【PROFILE SEARCH v1.1 2026-09-03】
+- 検索項目は初期状態ですべて閉じ、同時に開ける項目は1つだけに固定
+- 日本語IMEの変換中は入力欄を再描画せず、確定後に候補と結果だけ更新
+- 文字検索は部分一致ではなく前方一致（startsWith）
