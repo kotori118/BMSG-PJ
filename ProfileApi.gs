@@ -173,7 +173,7 @@ function getProfileChineseZodiac_(year) {
 function getProfileSearchData() {
   try {
     const cache = CacheService.getScriptCache();
-    const cacheKey = 'PROFILE_SEARCH_V1';
+    const cacheKey = 'PROFILE_SEARCH_V2';
     const cached = cache.get(cacheKey);
     if (cached) return JSON.parse(cached);
     const response = { ok: true, data: buildProfileSearchPayload_() };
@@ -195,13 +195,24 @@ function buildProfileSearchPayload_() {
       return asNumber_(a.DisplayOrder, 9999) - asNumber_(b.DisplayOrder, 9999);
     });
 
-  const fields = settings.map(function(setting) {
-    return {
-      profileId: asId_(setting.ProfileID),
-      label: String(setting.FieldName || setting.ProfileID).trim(),
+  const fields = [];
+  settings.forEach(function(setting) {
+    const profileId = asId_(setting.ProfileID);
+    const displayOrder = asNumber_(setting.DisplayOrder, 9999);
+    if (profileId === 'P002') {
+      fields.push(
+        { profileId: '_birthMonth', label: '誕生月', displayGroup: 'BASIC', displayOrder: displayOrder },
+        { profileId: '_zodiac', label: '星座', displayGroup: 'BASIC', displayOrder: displayOrder + 0.1 },
+        { profileId: '_chineseZodiac', label: '干支', displayGroup: 'BASIC', displayOrder: displayOrder + 0.2 }
+      );
+      return;
+    }
+    fields.push({
+      profileId: profileId,
+      label: String(setting.FieldName || profileId).trim(),
       displayGroup: String(setting.DisplayGroup || 'PROFILE').trim(),
-      displayOrder: asNumber_(setting.DisplayOrder, 9999)
-    };
+      displayOrder: displayOrder
+    });
   });
 
   const members = profiles.map(function(profile) {
@@ -209,8 +220,15 @@ function buildProfileSearchPayload_() {
     const values = {};
     settings.forEach(function(setting) {
       const profileId = asId_(setting.ProfileID);
-      values[profileId] = normalizeProfileSearchValues_(profile[profileId], setting.IsMultiValue);
+      if (profileId !== 'P002') {
+        values[profileId] = normalizeProfileSearchValues_(profile[profileId], setting.IsMultiValue);
+      }
     });
+
+    const birthday = parseProfileBirthday_(profile.P002);
+    values._birthMonth = birthday ? [birthday.month + '月'] : [];
+    values._zodiac = birthday ? [getProfileZodiac_(birthday.month, birthday.day)] : [];
+    values._chineseZodiac = birthday ? [getProfileChineseZodiac_(birthday.year)] : [];
     return { memberId: memberId, values: values };
   }).filter(function(member) { return member.memberId; });
 

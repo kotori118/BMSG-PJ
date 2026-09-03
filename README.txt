@@ -77,6 +77,9 @@ drive.google.com/thumbnail直読みによる認証／Cookie／配信相性の可
 
 【PROFILE SEARCH v1 2026-09-03】
 - ProfileSettingsのIsActiveかつIsCompareTarget項目をDisplayOrder順で動的取得
+- 誕生日の全日付は検索対象外とし、誕生月へ変換
+- 誕生日から星座・干支を自動生成して検索対象に追加
+- 検索項目は初期状態で項目名のみ表示し、1項目ずつタグを展開
 - 複数タグはAND検索
 - グループ絞り込みと連動
 - タグ・メンバー名・プロフィール値の文字検索に対応
