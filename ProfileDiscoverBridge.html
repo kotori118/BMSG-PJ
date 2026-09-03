@@ -1,0 +1,13 @@
+<script>
+  function resetProfileChemistrySelection() {
+    if (typeof returnProfileChemistryToDiscover === 'function' && returnProfileChemistryToDiscover()) return;
+    profileChemistryState.memberA = '';
+    profileChemistryState.memberB = '';
+    profileChemistryState.activeSlot = 'a';
+    renderProfileChemistry();
+    requestAnimationFrame(() => {
+      const panel = document.getElementById('profilePanel');
+      if (panel) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }
+</script>
