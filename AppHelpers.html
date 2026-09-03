@@ -16,6 +16,16 @@
         .replaceAll("'", '&#039;');
     }
 
+
+    function scrollAppToTop(behavior = 'smooth') {
+      const scroller = document.querySelector('.page-wrap');
+      if (scroller) {
+        scroller.scrollTo({ top: 0, left: 0, behavior });
+        return;
+      }
+      window.scrollTo({ top: 0, left: 0, behavior });
+    }
+
     function setTheme(theme) {
       document.body.classList.toggle(
         'theme-light',
@@ -28,10 +38,10 @@
         'is-home',
         route === 'home'
       );
-      document.body.classList.toggle(
-        'is-section-root',
-        ['home', 'data', 'lab'].includes(route)
-      );
+      const isSectionRoot = ['home', 'data', 'lab'].includes(route);
+      document.body.classList.toggle('is-section-root', isSectionRoot);
+      const utilityHome = document.querySelector('.utility-home');
+      if (utilityHome) utilityHome.hidden = isSectionRoot;
 
       const bottomNavRoutes = ['home', 'data', 'lab'];
       document.body.classList.toggle(

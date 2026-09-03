@@ -88,7 +88,7 @@
     profileMembersState.detailFields = [];
     profileMembersState.detailError = '';
     setProfileDetailMode(true); renderProfileMemberDetail();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    scrollAppToTop('smooth');
     google.script.run.withSuccessHandler(response => handleProfileMemberDetailSuccess(memberId, response))
       .withFailureHandler(error => handleProfileMemberDetailFailure(memberId, error))
       .getProfileMemberDetail(memberId);
@@ -123,7 +123,7 @@
     profileDetailReturnView = 'home';
     updateProfileControls();
     renderProfilePanel();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    scrollAppToTop('smooth');
   }
 
   function renderProfileMemberDetail() {

@@ -10,7 +10,7 @@
         setActiveNav(null);
         pageContent.innerHTML = render404(route);
         document.title = '404 | BMSG UNIVERSE';
-        window.scrollTo(0, 0);
+        scrollAppToTop('smooth');
         return;
       }
 
@@ -43,7 +43,7 @@
       }
 
       document.title = `${meta.title} | BMSG UNIVERSE`;
-      window.scrollTo(0, 0);
+      scrollAppToTop('smooth');
     }
 
     function navigateTo(route) {
