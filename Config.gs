@@ -12,6 +12,6 @@ const UNIVERSE_CONFIG = Object.freeze({
     GROUP_MEMBERS: '04_GroupMembers',
     PROFILES: '05_Profiles',
     IMAGES: '09_Images',
-    PROFILE_SETTINGS: '05_ProfileSettings'
+    PROFILE_SETTINGS: 'ProfileSettings'
   })
 });

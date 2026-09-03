@@ -166,8 +166,14 @@
 </script>
 
 <style>
-  .profile-detail-sections { display: grid; gap: 18px; margin-top: 24px; }
-  .profile-detail-section { border: 1px solid rgba(156,236,255,.16); background: rgba(255,255,255,.025); padding: 18px; }
+  /* Detail is profile-first: keep the member image as a compact identity cue. */
+  .profile-detail-hero { min-height: 124px; display: grid; grid-template-columns: 104px minmax(0, 1fr); align-items: stretch; border-radius: clamp(20px, 5vw, 28px); }
+  .profile-detail-visual { min-height: 124px; aspect-ratio: auto; }
+  .profile-detail-line { left: 14px; bottom: 12px; width: 30px; }
+  .profile-detail-identity { min-width: 0; padding: 18px clamp(18px, 5vw, 28px); display: flex; flex-direction: column; justify-content: center; }
+  .profile-detail-name { font-size: clamp(27px, 8vw, 48px); }
+  .profile-detail-sections { display: grid; gap: 14px; margin-top: 0; }
+  .profile-detail-section { overflow: hidden; border: 1px solid rgba(156,236,255,.16); border-radius: 18px; background: rgba(255,255,255,.025); padding: 18px; }
   .profile-detail-section-title { margin: 0 0 12px; color: var(--member-accent); font-family: Orbitron, sans-serif; font-size: 12px; letter-spacing: .14em; }
   .profile-detail-list { margin: 0; }
   .profile-detail-row { display: grid; grid-template-columns: minmax(105px, 34%) 1fr; gap: 14px; padding: 11px 0; border-top: 1px solid rgba(255,255,255,.08); }
@@ -178,4 +184,9 @@
   .profile-detail-spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,.18); border-top-color: var(--member-accent); border-radius: 50%; animation: profileDetailSpin .8s linear infinite; }
   @keyframes profileDetailSpin { to { transform: rotate(360deg); } }
   @media (max-width: 560px) { .profile-detail-section { padding: 15px; } .profile-detail-row { grid-template-columns: 96px 1fr; gap: 10px; } }
+  @media (min-width: 720px) {
+    .profile-detail-hero { grid-template-columns: 150px minmax(0, 1fr); min-height: 176px; }
+    .profile-detail-visual { min-height: 176px; }
+    .profile-detail-identity { padding: 30px 36px; justify-content: center; }
+  }
 </style>
