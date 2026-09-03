@@ -1,0 +1,85 @@
+<script>
+  function resetProfileChemistrySelection() {
+    profileChemistryState.memberA = '';
+    profileChemistryState.memberB = '';
+    profileChemistryState.activeSlot = 'a';
+    renderProfileChemistry();
+    requestAnimationFrame(() => {
+      const panel = document.getElementById('profilePanel');
+      if (panel) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }
+
+  function renderProfileChemistry() {
+    const panel = document.getElementById('profilePanel');
+    if (!panel || profileCurrentView !== 'chemistry') return;
+    if (profileChemistryState.status === 'idle' || profileChemistryState.status === 'loading') return renderProfileChemistryLoading();
+    if (profileChemistryState.status === 'error') {
+      panel.innerHTML = `<article class="profile-members-state"><p class="profile-panel-eyebrow">CONNECTION ERROR</p><h2 class="profile-members-state-title">ERROR</h2><p class="profile-panel-copy">${escapeHtml(profileChemistryState.error)}</p><button class="profile-retry-button" type="button" onclick="loadProfileChemistry(true)">RETRY</button></article>`;
+      return;
+    }
+
+    const memberA = getProfileChemistryMember(profileChemistryState.memberA);
+    const memberB = getProfileChemistryMember(profileChemistryState.memberB);
+    const members = getVisibleProfileMembers();
+    const isResultMode = Boolean(memberA && memberB);
+
+    panel.innerHTML = `<div class="profile-chemistry-head"><p class="profile-panel-eyebrow">TWO PEOPLE</p><h2 class="profile-chemistry-title">CHEMISTRY</h2>${isResultMode ? '<button class="profile-chemistry-back" type="button" onclick="resetProfileChemistrySelection()">← BACK</button>' : ''}</div>
+      <div class="profile-chemistry-slots">
+        ${renderProfileChemistrySlot('a', memberA, '01')}
+        <span class="profile-chemistry-cross" aria-hidden="true">×</span>
+        ${renderProfileChemistrySlot('b', memberB, '02')}
+      </div>
+      ${isResultMode
+        ? renderProfileChemistryResult(memberA, memberB)
+        : `<section class="profile-chemistry-picker"><div class="profile-chemistry-section-head"><h3>MEMBERS</h3><span>${members.length}</span></div><div class="profile-chemistry-member-grid">${members.map(renderProfileChemistryMemberButton).join('')}</div></section>`}`;
+  }
+
+  function renderProfileChemistryResult(memberA, memberB) {
+    const result = getProfileChemistryComparison(memberA, memberB);
+    const detailA = profileChemistryState.detailsByMemberId[memberA.memberId];
+    const detailB = profileChemistryState.detailsByMemberId[memberB.memberId];
+    const errorA = profileChemistryState.detailErrorByMemberId[memberA.memberId];
+    const errorB = profileChemistryState.detailErrorByMemberId[memberB.memberId];
+    const loading = !detailA || !detailB;
+
+    if (loading && !profileChemistryState.detailLoadingByMemberId[memberA.memberId] && !errorA) loadProfileChemistryDetail(memberA.memberId);
+    if (loading && !profileChemistryState.detailLoadingByMemberId[memberB.memberId] && !errorB) loadProfileChemistryDetail(memberB.memberId);
+
+    let comparisonBody = '';
+    if (errorA || errorB) {
+      comparisonBody = `<div class="profile-chemistry-detail-error"><p>${escapeHtml(errorA || errorB)}</p><button type="button" onclick="loadProfileChemistryDetail('${escapeHtml(errorA ? memberA.memberId : memberB.memberId)}', true)">RETRY</button></div>`;
+    } else if (loading) {
+      comparisonBody = `<div class="profile-chemistry-detail-loading"><span class="profile-detail-spinner"></span><span>LOADING PROFILES...</span></div>`;
+    } else {
+      const rows = getProfileChemistryDetailRows(memberA, memberB);
+      comparisonBody = `<div class="profile-chemistry-compare-head"><strong>${escapeHtml(memberA.displayName)}</strong><span>PROFILE</span><strong>${escapeHtml(memberB.displayName)}</strong></div><div class="profile-chemistry-compare-rows">${rows.map(row => {
+        const same = row.valueA !== '—' && row.valueA === row.valueB;
+        return `<div class="profile-chemistry-compare-row${same ? ' match' : ''}"><dd>${escapeHtml(row.valueA)}</dd><dt>${escapeHtml(row.label)}</dt><dd>${escapeHtml(row.valueB)}</dd></div>`;
+      }).join('')}</div>`;
+    }
+
+    return `<section id="profileChemistryResult" class="profile-chemistry-result"><div class="profile-chemistry-match-center"><p>MATCH</p><div class="profile-chemistry-score" style="--score:${result.score}"><div><strong>${result.score}</strong><span>%</span></div></div><small>${result.matched.length} / ${result.comparedCount}</small></div><div class="profile-chemistry-compare">${comparisonBody}</div></section>`;
+  }
+</script>
+
+<style>
+  .profile-chemistry-back{margin-top:14px;padding:0;border:0;color:rgba(156,236,255,.76);background:transparent;font:700 10px "Exo 2",sans-serif;letter-spacing:.14em;cursor:pointer}
+  .profile-chemistry-result{margin-top:22px!important;padding:0!important;border:0!important;border-radius:0!important;display:block!important;background:transparent!important;scroll-margin-top:18px}
+  .profile-chemistry-match-center{width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px 0 24px}
+  .profile-chemistry-match-center p{margin:0 0 10px;color:var(--cyan);font:700 9px "Exo 2",sans-serif;letter-spacing:.16em}
+  .profile-chemistry-match-center small{display:block;margin-top:9px;color:rgba(238,248,252,.38);font:700 9px "Exo 2",sans-serif;letter-spacing:.10em}
+  .profile-chemistry-compare{grid-column:auto!important;margin-top:0!important;padding-top:0!important;border-top:1px solid rgba(255,255,255,.08)!important}
+  .profile-chemistry-compare-head,.profile-chemistry-compare-row{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(78px,.64fr) minmax(0,1fr)!important;gap:10px!important;text-align:center}
+  .profile-chemistry-compare-head{padding:16px 0 12px!important;border-bottom:1px solid rgba(156,236,255,.16)!important;align-items:end}
+  .profile-chemistry-compare-head strong{min-width:0;color:rgba(247,251,255,.78);font:700 11px "Exo 2","Zen Kaku Gothic New",sans-serif;overflow-wrap:anywhere}
+  .profile-chemistry-compare-head span{color:rgba(238,248,252,.38);font:700 9px "Exo 2",sans-serif;letter-spacing:.12em}
+  .profile-chemistry-compare-row{padding:13px 0!important;border-bottom:1px solid rgba(255,255,255,.065)!important;align-items:start}
+  .profile-chemistry-compare-row dt{grid-column:2!important;color:rgba(238,248,252,.48)!important;font-size:11px!important;line-height:1.55;overflow-wrap:anywhere}
+  .profile-chemistry-compare-row dd{margin:0!important;color:#f5fbfd!important;font-size:13px!important;line-height:1.55;overflow-wrap:anywhere;text-align:center}
+  .profile-chemistry-compare-row dd:first-child{grid-column:1!important;grid-row:1}
+  .profile-chemistry-compare-row dd:last-child{grid-column:3!important;grid-row:1}
+  .profile-chemistry-compare-row.match dd{color:var(--cyan)!important}
+  @media(max-width:360px){.profile-chemistry-compare-head,.profile-chemistry-compare-row{grid-template-columns:minmax(0,1fr) minmax(70px,.60fr) minmax(0,1fr)!important;gap:7px!important}.profile-chemistry-compare-row dd{font-size:12px!important}.profile-chemistry-compare-row dt{font-size:10px!important}}
+  @media(min-width:720px){.profile-chemistry-result{max-width:620px}.profile-chemistry-score{width:112px;height:112px}.profile-chemistry-compare-head,.profile-chemistry-compare-row{grid-template-columns:minmax(0,1fr) minmax(120px,.7fr) minmax(0,1fr)!important;gap:18px!important}.profile-chemistry-compare-row dt{font-size:12px!important}.profile-chemistry-compare-row dd{font-size:14px!important}}
+</style>
