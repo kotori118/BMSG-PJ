@@ -1,0 +1,144 @@
+<script>
+  const profileDiscoverState = {
+    baseMemberId: '',
+    returnFromChemistry: false
+  };
+
+  function loadProfileDiscover() {
+    if (profileCurrentView !== 'discover') return;
+    if (profileMembersState.status !== 'ready') {
+      renderProfileDiscoverLoading();
+      if (profileMembersState.status === 'idle' || profileMembersState.status === 'error') loadProfileMembers();
+      return;
+    }
+    if (profileChemistryState.status !== 'ready') {
+      renderProfileDiscoverLoading();
+      loadProfileChemistryForDiscover();
+      return;
+    }
+    renderProfileDiscover();
+  }
+
+  function loadProfileChemistryForDiscover() {
+    if (profileChemistryState.status === 'loading') return;
+    profileChemistryState.status = 'loading';
+    profileChemistryState.error = '';
+    google.script.run.withSuccessHandler(response => {
+      if (!response || !response.ok || !response.data) {
+        profileChemistryState.status = 'error';
+        profileChemistryState.error = response && response.error ? response.error.message : '比較データの読み込みに失敗しました。';
+      } else {
+        profileChemistryState.status = 'ready';
+        profileChemistryState.fields = Array.isArray(response.data.fields) ? response.data.fields : [];
+        profileChemistryState.valuesByMemberId = (Array.isArray(response.data.members) ? response.data.members : []).reduce((map, member) => {
+          map[member.memberId] = member.values || {};
+          return map;
+        }, {});
+        profileChemistryState.error = '';
+      }
+      if (profileCurrentView === 'discover') renderProfileDiscover();
+    }).withFailureHandler(error => {
+      profileChemistryState.status = 'error';
+      profileChemistryState.error = error && error.message ? error.message : String(error || '比較データの読み込みに失敗しました。');
+      if (profileCurrentView === 'discover') renderProfileDiscover();
+    }).getProfileSearchData();
+  }
+
+  function renderProfileDiscoverLoading() {
+    const panel = document.getElementById('profilePanel');
+    if (!panel || profileCurrentView !== 'discover') return;
+    panel.innerHTML = `<div class="profile-chemistry-head"><p class="profile-panel-eyebrow">FIND SIMILAR</p><h2 class="profile-chemistry-title">DISCOVER</h2></div><div class="profile-chemistry-loading" aria-live="polite"><span class="profile-detail-spinner"></span><span>LOADING DISCOVER...</span></div>`;
+  }
+
+  function renderProfileDiscover() {
+    const panel = document.getElementById('profilePanel');
+    if (!panel || profileCurrentView !== 'discover') return;
+    if (profileMembersState.status !== 'ready' || profileChemistryState.status === 'idle' || profileChemistryState.status === 'loading') return renderProfileDiscoverLoading();
+    if (profileChemistryState.status === 'error') {
+      panel.innerHTML = `<article class="profile-members-state"><p class="profile-panel-eyebrow">CONNECTION ERROR</p><h2 class="profile-members-state-title">ERROR</h2><p class="profile-panel-copy">${escapeHtml(profileChemistryState.error)}</p><button class="profile-retry-button" type="button" onclick="loadProfileChemistryForDiscover()">RETRY</button></article>`;
+      return;
+    }
+
+    const baseMember = getProfileChemistryMember(profileDiscoverState.baseMemberId);
+    if (!baseMember) {
+      const members = getVisibleProfileMembers();
+      panel.innerHTML = `<div class="profile-members-head"><div><p class="profile-panel-eyebrow">FIND SIMILAR</p><h2 class="profile-members-title">DISCOVER</h2></div><span class="profile-members-count">${members.length}</span></div><p class="profile-panel-copy">基準となるメンバーを1名選んでください。</p><div class="profile-member-grid">${members.map(renderProfileDiscoverMemberCard).join('')}</div>`;
+      return;
+    }
+
+    const ranking = profileMembersState.members
+      .filter(member => member.memberId !== baseMember.memberId)
+      .map(member => ({ member, result: getProfileChemistryComparison(baseMember, member) }))
+      .sort((a, b) => b.result.score - a.result.score || Number(a.member.displayOrder) - Number(b.member.displayOrder));
+
+    panel.innerHTML = `<div class="profile-members-head"><div><p class="profile-panel-eyebrow">FIND SIMILAR</p><h2 class="profile-members-title">${escapeHtml(baseMember.displayName)} DISCOVER</h2></div><button class="profile-retry-button" type="button" onclick="changeProfileDiscoverMember()">CHANGE</button></div><div class="profile-member-grid">${ranking.map((item, index) => renderProfileDiscoverRankingCard(item, index + 1, baseMember)).join('')}</div>`;
+  }
+
+  function renderProfileDiscoverMemberCard(member) {
+    const initial = String(member.displayName || '?').slice(0, 1).toUpperCase();
+    const accent = /^#[0-9a-f]{6}$/i.test(member.colorHex || '') ? member.colorHex : '#9cecff';
+    const image = member.imageUrl ? `<img src="${escapeHtml(member.imageUrl)}" data-fallback-src="${escapeHtml(member.imageFallbackUrl || '')}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="handleProfileImageError(this)">` : '';
+    return `<article class="profile-member-card" style="--member-accent:${escapeHtml(accent)}" role="button" tabindex="0" data-member-id="${escapeHtml(member.memberId)}" onclick="selectProfileDiscoverMember(this.dataset.memberId)" onkeydown="handleProfileDiscoverCardKey(event, this.dataset.memberId)"><div class="profile-member-visual"><span class="profile-member-fallback" aria-hidden="true">${escapeHtml(initial)}</span>${image}<span class="profile-member-accent" aria-hidden="true"></span></div><div class="profile-member-body"><p class="profile-member-group">${escapeHtml(member.primaryGroupName || 'SOLO')}</p><h3 class="profile-member-name">${escapeHtml(member.displayName)}</h3></div></article>`;
+  }
+
+  function renderProfileDiscoverRankingCard(item, rank, baseMember) {
+    const member = item.member;
+    const result = item.result;
+    const initial = String(member.displayName || '?').slice(0, 1).toUpperCase();
+    const accent = /^#[0-9a-f]{6}$/i.test(member.colorHex || '') ? member.colorHex : '#9cecff';
+    const image = member.imageUrl ? `<img src="${escapeHtml(member.imageUrl)}" data-fallback-src="${escapeHtml(member.imageFallbackUrl || '')}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="handleProfileImageError(this)">` : '';
+    return `<article class="profile-member-card" style="--member-accent:${escapeHtml(accent)}" role="button" tabindex="0" data-member-id="${escapeHtml(member.memberId)}" onclick="openProfileDiscoverChemistry('${escapeHtml(baseMember.memberId)}', this.dataset.memberId)" onkeydown="handleProfileDiscoverRankingKey(event, '${escapeHtml(baseMember.memberId)}', this.dataset.memberId)"><div class="profile-member-visual"><span class="profile-member-fallback" aria-hidden="true">${escapeHtml(initial)}</span>${image}<span class="profile-member-accent" aria-hidden="true"></span></div><div class="profile-member-body"><p class="profile-member-group">#${rank} · MATCH ${result.score}%</p><h3 class="profile-member-name">${escapeHtml(member.displayName)}</h3><p class="profile-member-group">${result.matched.length}項目一致</p></div></article>`;
+  }
+
+  function selectProfileDiscoverMember(memberId) {
+    if (!getProfileChemistryMember(memberId)) return;
+    profileDiscoverState.baseMemberId = memberId;
+    renderProfileDiscover();
+    scrollAppToTop('smooth');
+  }
+
+  function changeProfileDiscoverMember() {
+    profileDiscoverState.baseMemberId = '';
+    renderProfileDiscover();
+    scrollAppToTop('smooth');
+  }
+
+  function openProfileDiscoverChemistry(baseMemberId, targetMemberId) {
+    if (!getProfileChemistryMember(baseMemberId) || !getProfileChemistryMember(targetMemberId)) return;
+    profileDiscoverState.returnFromChemistry = true;
+    profileChemistryState.memberA = baseMemberId;
+    profileChemistryState.memberB = targetMemberId;
+    profileChemistryState.activeSlot = 'b';
+    loadProfileChemistryDetail(baseMemberId);
+    loadProfileChemistryDetail(targetMemberId);
+    profileCurrentView = 'chemistry';
+    updateProfileControls();
+    renderProfileChemistry();
+    scrollAppToTop('smooth');
+  }
+
+  function returnProfileChemistryToDiscover() {
+    if (!profileDiscoverState.returnFromChemistry) return false;
+    profileDiscoverState.returnFromChemistry = false;
+    profileChemistryState.memberA = '';
+    profileChemistryState.memberB = '';
+    profileChemistryState.activeSlot = 'a';
+    profileCurrentView = 'discover';
+    updateProfileControls();
+    renderProfileDiscover();
+    scrollAppToTop('smooth');
+    return true;
+  }
+
+  function handleProfileDiscoverCardKey(event, memberId) {
+    if (!event || (event.key !== 'Enter' && event.key !== ' ')) return;
+    event.preventDefault();
+    selectProfileDiscoverMember(memberId);
+  }
+
+  function handleProfileDiscoverRankingKey(event, baseMemberId, targetMemberId) {
+    if (!event || (event.key !== 'Enter' && event.key !== ' ')) return;
+    event.preventDefault();
+    openProfileDiscoverChemistry(baseMemberId, targetMemberId);
+  }
+</script>
