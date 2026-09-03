@@ -7,7 +7,7 @@
 
   .profile-header {
     display: grid;
-    gap: clamp(30px, 8vw, 56px);
+    gap: 0;
   }
 
   .profile-universe-home {
@@ -74,12 +74,12 @@
 
   .profile-group-bar {
     position: sticky;
-    top: max(80px, calc(env(safe-area-inset-top) + 68px));
+    top: max(82px, calc(env(safe-area-inset-top) + 70px));
     z-index: 18;
     margin: clamp(30px, 7vw, 48px) calc(clamp(16px, 4vw, 34px) * -1) 0;
     padding: 9px clamp(16px, 4vw, 34px);
     background: #03070d;
-    box-shadow: 0 -14px 0 #03070d, 0 12px 24px rgba(3, 7, 13, .92);
+    box-shadow: 0 -24px 0 #03070d, 0 12px 24px rgba(3, 7, 13, .92);
   }
 
   .profile-group-scroll,
@@ -366,7 +366,7 @@
   }
 
   .profile-page-detail-mode .profile-panel {
-    padding-top: clamp(28px, 7vw, 48px);
+    padding-top: 10px;
   }
 
   .profile-member-detail {

@@ -104,7 +104,7 @@
     const visibleMembers = getProfileMapVisibleMembers();
     const labels = sortProfileMapLabels(category.key, visibleMembers.flatMap(member => getProfileMapValues(member, category.key)));
 
-    panel.innerHTML = `<div class="profile-map-head"><div><p class="profile-panel-eyebrow">RELATION MAP</p><h2 class="profile-map-title">MAP</h2><p class="profile-map-copy">同じプロフィールでつながるメンバー。</p></div><label class="profile-map-select-label"><span>CATEGORY</span><select onchange="selectProfileMapCategory(this.value)">${profileMapState.categories.map(item => `<option value="${escapeHtml(item.key)}"${item.key === category.key ? ' selected' : ''}>${escapeHtml(item.label)}</option>`).join('')}</select></label></div><div class="profile-map-groups">${labels.map(label => renderProfileMapGroup(label, category.key, visibleMembers)).join('') || `<div class="profile-map-empty">表示できるデータがありません。</div>`}</div>`;
+    panel.innerHTML = `<div class="profile-map-head"><div><p class="profile-panel-eyebrow">RELATION MAP</p><h2 class="profile-map-title">MAP</h2></div><label class="profile-map-select-label"><span>CATEGORY</span><select onchange="selectProfileMapCategory(this.value)">${profileMapState.categories.map(item => `<option value="${escapeHtml(item.key)}"${item.key === category.key ? ' selected' : ''}>${escapeHtml(item.label)}</option>`).join('')}</select></label></div><div class="profile-map-groups">${labels.map(label => renderProfileMapGroup(label, category.key, visibleMembers)).join('') || `<div class="profile-map-empty">表示できるデータがありません。</div>`}</div>`;
   }
 
   function renderProfileMapGroup(label, key, mapMembers) {

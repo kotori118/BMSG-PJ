@@ -804,11 +804,23 @@
     /* top utility actions */
     .utility-actions {
       position: fixed;
-      top: max(18px, env(safe-area-inset-top));
-      right: max(18px, calc((100vw - min(100vw, var(--page-max))) / 2 + 18px));
+      inset: 0 0 auto;
       z-index: 40;
+      min-height: max(82px, calc(env(safe-area-inset-top) + 70px));
+      box-sizing: border-box;
+      padding:
+        max(14px, env(safe-area-inset-top))
+        max(18px, calc((100vw - min(100vw, var(--page-max))) / 2 + 18px))
+        12px;
       display: flex;
+      align-items: flex-end;
       gap: 10px;
+      background: #03070d;
+      box-shadow: 0 10px 24px rgba(3, 7, 13, .48);
+    }
+
+    .utility-home {
+      margin-right: auto;
     }
 
     .utility-btn {
