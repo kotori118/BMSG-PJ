@@ -16,32 +16,36 @@ function getKaraokeBootstrap(userId, requestedRoomId) {
 }
 
 function createKaraokeRoom(userId) {
-  cleanupExpiredKaraoke_();
   const uid = validateKaraokeUser_(userId);
-  const sheet = getLogSheet_(UNIVERSE_CONFIG.SHEETS.KARAOKE_ROOMS);
-  const activeIds = readSheetObjects_(sheet).reduce(function(map,row){map[String(row.RoomID).padStart(4,'0')]=true;return map;},{});
-  let roomId = '';
-  for (let i=0;i<100;i++) {
-    const candidate = String(Math.floor(1000 + Math.random()*9000));
-    if (!activeIds[candidate]) { roomId=candidate; break; }
-  }
-  if (!roomId) throw new Error('ルームIDを発行できませんでした。');
-  const createdAt = new Date();
-  const expiresAt = new Date(createdAt.getTime()+KARAOKE_ROOM_MS_);
-  appendByHeaders_(sheet,{RoomID:roomId,CreatedAt:createdAt,CreatedByUserID:uid,ExpiresAt:expiresAt});
-  setKaraokeRoomProperty_(uid,roomId);
-  return {roomId:roomId,createdAt:createdAt.toISOString(),expiresAt:expiresAt.toISOString(),createdByUserId:uid};
+  return withKaraokeLock_(function() {
+    cleanupExpiredKaraokeUnsafe_();
+    const sheet = getLogSheet_(UNIVERSE_CONFIG.SHEETS.KARAOKE_ROOMS);
+    const activeIds = readSheetObjects_(sheet).reduce(function(map,row){map[String(row.RoomID).padStart(4,'0')]=true;return map;},{});
+    let roomId = '';
+    for (let i=0;i<100;i++) {
+      const candidate = String(Math.floor(1000 + Math.random()*9000));
+      if (!activeIds[candidate]) { roomId=candidate; break; }
+    }
+    if (!roomId) throw new Error('ルームIDを発行できませんでした。');
+    const createdAt = new Date();
+    const expiresAt = new Date(createdAt.getTime()+KARAOKE_ROOM_MS_);
+    appendByHeaders_(sheet,{RoomID:roomId,CreatedAt:createdAt,CreatedByUserID:uid,ExpiresAt:expiresAt});
+    setKaraokeRoomProperty_(uid,roomId);
+    return {roomId:roomId,createdAt:createdAt.toISOString(),expiresAt:expiresAt.toISOString(),createdByUserId:uid};
+  });
 }
 
 function joinKaraokeRoom(userId, roomId) {
-  cleanupExpiredKaraoke_();
   const uid=validateKaraokeUser_(userId);
   const id=String(roomId||'').replace(/\D/g,'').padStart(4,'0');
   if (!/^\d{4}$/.test(id)) throw new Error('4桁のルームIDを入力してください。');
-  const room=findActiveKaraokeRoom_(id);
-  if (!room) throw new Error('有効なルームが見つかりません。');
-  setKaraokeRoomProperty_(uid,id);
-  return {room:room,history:getKaraokeHistory_(id)};
+  return withKaraokeLock_(function() {
+    cleanupExpiredKaraokeUnsafe_();
+    const room=findActiveKaraokeRoom_(id);
+    if (!room) throw new Error('有効なルームが見つかりません。');
+    setKaraokeRoomProperty_(uid,id);
+    return {room:room,history:getKaraokeHistory_(id)};
+  });
 }
 
 function leaveKaraokeRoom(userId) {
@@ -51,101 +55,101 @@ function leaveKaraokeRoom(userId) {
 
 function shuffleKaraokeSong(payload) {
   payload=payload||{};
-  cleanupExpiredKaraoke_();
   const uid=validateKaraokeUser_(payload.userId);
   const roomId=String(payload.roomId||'').trim();
-  if (!findActiveKaraokeRoom_(roomId)) throw new Error('ルームの有効期限が切れています。');
   const songId=asId_(payload.songId);
-  const song=readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.SONGS).find(function(row){return asId_(row.SongID)===songId;});
-  if (!song) throw new Error('曲が見つかりません。');
-  const parts=readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.LYRICS_PARTS).filter(function(row){return asId_(row.SongID)===songId;});
-  const slots=collectKaraokeSingerSlots_(parts);
-  if (!slots.length) throw new Error('分配できる歌唱者がありません。');
+  return withKaraokeLock_(function() {
+    cleanupExpiredKaraokeUnsafe_();
+    if (!findActiveKaraokeRoom_(roomId)) throw new Error('ルームの有効期限が切れています。');
+    const song=readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.SONGS).find(function(row){return asId_(row.SongID)===songId;});
+    if (!song) throw new Error('曲が見つかりません。');
+    const parts=readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.LYRICS_PARTS).filter(function(row){return asId_(row.SongID)===songId;});
+    const slots=collectKaraokeSingerSlots_(parts);
+    if (!slots.length) throw new Error('分配できる歌唱者がありません。');
 
-  const users=getKaraokeUsers_();
-  const cumulative=getKaraokeCumulativeCounts_(roomId,users);
-  const ordered=users.slice().sort(function(a,b){
-    const diff=cumulative[a.userId]-cumulative[b.userId];
-    return diff || Math.random()-.5;
-  });
-  const shuffled=shuffleArray_(slots.slice());
-  const base=Math.floor(shuffled.length/users.length);
-  const extra=shuffled.length%users.length;
-  const assignments={};
-  let cursor=0;
-  ordered.forEach(function(user,index){
-    const size=base+(index<extra?1:0);
-    assignments[user.userId]=shuffled.slice(cursor,cursor+size);
-    cursor+=size;
-  });
-  const singerMap=buildLyricsSingerMap_();
-  Object.keys(assignments).forEach(function(userId){
-    assignments[userId]=assignments[userId].map(function(id){
-      const singer=singerMap[id]||{name:id,color:'#777777'};
-      return {memberId:id,name:singer.name,color:singer.color};
+    const users=getKaraokeUsers_();
+    const cumulative=getKaraokeCumulativeCounts_(roomId,users);
+    const ordered=orderKaraokeUsersByFairness_(users,cumulative);
+    const shuffled=shuffleArray_(slots.slice());
+    const base=Math.floor(shuffled.length/users.length);
+    const extra=shuffled.length%users.length;
+    const assignments={};
+    let cursor=0;
+    ordered.forEach(function(user,index){
+      const size=base+(index<extra?1:0);
+      assignments[user.userId]=shuffled.slice(cursor,cursor+size);
+      cursor+=size;
     });
+    const singerMap=buildLyricsSingerMap_();
+    Object.keys(assignments).forEach(function(userId){
+      assignments[userId]=assignments[userId].map(function(id){
+        const singer=singerMap[id]||{name:id,color:'#777777'};
+        return {memberId:id,name:singer.name,color:singer.color};
+      });
+    });
+    const result={
+      songId:songId,title:String(song.Title||''),artist:String(song.Artist||''),
+      assignments:assignments,users:users,createdAt:new Date().toISOString()
+    };
+    const sheet=getLogSheet_(UNIVERSE_CONFIG.SHEETS.KARAOKE_RESULTS);
+    appendByHeaders_(sheet,{
+      ShuffleID:Utilities.getUuid(),RoomID:roomId,SongID:songId,CreatedAt:new Date(),
+      CreatedByUserID:uid,ResultJSON:JSON.stringify(result)
+    });
+    return result;
   });
-  const result={
-    songId:songId,title:String(song.Title||''),artist:String(song.Artist||''),
-    assignments:assignments,users:users,createdAt:new Date().toISOString()
-  };
-  const sheet=getLogSheet_(UNIVERSE_CONFIG.SHEETS.KARAOKE_RESULTS);
-  appendByHeaders_(sheet,{
-    ShuffleID:Utilities.getUuid(),RoomID:roomId,SongID:songId,CreatedAt:new Date(),
-    CreatedByUserID:uid,ResultJSON:JSON.stringify(result)
-  });
-  return result;
 }
-
 
 function saveKaraokeAssignment(payload) {
   payload=payload||{};
-  cleanupExpiredKaraoke_();
   const uid=validateKaraokeUser_(payload.userId);
   const roomId=String(payload.roomId||getKaraokeRoomProperty_(uid)||'').trim();
-  if (!findActiveKaraokeRoom_(roomId)) throw new Error('ルームの有効期限が切れています。');
   const songId=asId_(payload.songId);
-  const song=readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.SONGS).find(function(row){return asId_(row.SongID)===songId;});
-  if (!song) throw new Error('曲が見つかりません。');
+  return withKaraokeLock_(function() {
+    cleanupExpiredKaraokeUnsafe_();
+    if (!findActiveKaraokeRoom_(roomId)) throw new Error('ルームの有効期限が切れています。');
+    const song=readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.SONGS).find(function(row){return asId_(row.SongID)===songId;});
+    if (!song) throw new Error('曲が見つかりません。');
 
-  const parts=readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.LYRICS_PARTS).filter(function(row){return asId_(row.SongID)===songId;});
-  const allowed={};
-  parts.forEach(function(part){
-    String(part.Singer||'').split(',').forEach(function(token){
-      const key=token.trim().replace(/_(up|down|sub)$/i,'');
-      if(key&&key!=='99')allowed[key]=true;
+    const parts=readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.LYRICS_PARTS).filter(function(row){return asId_(row.SongID)===songId;});
+    const allowed={};
+    parts.forEach(function(part){
+      String(part.Singer||'').split(',').forEach(function(token){
+        const key=token.trim().replace(/_(up|down|sub)$/i,'');
+        if(key&&key!=='99')allowed[key]=true;
+      });
     });
-  });
 
-  const submitted=payload.assignments&&typeof payload.assignments==='object'?payload.assignments:{};
-  const assignments={};
-  const assigned={};
-  getKaraokeUsers_().forEach(function(user){
-    const slots=Array.isArray(submitted[user.userId])?submitted[user.userId]:[];
-    assignments[user.userId]=slots.map(function(slot){
-      const memberId=String(slot&&slot.memberId||'').trim();
-      if(!allowed[memberId]||assigned[memberId])throw new Error('振り分け内容が正しくありません。');
-      assigned[memberId]=true;
-      const name=String(slot&&slot.name||memberId).slice(0,80);
-      const color=/^#[0-9a-f]{6}$/i.test(String(slot&&slot.color||''))?String(slot.color):'#777777';
-      return {memberId:memberId,name:name,color:color};
+    const submitted=payload.assignments&&typeof payload.assignments==='object'?payload.assignments:{};
+    const assignments={};
+    const assigned={};
+    getKaraokeUsers_().forEach(function(user){
+      const slots=Array.isArray(submitted[user.userId])?submitted[user.userId]:[];
+      assignments[user.userId]=slots.map(function(slot){
+        const memberId=String(slot&&slot.memberId||'').trim();
+        if(!allowed[memberId]||assigned[memberId])throw new Error('振り分け内容が正しくありません。');
+        assigned[memberId]=true;
+        const name=String(slot&&slot.name||memberId).slice(0,80);
+        const color=/^#[0-9a-f]{6}$/i.test(String(slot&&slot.color||''))?String(slot.color):'#777777';
+        return {memberId:memberId,name:name,color:color};
+      });
     });
-  });
-  const allowedIds=Object.keys(allowed);
-  if(!allowedIds.length||allowedIds.some(function(id){return !assigned[id];})||Object.keys(assigned).length!==allowedIds.length){
-    throw new Error('未設定の歌唱者があります。');
-  }
+    const allowedIds=Object.keys(allowed);
+    if(!allowedIds.length||allowedIds.some(function(id){return !assigned[id];})||Object.keys(assigned).length!==allowedIds.length){
+      throw new Error('未設定の歌唱者があります。');
+    }
 
-  const result={
-    songId:songId,title:String(song.Title||''),artist:String(song.Artist||''),
-    assignments:assignments,users:getKaraokeUsers_(),createdAt:new Date().toISOString()
-  };
-  const sheet=getLogSheet_(UNIVERSE_CONFIG.SHEETS.KARAOKE_RESULTS);
-  appendByHeaders_(sheet,{
-    ShuffleID:Utilities.getUuid(),RoomID:roomId,SongID:songId,CreatedAt:new Date(),
-    CreatedByUserID:uid,ResultJSON:JSON.stringify(result)
+    const result={
+      songId:songId,title:String(song.Title||''),artist:String(song.Artist||''),
+      assignments:assignments,users:getKaraokeUsers_(),createdAt:new Date().toISOString()
+    };
+    const sheet=getLogSheet_(UNIVERSE_CONFIG.SHEETS.KARAOKE_RESULTS);
+    appendByHeaders_(sheet,{
+      ShuffleID:Utilities.getUuid(),RoomID:roomId,SongID:songId,CreatedAt:new Date(),
+      CreatedByUserID:uid,ResultJSON:JSON.stringify(result)
+    });
+    return result;
   });
-  return result;
 }
 
 function getKaraokeHistory(roomId) { return getKaraokeHistory_(String(roomId||'').trim()); }
@@ -177,6 +181,18 @@ function getKaraokeCumulativeCounts_(roomId,users) {
   return counts;
 }
 
+function orderKaraokeUsersByFairness_(users,cumulative) {
+  const groups={};
+  users.forEach(function(user){
+    const count=Number(cumulative[user.userId]||0);
+    if(!groups[count])groups[count]=[];
+    groups[count].push(user);
+  });
+  return Object.keys(groups).map(Number).sort(function(a,b){return a-b;}).reduce(function(out,count){
+    return out.concat(shuffleArray_(groups[count].slice()));
+  },[]);
+}
+
 function getKaraokeHistory_(roomId) {
   const sheet=getLogSheet_(UNIVERSE_CONFIG.SHEETS.KARAOKE_RESULTS);
   return readSheetObjects_(sheet).filter(function(row){return String(row.RoomID).padStart(4,'0')===roomId;})
@@ -194,6 +210,10 @@ function findActiveKaraokeRoom_(roomId) {
 }
 
 function cleanupExpiredKaraoke_() {
+  return withKaraokeLock_(cleanupExpiredKaraokeUnsafe_);
+}
+
+function cleanupExpiredKaraokeUnsafe_() {
   const rooms=getLogSheet_(UNIVERSE_CONFIG.SHEETS.KARAOKE_ROOMS);
   const values=rooms.getDataRange().getValues(); if(values.length<2)return;
   const headers=values[0].map(String); const idCol=headers.indexOf('RoomID'),expCol=headers.indexOf('ExpiresAt');
@@ -202,6 +222,13 @@ function cleanupExpiredKaraoke_() {
   const results=getLogSheet_(UNIVERSE_CONFIG.SHEETS.KARAOKE_RESULTS);
   const rv=results.getDataRange().getValues(); if(rv.length>1){const rh=rv[0].map(String),roomCol=rh.indexOf('RoomID');for(let i=rv.length-1;i>=1;i--){if(expired[String(rv[i][roomCol]).padStart(4,'0')])results.deleteRow(i+1);}}
   for(let i=values.length-1;i>=1;i--){if(expired[String(values[i][idCol]).padStart(4,'0')])rooms.deleteRow(i+1);}
+}
+
+function withKaraokeLock_(callback) {
+  const lock=LockService.getScriptLock();
+  lock.waitLock(20000);
+  try{return callback();}
+  finally{lock.releaseLock();}
 }
 
 function validateKaraokeUser_(userId){const id=asId_(userId);if(KARAOKE_USERS_.indexOf(id)<0)throw new Error('利用ユーザーを選択してください。');return id;}
