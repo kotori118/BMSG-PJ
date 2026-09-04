@@ -18,70 +18,9 @@
 
     function showLoadingState() {
       closeStateCheck();
-      stateContent.innerHTML = `
-        <div class="loading-space">
-          <svg
-            class="loading-svg"
-            viewBox="0 0 220 220"
-            role="img"
-            aria-label="Loading Universe"
-          >
-            <defs>
-              <path
-                id="loadingStarMotionPath"
-                d="M110 34 L128 86 L182 86 L138 118 L155 171 L110 139 L65 171 L82 118 L38 86 L92 86 Z"
-              ></path>
-            </defs>
-
-            <!-- star outline -->
-            <path class="loading-star-segment" d="M110 34 L128 86"></path>
-            <path class="loading-star-segment" d="M128 86 L182 86"></path>
-            <path class="loading-star-segment" d="M182 86 L138 118"></path>
-            <path class="loading-star-segment" d="M138 118 L155 171"></path>
-            <path class="loading-star-segment thick" d="M155 171 L110 139"></path>
-            <path class="loading-star-segment thick" d="M110 139 L65 171"></path>
-            <path class="loading-star-segment" d="M65 171 L82 118"></path>
-            <path class="loading-star-segment" d="M82 118 L38 86"></path>
-            <path class="loading-star-segment" d="M38 86 L92 86"></path>
-            <path class="loading-star-segment" d="M92 86 L110 34"></path>
-
-            <!-- moving light bar -->
-            <g>
-              <g>
-                <rect
-                  class="loading-light-bar"
-                  x="-10"
-                  y="-2.1"
-                  width="20"
-                  height="4.2"
-                  rx="2.1"
-                ></rect>
-                <rect
-                  class="loading-light-core"
-                  x="-4.8"
-                  y="-1.05"
-                  width="9.6"
-                  height="2.1"
-                  rx="1.05"
-                ></rect>
-
-                <animateMotion
-                  dur="2.1s"
-                  repeatCount="indefinite"
-                  rotate="auto"
-                  keyPoints="0;1"
-                  keyTimes="0;1"
-                  calcMode="linear"
-                >
-                  <mpath href="#loadingStarMotionPath"></mpath>
-                </animateMotion>
-              </g>
-            </g>
-          </svg>
-
-          <div class="loading-label">LOADING UNIVERSE</div>
-        </div>
-      `;
+      stateContent.innerHTML = typeof renderUniverseLoading === 'function'
+        ? `<div class="loading-space">${renderUniverseLoading('LOADING UNIVERSE', '#9cecff')}</div>`
+        : '<div class="loading-space"></div>';
       stateOverlay.classList.add('open');
       document.body.style.overflow = 'hidden';
     }
