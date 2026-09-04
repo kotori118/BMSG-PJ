@@ -9,8 +9,8 @@
       <p class="lyrics-label">EDIT PART</p><h2>歌詞を編集</h2>
       <label>歌唱者<input id="lyricsSingerInput" type="text"></label>
       <label>歌詞<textarea id="lyricsTextInput" rows="6"></textarea></label>
-      <div id="lyricsPreview" class="lyrics-preview"></div>
-      <div class="lyrics-editor-actions"><button type="button" onclick="previewLyricsEdit()">プレビュー</button><button id="lyricsSaveButton" type="button" onclick="saveLyricsEdit()" disabled>保存</button></div>
+      <div id="lyricsPreview" hidden></div>
+      <div class="lyrics-editor-actions"><button id="lyricsSaveButton" type="button" onclick="saveLyricsEdit()">保存</button></div>
     </section>
   </div>
 </template>
