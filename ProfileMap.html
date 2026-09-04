@@ -82,7 +82,7 @@
   function renderProfileMapLoading() {
     const panel = document.getElementById('profilePanel');
     if (!panel || profileCurrentView !== 'map') return;
-    panel.innerHTML = `<div class="profile-map-head"><div><p class="profile-panel-eyebrow">RELATION MAP</p><h2 class="profile-map-title">MAP</h2></div></div><div class="profile-map-loading" aria-live="polite"><span class="profile-map-spinner"></span><span>LOADING MAP...</span></div>`;
+    panel.innerHTML = `<div class="profile-map-head"><div><p class="profile-panel-eyebrow">RELATION MAP</p><h2 class="profile-map-title">MAP</h2></div></div><div class="profile-map-loading">${renderUniverseLoading('LOADING MAP...', '#9cecff')}</div>`;
   }
 
   function renderProfileMap() {
@@ -136,10 +136,7 @@
   .profile-map-avatar { width: 50px; height: 50px; overflow: hidden; border-radius: 50%; display: grid; place-items: center; color: var(--member-accent); background: color-mix(in srgb, var(--member-accent) 12%, #07101a); font: 600 11px Orbitron, sans-serif; }
   .profile-map-avatar img { width: 100%; height: 100%; object-fit: cover; object-position: center top; display: block; }
   .profile-map-member-name { font: 600 15px "Exo 2", "Zen Kaku Gothic New", sans-serif; }
-  .profile-map-loading { min-height: 220px; display: flex; align-items: center; justify-content: center; gap: 12px; color: rgba(255,255,255,.60); font: 600 10px "Exo 2", sans-serif; letter-spacing: .12em; }
-  .profile-map-spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,.16); border-top-color: var(--cyan); border-radius: 50%; animation: profileMapSpin .8s linear infinite; }
+  .profile-map-loading { min-height: 220px; display: flex; align-items: center; justify-content: center; }
   .profile-map-empty { min-height: 160px; display: grid; place-items: center; color: rgba(232,242,247,.45); font-size: 12px; }
-  @keyframes profileMapSpin { to { transform: rotate(360deg); } }
   @media (max-width: 560px) { .profile-map-head { align-items: stretch; flex-direction: column; } .profile-map-select-label { width: 100%; } .profile-map-group { padding: 22px 20px; } }
-  @media (prefers-reduced-motion: reduce) { .profile-map-spinner { animation: none; } }
 </style>
