@@ -1,0 +1,97 @@
+<style>
+  :root{--u-loading-accent:var(--cyan)}
+
+  .universe-loading,
+  .profile-detail-loading,
+  .profile-map-loading,
+  .profile-search-loading,
+  .karaoke-loading,
+  .lyrics-loading{
+    --loading-accent:var(--u-loading-accent);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:12px;
+    color:rgba(232,242,247,.62);
+    font:600 10px "Exo 2",Roboto,sans-serif;
+    letter-spacing:.12em;
+  }
+
+  body.theme-light :is(.universe-loading,.karaoke-loading,.lyrics-loading){
+    color:rgba(21,24,32,.46);
+  }
+
+  .universe-spinner,
+  .profile-detail-spinner,
+  .profile-map-spinner,
+  .profile-search-spinner,
+  .karaoke-loading::before,
+  .lyrics-loading::before{
+    box-sizing:border-box;
+    width:18px;
+    height:18px;
+    flex:0 0 auto;
+    border:2px solid color-mix(in srgb,var(--loading-accent) 18%,transparent);
+    border-top-color:var(--loading-accent);
+    border-radius:50%;
+    animation:universeSpinner .8s linear infinite;
+    box-shadow:0 0 12px color-mix(in srgb,var(--loading-accent) 12%,transparent);
+  }
+
+  .karaoke-loading::before,
+  .lyrics-loading::before{content:""}
+
+  .profile-member-detail{
+    --loading-accent:var(--member-accent,var(--cyan));
+  }
+  .profile-map-loading,
+  .profile-search-loading,
+  .karaoke-loading,
+  .lyrics-loading,
+  .universe-loading{
+    --loading-accent:var(--u-loading-accent);
+  }
+
+  .loading-space{
+    display:grid;
+    place-items:center;
+    gap:14px;
+    min-height:220px;
+  }
+  .loading-space .loading-svg{display:none!important}
+  .loading-space .loading-label{display:none!important}
+  .loading-space::before{
+    content:"";
+    box-sizing:border-box;
+    width:22px;
+    height:22px;
+    border:2px solid color-mix(in srgb,var(--u-loading-accent) 18%,transparent);
+    border-top-color:var(--u-loading-accent);
+    border-radius:50%;
+    animation:universeSpinner .8s linear infinite;
+    box-shadow:0 0 14px color-mix(in srgb,var(--u-loading-accent) 14%,transparent);
+  }
+  .loading-space::after{
+    content:"LOADING UNIVERSE";
+    color:rgba(232,242,247,.58);
+    font:600 10px "Exo 2",Roboto,sans-serif;
+    letter-spacing:.13em;
+  }
+  body.theme-light .loading-space::after{color:rgba(21,24,32,.46)}
+
+  @keyframes universeSpinner{to{transform:rotate(360deg)}}
+  @media(prefers-reduced-motion:reduce){
+    .universe-spinner,.profile-detail-spinner,.profile-map-spinner,.profile-search-spinner,.karaoke-loading::before,.lyrics-loading::before,.loading-space::before{animation:none}
+  }
+</style>
+<script>
+  function normalizeUniverseLoadingAccent(value){
+    const color=String(value||'').trim();
+    return /^#[0-9a-f]{6}$/i.test(color)?color:'#9cecff';
+  }
+  function renderUniverseLoading(label,accent){
+    const safeLabel=typeof escapeHtml==='function'?escapeHtml(label||'LOADING...'):String(label||'LOADING...');
+    const safeAccent=normalizeUniverseLoadingAccent(accent);
+    return '<div class="universe-loading" style="--loading-accent:'+safeAccent+'"><span class="universe-spinner" aria-hidden="true"></span><span>'+safeLabel+'</span></div>';
+  }
+</script>
