@@ -14,7 +14,7 @@
     else{pageContent.innerHTML=renderPlaceholder(route);}
     document.title=meta.title+' | BMSG UNIVERSE'; scrollAppToTop('smooth');
   }
-  function navigateTo(route){if(!ROUTES[route]){renderRoute(route);return;}google.script.history.push({page:route},{page:route},'');renderRoute(route);}
+  function navigateTo(route){if(route==='home'&&(currentRoute==='lyrics'||currentRoute==='karaoke')&&!window.confirm('この画面を離れてHOMEへ戻りますか？'))return;if(!ROUTES[route]){renderRoute(route);return;}google.script.history.push({page:route},{page:route},'');renderRoute(route);}
   function initRouter(){google.script.history.setChangeHandler(function(event){const page=event&&event.location&&event.location.parameter&&event.location.parameter.page?event.location.parameter.page:'home';renderRoute(page,event.location.parameter||{});});google.script.url.getLocation(function(location){const page=location&&location.parameter&&location.parameter.page?location.parameter.page:'home';if(!location.parameter||!location.parameter.page){google.script.history.replace({page:'home'},{page:'home'},'');}renderRoute(page,location.parameter||{});});}
   initRouter();
 </script>
