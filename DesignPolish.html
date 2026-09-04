@@ -320,7 +320,90 @@
     }
   }
 
+  /* =========================================================
+     2026-09-04 refinement — HOME texture + Room rhythm
+     ========================================================= */
+  body.theme-light .utility-actions .utility-btn{
+    border-color:rgba(75,165,184,.34);
+    color:var(--ink);
+    background:linear-gradient(145deg,#fff,rgba(156,236,255,.34));
+    box-shadow:0 7px 20px rgba(75,165,184,.10),inset 0 1px 0 rgba(255,255,255,.86);
+  }
+
+  body.theme-light .lyrics-room-card.is-active .lyrics-room-primary,
+  body.theme-light .lyrics-room-card.is-active .lyrics-room-subactions button{
+    min-height:50px;
+    border:1px solid rgba(75,165,184,.28);
+    border-radius:15px;
+    color:var(--ink);
+    background:linear-gradient(145deg,#fff,rgba(156,236,255,.18));
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.86);
+  }
+  body.theme-light .lyrics-room-card.is-active .lyrics-room-primary{
+    width:100%;
+    padding:0 44px 0 18px;
+  }
+  body.theme-light .lyrics-room-card.is-active .lyrics-room-subactions{
+    gap:10px;
+    margin-top:10px;
+  }
+  body.theme-light .lyrics-room-card.is-active .lyrics-room-subactions button{
+    margin:0;
+  }
+
+  /* =========================================================
+     Shared State System v1 — Loading is intentionally excluded.
+     Loading visual will be redesigned separately after approval.
+     ========================================================= */
+  :root{
+    --u-state-radius:18px;
+    --u-state-line-dark:rgba(194,232,244,.12);
+    --u-state-line-light:rgba(75,165,184,.18);
+    --u-state-light-bg:linear-gradient(145deg,#fff,rgba(156,236,255,.055));
+  }
+
+  :is(.state-card,.profile-members-state,.karaoke-history-empty,.lyrics-empty){
+    border-radius:var(--u-state-radius);
+  }
+
+  body.theme-light :is(.state-card,.profile-members-state,.karaoke-history-empty,.lyrics-empty){
+    border-color:var(--u-state-line-light);
+    color:rgba(21,24,32,.50);
+    background:var(--u-state-light-bg);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.84);
+  }
+
+  :is(.skeleton-block,.profile-member-skeleton){
+    position:relative;
+    overflow:hidden;
+  }
+  :is(.skeleton-block,.profile-member-skeleton)::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    transform:translateX(-110%);
+    background:linear-gradient(90deg,transparent,rgba(156,236,255,.10),transparent);
+    animation:skeleton-scan 1.3s ease-in-out infinite;
+  }
+  body.theme-light :is(.skeleton-block,.profile-member-skeleton){
+    background:rgba(47,115,130,.07);
+  }
+
+  .universe-toast{
+    border:1px solid rgba(156,236,255,.22);
+    border-radius:16px;
+    background:linear-gradient(145deg,rgba(10,16,26,.96),rgba(5,10,18,.98));
+    box-shadow:0 18px 46px rgba(0,0,0,.20),inset 0 1px 0 rgba(255,255,255,.04);
+  }
+  body.theme-light .universe-toast{
+    border-color:rgba(75,165,184,.24);
+    color:var(--ink);
+    background:linear-gradient(145deg,#fff,rgba(156,236,255,.13));
+    box-shadow:0 16px 36px rgba(21,24,32,.12),inset 0 1px 0 rgba(255,255,255,.86);
+  }
+
   @media(prefers-reduced-motion:reduce){
     :is(.u-btn,.profile-universe-home,.profile-detail-back,.profile-retry-button,.lyrics-list-back,.lyrics-karaoke-icon,.lyrics-editor-actions button,.lyrics-room-join button,.lyrics-room-subactions button,.karaoke-primary,.karaoke-secondary,.karaoke-join button,.karaoke-actions button,.karaoke-back-link,.karaoke-top-back,.karaoke-history-heading button,.karaoke-song-footer button,.lyrics-group-card,.lyrics-song-card,.lyrics-gacha-card,.karaoke-groups button,.karaoke-song-list button,.karaoke-history-list button){transition:none}
+    :is(.skeleton-block,.profile-member-skeleton)::after{animation:none;display:none}
   }
 </style>
