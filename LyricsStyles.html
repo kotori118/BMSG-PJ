@@ -1,7 +1,7 @@
 <style>
   .lyrics-page{
     box-sizing:border-box;min-height:100%;padding:82px 0 72px;color:var(--ink);
-    background:var(--star-off-white);font-family:Roboto,"Zen Kaku Gothic New",sans-serif;
+    background:#fff;font-family:Roboto,"Zen Kaku Gothic New",sans-serif;
   }
   .lyrics-page-head,.lyrics-view{width:min(100%,820px);margin-inline:auto}
   .lyrics-page-head{margin-bottom:28px}
@@ -14,7 +14,7 @@
   .lyrics-groups,.lyrics-song-list{display:grid;gap:12px}
   .lyrics-group-card,.lyrics-song-card,.lyrics-gacha-card{
     box-sizing:border-box;width:100%;border:1px solid rgba(21,24,32,.12);border-radius:20px;
-    color:var(--ink);background:#fff;box-shadow:0 10px 26px rgba(8,14,22,.045);cursor:pointer
+    color:var(--ink);background:#fff;box-shadow:none;cursor:pointer;-webkit-tap-highlight-color:transparent
   }
   .lyrics-group-card{min-height:92px;padding:20px;text-align:left}
   .lyrics-group-card strong,.lyrics-gacha-card strong{display:block;font:600 21px Orbitron,"Zen Kaku Gothic New",sans-serif;letter-spacing:.01em}
@@ -45,7 +45,7 @@
   .lyrics-song-title h2{margin:0;color:var(--ink);font:600 clamp(25px,5.5vw,34px)/1.2 Orbitron,"Zen Kaku Gothic New",sans-serif}
   .lyrics-list-back{
     width:auto;min-height:46px;margin:0 0 36px;padding:0 17px;border:1px solid rgba(21,24,32,.13);
-    border-radius:14px;color:var(--ink);background:var(--star-off-white);font:700 13px "Zen Kaku Gothic New",sans-serif;cursor:pointer
+    border-radius:14px;color:var(--ink);background:#fff;font:600 12px "Zen Kaku Gothic New",sans-serif;cursor:pointer
   }
   .lyrics-parts{display:block;width:100%;background:#fff}
   .lyrics-part{
@@ -100,4 +100,10 @@
     .lyrics-part{margin-bottom:28px}
     .lyrics-part p{font-size:17px;line-height:1.85}
   }
+
+  body.theme-light .app-shell,body.theme-light .page-wrap,body.theme-light .page-content{background:#fff}
+  body.theme-light .lyrics-page button{-webkit-tap-highlight-color:transparent;transition:none}
+  body.theme-light .lyrics-page button:focus{outline:none}
+  body.theme-light .lyrics-page button:focus-visible{outline:1px solid rgba(21,24,32,.28);outline-offset:2px}
+  body.theme-light .lyrics-page button:active{filter:none;box-shadow:none;background-color:#f7f8f8}
 </style>
