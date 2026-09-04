@@ -5,6 +5,10 @@
      ========================================================= */
   :root{
     --cyan-ink:#2f7382;
+    --u-btn-radius:18px;
+    --u-btn-line:rgba(156,236,255,.24);
+    --u-btn-light-line:rgba(75,165,184,.24);
+    --u-btn-light-bg:linear-gradient(145deg,#fff,rgba(156,236,255,.07));
   }
 
   /* Top utility Search / Settings buttons */
@@ -166,5 +170,157 @@
   }
   body.theme-light .lyrics-room-card.is-active .lyrics-room-primary:not(:disabled):active{
     background:rgba(156,236,255,.20);
+  }
+
+  /* =========================================================
+     Shared Button Component v1 — HOME design language
+     HOME is the visual source of truth. Existing DOM and click
+     handlers stay intact; legacy service classes are mapped here.
+     ========================================================= */
+  :is(
+    .u-btn,
+    .profile-universe-home,
+    .profile-detail-back,
+    .profile-retry-button,
+    .lyrics-list-back,
+    .lyrics-karaoke-icon,
+    .lyrics-editor-actions button,
+    .lyrics-room-join button,
+    .lyrics-room-subactions button,
+    .karaoke-primary,
+    .karaoke-secondary,
+    .karaoke-join button,
+    .karaoke-actions button,
+    .karaoke-back-link,
+    .karaoke-top-back,
+    .karaoke-history-heading button,
+    .karaoke-song-footer button
+  ){
+    border:1px solid var(--dark-line);
+    border-radius:var(--u-btn-radius);
+    color:var(--white);
+    background:linear-gradient(145deg,rgba(255,255,255,.052),rgba(255,255,255,.022));
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.035);
+    cursor:pointer;
+    transform:translateZ(0);
+    transition:border-color var(--fast) var(--ease),background var(--fast) var(--ease),color var(--fast) var(--ease),transform var(--fast) var(--ease),box-shadow var(--fast) var(--ease);
+  }
+
+  :is(
+    .u-btn,
+    .profile-universe-home,
+    .profile-detail-back,
+    .profile-retry-button,
+    .lyrics-list-back,
+    .lyrics-karaoke-icon,
+    .lyrics-editor-actions button,
+    .lyrics-room-join button,
+    .lyrics-room-subactions button,
+    .karaoke-primary,
+    .karaoke-secondary,
+    .karaoke-join button,
+    .karaoke-actions button,
+    .karaoke-back-link,
+    .karaoke-top-back,
+    .karaoke-history-heading button,
+    .karaoke-song-footer button
+  ):active{transform:scale(.985)}
+
+  @media(hover:hover){
+    :is(
+      .u-btn,
+      .profile-universe-home,
+      .profile-detail-back,
+      .profile-retry-button,
+      .lyrics-list-back,
+      .lyrics-karaoke-icon,
+      .lyrics-editor-actions button,
+      .lyrics-room-join button,
+      .lyrics-room-subactions button,
+      .karaoke-primary,
+      .karaoke-secondary,
+      .karaoke-join button,
+      .karaoke-actions button,
+      .karaoke-back-link,
+      .karaoke-top-back,
+      .karaoke-history-heading button,
+      .karaoke-song-footer button
+    ):hover{
+      border-color:var(--dark-line-strong);
+      background:linear-gradient(145deg,rgba(255,255,255,.066),rgba(255,255,255,.027));
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+    }
+  }
+
+  body.theme-light :is(
+    .u-btn,
+    .lyrics-list-back,
+    .lyrics-karaoke-icon,
+    .lyrics-editor-actions button,
+    .lyrics-room-join button,
+    .lyrics-room-subactions button,
+    .karaoke-primary,
+    .karaoke-secondary,
+    .karaoke-join button,
+    .karaoke-actions button,
+    .karaoke-back-link,
+    .karaoke-top-back,
+    .karaoke-history-heading button,
+    .karaoke-song-footer button
+  ){
+    border-color:var(--u-btn-light-line);
+    color:var(--ink);
+    background:var(--u-btn-light-bg);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.75);
+  }
+
+  body.theme-light :is(
+    .lyrics-editor-actions button:last-child,
+    .karaoke-primary,
+    .karaoke-start,
+    .lyrics-karaoke-icon
+  ){
+    border-color:rgba(75,165,184,.38)!important;
+    color:var(--ink)!important;
+    background:linear-gradient(145deg,rgba(156,236,255,.28),rgba(156,236,255,.08))!important;
+  }
+
+  body.theme-light :is(
+    .lyrics-group-card,
+    .lyrics-song-card,
+    .lyrics-gacha-card,
+    .karaoke-groups button,
+    .karaoke-song-list button,
+    .karaoke-history-list button
+  ){
+    border-color:rgba(21,24,32,.12);
+    background:linear-gradient(145deg,#fff,rgba(156,236,255,.025));
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.82);
+    transition:border-color var(--fast) var(--ease),background var(--fast) var(--ease),transform var(--fast) var(--ease),box-shadow var(--fast) var(--ease);
+  }
+  body.theme-light :is(
+    .lyrics-group-card,
+    .lyrics-song-card,
+    .lyrics-gacha-card,
+    .karaoke-groups button,
+    .karaoke-song-list button,
+    .karaoke-history-list button
+  ):active{transform:scale(.985)}
+  @media(hover:hover){
+    body.theme-light :is(
+      .lyrics-group-card,
+      .lyrics-song-card,
+      .lyrics-gacha-card,
+      .karaoke-groups button,
+      .karaoke-song-list button,
+      .karaoke-history-list button
+    ):hover{
+      border-color:rgba(75,165,184,.30);
+      background:linear-gradient(145deg,#fff,rgba(156,236,255,.07));
+    }
+  }
+
+  @media(prefers-reduced-motion:reduce){
+    :is(.u-btn,.profile-universe-home,.profile-detail-back,.profile-retry-button,.lyrics-list-back,.lyrics-karaoke-icon,.lyrics-editor-actions button,.lyrics-room-join button,.lyrics-room-subactions button,.karaoke-primary,.karaoke-secondary,.karaoke-join button,.karaoke-actions button,.karaoke-back-link,.karaoke-top-back,.karaoke-history-heading button,.karaoke-song-footer button,.lyrics-group-card,.lyrics-song-card,.lyrics-gacha-card,.karaoke-groups button,.karaoke-song-list button,.karaoke-history-list button){transition:none}
   }
 </style>
