@@ -97,6 +97,57 @@ function shuffleKaraokeSong(payload) {
   return result;
 }
 
+
+function saveKaraokeAssignment(payload) {
+  payload=payload||{};
+  cleanupExpiredKaraoke_();
+  const uid=validateKaraokeUser_(payload.userId);
+  const roomId=String(payload.roomId||getKaraokeRoomProperty_(uid)||'').trim();
+  if (!findActiveKaraokeRoom_(roomId)) throw new Error('ルームの有効期限が切れています。');
+  const songId=asId_(payload.songId);
+  const song=readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.SONGS).find(function(row){return asId_(row.SongID)===songId;});
+  if (!song) throw new Error('曲が見つかりません。');
+
+  const parts=readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.LYRICS_PARTS).filter(function(row){return asId_(row.SongID)===songId;});
+  const allowed={};
+  parts.forEach(function(part){
+    String(part.Singer||'').split(',').forEach(function(token){
+      const key=token.trim().replace(/_(up|down|sub)$/i,'');
+      if(key)allowed[key]=true;
+    });
+  });
+
+  const submitted=payload.assignments&&typeof payload.assignments==='object'?payload.assignments:{};
+  const assignments={};
+  const assigned={};
+  getKaraokeUsers_().forEach(function(user){
+    const slots=Array.isArray(submitted[user.userId])?submitted[user.userId]:[];
+    assignments[user.userId]=slots.map(function(slot){
+      const memberId=String(slot&&slot.memberId||'').trim();
+      if(!allowed[memberId]||assigned[memberId])throw new Error('振り分け内容が正しくありません。');
+      assigned[memberId]=true;
+      const name=String(slot&&slot.name||memberId).slice(0,80);
+      const color=/^#[0-9a-f]{6}$/i.test(String(slot&&slot.color||''))?String(slot.color):'#777777';
+      return {memberId:memberId,name:name,color:color};
+    });
+  });
+  const allowedIds=Object.keys(allowed);
+  if(!allowedIds.length||allowedIds.some(function(id){return !assigned[id];})||Object.keys(assigned).length!==allowedIds.length){
+    throw new Error('未設定の歌唱者があります。');
+  }
+
+  const result={
+    songId:songId,title:String(song.Title||''),artist:String(song.Artist||''),
+    assignments:assignments,users:getKaraokeUsers_(),createdAt:new Date().toISOString()
+  };
+  const sheet=getLogSheet_(UNIVERSE_CONFIG.SHEETS.KARAOKE_RESULTS);
+  appendByHeaders_(sheet,{
+    ShuffleID:Utilities.getUuid(),RoomID:roomId,SongID:songId,CreatedAt:new Date(),
+    CreatedByUserID:uid,ResultJSON:JSON.stringify(result)
+  });
+  return result;
+}
+
 function getKaraokeHistory(roomId) { return getKaraokeHistory_(String(roomId||'').trim()); }
 
 function getKaraokeUsers_() {
