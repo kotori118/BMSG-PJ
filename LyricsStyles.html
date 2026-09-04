@@ -1,7 +1,7 @@
 <style>
   .lyrics-page{
     box-sizing:border-box;min-height:100%;padding:82px 0 72px;color:var(--ink);
-    background:var(--star-off-white);font-family:Roboto,"Zen Kaku Gothic New",sans-serif;
+    background:#fff;font-family:Roboto,"Zen Kaku Gothic New",sans-serif;
   }
   .lyrics-page-head,.lyrics-view{width:min(100%,820px);margin-inline:auto}
   .lyrics-page-head{margin-bottom:28px}
@@ -38,9 +38,9 @@
   .lyrics-song-card span{color:rgba(21,24,32,.48);font-size:11px}
   .lyrics-song-card b{position:absolute;right:18px;top:50%;transform:translateY(-50%);color:rgba(21,24,32,.3);font-size:24px}
 
-  .lyrics-page:has(.lyrics-song-title){padding-top:82px;background:var(--star-off-white)}
+  .lyrics-page:has(.lyrics-song-title){padding-top:82px;background:#fff}
   .lyrics-page:has(.lyrics-song-title) .lyrics-page-head{display:none}
-  .lyrics-view:has(.lyrics-song-title){box-sizing:border-box;padding:0 4px;background:var(--star-off-white)}
+  .lyrics-view:has(.lyrics-song-title){box-sizing:border-box;padding:0 4px;background:#fff}
   .lyrics-song-title{padding:0 0 18px;margin:0 0 18px;text-align:center;border-bottom:1px solid rgba(21,24,32,.65)}
   .lyrics-song-title h2{margin:0;color:var(--ink);font:600 clamp(25px,5.5vw,34px)/1.2 Orbitron,"Zen Kaku Gothic New",sans-serif}
   .lyrics-list-back{
@@ -101,7 +101,7 @@
     .lyrics-part p{font-size:17px;line-height:1.85}
   }
 
-  body.theme-light:has(.lyrics-page) .app-shell,body.theme-light:has(.lyrics-page) .page-wrap,body.theme-light:has(.lyrics-page) .page-content{background:var(--star-off-white)}
+  body.theme-light:has(.lyrics-page) .app-shell,body.theme-light:has(.lyrics-page) .page-wrap,body.theme-light:has(.lyrics-page) .page-content{background:#fff}
   body.theme-light .lyrics-page button{-webkit-tap-highlight-color:transparent;transition:none}
   body.theme-light .lyrics-page button:focus{outline:none}
   body.theme-light .lyrics-page button:focus-visible{outline:1px solid rgba(21,24,32,.28);outline-offset:2px}
@@ -151,4 +151,8 @@
   .lyrics-group-card.is-colored span{color:rgba(21,24,32,.42);opacity:1}
   .lyrics-group-card.is-colored:active{background:#f7f8f8}
   .lyrics-allstars-section h3.is-posse{-webkit-text-stroke:.7px #111;paint-order:stroke fill}
+
+  .lyrics-group-card.is-colored,.lyrics-group-card.is-colored strong{color:var(--ink)!important}
+  .lyrics-allstars-section h3,.lyrics-allstars-section h3.is-posse{color:var(--ink)!important;-webkit-text-stroke:0;paint-order:normal}
+  .lyrics-editor-actions button{color:var(--ink)}
 </style>
