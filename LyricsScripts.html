@@ -1,5 +1,5 @@
 <script>
-  const lyricsState={catalog:[],partsBySong:{},group:'',unit:'',query:'',song:null,editing:null,previewed:false,initialParams:{}};
+  const lyricsState={catalog:[],partsBySong:{},group:'',unit:'',query:'',song:null,editing:null,previewed:false,initialParams:{},karaokeRoom:null,karaokeHistory:[],karaokeRoomReady:false,karaokeBusy:false};
   const LYRICS_GROUPS=['BE:FIRST','MAZZEL','STARGLOW','HANA','BMSG ALLSTARS'];
   const LYRICS_UNITS=['ALL','BMSG ALLSTARS','ShowMinorSavage','BMSG POSSE','BMSG EAST','BMSG WEST','BMSG SKY','BMSG GAIA','BMSG MARINE','BMSG STRIKERS','その他UNIT'];
   function renderLyrics(){return document.getElementById('lyricsPageTemplate').innerHTML;}
@@ -20,6 +20,7 @@
   }
   function initLyricsPage(params){
     lyricsState.initialParams=params||{};
+    loadLyricsKaraokeRoom();
     try{const cached=sessionStorage.getItem('bmsgLyricsDataV3');if(cached){applyLyricsData(JSON.parse(cached));return;}}catch(error){}
     google.script.run.withSuccessHandler(function(data){try{sessionStorage.setItem('bmsgLyricsDataV3',JSON.stringify(data));}catch(error){}applyLyricsData(data);}).withFailureHandler(showLyricsError).getLyricsCatalog();
   }
@@ -31,7 +32,81 @@
   function lyricArg(value){return encodeURIComponent(String(value));}
   function unitSongs(unit){return lyricsState.catalog.filter(function(song){if(unit==='ALL')return song.category==='UNIT';return song.category==='UNIT'&&song.unitCategory===unit;});}
   function groupSongs(group){if(group==='BMSG ALLSTARS')return unitSongs('ALL');return lyricsState.catalog.filter(function(song){return song.category===group;});}
-  function showLyricsGroups(pushUrl){lyricsState.group='';lyricsState.unit='';lyricsState.song=null;if(pushUrl!==false)setLyricsUrl({});document.getElementById('lyricsView').innerHTML='<button class="lyrics-karaoke-entry" type="button" onclick="navigateTo(\'karaoke\')"><span class="lyrics-karaoke-copy"><strong>3人カラオケルーム</strong></span><span>ROOM</span></button><section class="lyrics-groups">'+LYRICS_GROUPS.map(function(group){return '<button class="lyrics-group-card" type="button" onclick="showLyricsGroup(\''+lyricArg(group)+'\')"><strong>'+escapeLyrics(group)+'</strong><span>'+groupSongs(group).length+' SONGS</span></button>';}).join('')+'</section><button class="lyrics-gacha-card" type="button" disabled><strong>SONG GACHA</strong><span>COMING NEXT</span></button>';scrollLyricsTop();}
+  function showLyricsGroups(pushUrl){lyricsState.group='';lyricsState.unit='';lyricsState.song=null;if(pushUrl!==false)setLyricsUrl({});document.getElementById('lyricsView').innerHTML='<div id="lyricsKaraokeRoom">'+renderLyricsKaraokeRoom()+'</div><section class="lyrics-groups">'+LYRICS_GROUPS.map(function(group){return '<button class="lyrics-group-card" type="button" onclick="showLyricsGroup(\''+lyricArg(group)+'\')"><strong>'+escapeLyrics(group)+'</strong><span>'+groupSongs(group).length+' SONGS</span></button>';}).join('')+'</section><button class="lyrics-gacha-card" type="button" disabled><strong>SONG GACHA</strong><span>COMING NEXT</span></button>';scrollLyricsTop();}
+
+  function renderLyricsKaraokeRoom(){
+    if(!lyricsState.karaokeRoomReady)return '<section class="lyrics-room-card is-loading"><p>KARAOKE ROOM</p><strong>ルーム情報を確認中</strong></section>';
+    if(!lyricsState.karaokeRoom){
+      return '<section class="lyrics-room-card"><p>KARAOKE ROOM</p><h2>3人カラオケルーム</h2><button class="lyrics-room-primary" type="button" onclick="createLyricsKaraokeRoom()">ルームを作る</button><div class="lyrics-room-join"><input id="lyricsRoomInput" inputmode="numeric" maxlength="4" placeholder="4桁のルームID"><button type="button" onclick="joinLyricsKaraokeRoom()">参加</button></div></section>';
+    }
+    const hasLatest=lyricsState.karaokeHistory.length>0;
+    return '<section class="lyrics-room-card is-active"><p>KARAOKE ROOM</p><h2>3人カラオケルーム</h2><div class="lyrics-room-id"><span>ROOM ID</span><strong>'+escapeLyrics(lyricsState.karaokeRoom.roomId)+'</strong></div><button class="lyrics-room-primary" type="button"'+(hasLatest?' onclick="openLatestLyricsKaraoke()"':' disabled')+'>'+(hasLatest?'最新結果を見る':'まだ結果がありません')+'</button><div class="lyrics-room-subactions"><button type="button" onclick="navigateTo(\'karaoke\')">履歴</button><button type="button" onclick="leaveLyricsKaraokeRoom()">退出する</button></div></section>';
+  }
+
+  function updateLyricsKaraokeRoom(){
+    const target=document.getElementById('lyricsKaraokeRoom');
+    if(target)target.innerHTML=renderLyricsKaraokeRoom();
+  }
+
+  function loadLyricsKaraokeRoom(){
+    lyricsState.karaokeRoomReady=false;
+    google.script.run.withSuccessHandler(function(data){
+      lyricsState.karaokeRoomReady=true;
+      lyricsState.karaokeRoom=data.room||null;
+      lyricsState.karaokeHistory=data.history||[];
+      updateLyricsKaraokeRoom();
+    }).withFailureHandler(function(error){
+      lyricsState.karaokeRoomReady=true;
+      lyricsState.karaokeRoom=null;
+      lyricsState.karaokeHistory=[];
+      updateLyricsKaraokeRoom();
+      showLyricsError(error);
+    }).getKaraokeBootstrap(getUniverseUserId());
+  }
+
+  function createLyricsKaraokeRoom(){
+    if(lyricsState.karaokeBusy)return;
+    lyricsState.karaokeBusy=true;
+    google.script.run.withSuccessHandler(function(room){
+      lyricsState.karaokeBusy=false;
+      lyricsState.karaokeRoom=room;
+      lyricsState.karaokeHistory=[];
+      updateLyricsKaraokeRoom();
+    }).withFailureHandler(function(error){lyricsState.karaokeBusy=false;showLyricsError(error);}).createKaraokeRoom(getUniverseUserId());
+  }
+
+  function joinLyricsKaraokeRoom(){
+    if(lyricsState.karaokeBusy)return;
+    const input=document.getElementById('lyricsRoomInput');
+    const roomId=input?input.value.trim():'';
+    if(!/^\d{4}$/.test(roomId)){showLyricsError('4桁のルームIDを入力してね。');return;}
+    lyricsState.karaokeBusy=true;
+    google.script.run.withSuccessHandler(function(data){
+      lyricsState.karaokeBusy=false;
+      lyricsState.karaokeRoom=data.room;
+      lyricsState.karaokeHistory=data.history||[];
+      updateLyricsKaraokeRoom();
+    }).withFailureHandler(function(error){lyricsState.karaokeBusy=false;showLyricsError(error);}).joinKaraokeRoom(getUniverseUserId(),roomId);
+  }
+
+  function leaveLyricsKaraokeRoom(){
+    if(lyricsState.karaokeBusy)return;
+    lyricsState.karaokeBusy=true;
+    google.script.run.withSuccessHandler(function(){
+      lyricsState.karaokeBusy=false;
+      lyricsState.karaokeRoom=null;
+      lyricsState.karaokeHistory=[];
+      updateLyricsKaraokeRoom();
+    }).withFailureHandler(function(error){lyricsState.karaokeBusy=false;showLyricsError(error);}).leaveKaraokeRoom(getUniverseUserId());
+  }
+
+  function openLatestLyricsKaraoke(){
+    if(!lyricsState.karaokeRoom||!lyricsState.karaokeHistory.length)return;
+    const params={page:'karaoke',mode:'latest',room:lyricsState.karaokeRoom.roomId};
+    google.script.history.push(params,params,'');
+    renderRoute('karaoke',params);
+  }
+
   function showLyricsGroup(encoded,pushUrl){const group=decodeURIComponent(encoded);lyricsState.group=group;lyricsState.unit='';lyricsState.query='';if(pushUrl!==false)setLyricsUrl({group:group});if(group==='BMSG ALLSTARS')renderLyricsUnits();else renderLyricsGroupSongs();scrollLyricsTop();}
   function renderLyricsUnits(){document.getElementById('lyricsView').innerHTML='<div class="lyrics-subhead"><button type="button" onclick="showLyricsGroups()">‹</button><div><p>LYRICS</p><h2>BMSG ALLSTARS</h2></div></div><section class="lyrics-groups lyrics-unit-groups">'+LYRICS_UNITS.map(function(unit){return '<button class="lyrics-group-card lyrics-unit-card" type="button" onclick="showLyricsUnit(\''+lyricArg(unit)+'\')"><strong>'+escapeLyrics(unit)+'</strong><span>'+unitSongs(unit).length+' SONGS</span></button>';}).join('')+'</section>';scrollLyricsTop();}
   function showLyricsUnit(encoded,pushUrl){lyricsState.unit=decodeURIComponent(encoded);lyricsState.query='';if(pushUrl!==false)setLyricsUrl({group:lyricsState.group,unit:lyricsState.unit});renderLyricsGroupSongs();scrollLyricsTop();}
