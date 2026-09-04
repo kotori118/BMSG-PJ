@@ -168,7 +168,7 @@
       const items=part.singers&&part.singers.length?part.singers:[{raw:part.singer,name:part.singer,color:'#777777'}];
       items.forEach(function(item){
         const key=karaokeSingerKey(item);
-        if(!key||seen[key])return;
+        if(!key||key==='99'||seen[key])return;
         seen[key]=true;
         out.push({key:key,name:item.name||key,color:item.color||'#777777'});
       });
@@ -281,9 +281,17 @@
     const items=part.singers&&part.singers.length?part.singers:[{raw:part.singer,name:part.singer,color:'#777777'}];
     const owners=[];
     items.forEach(function(item){
-      const userId=karaokeState.assignments[karaokeSingerKey(item)];
+      const key=karaokeSingerKey(item);
+      if(key==='99'){
+        karaokeState.users.forEach(function(user){
+          const label=user.displayName+'（ALL）';
+          if(!owners.some(function(owner){return owner.label===label;}))owners.push({label:label,color:item.color||'#777777'});
+        });
+        return;
+      }
+      const userId=karaokeState.assignments[key];
       const user=karaokeState.users.find(function(person){return person.userId===userId;});
-      const label=(user?user.displayName:'未設定')+'（'+(item.name||karaokeSingerKey(item))+'）';
+      const label=(user?user.displayName:'未設定')+'（'+(item.name||key)+'）';
       if(!owners.some(function(owner){return owner.label===label;}))owners.push({label:label,color:item.color||'#777777'});
     });
     return owners;
