@@ -163,9 +163,8 @@ function collectKaraokeSingerSlots_(parts) {
   const seen={}; const out=[];
   parts.forEach(function(part){
     String(part.Singer||'').split(',').forEach(function(token){
-      const base=token.trim().replace(/_(up|down|sub)$/i,'');
-      const ids=base.split('_');
-      ids.forEach(function(id){id=id.trim();if(id&&id!=='99'&&!seen[id]){seen[id]=true;out.push(id);}});
+      const key=token.trim().replace(/_(up|down|sub)$/i,'');
+      if(key&&key!=='99'&&!seen[key]){seen[key]=true;out.push(key);}
     });
   });
   return out;
