@@ -117,6 +117,20 @@
     letter-spacing:.13em;
   }
 
+  /* StateUI v2 inserts the shared renderer directly. In that mode the
+     compatibility pseudo-loader is disabled so only one 22px ring appears. */
+  .loading-space.loading-space-shared::before,
+  .loading-space.loading-space-shared::after{display:none}
+  .loading-space.loading-space-shared .universe-loading{
+    flex-direction:column;
+    gap:14px;
+  }
+  .loading-space.loading-space-shared .universe-spinner{
+    width:22px;
+    height:22px;
+    box-shadow:0 0 14px color-mix(in srgb,var(--loading-accent,var(--u-loading-accent)) 14%,transparent);
+  }
+
   @keyframes universeSpinner{to{transform:rotate(360deg)}}
 
   @media(prefers-reduced-motion:reduce){
