@@ -37,7 +37,7 @@
   function renderLyricsKaraokeRoom(){
     if(!lyricsState.karaokeRoomReady)return '<section class="lyrics-room-card is-loading"><p>KARAOKE ROOM</p><strong>ルーム情報を確認中</strong></section>';
     if(!lyricsState.karaokeRoom){
-      return '<section class="lyrics-room-card"><p>KARAOKE ROOM</p><h2>3人カラオケルーム</h2><button class="lyrics-room-primary" type="button" onclick="createLyricsKaraokeRoom()">ルームを作る</button><div class="lyrics-room-join"><input id="lyricsRoomInput" inputmode="numeric" maxlength="4" placeholder="4桁のルームID"><button type="button" onclick="joinLyricsKaraokeRoom()">参加</button></div></section>';
+      return '<section class="lyrics-room-card"><p>KARAOKE ROOM</p><button class="lyrics-room-primary" type="button" onclick="createLyricsKaraokeRoom()">ルームを作る</button><div class="lyrics-room-join"><input id="lyricsRoomInput" inputmode="numeric" maxlength="4" placeholder="4桁のルームID"><button type="button" onclick="joinLyricsKaraokeRoom()">参加</button></div></section>';
     }
     const hasLatest=lyricsState.karaokeHistory.length>0;
     return '<section class="lyrics-room-card is-active"><div class="lyrics-room-id"><span>ROOM ID</span><strong>'+escapeLyrics(lyricsState.karaokeRoom.roomId)+'</strong></div><button class="lyrics-room-primary" type="button"'+(hasLatest?' onclick="openLatestLyricsKaraoke()"':' disabled')+'>'+(hasLatest?'最新結果を見る':'まだ結果がありません')+'</button><div class="lyrics-room-subactions"><button type="button" onclick="navigateTo(\'karaoke\')">履歴</button><button type="button" onclick="leaveLyricsKaraokeRoom()">退出</button></div></section>';
