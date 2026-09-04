@@ -1,25 +1,30 @@
 <style>
-  .karaoke-title.is-favorite-ready{position:relative;padding-right:58px}
-  .karaoke-favorite-star{position:absolute;right:0;top:50%;transform:translateY(-50%);width:44px;height:44px;min-width:44px;padding:0;border-radius:50%;font-size:24px;line-height:1;display:grid;place-items:center}
+  .karaoke-title.is-favorite-ready{position:relative;padding-right:60px}
+  .karaoke-favorite-star{position:absolute;right:0;top:50%;transform:translateY(-50%);width:48px;height:48px;min-width:48px;padding:0;border-radius:15px!important;font-size:25px;line-height:1;display:grid;place-items:center;color:var(--ink)}
   .karaoke-favorite-star.is-applied{color:var(--cyan-ink,#2f7382)}
-  .karaoke-favorite-settings-modal{z-index:1220}
-  .karaoke-favorite-settings-panel{max-width:620px;max-height:min(86vh,760px);overflow:auto}
-  .karaoke-favorite-category-row{margin:8px 0 18px}
+
+  /* Favorite settings is a SETTINGS sub-screen, not a floating service card. */
+  .karaoke-favorite-settings-modal{z-index:1220;background:#fff!important;align-items:stretch!important;justify-content:center!important;padding:0!important}
+  .karaoke-favorite-settings-panel{width:min(100%,680px)!important;max-width:680px!important;min-height:100dvh;max-height:100dvh!important;margin:0!important;padding:clamp(24px,6vw,48px) clamp(22px,6vw,42px) 40px!important;border:0!important;border-radius:0!important;background:#fff!important;box-shadow:none!important;overflow:auto}
+  .karaoke-favorite-settings-panel .modal-head{position:sticky;top:0;z-index:2;margin:-8px 0 8px;padding:8px 0 18px;background:rgba(255,255,255,.96);backdrop-filter:blur(10px)}
+  .karaoke-favorite-settings-panel .modal-title{font-family:"Zen Kaku Gothic New",Roboto,sans-serif}
+  .karaoke-favorite-settings-panel .settings-eyebrow{color:var(--gray)}
+  .karaoke-favorite-category-row{margin:10px 0 18px}
   .karaoke-favorite-category-row label{display:block;margin-bottom:7px;color:var(--gray);font:600 10px "Exo 2",Roboto,sans-serif;letter-spacing:.12em}
-  .karaoke-favorite-category-select{width:100%;min-height:48px;padding:0 14px;border:1px solid rgba(156,236,255,.22);border-radius:14px;background:rgba(255,255,255,.04);color:inherit;font:600 14px "Zen Kaku Gothic New",Roboto,sans-serif}
-  body.theme-light .karaoke-favorite-category-select{background:#fff;border-color:rgba(75,165,184,.26);color:var(--ink)}
-  .karaoke-favorite-member-list{display:grid;gap:10px}
-  .karaoke-favorite-member-row{display:grid;grid-template-columns:minmax(92px,1fr) minmax(0,2.2fr);gap:12px;align-items:center;padding:12px;border:1px solid rgba(156,236,255,.14);border-radius:16px}
-  body.theme-light .karaoke-favorite-member-row{border-color:rgba(75,165,184,.18);background:linear-gradient(145deg,#fff,rgba(156,236,255,.05))}
-  .karaoke-favorite-member-name{font:700 14px "Zen Kaku Gothic New",Roboto,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .karaoke-favorite-user-options{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
-  .karaoke-favorite-user-options button{min-height:40px;padding:0 6px;border-radius:12px;font-size:11px}
-  .karaoke-favorite-user-options button.is-selected{border-color:rgba(75,165,184,.62)!important;box-shadow:inset 0 0 0 1px rgba(156,236,255,.28)}
-  .karaoke-favorite-save{width:100%;min-height:50px;margin-top:18px;border-radius:15px}
-  .karaoke-favorite-empty{padding:22px 12px;text-align:center;color:var(--gray);font-size:13px}
+  .karaoke-favorite-category-select{width:100%;min-height:50px;padding:0 14px;border:1px solid rgba(75,165,184,.28);border-radius:15px;background:linear-gradient(145deg,#fff,rgba(156,236,255,.10));color:var(--ink);font:600 14px "Zen Kaku Gothic New",Roboto,sans-serif;box-shadow:0 8px 22px rgba(75,165,184,.06),inset 0 1px 0 rgba(255,255,255,.9)}
+  .karaoke-favorite-member-list{border-top:1px solid rgba(21,24,32,.09)}
+  .karaoke-favorite-member-row{display:grid;grid-template-columns:minmax(100px,1fr) minmax(0,2.25fr);gap:14px;align-items:center;padding:17px 0;border-bottom:1px solid rgba(21,24,32,.09)}
+  .karaoke-favorite-member-name{font:700 15px "Zen Kaku Gothic New",Roboto,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .karaoke-favorite-user-options{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .karaoke-favorite-user-options .u-btn{min-height:44px;padding:0 6px;border-radius:14px!important;font-size:12px;box-shadow:none!important}
+  body.theme-light .karaoke-favorite-user-options .u-btn.is-selected{border-color:rgba(75,165,184,.62)!important;background:linear-gradient(145deg,#fff,rgba(156,236,255,.28))!important;box-shadow:inset 0 0 0 1px rgba(156,236,255,.24)!important;color:var(--cyan-ink,#2f7382)!important}
+  .karaoke-favorite-save{width:100%;min-height:50px;margin-top:20px;border-radius:15px!important}
+  .karaoke-favorite-empty{padding:28px 12px;text-align:center;color:var(--gray);font-size:13px}
+  #karaokeFavoriteSettingsBody>.universe-loading{min-height:160px;justify-content:center}
   @media(max-width:520px){
-    .karaoke-favorite-member-row{grid-template-columns:1fr;gap:9px}
-    .karaoke-favorite-user-options button{font-size:10px}
+    .karaoke-favorite-settings-panel{padding:24px 22px 34px!important}
+    .karaoke-favorite-member-row{grid-template-columns:1fr;gap:10px;padding:16px 0}
+    .karaoke-favorite-user-options .u-btn{font-size:11px}
   }
 </style>
 
@@ -29,6 +34,8 @@
     setupCategory:'',
     setupAssignments:null,
     settings:null,
+    settingsLoading:false,
+    settingsWaiters:[],
     editCategory:'BE:FIRST',
     editAssignments:{},
     busy:false
@@ -49,38 +56,38 @@
     title.classList.add('is-favorite-ready');
     const button=document.createElement('button');
     button.type='button';
-    button.className='karaoke-favorite-star'+(karaokeFavoriteState.setupApplied?' is-applied':'');
+    button.className='u-btn karaoke-favorite-star'+(karaokeFavoriteState.setupApplied?' is-applied':'');
     button.textContent=karaokeFavoriteState.setupApplied?'★':'☆';
     button.setAttribute('aria-label',karaokeFavoriteState.setupApplied?'推しセット適用済み':'推しセットを適用');
     button.onclick=applyKaraokeFavoriteSet;
     title.appendChild(button);
   }
 
+  function applyKaraokeFavoriteMap(categoryKey,map){
+    if(!Object.keys(map||{}).length){
+      if(typeof showToast==='function')showToast('この分類の推しセットはまだ未設定です');
+      return;
+    }
+    karaokeState.assignments={};
+    karaokeSingers().forEach(function(singer){if(map[singer.key])karaokeState.assignments[singer.key]=map[singer.key];});
+    karaokeFavoriteState.setupApplied=true;
+    karaokeFavoriteState.setupCategory=categoryKey;
+    karaokeFavoriteState.setupAssignments=map;
+    renderKaraokeSetup();
+    if(typeof showToast==='function')showToast(categoryKey+' の推しセットを適用しました');
+  }
+
   function applyKaraokeFavoriteSet(){
     if(karaokeFavoriteState.busy||typeof karaokeState==='undefined'||!karaokeState.song)return;
     const categoryKey=getKaraokeCurrentCategoryKey();
     if(!categoryKey){showKaraokeError('この曲の推しセット分類を判定できません。');return;}
+    const cachedCategory=karaokeFavoriteState.settings&&(karaokeFavoriteState.settings.categories||[]).find(function(item){return item.categoryKey===categoryKey;});
+    if(cachedCategory){applyKaraokeFavoriteMap(categoryKey,cachedCategory.assignments||{});return;}
     karaokeFavoriteState.busy=true;
     google.script.run.withSuccessHandler(function(data){
       karaokeFavoriteState.busy=false;
-      const map=data&&data.assignments?data.assignments:{};
-      if(!Object.keys(map).length){
-        if(typeof showToast==='function')showToast('この分類の推しセットはまだ未設定です');
-        return;
-      }
-      karaokeState.assignments={};
-      karaokeSingers().forEach(function(singer){
-        if(map[singer.key])karaokeState.assignments[singer.key]=map[singer.key];
-      });
-      karaokeFavoriteState.setupApplied=true;
-      karaokeFavoriteState.setupCategory=categoryKey;
-      karaokeFavoriteState.setupAssignments=map;
-      renderKaraokeSetup();
-      if(typeof showToast==='function')showToast(categoryKey+' の推しセットを適用しました');
-    }).withFailureHandler(function(error){
-      karaokeFavoriteState.busy=false;
-      showKaraokeError(error);
-    }).getKaraokeFavoriteSet(categoryKey);
+      applyKaraokeFavoriteMap(categoryKey,data&&data.assignments?data.assignments:{});
+    }).withFailureHandler(function(error){karaokeFavoriteState.busy=false;showKaraokeError(error);}).getKaraokeFavoriteSet(categoryKey);
   }
 
   function clearKaraokeFavoriteApplied(){
@@ -119,7 +126,7 @@
     const section=document.createElement('section');
     section.id='karaokeFavoriteSettingsSection';
     section.className='settings-group';
-    section.innerHTML='<p class="settings-section-title">KARAOKE</p><button class="settings-row settings-row-button" type="button" onclick="openKaraokeFavoriteSettings()"><span class="settings-row-copy"><strong>推しセット</strong><small>分類ごとの担当メンバーを設定</small></span><span class="settings-arrow">›</span></button>';
+    section.innerHTML='<p class="settings-section-title">KARAOKE</p><button class="settings-row settings-row-button" type="button" onclick="openKaraokeFavoriteSettings()"><span class="settings-row-copy"><strong>推しセット</strong><small>グループ・ユニットごとの担当を設定</small></span><span class="settings-arrow">›</span></button>';
     if(tools&&tools.parentNode)tools.parentNode.insertBefore(section,tools);else settings.querySelector('.settings-panel').appendChild(section);
   }
 
@@ -128,9 +135,29 @@
     const overlay=document.createElement('div');
     overlay.id='karaokeFavoriteSettingsOverlay';
     overlay.className='modal-overlay karaoke-favorite-settings-modal';
-    overlay.onclick=function(event){if(event.target===overlay)closeKaraokeFavoriteSettings();};
-    overlay.innerHTML='<section class="settings-panel karaoke-favorite-settings-panel" role="dialog" aria-modal="true" aria-labelledby="karaokeFavoriteSettingsTitle"><header class="modal-head"><div><p class="settings-eyebrow">KARAOKE</p><h2 id="karaokeFavoriteSettingsTitle" class="modal-title">推しセット</h2></div><button class="overlay-close" type="button" onclick="closeKaraokeFavoriteSettings()" aria-label="Close favorite settings">×</button></header><div id="karaokeFavoriteSettingsBody">'+(typeof renderUniverseLoading==='function'?renderUniverseLoading('LOADING...','#9cecff'):'')+'</div></section>';
+    overlay.innerHTML='<section class="settings-panel karaoke-favorite-settings-panel" role="dialog" aria-modal="true" aria-labelledby="karaokeFavoriteSettingsTitle"><header class="modal-head"><div><p class="settings-eyebrow">KARAOKE</p><h2 id="karaokeFavoriteSettingsTitle" class="modal-title">推しセット</h2></div><button class="overlay-close" type="button" onclick="closeKaraokeFavoriteSettings()" aria-label="推しセット設定を閉じる">×</button></header><div id="karaokeFavoriteSettingsBody"></div></section>';
     document.body.appendChild(overlay);
+  }
+
+  function flushKaraokeFavoriteSettingsWaiters(error){
+    const waiters=karaokeFavoriteState.settingsWaiters.slice();
+    karaokeFavoriteState.settingsWaiters=[];
+    waiters.forEach(function(callback){if(typeof callback==='function')callback(error,karaokeFavoriteState.settings);});
+  }
+
+  function preloadKaraokeFavoriteSettings(callback){
+    if(karaokeFavoriteState.settings){if(typeof callback==='function')callback(null,karaokeFavoriteState.settings);return;}
+    if(typeof callback==='function')karaokeFavoriteState.settingsWaiters.push(callback);
+    if(karaokeFavoriteState.settingsLoading)return;
+    karaokeFavoriteState.settingsLoading=true;
+    google.script.run.withSuccessHandler(function(data){
+      karaokeFavoriteState.settingsLoading=false;
+      karaokeFavoriteState.settings=data;
+      flushKaraokeFavoriteSettingsWaiters(null);
+    }).withFailureHandler(function(error){
+      karaokeFavoriteState.settingsLoading=false;
+      flushKaraokeFavoriteSettingsWaiters(error);
+    }).getKaraokeFavoriteSettings();
   }
 
   function openKaraokeFavoriteSettings(){
@@ -140,16 +167,21 @@
     overlay.classList.add('open');
     document.body.style.overflow='hidden';
     const body=document.getElementById('karaokeFavoriteSettingsBody');
+    if(karaokeFavoriteState.settings){
+      loadKaraokeFavoriteEditCategory(karaokeFavoriteState.editCategory);
+      return;
+    }
     if(body)body.innerHTML=typeof renderUniverseLoading==='function'?renderUniverseLoading('LOADING...','#9cecff'):'';
-    google.script.run.withSuccessHandler(function(data){
-      karaokeFavoriteState.settings=data;
+    preloadKaraokeFavoriteSettings(function(error,data){
+      if(error){
+        if(body)body.innerHTML='<div class="karaoke-favorite-empty">読み込みに失敗しました</div>';
+        if(typeof showToast==='function')showToast(error&&error.message?error.message:String(error||'読み込みに失敗しました'));
+        return;
+      }
       const hasCurrent=(data.categories||[]).some(function(item){return item.categoryKey===karaokeFavoriteState.editCategory;});
       if(!hasCurrent&&data.categories&&data.categories.length)karaokeFavoriteState.editCategory=data.categories[0].categoryKey;
       loadKaraokeFavoriteEditCategory(karaokeFavoriteState.editCategory);
-    }).withFailureHandler(function(error){
-      if(body)body.innerHTML='<div class="karaoke-favorite-empty">読み込みに失敗しました</div>';
-      if(typeof showToast==='function')showToast(error&&error.message?error.message:String(error||'読み込みに失敗しました'));
-    }).getKaraokeFavoriteSettings();
+    });
   }
 
   function closeKaraokeFavoriteSettings(){
@@ -181,12 +213,12 @@
     const members=(category.members||[]).map(function(member){
       const buttons=(data.users||[]).map(function(user){
         const selected=karaokeFavoriteState.editAssignments[member.memberId]===user.userId;
-        return '<button type="button" class="'+(selected?'is-selected':'')+'" onclick="setKaraokeFavoriteMember(\''+escapeLyrics(member.memberId)+'\',\''+escapeLyrics(user.userId)+'\')">'+escapeLyrics(user.displayName)+'</button>';
+        return '<button type="button" class="u-btn'+(selected?' is-selected':'')+'" onclick="setKaraokeFavoriteMember(\''+escapeLyrics(member.memberId)+'\',\''+escapeLyrics(user.userId)+'\')">'+escapeLyrics(user.displayName)+'</button>';
       }).join('');
       return '<div class="karaoke-favorite-member-row"><div class="karaoke-favorite-member-name" style="color:'+escapeLyrics(member.color||'#777777')+'">'+escapeLyrics(member.name)+'</div><div class="karaoke-favorite-user-options">'+buttons+'</div></div>';
     }).join('');
-    const complete=(category.members||[]).every(function(member){return !!karaokeFavoriteState.editAssignments[member.memberId];});
-    body.innerHTML='<div class="karaoke-favorite-category-row"><label>分類</label><select class="karaoke-favorite-category-select" onchange="loadKaraokeFavoriteEditCategory(this.value)">'+options+'</select></div><div class="karaoke-favorite-member-list">'+(members||'<div class="karaoke-favorite-empty">対象メンバーがいません</div>')+'</div><button class="karaoke-favorite-save" type="button" onclick="saveKaraokeFavoriteSettings()"'+(complete?'':' disabled')+'>保存</button>';
+    const complete=(category.members||[]).length>0&&(category.members||[]).every(function(member){return !!karaokeFavoriteState.editAssignments[member.memberId];});
+    body.innerHTML='<div class="karaoke-favorite-category-row"><label>GROUP / UNIT</label><select class="karaoke-favorite-category-select" onchange="loadKaraokeFavoriteEditCategory(this.value)">'+options+'</select></div><div class="karaoke-favorite-member-list">'+(members||'<div class="karaoke-favorite-empty">対象メンバーがいません</div>')+'</div><button class="u-btn karaoke-favorite-save" type="button" onclick="saveKaraokeFavoriteSettings()"'+(complete?'':' disabled')+'>保存</button>';
   }
 
   function saveKaraokeFavoriteSettings(){
@@ -209,7 +241,12 @@
     ensureKaraokeFavoriteSettingsModal();
     if(typeof openSettings==='function'){
       const baseOpenSettings=openSettings;
-      openSettings=function(){ensureKaraokeFavoriteSettingsEntry();return baseOpenSettings();};
+      openSettings=function(){
+        ensureKaraokeFavoriteSettingsEntry();
+        // Start loading while the user is still on the main SETTINGS screen.
+        preloadKaraokeFavoriteSettings();
+        return baseOpenSettings();
+      };
     }
   })();
 </script>
