@@ -7,4 +7,36 @@
 
 .lyrics-song-title{text-align:center;border-bottom:3px solid #363636;padding:4px 0 22px;margin-bottom:34px}.lyrics-song-title h2{margin:0;font-size:clamp(28px,6vw,40px);color:#303030}.lyrics-list-back{width:100%;margin:0 0 42px;padding:24px;border:0;border-radius:18px;background:#eee;color:#333;font-size:20px;font-weight:700}.lyrics-parts{display:block;background:#fff}.lyrics-part{display:block;box-sizing:border-box;width:100%;margin:0 0 34px;padding:0;text-align:left;border:0;background:transparent;color:#111}.lyrics-part p{margin:10px 0 0;font-size:clamp(18px,4.4vw,25px);line-height:1.75;white-space:pre-wrap}.lyrics-singer{font-size:clamp(17px,4vw,22px);font-weight:800}.lyrics-singer-separator{color:#aaa}.lyrics-part small{display:none}.lyrics-parts.is-editing .lyrics-part{position:relative;padding:14px;border:2px dashed #b8bad0;border-radius:12px}.lyrics-parts.is-editing .lyrics-part small{display:block;position:absolute;right:10px;top:10px;color:#666}.lyrics-view:has(.lyrics-song-title){background:#fff;padding:24px}.lyrics-page:has(.lyrics-song-title){background:#fff}.lyrics-page:has(.lyrics-song-title) .lyrics-page-head{display:none}
 @media(max-width:720px){.lyrics-view:has(.lyrics-song-title){margin:0 -4px;padding:0}.lyrics-song-title{margin-top:0}.lyrics-list-back{padding:20px}.lyrics-part{margin-bottom:31px}}
+
+/* Universe light theme */
+body.theme-light .lyrics-page{color:var(--ink);background:var(--star-off-white)}
+body.theme-light .lyrics-page-head p,body.theme-light .lyrics-label,body.theme-light .lyrics-subhead p{color:var(--cyan)}
+body.theme-light .lyrics-page-head h1{color:var(--ink)}
+body.theme-light .lyrics-group-card,body.theme-light .lyrics-song-card{border:1px solid rgba(12,30,39,.13);border-radius:22px;box-shadow:0 12px 30px rgba(5,18,27,.055)}
+body.theme-light .lyrics-group-card strong,body.theme-light .lyrics-song-card strong{font-family:Orbitron,'Zen Kaku Gothic New',sans-serif;letter-spacing:.015em}
+body.theme-light .lyrics-group-card span,body.theme-light .lyrics-count{color:rgba(12,30,39,.45)}
+body.theme-light .lyrics-gacha-card{border:1px solid rgba(12,30,39,.13);background:#fff;color:var(--ink)}
+body.theme-light .lyrics-gacha-card strong{font-family:Orbitron,sans-serif}
+body.theme-light .lyrics-subhead button,body.theme-light .lyrics-search{border:1px solid rgba(12,30,39,.14)}
+body.theme-light .lyrics-singer span{filter:saturate(.9)}
+body.theme-light .lyrics-editor-actions button:last-child{background:var(--ink);color:#fff}
+
+/* Search and settings follow the active LYRICS light theme */
+body.theme-light .screen-overlay{color:var(--ink);background:rgba(248,250,249,.99)}
+body.theme-light .screen-overlay .overlay-close,body.theme-light .modal-overlay .overlay-close{border-color:rgba(12,30,39,.14);color:var(--ink);background:#fff}
+body.theme-light .search-field{border-color:rgba(12,30,39,.14);background:#fff}
+body.theme-light .search-field svg{stroke:rgba(12,30,39,.58)}
+body.theme-light .search-input{color:var(--ink)}
+body.theme-light .search-input::placeholder{color:rgba(12,30,39,.34)}
+body.theme-light .search-status{color:rgba(12,30,39,.42)}
+body.theme-light .search-result{border-color:rgba(12,30,39,.11);color:var(--ink);background:#fff}
+body.theme-light .search-result-parent,body.theme-light .search-result-copy{color:rgba(12,30,39,.5)}
+body.theme-light .modal-overlay{background:rgba(236,240,239,.82)}
+body.theme-light .settings-panel,body.theme-light .state-panel{border-color:rgba(12,30,39,.12);color:var(--ink);background:#fff;box-shadow:0 28px 80px rgba(5,18,27,.16)}
+body.theme-light .settings-user-card,body.theme-light .tool-button{border-color:rgba(12,30,39,.11);color:var(--ink);background:var(--star-off-white)}
+body.theme-light .settings-label,body.theme-light .settings-note{color:rgba(12,30,39,.48)}
+body.theme-light .settings-user{color:var(--ink)}
+body.theme-light .settings-change{border-color:rgba(12,30,39,.13);color:var(--ink);background:#fff}
+body.theme-light .settings-section-title{color:rgba(12,30,39,.42)}
+body.theme-light .tool-status{color:rgba(12,30,39,.46)}
 </style>
