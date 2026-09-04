@@ -100,10 +100,9 @@ function shuffleKaraokeSong(payload) {
 function getKaraokeHistory(roomId) { return getKaraokeHistory_(String(roomId||'').trim()); }
 
 function getKaraokeUsers_() {
-  const rows=readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.USERS);
-  return KARAOKE_USERS_.map(function(id){
-    const row=rows.find(function(item){return asId_(item.UserID)===id;})||{};
-    return {userId:id,displayName:String(row.DisplayName||id)};
+  const names = { U001: 'ももたん', U002: 'みおたん', U003: 'りおたん' };
+  return KARAOKE_USERS_.map(function(id) {
+    return { userId: id, displayName: names[id] || id };
   });
 }
 
