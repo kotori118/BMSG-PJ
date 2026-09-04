@@ -2,7 +2,7 @@
   const lyricsState={catalog:[],partsBySong:{},groupColors:{},group:'',unit:'',query:'',song:null,editing:null,previewed:false,initialParams:{},karaokeRoom:null,karaokeHistory:[],karaokeRoomReady:false,karaokeBusy:false};
   const LYRICS_GROUPS=['BE:FIRST','MAZZEL','STARGLOW','HANA','BMSG ALLSTARS'];
   const LYRICS_UNITS=['ALL','BMSG ALLSTARS','ShowMinorSavage','BMSG POSSE','BMSG EAST','BMSG WEST','BMSG SKY','BMSG GAIA','BMSG MARINE','BMSG STRIKERS','その他UNIT'];
-  function renderLyrics(){return document.getElementById('lyricsPageTemplate').innerHTML;}
+  function renderLyrics(){return document.getElementById('lyricsPageTemplate').innerHTML.replace('__LYRICS_LOADING__',renderUniverseLoading('LOADING...','#9cecff'));}
   function applyLyricsData(data){
     lyricsState.catalog=data.songs||[];
     lyricsState.partsBySong=data.partsBySong||{};
@@ -58,8 +58,23 @@
     if(target)target.innerHTML=renderLyricsKaraokeRoom();
   }
 
+  function requireLyricsUniverseUser(){
+    const userId=typeof getUniverseUserId==='function'?getUniverseUserId():'';
+    if(userId)return userId;
+    if(typeof openUserChooser==='function')openUserChooser(true);
+    return '';
+  }
+
   function loadLyricsKaraokeRoom(){
     lyricsState.karaokeRoomReady=false;
+    const userId=requireLyricsUniverseUser();
+    if(!userId){
+      lyricsState.karaokeRoomReady=true;
+      lyricsState.karaokeRoom=null;
+      lyricsState.karaokeHistory=[];
+      updateLyricsKaraokeRoom();
+      return;
+    }
     google.script.run.withSuccessHandler(function(data){
       lyricsState.karaokeRoomReady=true;
       lyricsState.karaokeRoom=data.room||null;
@@ -71,22 +86,26 @@
       lyricsState.karaokeHistory=[];
       updateLyricsKaraokeRoom();
       showLyricsError(error);
-    }).getKaraokeBootstrap(getUniverseUserId());
+    }).getKaraokeBootstrap(userId);
   }
 
   function createLyricsKaraokeRoom(){
     if(lyricsState.karaokeBusy)return;
+    const userId=requireLyricsUniverseUser();
+    if(!userId)return;
     lyricsState.karaokeBusy=true;
     google.script.run.withSuccessHandler(function(room){
       lyricsState.karaokeBusy=false;
       lyricsState.karaokeRoom=room;
       lyricsState.karaokeHistory=[];
       updateLyricsKaraokeRoom();
-    }).withFailureHandler(function(error){lyricsState.karaokeBusy=false;showLyricsError(error);}).createKaraokeRoom(getUniverseUserId());
+    }).withFailureHandler(function(error){lyricsState.karaokeBusy=false;showLyricsError(error);}).createKaraokeRoom(userId);
   }
 
   function joinLyricsKaraokeRoom(){
     if(lyricsState.karaokeBusy)return;
+    const userId=requireLyricsUniverseUser();
+    if(!userId)return;
     const input=document.getElementById('lyricsRoomInput');
     const roomId=input?input.value.trim():'';
     if(!/^\d{4}$/.test(roomId)){showLyricsError('4桁のルームIDを入力してね。');return;}
@@ -96,18 +115,20 @@
       lyricsState.karaokeRoom=data.room;
       lyricsState.karaokeHistory=data.history||[];
       updateLyricsKaraokeRoom();
-    }).withFailureHandler(function(error){lyricsState.karaokeBusy=false;showLyricsError(error);}).joinKaraokeRoom(getUniverseUserId(),roomId);
+    }).withFailureHandler(function(error){lyricsState.karaokeBusy=false;showLyricsError(error);}).joinKaraokeRoom(userId,roomId);
   }
 
   function leaveLyricsKaraokeRoom(){
     if(lyricsState.karaokeBusy)return;
+    const userId=requireLyricsUniverseUser();
+    if(!userId)return;
     lyricsState.karaokeBusy=true;
     google.script.run.withSuccessHandler(function(){
       lyricsState.karaokeBusy=false;
       lyricsState.karaokeRoom=null;
       lyricsState.karaokeHistory=[];
       updateLyricsKaraokeRoom();
-    }).withFailureHandler(function(error){lyricsState.karaokeBusy=false;showLyricsError(error);}).leaveKaraokeRoom(getUniverseUserId());
+    }).withFailureHandler(function(error){lyricsState.karaokeBusy=false;showLyricsError(error);}).leaveKaraokeRoom(userId);
   }
 
   function openLatestLyricsKaraoke(){
@@ -181,6 +202,8 @@
     const singer=singerInput.value.trim();
     const lyrics=lyricsInput.value.trim();
     if(!singer||!lyrics){showLyricsError('歌唱者と歌詞を入力してね。');return;}
+    const userId=requireLyricsUniverseUser();
+    if(!userId)return;
     const button=document.getElementById('lyricsSaveButton');
     button.disabled=true;
     google.script.run.withSuccessHandler(function(saved){
@@ -195,9 +218,8 @@
     }).withFailureHandler(function(error){
       button.disabled=false;
       showLyricsError(error);
-    }).updateLyricsPart({userId:getUniverseUserId(),songId:lyricsState.song.songId,partOrder:lyricsState.editing.partOrder,singer:singer,lyrics:lyrics});
+    }).updateLyricsPart({userId:userId,songId:lyricsState.song.songId,partOrder:lyricsState.editing.partOrder,singer:singer,lyrics:lyrics});
   }
-  function getUniverseUserId(){return localStorage.getItem('bmsgUniverseUserId')||'U001';}
   function scrollLyricsTop(){const scroller=document.querySelector('.page-wrap');if(scroller)scroller.scrollTo({top:0,behavior:'smooth'});}
   function showLyricsError(error){const message=error&&error.message?error.message:String(error);if(typeof showToast==='function')showToast(message);else alert(message);}
   function escapeLyrics(value){const div=document.createElement('div');div.textContent=String(value==null?'':value);return div.innerHTML;}
