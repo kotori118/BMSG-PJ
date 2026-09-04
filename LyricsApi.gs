@@ -111,7 +111,7 @@ function updateLyricsPart(payload) {
     if (String(checked[singerCol]) !== singer || String(checked[lyricsCol]) !== lyrics) {
       throw new Error('保存後の確認に失敗しました。');
     }
-    return { ok: true, songId: songId, partOrder: partOrder, singer: singer, lyrics: lyrics };
+    return { ok: true, songId: songId, partOrder: partOrder, singer: singer, singers: formatLyricsSingers_(singer, buildLyricsSingerMap_()), lyrics: lyrics };
   } finally {
     lock.releaseLock();
   }
