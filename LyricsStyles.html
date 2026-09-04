@@ -1,42 +1,103 @@
 <style>
-.lyrics-page{min-height:100%;padding:118px clamp(18px,5vw,58px) 80px;color:#303136;background:#fafafa;font-family:'Zen Kaku Gothic New',sans-serif}.lyrics-page-head{max-width:820px;margin:0 auto 34px}.lyrics-page-head p,.lyrics-label{margin:0 0 5px;font:600 10px Orbitron,sans-serif;letter-spacing:.2em;color:#505bb6}.lyrics-page-head h1{margin:0;font:700 clamp(42px,8vw,72px)/.95 Orbitron,sans-serif;letter-spacing:.035em;color:#303136}.lyrics-view{max-width:820px;margin:auto}.lyrics-loading,.lyrics-empty{padding:50px 0;text-align:center;color:#8c8d93;font:600 12px Orbitron,sans-serif;letter-spacing:.12em}
-.lyrics-groups{display:grid;gap:18px}.lyrics-group-card,.lyrics-gacha-card{width:100%;min-height:116px;border:4px solid #dedede;border-radius:24px;background:#fff;box-shadow:0 8px 14px rgba(30,32,40,.06);color:#303136}.lyrics-group-card strong,.lyrics-gacha-card strong{display:block;font:700 clamp(23px,5vw,34px) 'Zen Kaku Gothic New',sans-serif}.lyrics-group-card span,.lyrics-gacha-card span{display:block;margin-top:5px;color:#929399;font:600 10px Orbitron,sans-serif;letter-spacing:.12em}.lyrics-gacha-card{margin-top:44px;border-color:#ffdda2;background:#fff7e8;color:#e45a21}.lyrics-gacha-card:disabled{opacity:1}
-.lyrics-subhead{display:grid;grid-template-columns:54px 1fr;align-items:center;gap:14px;margin-bottom:24px}.lyrics-subhead button{width:54px;height:54px;border:2px solid #ddd;border-radius:50%;background:#fff;color:#383a40;font-size:38px;line-height:1}.lyrics-subhead p{margin:0;color:#505bb6;font:600 10px Orbitron,sans-serif;letter-spacing:.16em}.lyrics-subhead h2{margin:3px 0 0;font-size:clamp(28px,6vw,42px);line-height:1.1}.lyrics-search{box-sizing:border-box;width:100%;border:3px solid #e0e0e0;border-radius:18px;padding:17px 19px;background:#fff;color:#303136;font:600 16px Roboto,sans-serif}.lyrics-count{margin:28px 3px 14px;color:#777981;font:600 11px Orbitron,sans-serif;letter-spacing:.14em}.lyrics-song-list{display:grid;gap:13px}.lyrics-song-card{position:relative;display:grid;gap:5px;width:100%;padding:21px 52px 21px 23px;text-align:left;border:3px solid #e1e1e1;border-radius:20px;background:#fff;color:#303136}.lyrics-song-card strong{font-size:20px}.lyrics-song-card span{font-size:12px;color:#85868b}.lyrics-song-card b{position:absolute;right:22px;top:50%;transform:translateY(-50%);font-size:28px;color:#aaa}.lyrics-song-head{padding-bottom:20px;border-bottom:2px solid #e4e4e4}.lyrics-parts{display:grid;gap:4px}.lyrics-part{position:relative;width:100%;padding:14px 48px 14px 14px;text-align:left;border:0;border-bottom:1px solid #e6e6e6;background:#fff;color:#303136}.lyrics-part span{font-weight:700;color:#4b55ad}.lyrics-part p{margin:6px 0 0;line-height:1.9;white-space:pre-wrap}.lyrics-part small{position:absolute;right:10px;top:14px;color:#aaa;font:600 9px Orbitron,sans-serif}
-.lyrics-editor[hidden]{display:none}.lyrics-editor{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:18px;background:rgba(22,23,29,.62)}.lyrics-editor-card{position:relative;box-sizing:border-box;width:min(600px,100%);max-height:90vh;overflow:auto;border-radius:22px;background:#fff;padding:25px}.lyrics-editor-card label{display:grid;gap:7px;margin:13px 0;font-weight:700}.lyrics-editor-card input,.lyrics-editor-card textarea{border:2px solid #dedee2;border-radius:12px;padding:12px;font:inherit}.lyrics-editor-close{position:absolute;right:15px;top:12px;border:0;background:none;font-size:28px}.lyrics-preview{min-height:65px;margin:16px 0;padding:14px;border-radius:12px;background:#f3f3f5}.lyrics-preview p{white-space:pre-wrap}.lyrics-editor-actions{display:flex;justify-content:flex-end;gap:9px}.lyrics-editor-actions button{border:0;border-radius:11px;padding:12px 17px;background:#e8e8ec}.lyrics-editor-actions button:last-child{background:#4956b5;color:#fff}.lyrics-editor-actions button:disabled{opacity:.4}
-@media(max-width:720px){.lyrics-page{padding:124px 20px 76px}.lyrics-page-head{margin-bottom:28px}.lyrics-page-head h1{font-size:48px}.lyrics-group-card{min-height:112px}.lyrics-parts{margin:0 -20px}.lyrics-part{padding-left:20px}.lyrics-song-head h2{font-size:30px}}
+  .lyrics-page{
+    box-sizing:border-box;min-height:100%;padding:82px 0 72px;color:var(--ink);
+    background:var(--star-off-white);font-family:Roboto,"Zen Kaku Gothic New",sans-serif;
+  }
+  .lyrics-page-head,.lyrics-view{width:min(100%,820px);margin-inline:auto}
+  .lyrics-page-head{margin-bottom:28px}
+  .lyrics-page-head p,.lyrics-label,.lyrics-subhead p{
+    margin:0 0 6px;color:var(--cyan);font:600 10px "Exo 2",Roboto,sans-serif;letter-spacing:.18em
+  }
+  .lyrics-page-head h1{margin:0;color:var(--ink);font:600 clamp(40px,8vw,68px)/.95 Orbitron,sans-serif;letter-spacing:.025em}
+  .lyrics-loading,.lyrics-empty{padding:48px 0;text-align:center;color:rgba(21,24,32,.42);font:600 11px "Exo 2",sans-serif;letter-spacing:.14em}
 
-.lyrics-song-title{text-align:center;border-bottom:3px solid #363636;padding:4px 0 22px;margin-bottom:34px}.lyrics-song-title h2{margin:0;font-size:clamp(28px,6vw,40px);color:#303030}.lyrics-list-back{width:100%;margin:0 0 42px;padding:24px;border:0;border-radius:18px;background:#eee;color:#333;font-size:20px;font-weight:700}.lyrics-parts{display:block;background:#fff}.lyrics-part{display:block;box-sizing:border-box;width:100%;margin:0 0 34px;padding:0;text-align:left;border:0;background:transparent;color:#111}.lyrics-part p{margin:10px 0 0;font-size:clamp(18px,4.4vw,25px);line-height:1.75;white-space:pre-wrap}.lyrics-singer{font-size:clamp(17px,4vw,22px);font-weight:800}.lyrics-singer-separator{color:#aaa}.lyrics-part small{display:none}.lyrics-parts.is-editing .lyrics-part{position:relative;padding:14px;border:2px dashed #b8bad0;border-radius:12px}.lyrics-parts.is-editing .lyrics-part small{display:block;position:absolute;right:10px;top:10px;color:#666}.lyrics-view:has(.lyrics-song-title){background:#fff;padding:24px}.lyrics-page:has(.lyrics-song-title){background:#fff}.lyrics-page:has(.lyrics-song-title) .lyrics-page-head{display:none}
-@media(max-width:720px){.lyrics-view:has(.lyrics-song-title){margin:0 -4px;padding:0}.lyrics-song-title{margin-top:0}.lyrics-list-back{padding:20px}.lyrics-part{margin-bottom:31px}}
+  .lyrics-groups,.lyrics-song-list{display:grid;gap:12px}
+  .lyrics-group-card,.lyrics-song-card,.lyrics-gacha-card{
+    box-sizing:border-box;width:100%;border:1px solid rgba(21,24,32,.12);border-radius:20px;
+    color:var(--ink);background:#fff;box-shadow:0 10px 26px rgba(8,14,22,.045);cursor:pointer
+  }
+  .lyrics-group-card{min-height:92px;padding:20px;text-align:left}
+  .lyrics-group-card strong,.lyrics-gacha-card strong{display:block;font:600 21px Orbitron,"Zen Kaku Gothic New",sans-serif;letter-spacing:.01em}
+  .lyrics-group-card span,.lyrics-gacha-card span{display:block;margin-top:6px;color:rgba(21,24,32,.42);font:600 9px "Exo 2",sans-serif;letter-spacing:.13em}
+  .lyrics-unit-card{min-height:78px}
+  .lyrics-gacha-card{min-height:86px;margin-top:28px;padding:20px;text-align:left;opacity:.55}
 
-/* Universe light theme */
-body.theme-light .lyrics-page{color:var(--ink);background:var(--star-off-white)}
-body.theme-light .lyrics-page-head p,body.theme-light .lyrics-label,body.theme-light .lyrics-subhead p{color:var(--cyan)}
-body.theme-light .lyrics-page-head h1{color:var(--ink)}
-body.theme-light .lyrics-group-card,body.theme-light .lyrics-song-card{border:1px solid rgba(12,30,39,.13);border-radius:22px;box-shadow:0 12px 30px rgba(5,18,27,.055)}
-body.theme-light .lyrics-group-card strong,body.theme-light .lyrics-song-card strong{font-family:Orbitron,'Zen Kaku Gothic New',sans-serif;letter-spacing:.015em}
-body.theme-light .lyrics-group-card span,body.theme-light .lyrics-count{color:rgba(12,30,39,.45)}
-body.theme-light .lyrics-gacha-card{border:1px solid rgba(12,30,39,.13);background:#fff;color:var(--ink)}
-body.theme-light .lyrics-gacha-card strong{font-family:Orbitron,sans-serif}
-body.theme-light .lyrics-subhead button,body.theme-light .lyrics-search{border:1px solid rgba(12,30,39,.14)}
-body.theme-light .lyrics-singer span{filter:saturate(.9)}
-body.theme-light .lyrics-editor-actions button:last-child{background:var(--ink);color:#fff}
+  .lyrics-subhead{display:flex;align-items:center;gap:14px;margin-bottom:22px}
+  .lyrics-subhead button{
+    width:46px;height:46px;flex:0 0 auto;border:1px solid rgba(21,24,32,.13);border-radius:14px;
+    color:var(--ink);background:#fff;font-size:29px;line-height:1;cursor:pointer
+  }
+  .lyrics-subhead h2{margin:2px 0 0;color:var(--ink);font:600 clamp(25px,5vw,36px)/1.1 Orbitron,"Zen Kaku Gothic New",sans-serif}
+  .lyrics-search{
+    box-sizing:border-box;width:100%;height:54px;padding:0 17px;border:1px solid rgba(21,24,32,.13);
+    border-radius:16px;outline:0;color:var(--ink);background:#fff;font:500 15px Roboto,"Zen Kaku Gothic New",sans-serif
+  }
+  .lyrics-count{margin:24px 2px 12px;color:rgba(21,24,32,.42);font:600 10px "Exo 2",sans-serif;letter-spacing:.14em}
+  .lyrics-song-card{position:relative;display:grid;gap:5px;padding:18px 48px 18px 19px;text-align:left}
+  .lyrics-song-card strong{font:600 17px Roboto,"Zen Kaku Gothic New",sans-serif}
+  .lyrics-song-card span{color:rgba(21,24,32,.48);font-size:11px}
+  .lyrics-song-card b{position:absolute;right:18px;top:50%;transform:translateY(-50%);color:rgba(21,24,32,.3);font-size:24px}
 
-/* Search and settings follow the active LYRICS light theme */
-body.theme-light .screen-overlay{color:var(--ink);background:rgba(248,250,249,.99)}
-body.theme-light .screen-overlay .overlay-close,body.theme-light .modal-overlay .overlay-close{border-color:rgba(12,30,39,.14);color:var(--ink);background:#fff}
-body.theme-light .search-field{border-color:rgba(12,30,39,.14);background:#fff}
-body.theme-light .search-field svg{stroke:rgba(12,30,39,.58)}
-body.theme-light .search-input{color:var(--ink)}
-body.theme-light .search-input::placeholder{color:rgba(12,30,39,.34)}
-body.theme-light .search-status{color:rgba(12,30,39,.42)}
-body.theme-light .search-result{border-color:rgba(12,30,39,.11);color:var(--ink);background:#fff}
-body.theme-light .search-result-parent,body.theme-light .search-result-copy{color:rgba(12,30,39,.5)}
-body.theme-light .modal-overlay{background:rgba(236,240,239,.82)}
-body.theme-light .settings-panel,body.theme-light .state-panel{border-color:rgba(12,30,39,.12);color:var(--ink);background:#fff;box-shadow:0 28px 80px rgba(5,18,27,.16)}
-body.theme-light .settings-user-card,body.theme-light .tool-button{border-color:rgba(12,30,39,.11);color:var(--ink);background:var(--star-off-white)}
-body.theme-light .settings-label,body.theme-light .settings-note{color:rgba(12,30,39,.48)}
-body.theme-light .settings-user{color:var(--ink)}
-body.theme-light .settings-change{border-color:rgba(12,30,39,.13);color:var(--ink);background:#fff}
-body.theme-light .settings-section-title{color:rgba(12,30,39,.42)}
-body.theme-light .tool-status{color:rgba(12,30,39,.46)}
+  .lyrics-page:has(.lyrics-song-title){padding-top:82px;background:#fff}
+  .lyrics-page:has(.lyrics-song-title) .lyrics-page-head{display:none}
+  .lyrics-view:has(.lyrics-song-title){box-sizing:border-box;padding:0 4px;background:#fff}
+  .lyrics-song-title{padding:0 0 18px;margin:0 0 18px;text-align:center;border-bottom:1px solid rgba(21,24,32,.65)}
+  .lyrics-song-title h2{margin:0;color:var(--ink);font:600 clamp(25px,5.5vw,34px)/1.2 Orbitron,"Zen Kaku Gothic New",sans-serif}
+  .lyrics-list-back{
+    width:auto;min-height:46px;margin:0 0 36px;padding:0 17px;border:1px solid rgba(21,24,32,.13);
+    border-radius:14px;color:var(--ink);background:var(--star-off-white);font:700 13px "Zen Kaku Gothic New",sans-serif;cursor:pointer
+  }
+  .lyrics-parts{display:block;width:100%;background:#fff}
+  .lyrics-part{
+    position:relative;box-sizing:border-box;display:block;width:100%;margin:0 0 30px;padding:0;
+    text-align:left;border:0;color:#111;background:transparent
+  }
+  .lyrics-singer{font:700 15px "Exo 2",Roboto,sans-serif;letter-spacing:.01em}
+  .lyrics-singer-separator{color:rgba(21,24,32,.35)}
+  .lyrics-part p{margin:8px 0 0;font:400 18px/1.85 "Zen Kaku Gothic New",Roboto,sans-serif;white-space:pre-wrap;overflow-wrap:anywhere}
+  .lyrics-part small{display:none}
+  .lyrics-parts.is-editing .lyrics-part{padding:13px;border:1px dashed rgba(21,24,32,.28);border-radius:14px;cursor:pointer}
+  .lyrics-parts.is-editing .lyrics-part small{position:absolute;right:10px;top:10px;display:block;color:rgba(21,24,32,.42);font:600 9px "Exo 2",sans-serif}
+
+  .lyrics-editor[hidden]{display:none}
+  .lyrics-editor{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:18px;background:rgba(8,14,22,.56)}
+  .lyrics-editor-card{position:relative;box-sizing:border-box;width:min(600px,100%);max-height:88dvh;overflow:auto;padding:24px;border:1px solid rgba(21,24,32,.12);border-radius:24px;color:var(--ink);background:#fff}
+  .lyrics-editor-card h2{margin:0 0 20px;font:600 25px Orbitron,"Zen Kaku Gothic New",sans-serif}
+  .lyrics-editor-card label{display:grid;gap:7px;margin:13px 0;font-size:13px;font-weight:700}
+  .lyrics-editor-card input,.lyrics-editor-card textarea{box-sizing:border-box;width:100%;padding:12px;border:1px solid rgba(21,24,32,.15);border-radius:13px;font:400 16px "Zen Kaku Gothic New",Roboto,sans-serif}
+  .lyrics-editor-close{position:absolute;right:14px;top:12px;width:40px;height:40px;border:1px solid rgba(21,24,32,.12);border-radius:50%;color:var(--ink);background:#fff;font-size:23px}
+  .lyrics-preview{min-height:60px;margin:16px 0;padding:13px;border-radius:14px;background:var(--star-off-white)}
+  .lyrics-preview p{white-space:pre-wrap}
+  .lyrics-editor-actions{display:flex;justify-content:flex-end;gap:9px}
+  .lyrics-editor-actions button{min-height:44px;padding:0 15px;border:0;border-radius:13px;background:#eceff1}
+  .lyrics-editor-actions button:last-child{color:#fff;background:var(--ink)}
+  .lyrics-editor-actions button:disabled{opacity:.4}
+
+  body.theme-light .screen-overlay{color:var(--ink);background:rgba(248,250,249,.99)}
+  body.theme-light .screen-overlay .overlay-close,body.theme-light .modal-overlay .overlay-close{border-color:rgba(21,24,32,.13);color:var(--ink);background:#fff}
+  body.theme-light .search-field{border-color:rgba(21,24,32,.13);background:#fff}
+  body.theme-light .search-field svg{stroke:rgba(21,24,32,.58)}
+  body.theme-light .search-input{color:var(--ink)}
+  body.theme-light .search-input::placeholder{color:rgba(21,24,32,.34)}
+  body.theme-light .search-status{color:rgba(21,24,32,.42)}
+  body.theme-light .search-result{border-color:rgba(21,24,32,.1);color:var(--ink);background:#fff}
+  body.theme-light .search-result-parent,body.theme-light .search-result-copy{color:rgba(21,24,32,.48)}
+  body.theme-light .modal-overlay{background:rgba(236,240,239,.82)}
+  body.theme-light .settings-panel,body.theme-light .state-panel{border-color:rgba(21,24,32,.12);color:var(--ink);background:#fff;box-shadow:0 28px 80px rgba(8,14,22,.16)}
+  body.theme-light .settings-user-card,body.theme-light .tool-button{border-color:rgba(21,24,32,.1);color:var(--ink);background:var(--star-off-white)}
+  body.theme-light .settings-label,body.theme-light .settings-note,body.theme-light .settings-section-title{color:rgba(21,24,32,.45)}
+  body.theme-light .settings-user{color:var(--ink)}
+  body.theme-light .settings-change{border-color:rgba(21,24,32,.12);color:var(--ink);background:#fff}
+  body.theme-light .tool-status{color:rgba(21,24,32,.46)}
+
+  @media(max-width:720px){
+    .lyrics-page{padding:76px 0 68px}
+    .lyrics-page:has(.lyrics-song-title){padding-top:76px}
+    .lyrics-group-card{min-height:86px}
+    .lyrics-view:has(.lyrics-song-title){padding:0}
+    .lyrics-song-title{margin-bottom:16px}
+    .lyrics-list-back{margin-bottom:30px}
+    .lyrics-part{margin-bottom:28px}
+    .lyrics-part p{font-size:17px;line-height:1.85}
+  }
 </style>
