@@ -9,12 +9,23 @@
     const savedId = localStorage.getItem('bmsgUniverseUserId') || 'U001';
     return UNIVERSE_USERS.find(function(user) { return user.id === savedId; }) || UNIVERSE_USERS[0];
   }
+  function isLyricsEditMode() { return localStorage.getItem('bmsgLyricsEditMode') === 'true'; }
+  function syncLyricsEditMode() {
+    const status = document.getElementById('lyricsEditModeStatus');
+    if (status) status.textContent = isLyricsEditMode() ? 'ON' : 'OFF';
+  }
+  function toggleLyricsEditMode() {
+    localStorage.setItem('bmsgLyricsEditMode', isLyricsEditMode() ? 'false' : 'true');
+    syncLyricsEditMode();
+    if (typeof lyricsState !== 'undefined' && lyricsState.song && typeof renderLyricsSong === 'function') renderLyricsSong();
+  }
+
   function syncSettingsUserName() {
     const label = document.getElementById('settingsUserName');
     if (label) label.textContent = getCurrentUniverseUser().name;
   }
   function openSettings() {
-    syncSettingsUserName(); settingsOverlay.classList.add('open'); document.body.style.overflow = 'hidden';
+    syncSettingsUserName(); syncLyricsEditMode(); settingsOverlay.classList.add('open'); document.body.style.overflow = 'hidden';
   }
   function openPerformanceTool() { closeSettings(); navigateTo('metrics'); }
   function closeSettings() { settingsOverlay.classList.remove('open'); document.body.style.overflow = ''; }
@@ -25,5 +36,5 @@
     localStorage.setItem('bmsgUniverseUserId', next.id); syncSettingsUserName();
     if (typeof showToast === 'function') showToast(next.name + 'に変更しました');
   }
-  syncSettingsUserName();
+  syncSettingsUserName(); syncLyricsEditMode();
 </script>
