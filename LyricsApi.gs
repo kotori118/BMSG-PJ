@@ -5,6 +5,12 @@ function getLyricsCatalog() {
   const songs = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.SONGS);
   const parts = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.LYRICS_PARTS);
   const singerMap = buildLyricsSingerMap_();
+  const groupColors = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.GROUPS).reduce(function(map,row){
+    const name=String(row.GroupName||'').trim();
+    const color=String(row.ColorHex||'').trim();
+    if(name&&/^#[0-9a-f]{6}$/i.test(color))map[name]=color;
+    return map;
+  },{});
   const partsBySong = parts.reduce(function(map, row) {
     const id = asId_(row.SongID);
     if (!id) return map;
@@ -29,6 +35,7 @@ function getLyricsCatalog() {
 
   return {
     categories: LYRICS_CATEGORIES_.slice(),
+    groupColors: groupColors,
     partsBySong: partsBySong,
     songs: songs.filter(function(row) {
       return counts[asId_(row.SongID)] > 0;
