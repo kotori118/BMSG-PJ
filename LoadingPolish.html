@@ -1,12 +1,13 @@
 <style>
   /* =========================================================
-     Universe Shared Loading System v2
+     Universe Shared Loading System v3
      PROFILE ring spinner is the visual source of truth.
-     Existing service DOM stays intact; this layer owns the
-     loading surface, accent, motion and accessibility rhythm.
+     This file is the final loading visual authority.
      ========================================================= */
   :root{
-    --u-loading-accent:var(--cyan,#9cecff);
+    --u-loading-accent:#9cecff;
+    --u-loading-track-dark:rgba(247,251,255,.16);
+    --u-loading-track-light:rgba(21,24,32,.16);
     --u-loading-size:18px;
     --u-loading-ring:2px;
     --u-loading-gap:12px;
@@ -31,14 +32,7 @@
     letter-spacing:.12em;
   }
 
-  body.theme-light :is(
-    .universe-loading,
-    .profile-detail-loading,
-    .profile-map-loading,
-    .profile-search-loading,
-    .karaoke-loading,
-    .lyrics-loading
-  ){
+  body.theme-light :is(.universe-loading,.profile-detail-loading,.profile-map-loading,.profile-search-loading,.karaoke-loading,.lyrics-loading){
     color:var(--u-loading-label-light);
   }
 
@@ -47,50 +41,53 @@
   .profile-map-spinner,
   .profile-search-spinner,
   .karaoke-loading::before,
-  .lyrics-loading::before,
-  .lyrics-room-card.is-loading::before{
+  .lyrics-loading::before{
     box-sizing:border-box;
     width:var(--u-loading-size);
     height:var(--u-loading-size);
     flex:0 0 auto;
-    border:var(--u-loading-ring) solid color-mix(in srgb,var(--loading-accent,var(--u-loading-accent)) 18%,transparent);
-    border-top-color:var(--loading-accent,var(--u-loading-accent));
+    border:var(--u-loading-ring) solid var(--u-loading-track-dark)!important;
+    border-top-color:var(--loading-accent,var(--u-loading-accent))!important;
+    border-right-color:var(--loading-accent,var(--u-loading-accent))!important;
     border-radius:50%;
-    animation:universeSpinner var(--u-loading-speed) linear infinite;
-    box-shadow:0 0 12px color-mix(in srgb,var(--loading-accent,var(--u-loading-accent)) 12%,transparent);
+    animation:universeSpinner var(--u-loading-speed) linear infinite!important;
+    box-shadow:0 0 12px rgba(156,236,255,.12);
+  }
+
+  body.theme-light :is(.universe-spinner,.profile-detail-spinner,.profile-map-spinner,.profile-search-spinner,.karaoke-loading::before,.lyrics-loading::before){
+    border-color:var(--u-loading-track-light)!important;
+    border-top-color:var(--loading-accent,var(--u-loading-accent))!important;
+    border-right-color:var(--loading-accent,var(--u-loading-accent))!important;
   }
 
   .karaoke-loading::before,
-  .lyrics-loading::before,
-  .lyrics-room-card.is-loading::before{content:""}
+  .lyrics-loading::before{content:""}
 
-  /* Member detail inherits its member color instead of falling back to cyan. */
+  /* Member detail uses Member Color. */
   .profile-member-detail .profile-detail-loading{
     --loading-accent:var(--member-accent,var(--u-loading-accent));
   }
 
-  /* General PROFILE / LYRICS / KARAOKE loaders use Soft Cyan. */
+  /* General loaders are always Soft Cyan unless an explicit inline accent is supplied. */
   .profile-map-loading,
   .profile-search-loading,
   .karaoke-loading,
-  .lyrics-loading,
-  .universe-loading{
-    --loading-accent:var(--u-loading-accent);
+  .lyrics-loading{
+    --loading-accent:#9cecff;
   }
 
-  /* LYRICS room bootstrap uses the same ring without changing room logic. */
+  /* Room bootstrap now renders the shared spinner directly; no pseudo duplicate. */
   .lyrics-room-card.is-loading{
-    --loading-accent:var(--u-loading-accent);
+    min-height:118px;
+    display:grid;
+    place-items:center;
   }
-  .lyrics-room-card.is-loading::before{
-    display:block;
-    margin:10px 0 4px;
-  }
+  .lyrics-room-card.is-loading::before{display:none!important;content:none!important}
+  .lyrics-room-card.is-loading .universe-loading{gap:0}
 
-  /* Full-screen / state-check loading. Legacy star markup is harmless if
-     encountered, but the visible system is always the common ring. */
+  /* Full-screen / shared state loader. */
   .loading-space{
-    --loading-accent:var(--u-loading-accent);
+    --loading-accent:#9cecff;
     display:grid;
     place-items:center;
     gap:14px;
@@ -105,11 +102,17 @@
     box-sizing:border-box;
     width:22px;
     height:22px;
-    border:2px solid color-mix(in srgb,var(--loading-accent) 18%,transparent);
-    border-top-color:var(--loading-accent);
+    border:2px solid var(--u-loading-track-dark)!important;
+    border-top-color:var(--loading-accent)!important;
+    border-right-color:var(--loading-accent)!important;
     border-radius:50%;
-    animation:universeSpinner var(--u-loading-speed) linear infinite;
-    box-shadow:0 0 14px color-mix(in srgb,var(--loading-accent) 14%,transparent);
+    animation:universeSpinner var(--u-loading-speed) linear infinite!important;
+    box-shadow:0 0 14px rgba(156,236,255,.14);
+  }
+  body.theme-light .loading-space::before{
+    border-color:var(--u-loading-track-light)!important;
+    border-top-color:var(--loading-accent)!important;
+    border-right-color:var(--loading-accent)!important;
   }
   .loading-space::after{
     content:"LOADING UNIVERSE";
@@ -117,33 +120,15 @@
     letter-spacing:.13em;
   }
 
-  /* StateUI v2 inserts the shared renderer directly. In that mode the
-     compatibility pseudo-loader is disabled so only one 22px ring appears. */
   .loading-space.loading-space-shared::before,
   .loading-space.loading-space-shared::after{display:none}
-  .loading-space.loading-space-shared .universe-loading{
-    flex-direction:column;
-    gap:14px;
-  }
-  .loading-space.loading-space-shared .universe-spinner{
-    width:22px;
-    height:22px;
-    box-shadow:0 0 14px color-mix(in srgb,var(--loading-accent,var(--u-loading-accent)) 14%,transparent);
-  }
+  .loading-space.loading-space-shared .universe-loading{flex-direction:column;gap:14px}
+  .loading-space.loading-space-shared .universe-spinner{width:22px;height:22px}
 
   @keyframes universeSpinner{to{transform:rotate(360deg)}}
 
   @media(prefers-reduced-motion:reduce){
-    .universe-spinner,
-    .profile-detail-spinner,
-    .profile-map-spinner,
-    .profile-search-spinner,
-    .karaoke-loading::before,
-    .lyrics-loading::before,
-    .lyrics-room-card.is-loading::before,
-    .loading-space::before{
-      animation:none;
-    }
+    .universe-spinner,.profile-detail-spinner,.profile-map-spinner,.profile-search-spinner,.karaoke-loading::before,.lyrics-loading::before,.loading-space::before{animation:none!important}
   }
 </style>
 <script>
@@ -153,9 +138,10 @@
   }
 
   function renderUniverseLoading(label,accent){
-    const text=String(label||'読み込み中');
-    const safeLabel=typeof escapeHtml==='function'?escapeHtml(text):text;
     const safeAccent=normalizeUniverseLoadingAccent(accent);
-    return '<div class="universe-loading" role="status" aria-live="polite" style="--loading-accent:'+safeAccent+'"><span class="universe-spinner" aria-hidden="true"></span><span>'+safeLabel+'</span></div>';
+    const hasLabel=label!==false&&label!==null;
+    const text=hasLabel?String(label||'読み込み中'):'';
+    const safeLabel=typeof escapeHtml==='function'?escapeHtml(text):text;
+    return '<div class="universe-loading" role="status" aria-live="polite" style="--loading-accent:'+safeAccent+'"><span class="universe-spinner" aria-hidden="true"></span>'+(hasLabel?'<span>'+safeLabel+'</span>':'')+'</div>';
   }
 </script>
