@@ -113,7 +113,7 @@ function saveKaraokeAssignment(payload) {
   parts.forEach(function(part){
     String(part.Singer||'').split(',').forEach(function(token){
       const key=token.trim().replace(/_(up|down|sub)$/i,'');
-      if(key)allowed[key]=true;
+      if(key&&key!=='99')allowed[key]=true;
     });
   });
 
