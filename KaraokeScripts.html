@@ -1,6 +1,5 @@
 <script>
-  const KARAOKE_GROUPS=['BE:FIRST','MAZZEL','STARGLOW','HANA','BMSG ALLSTARS'];
-  const karaokeState={category:'',users:[{userId:'U001',displayName:'ももたん'},{userId:'U002',displayName:'みおたん'},{userId:'U003',displayName:'りおたん'}],room:null,history:[],songs:[],partsBySong:{},song:null,assignments:{},screen:'entry',busy:false,backParams:{}};
+  const karaokeState={users:[{userId:'U001',displayName:'ももたん'},{userId:'U002',displayName:'みおたん'},{userId:'U003',displayName:'りおたん'}],room:null,history:[],songs:[],partsBySong:{},song:null,assignments:{},screen:'entry',busy:false,backParams:{}};
 
   function renderKaraoke(){return document.getElementById('karaokePageTemplate').innerHTML;}
 
@@ -40,36 +39,11 @@
 
   function renderKaraokeEntry(){
     karaokeState.screen='entry';
-    karaokeState.category='';
     document.getElementById('karaokeView').innerHTML=
-      '<button class="karaoke-top-back" type="button" onclick="navigateTo(\'lyrics\')">‹ <span>BACK</span></button><section class="karaoke-room-card"><h2>🎤 3人カラオケルーム</h2><div id="karaokeRoomBody"><button class="karaoke-primary" type="button" onclick="createKaraokeRoomUI()">カラオケルームを作る</button><div class="karaoke-join"><input id="karaokeRoomInput" inputmode="numeric" maxlength="4" placeholder="4桁のルームID"><button type="button" onclick="joinKaraokeRoomUI()">参加</button></div></div></section>'+
-      '<p class="karaoke-section-label">SELECT ARTIST</p><section class="karaoke-groups">'+KARAOKE_GROUPS.map(function(group){return '<button type="button" onclick="openKaraokeGroup(\''+encodeURIComponent(group)+'\')"><strong>'+escapeLyrics(group)+'</strong><span>›</span></button>';}).join('')+'</section>';
-  }
-
-  function karaokeGroupSongs(group){
-    return karaokeState.songs.filter(function(song){
-      if(group==='BMSG ALLSTARS')return song.category==='UNIT';
-      return song.category===group;
-    }).sort(function(a,b){
-      const at=Date.parse(a.releaseDate||'')||0,bt=Date.parse(b.releaseDate||'')||0;
-      return bt-at||(Number(b.songId)||0)-(Number(a.songId)||0);
-    });
-  }
-
-  function openKaraokeGroup(encoded){
-    karaokeState.category=decodeURIComponent(encoded);
-    renderKaraokeSongList();
-    scrollKaraokeTop();
-  }
-
-  function renderKaraokeSongList(){
-    const songs=karaokeGroupSongs(karaokeState.category);
-    document.getElementById('karaokeView').innerHTML=
-      '<button class="karaoke-top-back" type="button" onclick="renderKaraokeEntry();updateKaraokeRoomCard()">‹ <span>BACK</span></button>'+
-      '<div class="karaoke-title karaoke-list-title"><p>KARAOKE</p><h2>'+escapeLyrics(karaokeState.category)+'</h2></div>'+
-      '<section class="karaoke-song-list">'+songs.map(function(song){
-        return '<button type="button" onclick="openKaraokeSetup(\''+encodeURIComponent(song.songId)+'\')"><strong>'+escapeLyrics(song.title)+'</strong><span>›</span></button>';
-      }).join('')+'</section>';
+      '<button class="karaoke-top-back" type="button" onclick="navigateTo(\'lyrics\')">‹ <span>BACK</span></button>'+
+      '<section class="karaoke-room-card"><h2>3人カラオケルーム</h2><div id="karaokeRoomBody"></div></section>'+
+      '<section id="karaokeHistoryArea" class="karaoke-history-area"></section>';
+    updateKaraokeRoomCard();
   }
 
   function updateKaraokeRoomCard(){
@@ -77,9 +51,28 @@
     if(!body)return;
     if(!karaokeState.room){
       body.innerHTML='<button class="karaoke-primary" type="button" onclick="createKaraokeRoomUI()">カラオケルームを作る</button><div class="karaoke-join"><input id="karaokeRoomInput" inputmode="numeric" maxlength="4" placeholder="4桁のルームID"><button type="button" onclick="joinKaraokeRoomUI()">参加</button></div>';
+      renderKaraokeHistory();
       return;
     }
     body.innerHTML='<div class="karaoke-active-room"><span>ROOM ID</span><strong>'+escapeLyrics(karaokeState.room.roomId)+'</strong></div><button class="karaoke-secondary" type="button" onclick="leaveKaraokeRoomUI()">ルームを抜ける</button>';
+    renderKaraokeHistory();
+  }
+
+  function renderKaraokeHistory(){
+    const area=document.getElementById('karaokeHistoryArea');
+    if(!area)return;
+    if(!karaokeState.room){area.innerHTML='<p class="karaoke-section-label">HISTORY</p><div class="karaoke-history-empty">ルームに参加すると履歴が表示されます</div>';return;}
+    area.innerHTML='<p class="karaoke-section-label">HISTORY</p>'+(karaokeState.history.length?'<div class="karaoke-history-list">'+karaokeState.history.map(function(item,index){return '<button type="button" onclick="openKaraokeHistory('+index+')"><span><strong>'+escapeLyrics(item.title||'曲名なし')+'</strong><small>'+escapeLyrics(formatKaraokeTime(item.createdAt))+'</small></span><b>›</b></button>';}).join('')+'</div>':'<div class="karaoke-history-empty">まだ振り分け履歴はありません</div>');
+  }
+
+  function openKaraokeHistory(index){
+    const item=karaokeState.history[index];if(!item)return;
+    karaokeState.screen='history';
+    document.getElementById('karaokeView').innerHTML='<button class="karaoke-top-back" type="button" onclick="renderKaraokeEntry()">‹ <span>BACK</span></button><div class="karaoke-title"><p>HISTORY</p><h2>'+escapeLyrics(item.title||'')+'</h2></div><section class="karaoke-history-result">'+karaokeState.users.map(function(user){const slots=(item.assignments&&item.assignments[user.userId])||[];return '<article><span>'+escapeLyrics(user.displayName)+'</span><strong>'+slots.map(function(slot){return '<i style="color:'+escapeLyrics(slot.color||'#777777')+'">'+escapeLyrics(typeof slot==='string'?slot:(slot.name||slot.memberId||''))+'</i>';}).join('<em>/</em>')+'</strong></article>';}).join('')+'</section>';
+    scrollKaraokeTop();
+  }
+
+  function formatKaraokeTime(value){try{return new Intl.DateTimeFormat('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}).format(new Date(value));}catch(error){return'';}}
   }
 
   function createKaraokeRoomUI(){
