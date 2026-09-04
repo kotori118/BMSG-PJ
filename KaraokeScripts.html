@@ -6,12 +6,12 @@
   function initKaraokePage(params){
     params=params||{};
     karaokeState.backParams={group:params.group||'',unit:params.unit||''};
-    const cached=sessionStorage.getItem('bmsgLyricsDataV3');
+    const cached=sessionStorage.getItem('bmsgLyricsDataV4');
     if(cached){
       try{applyKaraokeCatalog(JSON.parse(cached),params);return;}catch(error){}
     }
     google.script.run.withSuccessHandler(function(data){
-      try{sessionStorage.setItem('bmsgLyricsDataV3',JSON.stringify(data));}catch(error){}
+      try{sessionStorage.setItem('bmsgLyricsDataV4',JSON.stringify(data));}catch(error){}
       applyKaraokeCatalog(data,params);
     }).withFailureHandler(showKaraokeError).getLyricsCatalog();
   }
@@ -20,7 +20,7 @@
     karaokeState.songs=data.songs||[];
     karaokeState.partsBySong=data.partsBySong||{};
     if(params&&params.mode==='latest'){
-      document.getElementById('karaokeView').innerHTML='<div class="lyrics-loading">LOADING...</div>';
+      document.getElementById('karaokeView').innerHTML='<div class="karaoke-loading">読み込み中</div>';
       loadKaraokeRoom(params.room,function(){
         if(karaokeState.history.length)openKaraokeResultSong(karaokeState.history[0]);
         else{renderKaraokeEntry();showKaraokeError('まだ振り分け結果がありません。');}
@@ -95,7 +95,7 @@
     karaokeState.screen='ranking';
     const today=karaokeDayKey(new Date());
     const daily=karaokeState.history.filter(function(item){return karaokeDayKey(item.createdAt)===today;});
-    document.getElementById('karaokeView').innerHTML='<button class="karaoke-top-back" type="button" onclick="renderKaraokeEntry()">‹ <span>BACK</span></button><div class="karaoke-title"><p>TODAY</p><h2>担当者ランキング</h2></div><section class="karaoke-member-ranking">'+karaokeState.users.map(function(user){
+    document.getElementById('karaokeView').innerHTML='<button class="karaoke-top-back" type="button" onclick="renderKaraokeEntry()">‹ <span>BACK</span></button><div class="karaoke-title"><p>本日の集計</p><h2>担当者ランキング</h2></div><section class="karaoke-member-ranking">'+karaokeState.users.map(function(user){
       const counts={};
       daily.forEach(function(item){((item.assignments&&item.assignments[user.userId])||[]).forEach(function(slot){const name=typeof slot==='string'?slot:(slot.name||slot.memberId||'');if(name)counts[name]=(counts[name]||0)+1;});});
       const rows=Object.keys(counts).sort(function(a,b){return counts[b]-counts[a]||a.localeCompare(b,'ja');});
@@ -107,8 +107,8 @@
   function renderKaraokeHistory(){
     const area=document.getElementById('karaokeHistoryArea');
     if(!area)return;
-    if(!karaokeState.room){area.innerHTML='<p class="karaoke-section-label">HISTORY</p><div class="karaoke-history-empty">ルームに参加すると履歴が表示されます</div>';return;}
-    area.innerHTML='<div class="karaoke-history-heading"><p class="karaoke-section-label">HISTORY</p><button type="button" onclick="openKaraokeRanking()">担当者ランキング</button></div>'+(karaokeState.history.length?'<div class="karaoke-history-list">'+karaokeState.history.map(function(item){return '<article class="karaoke-history-card"><header><strong>'+escapeLyrics(item.title||'曲名なし')+'</strong><small>'+escapeLyrics(formatKaraokeTime(item.createdAt))+'</small></header><div>'+karaokeHistoryRows(item)+'</div></article>';}).join('')+'</div>':'<div class="karaoke-history-empty">まだ振り分け履歴はありません</div>');
+    if(!karaokeState.room){area.innerHTML='<p class="karaoke-section-label">履歴</p><div class="karaoke-history-empty">ルームに参加すると履歴が表示されます</div>';return;}
+    area.innerHTML='<div class="karaoke-history-heading"><p class="karaoke-section-label">履歴</p><button type="button" onclick="openKaraokeRanking()">担当者ランキング</button></div>'+(karaokeState.history.length?'<div class="karaoke-history-list">'+karaokeState.history.map(function(item){return '<article class="karaoke-history-card"><header><strong>'+escapeLyrics(item.title||'曲名なし')+'</strong><small>'+escapeLyrics(formatKaraokeTime(item.createdAt))+'</small></header><div>'+karaokeHistoryRows(item)+'</div></article>';}).join('')+'</div>':'<div class="karaoke-history-empty">まだ振り分け履歴はありません</div>');
   }
 
   function openKaraokeHistory(index){
