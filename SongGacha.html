@@ -3,7 +3,7 @@
   .lyrics-gacha-card:not(:disabled) span{color:rgba(21,24,32,.58)!important;}
   .song-gacha-screen{padding:0 0 32px;color:var(--ink);}
   .song-gacha-head{display:flex;align-items:center;gap:14px;margin-bottom:24px;}
-  .song-gacha-back{width:auto!important;min-width:82px!important;height:46px!important;padding:0 17px!important;margin:0!important;border-radius:14px!important;font-family:'Exo 2',sans-serif!important;font-size:11px!important;font-weight:700!important;letter-spacing:.12em!important;}
+  .song-gacha-back{width:46px!important;height:46px!important;min-width:46px!important;flex:0 0 46px!important;padding:0!important;margin:0!important;border-radius:14px!important;font-size:29px!important;line-height:1!important;}
   .song-gacha-head h2{margin:0;font-family:'Orbitron',sans-serif;font-size:clamp(22px,6vw,32px);letter-spacing:.08em;}
   .song-gacha-lead{margin:-8px 0 22px;font-family:'Roboto',sans-serif;font-size:12px;line-height:1.75;letter-spacing:.04em;color:color-mix(in srgb,var(--ink) 64%,transparent);}
   .song-gacha-groups{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;}
@@ -14,15 +14,9 @@
   .song-gacha-group.is-off{opacity:.46;filter:saturate(.45);}
   .song-gacha-count{margin:0 0 13px;font-family:'Roboto',sans-serif;font-size:11px;letter-spacing:.14em;color:color-mix(in srgb,var(--ink) 58%,transparent);text-align:center;}
   .song-gacha-draw{width:100%;min-height:56px;border-radius:16px!important;font-family:'Orbitron',sans-serif!important;font-weight:700!important;letter-spacing:.12em!important;}
-  .song-gacha-result{margin-top:26px;padding:27px 0 20px;border-top:1px solid rgba(60,180,215,.22);text-align:center;animation:songGachaResultIn .42s ease both;}
-  .song-gacha-result-label{margin:0 0 9px;font-family:'Roboto',sans-serif;font-size:10px;letter-spacing:.24em;color:#42bfdc;}
-  .song-gacha-result h3{margin:0;font-family:'Zen Kaku Gothic New',sans-serif;font-size:clamp(24px,7vw,34px);line-height:1.4;}
-  .song-gacha-result-group{margin:8px 0 20px;font-family:'Exo 2',sans-serif;font-size:12px;letter-spacing:.13em;color:color-mix(in srgb,var(--ink) 58%,transparent);}
-  .song-gacha-result-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-  .song-gacha-result-actions button{min-height:52px;border-radius:15px!important;font-family:'Exo 2',sans-serif!important;font-weight:700!important;letter-spacing:.08em!important;}
-  .song-gacha-result-actions .song-gacha-again{border-color:rgba(80,205,238,.72)!important;background:linear-gradient(145deg,#fff 0%,rgba(156,236,255,.24) 100%)!important;}
   .song-gacha-overlay{position:fixed;inset:0;z-index:2400;display:flex;align-items:center;justify-content:center;overflow:hidden;background:radial-gradient(circle at 50% 48%,rgba(44,178,219,.14),transparent 30%),linear-gradient(180deg,#03080f 0%,#06101b 54%,#02060b 100%);color:#fff;opacity:0;animation:songGachaFadeIn .28s ease forwards;}
-  .song-gacha-overlay.is-leaving{animation:songGachaFadeOut .34s ease forwards;}
+  .song-gacha-overlay.is-static{opacity:1;animation:none;}
+  .song-gacha-overlay.is-leaving{animation:songGachaFadeOut .28s ease forwards;}
   .song-gacha-orbit{position:absolute;width:min(74vw,310px);aspect-ratio:1;border:1px solid rgba(156,236,255,.24);border-radius:50%;box-shadow:0 0 40px rgba(98,218,246,.08),inset 0 0 40px rgba(98,218,246,.05);animation:songGachaOrbit 2.2s linear infinite;}
   .song-gacha-orbit::before,.song-gacha-orbit::after{content:'';position:absolute;inset:16%;border:1px solid rgba(183,153,255,.13);border-radius:50%;transform:rotate(58deg) scaleY(.52);}
   .song-gacha-orbit::after{inset:30%;border-color:rgba(156,236,255,.2);transform:rotate(-38deg) scaleY(.64);}
@@ -31,14 +25,20 @@
   .song-gacha-stage-label{margin:0 0 13px;font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:.32em;color:#9cecff;}
   .song-gacha-ticker{min-height:82px;display:flex;align-items:center;justify-content:center;font-family:'Zen Kaku Gothic New',sans-serif;font-size:clamp(22px,7vw,34px);font-weight:700;line-height:1.45;text-shadow:0 0 24px rgba(156,236,255,.22);}
   .song-gacha-stage.is-final .song-gacha-ticker{animation:songGachaFinal .52s cubic-bezier(.2,.85,.25,1) both;}
+  .song-gacha-final-group{display:none;margin:7px 0 0;font-family:'Exo 2',sans-serif;font-size:11px;letter-spacing:.15em;color:rgba(223,249,255,.62);}
+  .song-gacha-overlay-actions{display:none;grid-template-columns:1fr 1fr;gap:10px;margin-top:26px;animation:songGachaActionsIn .35s ease both;}
+  .song-gacha-stage.is-ready .song-gacha-final-group,.song-gacha-stage.is-ready .song-gacha-overlay-actions{display:grid;}
+  .song-gacha-stage.is-ready .song-gacha-final-group{display:block;}
+  .song-gacha-overlay-actions button{min-height:50px;border:1px solid rgba(156,236,255,.34)!important;border-radius:15px!important;color:#fff!important;background:linear-gradient(145deg,rgba(255,255,255,.07),rgba(156,236,255,.12))!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.08)!important;font-family:'Exo 2',sans-serif!important;font-weight:700!important;letter-spacing:.08em!important;}
+  .song-gacha-overlay-actions .song-gacha-again{border-color:rgba(156,236,255,.68)!important;background:linear-gradient(145deg,rgba(156,236,255,.12),rgba(156,236,255,.22))!important;}
   @keyframes songGachaFadeIn{to{opacity:1}}
   @keyframes songGachaFadeOut{to{opacity:0;transform:scale(1.015)}}
   @keyframes songGachaOrbit{to{transform:rotate(360deg)}}
   @keyframes songGachaStar{from{opacity:.22;transform:scale(.7)}to{opacity:.95;transform:scale(1.55)}}
   @keyframes songGachaFinal{0%{opacity:.25;transform:scale(.86);filter:blur(5px)}70%{opacity:1;transform:scale(1.035);filter:blur(0)}100%{transform:scale(1)}}
-  @keyframes songGachaResultIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-  @media(max-width:390px){.song-gacha-groups{grid-template-columns:1fr}.song-gacha-result-actions{grid-template-columns:1fr 1fr}}
-  @media(prefers-reduced-motion:reduce){.song-gacha-overlay,.song-gacha-overlay.is-leaving,.song-gacha-orbit,.song-gacha-star,.song-gacha-stage.is-final .song-gacha-ticker,.song-gacha-result{animation:none!important;}.song-gacha-overlay{opacity:1}.song-gacha-overlay.is-leaving{opacity:0}}
+  @keyframes songGachaActionsIn{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+  @media(max-width:390px){.song-gacha-groups{grid-template-columns:1fr}.song-gacha-overlay-actions{grid-template-columns:1fr 1fr}}
+  @media(prefers-reduced-motion:reduce){.song-gacha-overlay,.song-gacha-overlay.is-leaving,.song-gacha-orbit,.song-gacha-star,.song-gacha-stage.is-final .song-gacha-ticker,.song-gacha-overlay-actions{animation:none!important;}.song-gacha-overlay{opacity:1}}
 </style>
 <script>
   const songGachaState={enabled:{},result:null,drawing:false};
@@ -73,6 +73,7 @@
   }
 
   function openSongGacha(){
+    closeSongGachaOverlay(true);
     resetSongGachaSelection();
     setLyricsUrl({});
     renderSongGacha();
@@ -84,7 +85,7 @@
     if(!view)return;
     const pool=songGachaPool();
     view.innerHTML='<section class="song-gacha-screen">'
-      +'<div class="song-gacha-head"><button class="u-btn lyrics-list-back song-gacha-back" type="button" onclick="showLyricsGroups()">BACK</button><h2>SONG GACHA</h2></div>'
+      +'<div class="song-gacha-head"><button class="u-btn song-gacha-back" type="button" aria-label="Back" onclick="showLyricsGroups()">‹</button><h2>SONG GACHA</h2></div>'
       +'<p class="song-gacha-lead">SELECT GROUPS TO INCLUDE. BMSG ALLSTARS IS DRAWN AS ONE GROUP.</p>'
       +'<div class="song-gacha-groups">'+LYRICS_GROUPS.map(function(group){
         const on=!!songGachaState.enabled[group];
@@ -92,7 +93,6 @@
       }).join('')+'</div>'
       +'<p class="song-gacha-count">'+pool.length+' SONGS IN GACHA</p>'
       +'<button class="u-btn song-gacha-draw" type="button" onclick="drawSongGacha()"'+(!pool.length||songGachaState.drawing?' disabled':'')+'>DRAW</button>'
-      +(songGachaState.result?renderSongGachaResult(songGachaState.result):'')
       +'</section>';
   }
 
@@ -103,35 +103,39 @@
     renderSongGacha();
   }
 
-  function renderSongGachaResult(result){
-    return '<section class="song-gacha-result"><p class="song-gacha-result-label">YOUR SONG</p><h3>'+escapeLyrics(result.song.title)+'</h3><p class="song-gacha-result-group">'+escapeLyrics(result.group)+'</p><div class="song-gacha-result-actions"><button class="u-btn song-gacha-again" type="button" onclick="drawSongGacha()">DRAW AGAIN</button><button class="u-btn" type="button" onclick="openSongGachaKaraoke()">KARAOKE</button></div></section>';
-  }
-
   function drawSongGacha(){
     if(songGachaState.drawing)return;
     const pool=songGachaPool();
     if(!pool.length){showLyricsError('SELECT AT LEAST ONE GROUP.');return;}
+    closeSongGachaOverlay(true);
     songGachaState.drawing=true;
     const result=pool[Math.floor(Math.random()*pool.length)];
     songGachaState.result=result;
-    if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches){
-      songGachaState.drawing=false;
-      renderSongGacha();
-      return;
-    }
-    playSongGachaAnimation(pool,result);
+    playSongGachaAnimation(pool,result,window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   }
 
-  function playSongGachaAnimation(pool,result){
-    const overlay=document.createElement('div');
-    overlay.className='song-gacha-overlay';
-    overlay.innerHTML='<div class="song-gacha-orbit"></div>'+Array.from({length:18},function(_,i){
+  function songGachaOverlayMarkup(){
+    return '<div class="song-gacha-orbit"></div>'+Array.from({length:18},function(_,i){
       const left=(11+(i*37)%82),top=(7+(i*53)%86),delay=((i%7)*.12).toFixed(2);
       return '<i class="song-gacha-star" style="left:'+left+'%;top:'+top+'%;animation-delay:'+delay+'s"></i>';
-    }).join('')+'<div class="song-gacha-stage"><p class="song-gacha-stage-label">BMSG UNIVERSE</p><div class="song-gacha-ticker">...</div></div>';
+    }).join('')+'<div class="song-gacha-stage"><p class="song-gacha-stage-label">BMSG UNIVERSE</p><div class="song-gacha-ticker">...</div><p class="song-gacha-final-group"></p><div class="song-gacha-overlay-actions"><button class="u-btn song-gacha-again" type="button" onclick="drawSongGachaAgain()">DRAW AGAIN</button><button class="u-btn" type="button" onclick="openSongGachaKaraoke()">KARAOKE</button></div></div>';
+  }
+
+  function playSongGachaAnimation(pool,result,reduced){
+    const overlay=document.createElement('div');
+    overlay.className='song-gacha-overlay'+(reduced?' is-static':'');
+    overlay.innerHTML=songGachaOverlayMarkup();
     document.body.appendChild(overlay);
     const ticker=overlay.querySelector('.song-gacha-ticker');
+    const group=overlay.querySelector('.song-gacha-final-group');
     const stage=overlay.querySelector('.song-gacha-stage');
+    if(reduced){
+      ticker.textContent=result.song.title;
+      group.textContent=result.group;
+      stage.classList.add('is-final','is-ready');
+      songGachaState.drawing=false;
+      return;
+    }
     let ticks=0;
     const timer=setInterval(function(){
       const pick=pool[Math.floor(Math.random()*pool.length)];
@@ -140,19 +144,28 @@
       if(ticks>=11){
         clearInterval(timer);
         ticker.textContent=result.song.title;
+        group.textContent=result.group;
         stage.classList.add('is-final');
         setTimeout(function(){
-          overlay.classList.add('is-leaving');
-          setTimeout(function(){
-            overlay.remove();
-            songGachaState.drawing=false;
-            renderSongGacha();
-            const resultNode=document.querySelector('.song-gacha-result');
-            if(resultNode)resultNode.scrollIntoView({behavior:'smooth',block:'center'});
-          },340);
-        },720);
+          stage.classList.add('is-ready');
+          songGachaState.drawing=false;
+        },520);
       }
     },105);
+  }
+
+  function closeSongGachaOverlay(immediate){
+    const overlay=document.querySelector('.song-gacha-overlay');
+    if(!overlay)return;
+    if(immediate){overlay.remove();return;}
+    overlay.classList.add('is-leaving');
+    setTimeout(function(){overlay.remove();},280);
+  }
+
+  function drawSongGachaAgain(){
+    closeSongGachaOverlay(true);
+    songGachaState.drawing=false;
+    drawSongGacha();
   }
 
   function applySongGachaContext(){
@@ -166,6 +179,7 @@
   function openSongGachaKaraoke(){
     const result=applySongGachaContext();
     if(!result)return;
+    closeSongGachaOverlay(true);
     setLyricsUrl({group:lyricsState.group,unit:lyricsState.unit,song:result.song.songId});
     openKaraokeFromLyrics(lyricArg(result.song.songId));
   }
