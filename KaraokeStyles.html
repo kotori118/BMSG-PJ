@@ -1,3 +1,48 @@
 <style>
-.karaoke-page{box-sizing:border-box;min-height:100%;padding:82px 0 72px;color:var(--ink);background:#fff;font-family:Roboto,"Zen Kaku Gothic New",sans-serif}.karaoke-head,.karaoke-view{width:min(100%,820px);margin-inline:auto}.karaoke-head{margin-bottom:28px}.karaoke-head p,.karaoke-label{margin:0 0 7px;color:var(--cyan);font:600 9px "Exo 2",sans-serif;letter-spacing:.17em}.karaoke-head h1{margin:0;font:600 clamp(38px,8vw,66px)/.95 Orbitron,sans-serif}.karaoke-loading{padding:50px;text-align:center;font:600 10px "Exo 2",sans-serif;color:#888}.karaoke-entry{padding:20px;border:1px solid rgba(21,24,32,.12);border-radius:22px}.karaoke-primary{box-sizing:border-box;width:100%;min-height:54px;border:0;border-radius:16px;color:#fff;background:var(--ink);font:600 13px "Exo 2",sans-serif;letter-spacing:.1em}.karaoke-join{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:10px}.karaoke-join input{min-width:0;height:50px;padding:0 15px;border:1px solid rgba(21,24,32,.14);border-radius:15px;font:600 16px "Exo 2",sans-serif}.karaoke-join button,.karaoke-back-link,.karaoke-room-bar button{padding:0 17px;border:1px solid rgba(21,24,32,.13);border-radius:15px;background:#fff;font:600 10px "Exo 2",sans-serif}.karaoke-back-link{min-height:46px;margin-top:16px}.karaoke-room-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:30px;padding:15px 17px;border:1px solid rgba(21,24,32,.12);border-radius:18px}.karaoke-room-bar div{display:grid;gap:2px}.karaoke-room-bar small{font:600 8px "Exo 2",sans-serif;letter-spacing:.14em;color:#888}.karaoke-room-bar strong{font:600 27px Orbitron,sans-serif}.karaoke-room-bar button{height:40px}.karaoke-groups,.karaoke-songs{display:grid;gap:8px}.karaoke-groups button,.karaoke-songs button,.karaoke-history button{position:relative;min-height:58px;padding:0 17px;border:1px solid rgba(21,24,32,.12);border-radius:16px;color:var(--ink);background:#fff;text-align:left;font:600 15px Orbitron,"Zen Kaku Gothic New",sans-serif}.karaoke-songs button span{position:absolute;right:16px;color:#aaa}.karaoke-subhead{display:flex;align-items:center;gap:14px;margin-bottom:22px}.karaoke-subhead>button{width:46px;height:46px;border:1px solid rgba(21,24,32,.13);border-radius:14px;background:#fff;font-size:29px}.karaoke-subhead h2{margin:0;font:600 27px Orbitron,"Zen Kaku Gothic New",sans-serif}.karaoke-subhead small{font:600 8px "Exo 2",sans-serif;letter-spacing:.14em;color:#888}.karaoke-gacha{width:100%;min-height:54px;margin-bottom:20px;border:1px solid rgba(21,24,32,.12);border-radius:16px;color:var(--ink);background:#f4f7f7;font:600 12px "Exo 2",sans-serif;letter-spacing:.12em}.karaoke-assignments{display:grid;gap:10px;margin-bottom:20px}.karaoke-assignments article{padding:18px;border:1px solid rgba(21,24,32,.12);border-radius:18px}.karaoke-assignments p{margin:0 0 7px;color:#777;font-size:12px}.karaoke-assignments strong{font-size:18px}.karaoke-history{display:grid;gap:7px;margin-top:32px}.karaoke-history button{display:flex;align-items:center;justify-content:space-between;font-family:Roboto,"Zen Kaku Gothic New",sans-serif}.karaoke-history button span{color:#999;font-size:10px}.karaoke-page button{-webkit-tap-highlight-color:transparent}.karaoke-page button:focus{outline:none}.karaoke-page button:active{filter:none;background:#f5f7f7}@media(max-width:720px){.karaoke-page{padding:76px 0 68px}.karaoke-head h1{font-size:43px}}
+.karaoke-page{box-sizing:border-box;min-height:100%;padding:76px 0 72px;color:var(--ink);background:#fff;font-family:Roboto,"Zen Kaku Gothic New",sans-serif}
+.karaoke-head,.karaoke-view{width:min(100%,820px);margin-inline:auto}
+.karaoke-head{display:none}
+.karaoke-loading{padding:50px;text-align:center;font-weight:700;color:#888}
+.karaoke-room-card{padding:20px;border:2px solid #cbd3ee;border-radius:18px;background:#f2f4fc}
+.karaoke-room-card h2{margin:0 0 18px;text-align:center;color:#172a82;font-size:19px}
+.karaoke-primary{box-sizing:border-box;width:100%;min-height:58px;border:0;border-radius:10px;color:#fff;background:#4659b8;font-size:18px;font-weight:700}
+.karaoke-join{display:grid;grid-template-columns:1fr auto;gap:9px;margin-top:12px}
+.karaoke-join input{box-sizing:border-box;min-width:0;height:50px;padding:0 14px;border:1px solid #ccc;border-radius:9px;background:#fff;text-align:center;font-size:17px}
+.karaoke-join button{height:50px;padding:0 19px;border:0;border-radius:9px;color:#fff;background:#6070c4;font-size:17px;font-weight:700}
+.karaoke-active-room{display:flex;align-items:center;justify-content:space-between;padding:16px;border-radius:10px;background:#fff}
+.karaoke-active-room span{color:#777;font-size:11px;font-weight:700;letter-spacing:.1em}
+.karaoke-active-room strong{color:#172a82;font-size:28px;letter-spacing:.08em}
+.karaoke-secondary{width:100%;min-height:46px;margin-top:10px;border:1px solid #ccd2e7;border-radius:10px;background:#fff;font-weight:700}
+.karaoke-title{margin:0 0 22px;padding:0 0 16px;border-bottom:2px solid #333;text-align:center}
+.karaoke-title h2{margin:0;font-size:25px;line-height:1.3}
+.karaoke-title small{font-size:.72em}
+.karaoke-user-settings{display:grid;gap:18px}
+.karaoke-user-settings article{padding:18px;border:1px solid #ddd;border-radius:12px;background:#fff}
+.karaoke-user-settings h3{margin:0;padding:0 0 13px;border-bottom:1px dashed #ccc;font-size:21px}
+.karaoke-user-settings label{display:flex;align-items:center;min-height:50px;border-bottom:1px solid #eee;cursor:pointer}
+.karaoke-user-settings label:last-child{border-bottom:0}
+.karaoke-user-settings input{position:absolute;opacity:0;pointer-events:none}
+.karaoke-user-settings label span{box-sizing:border-box;width:25px;height:25px;margin-right:13px;border:2px solid #999;border-radius:7px;background:#fff}
+.karaoke-user-settings input:checked+span{border-color:#4659b8;background:#4659b8;box-shadow:inset 0 0 0 5px #fff}
+.karaoke-user-settings label b{font-size:18px;font-weight:400}
+.karaoke-actions{display:grid;gap:11px;margin-top:20px}
+.karaoke-actions button,.karaoke-back-link{box-sizing:border-box;width:100%;min-height:58px;border-radius:10px;font-size:18px;font-weight:700}
+.karaoke-random{border:1px solid #ffd08a;color:#dc5d18;background:#fff7e8}
+.karaoke-reset,.karaoke-back-link{border:1px solid #ddd;color:#444;background:#f1f1f1}
+.karaoke-start{border:1px solid #bfdfbe;color:#3e7e39;background:#ecf8ec}
+.karaoke-back-link{display:block;margin-top:20px}
+.karaoke-lyrics{display:block}
+.karaoke-lyrics article{margin:0 0 29px}
+.karaoke-owner{font-size:16px;font-weight:700}
+.karaoke-owner span+span{margin-left:4px}
+.karaoke-lyrics p{margin:8px 0 0;font-size:18px;line-height:1.85;white-space:pre-wrap;overflow-wrap:anywhere}
+.karaoke-page button{-webkit-tap-highlight-color:transparent}
+.karaoke-page button:focus{outline:none}
+.karaoke-page button:active{filter:none}
+@media(max-width:720px){
+  .karaoke-page{padding:76px 0 68px}
+  .karaoke-title h2{font-size:23px}
+  .karaoke-user-settings article{padding:17px}
+  .karaoke-lyrics p{font-size:17px}
+}
 </style>
