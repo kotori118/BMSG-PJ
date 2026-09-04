@@ -1,8 +1,8 @@
 <style>
   /* =========================================================
-     Universe Shared Loading System v3
+     Universe Shared Loading System v4
      PROFILE ring spinner is the visual source of truth.
-     This file is the final loading visual authority.
+     renderUniverseLoading() is the shared loading markup authority.
      ========================================================= */
   :root{
     --u-loading-accent:#9cecff;
@@ -63,12 +63,16 @@
   .karaoke-loading::before,
   .lyrics-loading::before{content:""}
 
-  /* Member detail uses Member Color. */
+  /* Direct shared-renderer hosts must never receive a legacy pseudo spinner. */
+  .karaoke-loading.is-shared::before,
+  .lyrics-loading.is-shared::before{display:none!important;content:none!important}
+
+  /* Member detail uses Member Color when legacy markup is encountered. */
   .profile-member-detail .profile-detail-loading{
     --loading-accent:var(--member-accent,var(--u-loading-accent));
   }
 
-  /* General loaders are always Soft Cyan unless an explicit inline accent is supplied. */
+  /* General legacy loader hosts are always Soft Cyan unless an explicit inline accent is supplied. */
   .profile-map-loading,
   .profile-search-loading,
   .karaoke-loading,
@@ -76,7 +80,7 @@
     --loading-accent:#9cecff;
   }
 
-  /* Room bootstrap now renders the shared spinner directly; no pseudo duplicate. */
+  /* Room bootstrap renders the shared spinner directly; no pseudo duplicate. */
   .lyrics-room-card.is-loading{
     min-height:118px;
     display:grid;
