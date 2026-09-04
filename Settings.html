@@ -65,6 +65,18 @@
     if (event.target && event.target.id === 'userChooserOverlay') closeUserChooser();
   }
 
+  function refreshUniverseUserContext() {
+    if (typeof google !== 'undefined' && google.script && google.script.url && typeof google.script.url.getLocation === 'function') {
+      google.script.url.getLocation(function(location) {
+        const params = location && location.parameter ? location.parameter : {};
+        const route = params.page || (typeof currentRoute !== 'undefined' && currentRoute ? currentRoute : 'home');
+        if (typeof renderRoute === 'function') renderRoute(route, params);
+      });
+      return;
+    }
+    if (typeof renderRoute === 'function') renderRoute(typeof currentRoute !== 'undefined' && currentRoute ? currentRoute : 'home', {});
+  }
+
   function selectUniverseUser(userId) {
     const user = UNIVERSE_USERS.find(function(item) { return item.id === userId; });
     if (!user) return;
@@ -73,7 +85,7 @@
     syncSettingsUserName();
     syncUserChooser();
     closeUserChooser();
-    if (previousId !== user.id) window.location.reload();
+    if (previousId !== user.id) refreshUniverseUserContext();
   }
 
   function ensureUniverseUserSelection() {
