@@ -1,5 +1,6 @@
 <script>
-  const karaokeState={users:[{userId:'U001',displayName:'ももたん'},{userId:'U002',displayName:'みおたん'},{userId:'U003',displayName:'りおたん'}],room:null,history:[],songs:[],partsBySong:{},song:null,assignments:{},screen:'entry',busy:false,backParams:{}};
+  const KARAOKE_GROUPS=['BE:FIRST','MAZZEL','STARGLOW','HANA','BMSG ALLSTARS'];
+  const karaokeState={category:'',users:[{userId:'U001',displayName:'ももたん'},{userId:'U002',displayName:'みおたん'},{userId:'U003',displayName:'りおたん'}],room:null,history:[],songs:[],partsBySong:{},song:null,assignments:{},screen:'entry',busy:false,backParams:{}};
 
   function renderKaraoke(){return document.getElementById('karaokePageTemplate').innerHTML;}
 
@@ -39,9 +40,36 @@
 
   function renderKaraokeEntry(){
     karaokeState.screen='entry';
+    karaokeState.category='';
     document.getElementById('karaokeView').innerHTML=
-      '<section class="karaoke-room-card"><h2>🎤 3人カラオケルーム</h2><div id="karaokeRoomBody"><button class="karaoke-primary" type="button" onclick="createKaraokeRoomUI()">カラオケルームを作る</button><div class="karaoke-join"><input id="karaokeRoomInput" inputmode="numeric" maxlength="4" placeholder="4桁のルームID"><button type="button" onclick="joinKaraokeRoomUI()">参加</button></div></div></section>'+
-      '<button class="karaoke-back-link" type="button" onclick="navigateTo(\'lyrics\')">BACK</button>';
+      '<button class="karaoke-top-back" type="button" onclick="navigateTo(\'lyrics\')">‹ <span>BACK</span></button><section class="karaoke-room-card"><h2>🎤 3人カラオケルーム</h2><div id="karaokeRoomBody"><button class="karaoke-primary" type="button" onclick="createKaraokeRoomUI()">カラオケルームを作る</button><div class="karaoke-join"><input id="karaokeRoomInput" inputmode="numeric" maxlength="4" placeholder="4桁のルームID"><button type="button" onclick="joinKaraokeRoomUI()">参加</button></div></div></section>'+
+      '<p class="karaoke-section-label">SELECT ARTIST</p><section class="karaoke-groups">'+KARAOKE_GROUPS.map(function(group){return '<button type="button" onclick="openKaraokeGroup(\''+encodeURIComponent(group)+'\')"><strong>'+escapeLyrics(group)+'</strong><span>›</span></button>';}).join('')+'</section>';
+  }
+
+  function karaokeGroupSongs(group){
+    return karaokeState.songs.filter(function(song){
+      if(group==='BMSG ALLSTARS')return song.category==='UNIT';
+      return song.category===group;
+    }).sort(function(a,b){
+      const at=Date.parse(a.releaseDate||'')||0,bt=Date.parse(b.releaseDate||'')||0;
+      return bt-at||(Number(b.songId)||0)-(Number(a.songId)||0);
+    });
+  }
+
+  function openKaraokeGroup(encoded){
+    karaokeState.category=decodeURIComponent(encoded);
+    renderKaraokeSongList();
+    scrollKaraokeTop();
+  }
+
+  function renderKaraokeSongList(){
+    const songs=karaokeGroupSongs(karaokeState.category);
+    document.getElementById('karaokeView').innerHTML=
+      '<button class="karaoke-top-back" type="button" onclick="renderKaraokeEntry();updateKaraokeRoomCard()">‹ <span>BACK</span></button>'+
+      '<div class="karaoke-title karaoke-list-title"><p>KARAOKE</p><h2>'+escapeLyrics(karaokeState.category)+'</h2></div>'+
+      '<section class="karaoke-song-list">'+songs.map(function(song){
+        return '<button type="button" onclick="openKaraokeSetup(\''+encodeURIComponent(song.songId)+'\')"><strong>'+escapeLyrics(song.title)+'</strong><span>›</span></button>';
+      }).join('')+'</section>';
   }
 
   function updateKaraokeRoomCard(){
@@ -112,14 +140,14 @@
   function renderKaraokeSetup(){
     const singers=karaokeSingers();
     document.getElementById('karaokeView').innerHTML=
-      '<div class="karaoke-title"><h2>カラオケ設定</h2></div>'+
+      '<button class="karaoke-top-back" type="button" onclick="backToLyricsSong()">‹ <span>BACK</span></button><div class="karaoke-title"><p>KARAOKE</p><h2>カラオケ設定</h2></div>'+
       '<section class="karaoke-user-settings">'+karaokeState.users.map(function(user){
         return '<article><h3>'+escapeLyrics(user.displayName)+'</h3><div>'+singers.map(function(singer){
           const checked=karaokeState.assignments[singer.key]===user.userId?' checked':'';
           return '<label><input type="checkbox"'+checked+' onchange="toggleKaraokeSinger(\''+encodeURIComponent(singer.key)+'\',\''+user.userId+'\',this)"><span></span><b>'+escapeLyrics(singer.name)+'</b></label>';
         }).join('')+'</div></article>';
       }).join('')+'</section>'+
-      '<div class="karaoke-actions"><button class="karaoke-random" type="button" onclick="randomizeKaraoke()">ランダム振り分け</button><button class="karaoke-reset" type="button" onclick="resetKaraoke()">リセット</button><button class="karaoke-start" type="button" onclick="startKaraoke()">🎤 カラオケ開始</button><button class="karaoke-back-link" type="button" onclick="backToLyricsSong()">BACK</button></div>';
+      '<div class="karaoke-actions"><button class="karaoke-random" type="button" onclick="randomizeKaraoke()">ランダム振り分け</button><button class="karaoke-reset" type="button" onclick="resetKaraoke()">リセット</button><button class="karaoke-start" type="button" onclick="startKaraoke()">🎤 カラオケ開始</button></div>';
   }
 
   function toggleKaraokeSinger(encoded,userId,input){
@@ -169,11 +197,10 @@
   function renderKaraokeSong(){
     const song=karaokeState.song;
     document.getElementById('karaokeView').innerHTML=
-      '<div class="karaoke-title"><h2>'+escapeLyrics(song.title)+' <small>（カラオケ）</small></h2></div>'+
+      '<button class="karaoke-top-back" type="button" onclick="renderKaraokeSetup();karaokeState.screen=\'setup\';setKaraokeUrl(\'setup\')">‹ <span>BACK</span></button><div class="karaoke-title"><p>KARAOKE</p><h2>'+escapeLyrics(song.title)+' <small>（カラオケ）</small></h2></div>'+
       '<section class="karaoke-lyrics">'+song.parts.map(function(part){
         return '<article><div class="karaoke-owner">'+karaokePartOwners(part).map(function(owner){return '<span style="color:'+escapeLyrics(owner.color)+'">'+escapeLyrics(owner.label)+'</span>';}).join(' / ')+'</div><p>'+escapeLyrics(part.lyrics)+'</p></article>';
-      }).join('')+'</section>'+
-      '<button class="karaoke-back-link" type="button" onclick="renderKaraokeSetup();karaokeState.screen=\'setup\';setKaraokeUrl(\'setup\')">設定へ戻る</button>';
+      }).join('')+'</section>';
   }
 
   function setKaraokeUrl(mode){
