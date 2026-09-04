@@ -38,6 +38,7 @@ function getLyricsCatalog() {
         songId: asId_(row.SongID),
         title: String(row.Title || '').trim(),
         artist: artist,
+        releaseDate: row.ReleaseDate instanceof Date ? row.ReleaseDate.toISOString() : String(row.ReleaseDate || ''),
         category: lyricsCategory_(artist),
         unitCategory: lyricsUnitCategory_(String(row.Title || '').trim(), artist),
         partCount: counts[asId_(row.SongID)] || 0
