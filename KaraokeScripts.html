@@ -1,5 +1,5 @@
 <script>
-  const karaokeState={users:[{userId:'U001',displayName:'ももたん'},{userId:'U002',displayName:'みおたん'},{userId:'U003',displayName:'りおたん'}],room:null,history:[],songs:[],partsBySong:{},song:null,assignments:{},screen:'entry',busy:false,roomReady:false,backParams:{}};
+  const karaokeState={users:[{userId:'U001',displayName:'ももたん'},{userId:'U002',displayName:'みおたん'},{userId:'U003',displayName:'りおたん'}],room:null,history:[],songs:[],partsBySong:{},song:null,assignments:{},screen:'entry',busy:false,roomReady:false,pendingSave:null,resultView:false,backParams:{}};
 
   function renderKaraoke(){return document.getElementById('karaokePageTemplate').innerHTML;}
 
@@ -19,12 +19,20 @@
   function applyKaraokeCatalog(data,params){
     karaokeState.songs=data.songs||[];
     karaokeState.partsBySong=data.partsBySong||{};
+    if(params&&params.mode==='latest'){
+      document.getElementById('karaokeView').innerHTML='<div class="lyrics-loading">LOADING...</div>';
+      loadKaraokeRoom(params.room,function(){
+        if(karaokeState.history.length)openKaraokeResultSong(karaokeState.history[0]);
+        else{renderKaraokeEntry();showKaraokeError('まだ振り分け結果がありません。');}
+      });
+      return;
+    }
     if(params&&params.song){openKaraokeSetup(params.song,false);loadKaraokeRoom(params&&params.room);return;}
     renderKaraokeEntry();
     loadKaraokeRoom(params&&params.room);
   }
 
-  function loadKaraokeRoom(roomId){
+  function loadKaraokeRoom(roomId,done){
     karaokeState.roomReady=false;
     google.script.run.withSuccessHandler(function(data){
       karaokeState.roomReady=true;
@@ -32,11 +40,20 @@
       karaokeState.room=data.room||null;
       karaokeState.history=data.history||[];
       updateKaraokeRoomCard();
+      if(karaokeState.pendingSave&&karaokeState.room){
+        const payload=karaokeState.pendingSave;
+        karaokeState.pendingSave=null;
+        payload.roomId=karaokeState.room.roomId;
+        saveKaraokeResult(payload);
+      }
+      if(typeof done==='function')done();
     }).withFailureHandler(function(error){
       karaokeState.roomReady=true;
       karaokeState.room=null;
       updateKaraokeRoomCard();
+      karaokeState.pendingSave=null;
       showKaraokeError(error);
+      if(typeof done==='function')done();
     }).getKaraokeBootstrap(getUniverseUserId(),roomId);
   }
 
@@ -109,6 +126,7 @@
     if(!meta){showKaraokeError('曲が見つかりません。');return;}
     karaokeState.song={songId:id,title:meta.title,artist:meta.artist,parts:karaokeState.partsBySong[id]||[]};
     karaokeState.assignments={};
+    karaokeState.resultView=false;
     karaokeState.screen='setup';
     if(pushUrl!==false)setKaraokeUrl('setup');
     renderKaraokeSetup();
@@ -185,24 +203,53 @@
     scrollKaraokeTop();
   }
 
+  function saveKaraokeResult(payload){
+    karaokeState.busy=true;
+    google.script.run.withSuccessHandler(function(result){
+      karaokeState.busy=false;
+      karaokeState.history=karaokeState.history.filter(function(item){return item.createdAt!==result.createdAt;});
+      karaokeState.history.unshift(result);
+      if(typeof showToast==='function')showToast('振り分けを履歴に保存しました');
+    }).withFailureHandler(karaokeFailure).saveKaraokeAssignment(payload);
+  }
+
   function startKaraoke(){
     const missing=karaokeSingers().find(function(singer){return !karaokeState.assignments[singer.key];});
     if(missing){showKaraokeError(missing.name+'が未設定です');return;}
     if(karaokeState.busy)return;
-    if(!karaokeState.roomReady){showKaraokeError('ルーム情報を確認中です。少し待ってください。');return;}
-    if(!karaokeState.room){showKaraokeSong();return;}
-    karaokeState.busy=true;
-    google.script.run.withSuccessHandler(function(result){
-      karaokeState.busy=false;
-      karaokeState.history.unshift(result);
-      showKaraokeSong();
-      if(typeof showToast==='function')showToast('振り分けを履歴に保存しました');
-    }).withFailureHandler(karaokeFailure).saveKaraokeAssignment({
+    const payload={
       userId:getUniverseUserId(),
-      roomId:karaokeState.room.roomId,
+      roomId:karaokeState.room&&karaokeState.room.roomId,
       songId:karaokeState.song.songId,
       assignments:buildKaraokeResultAssignments()
+    };
+    showKaraokeSong();
+    if(!karaokeState.roomReady){karaokeState.pendingSave=payload;return;}
+    if(karaokeState.room)saveKaraokeResult(payload);
+  }
+
+  function openKaraokeResultSong(item){
+    if(!item)return;
+    const id=String(item.songId||'');
+    const meta=karaokeState.songs.find(function(song){return String(song.songId)===id;})||item;
+    karaokeState.song={songId:id,title:meta.title||item.title||'',artist:meta.artist||item.artist||'',parts:karaokeState.partsBySong[id]||[]};
+    karaokeState.assignments={};
+    Object.keys(item.assignments||{}).forEach(function(userId){
+      (item.assignments[userId]||[]).forEach(function(slot){
+        const memberId=typeof slot==='string'?slot:slot.memberId;
+        if(memberId)karaokeState.assignments[String(memberId)]=userId;
+      });
     });
+    karaokeState.resultView=true;
+    karaokeState.screen='song';
+    renderKaraokeSong();
+    scrollKaraokeTop();
+  }
+
+  function backFromKaraokeResult(){
+    const params={page:'lyrics'};
+    google.script.history.push(params,params,'');
+    renderRoute('lyrics',params);
   }
 
   function karaokePartOwners(part){
@@ -219,8 +266,9 @@
 
   function renderKaraokeSong(){
     const song=karaokeState.song;
+    const backAction=karaokeState.resultView?'backFromKaraokeResult()':"renderKaraokeSetup();karaokeState.screen='setup';setKaraokeUrl('setup')";
     document.getElementById('karaokeView').innerHTML=
-      '<button class="karaoke-top-back" type="button" onclick="renderKaraokeSetup();karaokeState.screen=\'setup\';setKaraokeUrl(\'setup\')">‹ <span>BACK</span></button><div class="karaoke-title"><p>KARAOKE</p><h2>'+escapeLyrics(song.title)+' <small>（カラオケ）</small></h2></div>'+
+      '<button class="karaoke-top-back" type="button" onclick="'+backAction+'">‹ <span>BACK</span></button><div class="karaoke-title"><p>KARAOKE</p><h2>'+escapeLyrics(song.title)+' <small>（カラオケ）</small></h2></div>'+
       '<section class="karaoke-lyrics">'+song.parts.map(function(part){
         return '<article><div class="karaoke-owner">'+karaokePartOwners(part).map(function(owner){return '<span style="color:'+escapeLyrics(owner.color)+'">'+escapeLyrics(owner.label)+'</span>';}).join(' / ')+'</div><p>'+escapeLyrics(part.lyrics)+'</p></article>';
       }).join('')+'</section>';
