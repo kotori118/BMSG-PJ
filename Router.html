@@ -10,7 +10,7 @@
     else if(route==='lab'){pageContent.innerHTML=renderLab();}
     else if(route==='metrics'){pageContent.innerHTML=renderPerformanceToolPlaceholder();}
     else if(route==='profile'){pageContent.innerHTML=renderProfile();initProfilePage();}
-    else if(route==='lyrics'){pageContent.innerHTML=renderLyrics();initLyricsPage(routeParams||{});}
+    else if(route==='lyrics'){pageContent.innerHTML=renderLyrics();initLyricsPage(routeParams||{});}else if(route==='karaoke'){pageContent.innerHTML=renderKaraoke();initKaraokePage(routeParams||{});}
     else{pageContent.innerHTML=renderPlaceholder(route);}
     document.title=meta.title+' | BMSG UNIVERSE'; scrollAppToTop('smooth');
   }
