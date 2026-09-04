@@ -131,14 +131,20 @@
       return '<span style="color:'+escapeLyrics(singer.color)+'">'+escapeLyrics(singer.name+mark)+'</span>';
     }).join('<span class="lyrics-singer-separator"> / </span>');
   }
+  function lyricsMicrophoneIcon(){
+    return '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="3" width="8" height="12" rx="4"></rect><path d="M5 11a7 7 0 0 0 14 0M12 18v3M8.5 21h7"></path></svg>';
+  }
+  function lyricsSongActions(){
+    return '<div class="lyrics-song-actions"><button class="lyrics-list-back" type="button" onclick="backToLyricsSongs()">BACK</button><button class="lyrics-karaoke-icon" type="button" aria-label="カラオケ設定" onclick="openKaraokeFromLyrics(\''+lyricArg(lyricsState.song.songId)+'\')">'+lyricsMicrophoneIcon()+'<span>KARAOKE</span></button></div>';
+  }
   function renderLyricsSong(){
     const song=lyricsState.song;
     const editing=typeof isLyricsEditMode==='function'&&isLyricsEditMode();
-    document.getElementById('lyricsView').innerHTML='<div class="lyrics-song-title"><h2>'+escapeLyrics(song.title)+'</h2></div><button class="lyrics-list-back" type="button" onclick="backToLyricsSongs()">BACK</button><section class="lyrics-parts '+(editing?'is-editing':'')+'">'+song.parts.map(function(part){
+    document.getElementById('lyricsView').innerHTML='<div class="lyrics-song-title"><h2>'+escapeLyrics(song.title)+'</h2></div>'+lyricsSongActions()+'<section class="lyrics-parts '+(editing?'is-editing':'')+'">'+song.parts.map(function(part){
       const tag=editing?'button':'div';
       const action=editing?' type="button" onclick="openLyricsEditor('+part.partOrder+')"':'';
       return '<'+tag+' class="lyrics-part"'+action+'><div class="lyrics-singer">'+renderLyricsSinger(part)+'</div><p>'+escapeLyrics(part.lyrics)+'</p>'+(editing?'<small>EDIT</small>':'')+'</'+tag+'>';
-    }).join('')+'</section>'+(editing?'':'<button class="lyrics-karaoke-mode" type="button" onclick="openKaraokeFromLyrics(\''+lyricArg(song.songId)+'\')"><span>カラオケモード</span></button>');
+    }).join('')+'</section>'+lyricsSongActions();
   }
   function openKaraokeFromLyrics(encoded){const songId=decodeURIComponent(encoded);const params={page:'karaoke',song:songId,group:lyricsState.group||'',unit:lyricsState.unit||''};google.script.history.push(params,params,'');renderRoute('karaoke',params);}
   function openLyricsEditor(order){const part=lyricsState.song.parts.find(function(p){return p.partOrder===order;});if(!part)return;lyricsState.editing=part;lyricsState.previewed=false;document.getElementById('lyricsSingerInput').value=part.singer;document.getElementById('lyricsTextInput').value=part.lyrics;document.getElementById('lyricsPreview').innerHTML='<p>PREVIEW</p>';const saveButton=document.getElementById('lyricsSaveButton');saveButton.disabled=true;saveButton.textContent='SAVE';document.getElementById('lyricsEditor').hidden=false;}
