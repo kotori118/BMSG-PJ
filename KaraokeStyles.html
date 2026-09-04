@@ -5,13 +5,13 @@
   }
   .karaoke-head,.karaoke-view{width:min(100%,820px);margin-inline:auto}
   .karaoke-head{display:block;margin-bottom:28px}
-  .karaoke-head p{margin:0 0 6px;color:#5b8994;font:600 10px "Exo 2",Roboto,sans-serif;letter-spacing:.18em}
+  .karaoke-head p{margin:0 0 6px;color:var(--cyan);font:600 10px "Exo 2",Roboto,sans-serif;letter-spacing:.18em}
   .karaoke-head h1{margin:0;color:var(--ink);font:600 clamp(40px,8vw,68px)/.95 Orbitron,sans-serif;letter-spacing:.025em}
   .karaoke-loading{padding:48px 0;text-align:center;color:rgba(21,24,32,.42);font:600 11px "Exo 2",sans-serif;letter-spacing:.14em}
 
   .karaoke-room-card,.karaoke-user-settings article{
     box-sizing:border-box;border:1px solid rgba(21,24,32,.12);border-radius:20px;
-    color:var(--ink);background:rgba(255,255,255,.78);box-shadow:none
+    color:var(--ink);background:#fff;box-shadow:none
   }
   .karaoke-room-card{padding:20px}
   .karaoke-room-card h2{margin:0 0 18px;color:var(--ink);font:700 18px "Zen Kaku Gothic New",sans-serif}
@@ -48,7 +48,7 @@
     box-sizing:border-box;width:24px;height:24px;margin-right:13px;border:1.5px solid rgba(21,24,32,.35);
     border-radius:8px;background:#fff
   }
-  .karaoke-user-settings input:checked+span{border-color:#5b8994;background:var(--cyan);box-shadow:inset 0 0 0 5px #fff}
+  .karaoke-user-settings input:checked+span{border-color:var(--cyan);background:var(--cyan);box-shadow:inset 0 0 0 5px #fff}
   .karaoke-user-settings label b{color:var(--ink);font:500 15px Roboto,"Zen Kaku Gothic New",sans-serif}
 
   .karaoke-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:18px}
@@ -65,7 +65,7 @@
   .karaoke-lyrics article{margin:0 0 30px}
   .karaoke-owner{font:700 15px "Exo 2",Roboto,sans-serif;letter-spacing:.01em}
   .karaoke-owner span+span{margin-left:4px}
-  .karaoke-lyrics p{margin:8px 0 0;font:400 18px/1.85 "Zen Kaku Gothic New",Roboto,sans-serif;white-space:pre-wrap;overflow-wrap:anywhere}
+  .karaoke-lyrics p{margin:8px 0 0;font:400 18px/1.9 "Noto Serif JP",serif;white-space:pre-wrap;overflow-wrap:anywhere}
 
   .karaoke-page button{-webkit-tap-highlight-color:transparent;transition:none}
   .karaoke-page button:focus{outline:none}
@@ -84,15 +84,15 @@
 
   .karaoke-top-back{
     display:inline-flex;align-items:center;gap:8px;min-width:46px;height:46px;margin:0 0 22px;padding:0 14px;
-    border:1px solid rgba(21,24,32,.13);border-radius:14px;color:var(--ink);background:rgba(255,255,255,.78);
+    border:1px solid rgba(21,24,32,.13);border-radius:14px;color:var(--ink);background:#fff;
     font-size:25px;line-height:1
   }
   .karaoke-top-back span{font:600 9px "Exo 2",sans-serif;letter-spacing:.13em}
-  .karaoke-section-label,.karaoke-list-title p{margin:28px 2px 10px;color:#5b8994;font:600 9px "Exo 2",sans-serif;letter-spacing:.17em}
+  .karaoke-section-label,.karaoke-list-title p{margin:28px 2px 10px;color:var(--cyan);font:600 9px "Exo 2",sans-serif;letter-spacing:.17em}
   .karaoke-groups,.karaoke-song-list{display:grid;gap:9px}
   .karaoke-groups button,.karaoke-song-list button{
     box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;width:100%;min-height:64px;padding:0 18px;
-    border:1px solid rgba(21,24,32,.12);border-radius:18px;color:var(--ink);background:rgba(255,255,255,.78);text-align:left
+    border:1px solid rgba(21,24,32,.12);border-radius:18px;color:var(--ink);background:#fff;text-align:left
   }
   .karaoke-groups strong{font:600 17px Orbitron,"Zen Kaku Gothic New",sans-serif}
   .karaoke-song-list strong{font:600 15px Roboto,"Zen Kaku Gothic New",sans-serif}
@@ -104,13 +104,13 @@
   .karaoke-history-area .karaoke-section-label{margin-top:0}
   .karaoke-history-empty{
     box-sizing:border-box;padding:24px;border:1px solid rgba(21,24,32,.1);border-radius:18px;
-    color:rgba(21,24,32,.46);background:rgba(255,255,255,.48);text-align:center;
+    color:rgba(21,24,32,.46);background:#fff;text-align:center;
     font:500 13px "Zen Kaku Gothic New",sans-serif
   }
   .karaoke-history-list{display:grid;gap:8px}
   .karaoke-history-list button{
     box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;width:100%;min-height:66px;padding:13px 17px;
-    border:1px solid rgba(21,24,32,.12);border-radius:18px;color:var(--ink);background:rgba(255,255,255,.78);text-align:left
+    border:1px solid rgba(21,24,32,.12);border-radius:18px;color:var(--ink);background:#fff;text-align:left
   }
   .karaoke-history-list button>span{display:grid;gap:4px}
   .karaoke-history-list strong{font:600 15px Roboto,"Zen Kaku Gothic New",sans-serif}
@@ -118,7 +118,7 @@
   .karaoke-history-list b{color:rgba(21,24,32,.3);font-size:23px}
   .karaoke-history-result{display:grid;gap:10px}
   .karaoke-history-result article{
-    display:grid;gap:8px;padding:18px;border:1px solid rgba(21,24,32,.12);border-radius:18px;background:rgba(255,255,255,.78)
+    display:grid;gap:8px;padding:18px;border:1px solid rgba(21,24,32,.12);border-radius:18px;background:#fff
   }
   .karaoke-history-result article>span{color:rgba(21,24,32,.48);font:600 10px "Exo 2","Zen Kaku Gothic New",sans-serif;letter-spacing:.08em}
   .karaoke-history-result strong{font:600 16px Roboto,"Zen Kaku Gothic New",sans-serif}
@@ -126,9 +126,9 @@
   .karaoke-history-result em{margin:0 7px;color:rgba(21,24,32,.28);font-style:normal}
 
 
-  .karaoke-actions .karaoke-top-link{grid-column:1/-1;min-height:50px;border:1px solid rgba(21,24,32,.13);border-radius:15px;color:var(--ink);background:rgba(255,255,255,.78);font:600 12px "Zen Kaku Gothic New",sans-serif}
+  .karaoke-actions .karaoke-top-link{grid-column:1/-1;min-height:50px;border:1px solid rgba(21,24,32,.13);border-radius:15px;color:var(--ink);background:#fff;font:600 12px "Zen Kaku Gothic New",sans-serif}
   .karaoke-page:has(.karaoke-title) .karaoke-head{display:none}
-  .karaoke-history-card{box-sizing:border-box;padding:18px;border:1px solid rgba(21,24,32,.12);border-radius:18px;background:rgba(255,255,255,.78)}
+  .karaoke-history-card{box-sizing:border-box;padding:18px;border:1px solid rgba(21,24,32,.12);border-radius:18px;background:#fff}
   .karaoke-history-card header{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding-bottom:12px;border-bottom:1px solid rgba(21,24,32,.1)}
   .karaoke-history-card header strong{font:600 16px Roboto,"Zen Kaku Gothic New",sans-serif}
   .karaoke-history-card header small{flex:0 0 auto;color:rgba(21,24,32,.42);font:600 9px "Exo 2",sans-serif;letter-spacing:.06em}
@@ -140,7 +140,7 @@
   .karaoke-ranking{margin-bottom:28px}
   .karaoke-ranking .karaoke-section-label{margin-top:0}
   .karaoke-ranking>div{display:grid;gap:8px}
-  .karaoke-ranking article{display:grid;grid-template-columns:28px 1fr auto;align-items:center;gap:10px;min-height:54px;padding:0 16px;border:1px solid rgba(21,24,32,.1);border-radius:16px;background:rgba(255,255,255,.65)}
+  .karaoke-ranking article{display:grid;grid-template-columns:28px 1fr auto;align-items:center;gap:10px;min-height:54px;padding:0 16px;border:1px solid rgba(21,24,32,.1);border-radius:16px;background:#fff}
   .karaoke-ranking article b{font:600 15px Orbitron,sans-serif}
   .karaoke-ranking article span{font:600 14px "Zen Kaku Gothic New",sans-serif}
   .karaoke-ranking article strong{color:rgba(21,24,32,.46);font:600 9px "Exo 2",sans-serif;letter-spacing:.1em}
@@ -150,7 +150,7 @@
   .karaoke-history-heading .karaoke-section-label{margin:0}
   .karaoke-history-heading button{min-height:40px;padding:0 13px;border:1px solid rgba(69,126,140,.25);border-radius:13px;color:var(--ink);background:rgba(156,236,255,.2);font:600 11px "Zen Kaku Gothic New",sans-serif}
   .karaoke-member-ranking{display:grid;gap:12px}
-  .karaoke-member-ranking>article{padding:20px;border:1px solid rgba(21,24,32,.12);border-radius:18px;background:rgba(255,255,255,.78)}
+  .karaoke-member-ranking>article{padding:20px;border:1px solid rgba(21,24,32,.12);border-radius:18px;background:#fff}
   .karaoke-member-ranking h3{margin:0 0 12px;font:700 18px "Zen Kaku Gothic New",sans-serif}
   .karaoke-member-ranking ol{display:grid;gap:0;margin:0;padding:0;list-style:none}
   .karaoke-member-ranking li{display:grid;grid-template-columns:28px 1fr auto;align-items:center;gap:10px;min-height:46px;border-top:1px solid rgba(21,24,32,.08)}
@@ -159,5 +159,5 @@
   .karaoke-member-ranking li strong{font:600 13px "Zen Kaku Gothic New",sans-serif}
   .karaoke-member-ranking article>p{margin:0;color:rgba(21,24,32,.45);font:500 13px "Zen Kaku Gothic New",sans-serif}
   .karaoke-song-footer{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:34px}
-  .karaoke-song-footer button{box-sizing:border-box;min-height:50px;padding:0 12px;border:1px solid rgba(21,24,32,.13);border-radius:15px;color:var(--ink);background:rgba(255,255,255,.78);font:600 12px "Zen Kaku Gothic New",sans-serif}
+  .karaoke-song-footer button{box-sizing:border-box;min-height:50px;padding:0 12px;border:1px solid rgba(21,24,32,.13);border-radius:15px;color:var(--ink);background:#fff;font:600 12px "Zen Kaku Gothic New",sans-serif}
 </style>
