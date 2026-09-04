@@ -323,25 +323,33 @@
   /* =========================================================
      2026-09-04 refinement — HOME texture + Room rhythm
      ========================================================= */
-  body.theme-light .utility-actions .utility-btn{
+  body.theme-light .app-shell .utility-actions .utility-btn{
     border-color:rgba(75,165,184,.34);
     color:var(--ink);
     background:linear-gradient(145deg,#fff,rgba(156,236,255,.34));
     box-shadow:0 7px 20px rgba(75,165,184,.10),inset 0 1px 0 rgba(255,255,255,.86);
   }
 
-  body.theme-light .lyrics-room-card.is-active .lyrics-room-primary,
+  body.theme-light .lyrics-room-card .lyrics-room-primary,
   body.theme-light .lyrics-room-card.is-active .lyrics-room-subactions button{
+    box-sizing:border-box;
+    height:50px;
     min-height:50px;
     border:1px solid rgba(75,165,184,.28);
     border-radius:15px;
     color:var(--ink);
     background:linear-gradient(145deg,#fff,rgba(156,236,255,.18));
     box-shadow:inset 0 1px 0 rgba(255,255,255,.86);
+    font:600 13px "Zen Kaku Gothic New",Roboto,sans-serif;
+  }
+  body.theme-light .lyrics-room-card:not(.is-active) .lyrics-room-primary{
+    padding:0 18px;
+    text-align:center;
   }
   body.theme-light .lyrics-room-card.is-active .lyrics-room-primary{
     width:100%;
     padding:0 44px 0 18px;
+    text-align:left;
   }
   body.theme-light .lyrics-room-card.is-active .lyrics-room-subactions{
     gap:10px;
@@ -349,6 +357,10 @@
   }
   body.theme-light .lyrics-room-card.is-active .lyrics-room-subactions button{
     margin:0;
+  }
+  body.theme-light .lyrics-room-card .lyrics-room-primary:active,
+  body.theme-light .lyrics-room-card.is-active .lyrics-room-subactions button:active{
+    background:linear-gradient(145deg,#fff,rgba(156,236,255,.26));
   }
 
   /* =========================================================
