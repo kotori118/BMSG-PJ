@@ -112,12 +112,15 @@ function updateLyricsPart(payload) {
       }
     }
     if (!rowNumber) throw new Error('更新対象の歌詞パートが見つかりません。');
-    sheet.getRange(rowNumber, singerCol + 1).setValue(singer);
-    sheet.getRange(rowNumber, lyricsCol + 1).setValue(lyrics);
+    const singerCell = sheet.getRange(rowNumber, singerCol + 1);
+    const lyricsCell = sheet.getRange(rowNumber, lyricsCol + 1);
+    singerCell.setNumberFormat('@').setValue(singer);
+    lyricsCell.setNumberFormat('@').setValue(lyrics);
     SpreadsheetApp.flush();
-    const checked = sheet.getRange(rowNumber, 1, 1, headers.length).getValues()[0];
-    if (String(checked[singerCol]) !== singer || String(checked[lyricsCol]) !== lyrics) {
-      throw new Error('保存後の確認に失敗しました。');
+    const checkedSinger = singerCell.getDisplayValue();
+    const checkedLyrics = lyricsCell.getDisplayValue();
+    if (checkedSinger !== singer || checkedLyrics !== lyrics) {
+      throw new Error('保存内容を確認できませんでした。もう一度試してください。');
     }
     return { ok: true, songId: songId, partOrder: partOrder, singer: singer, singers: formatLyricsSingers_(singer, buildLyricsSingerMap_()), lyrics: lyrics };
   } finally {
