@@ -19,7 +19,7 @@
     function showLoadingState() {
       closeStateCheck();
       stateContent.innerHTML = typeof renderUniverseLoading === 'function'
-        ? `<div class="loading-space">${renderUniverseLoading('LOADING UNIVERSE', '#9cecff')}</div>`
+        ? `<div class="loading-space loading-space-shared">${renderUniverseLoading('LOADING UNIVERSE', '#9cecff')}</div>`
         : '<div class="loading-space"></div>';
       stateOverlay.classList.add('open');
       document.body.style.overflow = 'hidden';
