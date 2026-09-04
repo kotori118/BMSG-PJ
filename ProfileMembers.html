@@ -138,7 +138,11 @@
   }
 
   function renderProfileDetailContent() {
-    if (profileMembersState.detailStatus === 'loading') return `<div class="profile-detail-loading" aria-live="polite"><span class="profile-detail-spinner"></span><span>LOADING PROFILE...</span></div>`;
+    if (profileMembersState.detailStatus === 'loading') {
+      const member = profileMembersState.members.find(item => item.memberId === profileSelectedMemberId);
+      const accent = member && /^#[0-9a-f]{6}$/i.test(member.colorHex || '') ? member.colorHex : '#9cecff';
+      return `<div class="profile-detail-loading">${renderUniverseLoading('LOADING PROFILE...', accent)}</div>`;
+    }
     if (profileMembersState.detailStatus === 'error') return `<div class="profile-detail-message"><p>${escapeHtml(profileMembersState.detailError)}</p><button class="profile-retry-button" type="button" onclick="openProfileMemberDetail(profileSelectedMemberId)">RETRY</button></div>`;
     const fields = profileMembersState.detailFields || [];
     if (!fields.length) return `<div class="profile-detail-message"><p>表示できるプロフィール項目がありません。</p></div>`;
@@ -180,9 +184,8 @@
   .profile-detail-row:first-child { border-top: 0; }
   .profile-detail-row dt { color: rgba(255,255,255,.56); font-size: 12px; }
   .profile-detail-row dd { margin: 0; color: #fff; font-size: 14px; line-height: 1.65; overflow-wrap: anywhere; }
-  .profile-detail-loading, .profile-detail-message { display: flex; align-items: center; justify-content: center; gap: 12px; min-height: 140px; margin-top: 24px; color: rgba(255,255,255,.68); font-family: Orbitron, sans-serif; font-size: 11px; letter-spacing: .12em; }
-  .profile-detail-spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,.18); border-top-color: var(--member-accent); border-radius: 50%; animation: profileDetailSpin .8s linear infinite; }
-  @keyframes profileDetailSpin { to { transform: rotate(360deg); } }
+  .profile-detail-loading, .profile-detail-message { display: flex; align-items: center; justify-content: center; min-height: 140px; margin-top: 24px; }
+  .profile-detail-message { gap: 12px; color: rgba(255,255,255,.68); font-family: Orbitron, sans-serif; font-size: 11px; letter-spacing: .12em; }
   @media (max-width: 560px) { .profile-detail-section { padding: 15px; } .profile-detail-row { grid-template-columns: 96px 1fr; gap: 10px; } }
   @media (min-width: 720px) {
     .profile-detail-hero { grid-template-columns: 150px minmax(0, 1fr); min-height: 176px; }
