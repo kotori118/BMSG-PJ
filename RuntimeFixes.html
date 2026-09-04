@@ -1,0 +1,19 @@
+<style>
+  /* SONG GACHA settings back matches the other LYRICS white navigation buttons. */
+  body.theme-light .song-gacha-back,
+  .song-gacha-back{
+    background:#fff!important;
+    border-color:rgba(21,24,32,.14)!important;
+    color:var(--ink)!important;
+    box-shadow:0 5px 16px rgba(21,24,32,.035),inset 0 1px 0 rgba(255,255,255,.98)!important;
+  }
+</style>
+<script>
+  /* Speed-first KARAOKE randomization: fairness/history balancing is intentionally disabled. */
+  if(typeof randomizeKaraokeLocal==='function'){
+    randomizeKaraoke=function(){
+      if(karaokeState.busy)return;
+      randomizeKaraokeLocal();
+    };
+  }
+</script>
