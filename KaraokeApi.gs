@@ -87,16 +87,14 @@ function shuffleKaraokeSong(payload) {
         return {memberId:id,name:singer.name,color:singer.color};
       });
     });
-    const result={
-      songId:songId,title:String(song.Title||''),artist:String(song.Artist||''),
-      assignments:assignments,users:users,createdAt:new Date().toISOString()
+    return {
+      songId:songId,
+      title:String(song.Title||''),
+      artist:String(song.Artist||''),
+      assignments:assignments,
+      users:users,
+      cumulative:cumulative
     };
-    const sheet=getLogSheet_(UNIVERSE_CONFIG.SHEETS.KARAOKE_RESULTS);
-    appendByHeaders_(sheet,{
-      ShuffleID:Utilities.getUuid(),RoomID:roomId,SongID:songId,CreatedAt:new Date(),
-      CreatedByUserID:uid,ResultJSON:JSON.stringify(result)
-    });
-    return result;
   });
 }
 
