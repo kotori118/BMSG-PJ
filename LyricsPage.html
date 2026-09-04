@@ -1,0 +1,31 @@
+<template id="lyricsPageTemplate">
+  <section class="lyrics-page">
+    <header class="lyrics-hero">
+      <p class="lyrics-kicker">BMSG UNIVERSE</p>
+      <h1>LYRICS</h1>
+      <p>歌詞と歌割りを、みんなで更新。</p>
+    </header>
+    <div class="lyrics-toolbar">
+      <div id="lyricsCategories" class="lyrics-tabs"></div>
+      <input id="lyricsSearch" class="lyrics-search" type="search" placeholder="曲名・アーティストで検索">
+    </div>
+    <div id="lyricsStatus" class="lyrics-status">LOADING...</div>
+    <div class="lyrics-layout">
+      <div id="lyricsSongList" class="lyrics-song-list"></div>
+      <article id="lyricsDetail" class="lyrics-detail"><p class="lyrics-empty">曲を選んでね。</p></article>
+    </div>
+  </section>
+  <div id="lyricsEditor" class="lyrics-editor" hidden>
+    <section class="lyrics-editor-card" role="dialog" aria-modal="true" aria-labelledby="lyricsEditorTitle">
+      <button class="lyrics-editor-close" type="button" onclick="closeLyricsEditor()">×</button>
+      <p class="lyrics-kicker">EDIT PART</p><h2 id="lyricsEditorTitle">歌詞を編集</h2>
+      <label>歌唱者<input id="lyricsSingerInput" type="text"></label>
+      <label>歌詞<textarea id="lyricsTextInput" rows="6"></textarea></label>
+      <div id="lyricsPreview" class="lyrics-preview"></div>
+      <div class="lyrics-editor-actions">
+        <button type="button" onclick="previewLyricsEdit()">プレビュー</button>
+        <button id="lyricsSaveButton" type="button" onclick="saveLyricsEdit()" disabled>確認して保存</button>
+      </div>
+    </section>
+  </div>
+</template>
