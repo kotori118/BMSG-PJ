@@ -5,10 +5,20 @@
     { id: 'U003', name: 'りおたん' }
   ]);
 
-  function getCurrentUniverseUser() {
-    const savedId = localStorage.getItem('bmsgUniverseUserId') || 'U001';
-    return UNIVERSE_USERS.find(function(user) { return user.id === savedId; }) || UNIVERSE_USERS[0];
+  function readUniverseUserId() {
+    const savedId = String(localStorage.getItem('bmsgUniverseUserId') || '').trim();
+    return UNIVERSE_USERS.some(function(user) { return user.id === savedId; }) ? savedId : '';
   }
+
+  function getUniverseUserId() {
+    return readUniverseUserId();
+  }
+
+  function getCurrentUniverseUser() {
+    const savedId = readUniverseUserId();
+    return UNIVERSE_USERS.find(function(user) { return user.id === savedId; }) || null;
+  }
+
   function isLyricsEditMode() { return localStorage.getItem('bmsgLyricsEditMode') === 'true'; }
   function syncLyricsEditMode() {
     const status = document.getElementById('lyricsEditModeStatus');
@@ -22,19 +32,66 @@
 
   function syncSettingsUserName() {
     const label = document.getElementById('settingsUserName');
-    if (label) label.textContent = getCurrentUniverseUser().name;
+    const current = getCurrentUniverseUser();
+    if (label) label.textContent = current ? current.name : '未選択';
   }
+
+  function syncUserChooser() {
+    const currentId = readUniverseUserId();
+    document.querySelectorAll('#userChooserOverlay .user-choice').forEach(function(button) {
+      button.classList.toggle('is-current', button.dataset.userId === currentId);
+    });
+  }
+
+  function openUserChooser(required) {
+    const overlay = document.getElementById('userChooserOverlay');
+    if (!overlay) return;
+    closeSettings();
+    overlay.classList.toggle('is-required', !!required);
+    syncUserChooser();
+    overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeUserChooser() {
+    const overlay = document.getElementById('userChooserOverlay');
+    if (!overlay) return;
+    if (overlay.classList.contains('is-required') && !readUniverseUserId()) return;
+    overlay.classList.remove('open', 'is-required');
+    document.body.style.overflow = '';
+  }
+
+  function closeUserChooserOnBackdrop(event) {
+    if (event.target && event.target.id === 'userChooserOverlay') closeUserChooser();
+  }
+
+  function selectUniverseUser(userId) {
+    const user = UNIVERSE_USERS.find(function(item) { return item.id === userId; });
+    if (!user) return;
+    const previousId = readUniverseUserId();
+    localStorage.setItem('bmsgUniverseUserId', user.id);
+    syncSettingsUserName();
+    syncUserChooser();
+    closeUserChooser();
+    if (previousId !== user.id) window.location.reload();
+  }
+
+  function ensureUniverseUserSelection() {
+    if (!readUniverseUserId()) openUserChooser(true);
+  }
+
   function openSettings() {
-    syncSettingsUserName(); syncLyricsEditMode(); const lyricsSection=document.getElementById('lyricsSettingsSection'); if(lyricsSection) lyricsSection.hidden=currentRoute!=='lyrics'; settingsOverlay.classList.add('open'); document.body.style.overflow = 'hidden';
+    syncSettingsUserName();
+    syncLyricsEditMode();
+    const lyricsSection = document.getElementById('lyricsSettingsSection');
+    if (lyricsSection) lyricsSection.hidden = currentRoute !== 'lyrics';
+    settingsOverlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
   }
   function openPerformanceTool() { closeSettings(); navigateTo('metrics'); }
   function closeSettings() { settingsOverlay.classList.remove('open'); document.body.style.overflow = ''; }
-  function cycleDemoUser() {
-    const current = getCurrentUniverseUser();
-    const index = UNIVERSE_USERS.findIndex(function(user) { return user.id === current.id; });
-    const next = UNIVERSE_USERS[(index + 1) % UNIVERSE_USERS.length];
-    localStorage.setItem('bmsgUniverseUserId', next.id); syncSettingsUserName();
-    if (typeof showToast === 'function') showToast(next.name + 'に変更しました');
-  }
-  syncSettingsUserName(); syncLyricsEditMode();
+
+  syncSettingsUserName();
+  syncLyricsEditMode();
+  setTimeout(ensureUniverseUserSelection, 0);
 </script>
