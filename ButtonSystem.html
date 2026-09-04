@@ -1,0 +1,136 @@
+<style>
+  /* =========================================================
+     Universe Shared Button System v2
+     HOME is the visual source of truth.
+     Every button inherits one interaction/focus/disabled system;
+     semantic families only override surface/layout variables.
+     ========================================================= */
+  :root{
+    --btn-radius:18px;
+    --btn-radius-compact:14px;
+    --btn-line-dark:rgba(194,232,244,.14);
+    --btn-line-dark-hover:rgba(156,236,255,.42);
+    --btn-line-light:rgba(75,165,184,.24);
+    --btn-line-light-hover:rgba(75,165,184,.42);
+    --btn-bg-dark:linear-gradient(145deg,rgba(255,255,255,.052),rgba(255,255,255,.022));
+    --btn-bg-dark-hover:linear-gradient(145deg,rgba(255,255,255,.072),rgba(255,255,255,.03));
+    --btn-bg-light:linear-gradient(145deg,#fff,rgba(156,236,255,.08));
+    --btn-bg-light-hover:linear-gradient(145deg,#fff,rgba(156,236,255,.15));
+    --btn-shadow-dark:inset 0 1px 0 rgba(255,255,255,.04);
+    --btn-shadow-light:0 8px 22px rgba(75,165,184,.08),inset 0 1px 0 rgba(255,255,255,.86);
+  }
+
+  button{
+    -webkit-appearance:none;
+    appearance:none;
+    font:inherit;
+    -webkit-tap-highlight-color:transparent;
+    touch-action:manipulation;
+    cursor:pointer;
+    transition:border-color var(--fast) var(--ease),background var(--fast) var(--ease),color var(--fast) var(--ease),box-shadow var(--fast) var(--ease),transform var(--fast) var(--ease),opacity var(--fast) var(--ease);
+  }
+  button:not(:disabled):active{transform:scale(.985)}
+  button:focus-visible{outline:2px solid rgba(156,236,255,.72);outline-offset:3px}
+  button:disabled{cursor:default;opacity:.48}
+
+  /* Standard action surfaces */
+  :is(
+    .u-btn,.state-check-trigger,.state-test-btn,.state-close,.tool-back,.home-link,.settings-action,
+    .profile-universe-home,.profile-detail-back,.profile-retry-button,
+    .lyrics-list-back,.lyrics-karaoke-icon,.lyrics-editor-actions button,.lyrics-room-primary,.lyrics-room-join button,.lyrics-room-subactions button,
+    .karaoke-primary,.karaoke-secondary,.karaoke-start,.karaoke-save-favorite,.karaoke-join button,.karaoke-actions button,.karaoke-back-link,.karaoke-top-back,.karaoke-history-heading button,.karaoke-song-footer button,.karaoke-history-actions button,.karaoke-room-actions button
+  ){
+    border:1px solid var(--btn-line-dark);
+    border-radius:var(--btn-radius);
+    color:var(--white);
+    background:var(--btn-bg-dark);
+    box-shadow:var(--btn-shadow-dark);
+  }
+  @media(hover:hover){
+    :is(
+      .u-btn,.state-check-trigger,.state-test-btn,.state-close,.tool-back,.home-link,.settings-action,
+      .profile-universe-home,.profile-detail-back,.profile-retry-button,
+      .lyrics-list-back,.lyrics-karaoke-icon,.lyrics-editor-actions button,.lyrics-room-primary,.lyrics-room-join button,.lyrics-room-subactions button,
+      .karaoke-primary,.karaoke-secondary,.karaoke-start,.karaoke-save-favorite,.karaoke-join button,.karaoke-actions button,.karaoke-back-link,.karaoke-top-back,.karaoke-history-heading button,.karaoke-song-footer button,.karaoke-history-actions button,.karaoke-room-actions button
+    ):not(:disabled):hover{border-color:var(--btn-line-dark-hover);background:var(--btn-bg-dark-hover)}
+  }
+  body.theme-light :is(
+    .u-btn,.state-check-trigger,.state-test-btn,.state-close,.tool-back,.home-link,.settings-action,
+    .lyrics-list-back,.lyrics-karaoke-icon,.lyrics-editor-actions button,.lyrics-room-primary,.lyrics-room-join button,.lyrics-room-subactions button,
+    .karaoke-primary,.karaoke-secondary,.karaoke-start,.karaoke-save-favorite,.karaoke-join button,.karaoke-actions button,.karaoke-back-link,.karaoke-top-back,.karaoke-history-heading button,.karaoke-song-footer button,.karaoke-history-actions button,.karaoke-room-actions button
+  ){
+    border-color:var(--btn-line-light);
+    color:var(--ink);
+    background:var(--btn-bg-light);
+    box-shadow:var(--btn-shadow-light);
+  }
+  @media(hover:hover){
+    body.theme-light :is(
+      .u-btn,.state-check-trigger,.state-test-btn,.state-close,.tool-back,.home-link,.settings-action,
+      .lyrics-list-back,.lyrics-karaoke-icon,.lyrics-editor-actions button,.lyrics-room-primary,.lyrics-room-join button,.lyrics-room-subactions button,
+      .karaoke-primary,.karaoke-secondary,.karaoke-start,.karaoke-save-favorite,.karaoke-join button,.karaoke-actions button,.karaoke-back-link,.karaoke-top-back,.karaoke-history-heading button,.karaoke-song-footer button,.karaoke-history-actions button,.karaoke-room-actions button
+    ):not(:disabled):hover{border-color:var(--btn-line-light-hover);background:var(--btn-bg-light-hover)}
+  }
+
+  /* Primary actions are stronger only by accent, never solid-cyan slabs. */
+  body.theme-light :is(.lyrics-karaoke-icon,.lyrics-editor-actions button:last-child,.karaoke-primary,.karaoke-start,.lyrics-room-primary){
+    border-color:rgba(75,165,184,.38);
+    background:linear-gradient(145deg,#fff,rgba(156,236,255,.20));
+  }
+
+  /* Utility/icon family shares one HOME-derived texture. */
+  .utility-actions .utility-btn,
+  .overlay-close{
+    border:1px solid var(--btn-line-dark);
+    color:var(--white);
+    background:var(--btn-bg-dark);
+    box-shadow:var(--btn-shadow-dark);
+  }
+  body.theme-light .app-shell .utility-actions .utility-btn,
+  body.theme-light .overlay-close{
+    border-color:rgba(75,165,184,.30);
+    color:var(--ink);
+    background:linear-gradient(145deg,#fff,rgba(156,236,255,.22));
+    box-shadow:var(--btn-shadow-light);
+  }
+
+  /* Content-card family keeps its layout/content identity, but uses one interaction language. */
+  :is(.home-card,.category-card,.lyrics-group-card,.lyrics-song-card,.lyrics-gacha-card,.karaoke-groups button,.karaoke-song-list button,.karaoke-history-list button,
+      .profile-member-card,.profile-map-member,.profile-search-member,.profile-chemistry-member,.profile-discover-member){
+    transform:translateZ(0);
+  }
+  @media(hover:hover){
+    :is(.home-card,.category-card,.lyrics-group-card,.lyrics-song-card,.lyrics-gacha-card,.karaoke-groups button,.karaoke-song-list button,.karaoke-history-list button,
+        .profile-member-card,.profile-map-member,.profile-search-member,.profile-chemistry-member,.profile-discover-member):not(:disabled):hover{
+      border-color:rgba(156,236,255,.34);
+    }
+  }
+  body.theme-light :is(.lyrics-group-card,.lyrics-song-card,.lyrics-gacha-card,.karaoke-groups button,.karaoke-song-list button,.karaoke-history-list button){
+    border-color:rgba(21,24,32,.12);
+    background:linear-gradient(145deg,#fff,rgba(156,236,255,.035));
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.86);
+  }
+
+  /* Tabs/chips/navigation remain semantically distinct, but share press/focus/disabled behavior from the base. */
+  :is(.profile-group-chip,.profile-local-tab,.profile-search-tag,.profile-search-field-toggle,.nav-btn){
+    -webkit-tap-highlight-color:transparent;
+  }
+
+  /* Room rhythm: same surface metrics for every Room action. */
+  body.theme-light .lyrics-room-card .lyrics-room-primary,
+  body.theme-light .lyrics-room-card .lyrics-room-join button,
+  body.theme-light .lyrics-room-card .lyrics-room-subactions button{
+    box-sizing:border-box;
+    min-height:50px;
+    height:50px;
+    border-radius:15px;
+    border-color:rgba(75,165,184,.28);
+    background:linear-gradient(145deg,#fff,rgba(156,236,255,.18));
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.86);
+  }
+
+  @media(prefers-reduced-motion:reduce){
+    button{transition:none!important}
+    button:not(:disabled):active{transform:none!important}
+  }
+</style>
