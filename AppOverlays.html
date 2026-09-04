@@ -28,37 +28,34 @@
     <div id="settingsOverlay" class="modal-overlay" onclick="closeOnBackdrop(event, 'settingsOverlay')">
       <section class="settings-panel" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
         <header class="modal-head">
-          <h2 id="settingsTitle" class="modal-title">SETTINGS</h2>
+          <div><p class="settings-eyebrow">BMSG UNIVERSE</p><h2 id="settingsTitle" class="modal-title">SETTINGS</h2></div>
           <button class="overlay-close" onclick="closeSettings()" aria-label="Close settings">×</button>
         </header>
 
-        <div class="settings-user-card">
-          <p class="settings-label">現在のユーザー</p>
-          <div class="settings-user-row">
-            <span id="settingsUserName" class="settings-user">ももたん</span>
-            <button class="settings-change" onclick="cycleDemoUser()">変更</button>
+        <section class="settings-group">
+          <p class="settings-section-title">ACCOUNT</p>
+          <div class="settings-row">
+            <div class="settings-row-copy"><small>CURRENT USER</small><strong id="settingsUserName">ももたん</strong></div>
+            <button class="settings-action" onclick="cycleDemoUser()">CHANGE</button>
           </div>
-        </div>
+        </section>
 
-        <div class="settings-section">
+        <section id="lyricsSettingsSection" class="settings-group">
           <p class="settings-section-title">LYRICS</p>
-          <button class="tool-button" onclick="toggleLyricsEditMode()">
-            <span class="tool-name">歌詞編集モード</span>
-            <span id="lyricsEditModeStatus" class="tool-status">OFF</span>
+          <button class="settings-row settings-row-button" onclick="toggleLyricsEditMode()">
+            <span class="settings-row-copy"><strong>歌詞編集</strong><small>歌詞・歌割りを変更</small></span>
+            <span id="lyricsEditModeStatus" class="settings-switch">OFF</span>
           </button>
-        </div>
+        </section>
 
-        <div class="settings-section">
+        <section class="settings-group">
           <p class="settings-section-title">TOOLS</p>
-          <button class="tool-button" onclick="openPerformanceTool()">
-            <span class="tool-name">歌唱・センター秒数計測</span>
-            <span class="tool-status">PHASE 3 PLACEHOLDER</span>
+          <button class="settings-row settings-row-button" onclick="openPerformanceTool()">
+            <span class="settings-row-copy"><strong>歌唱・センター秒数計測</strong><small>PERFORMANCE TIMER</small></span>
+            <span class="settings-arrow">›</span>
           </button>
-        </div>
-
-        <p class="settings-note">現在の検証版ではユーザー変更とツール導線を確認できます。</p>
-      </section>
-    </div>
+        </section>
+      </section>   </div>
 
     <div id="stateCheckOverlay" class="modal-overlay" onclick="closeOnBackdrop(event, 'stateCheckOverlay')">
       <section class="state-panel" role="dialog" aria-modal="true" aria-labelledby="stateCheckTitle">
