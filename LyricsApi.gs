@@ -4,6 +4,23 @@ const LYRICS_CATEGORIES_ = Object.freeze(['ALL', 'BE:FIRST', 'MAZZEL', 'STARGLOW
 function getLyricsCatalog() {
   const songs = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.SONGS);
   const parts = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.LYRICS_PARTS);
+  const singerMap = buildLyricsSingerMap_();
+  const partsBySong = parts.reduce(function(map, row) {
+    const id = asId_(row.SongID);
+    if (!id) return map;
+    if (!map[id]) map[id] = [];
+    map[id].push({
+      songId: id,
+      partOrder: Number(row.PartOrder),
+      singer: String(row.Singer || ''),
+      singers: formatLyricsSingers_(String(row.Singer || ''), singerMap),
+      lyrics: String(row.Lyrics || '')
+    });
+    return map;
+  }, {});
+  Object.keys(partsBySong).forEach(function(id) {
+    partsBySong[id].sort(function(a, b) { return a.partOrder - b.partOrder; });
+  });
   const counts = parts.reduce(function(map, row) {
     const id = asId_(row.SongID);
     if (id) map[id] = (map[id] || 0) + 1;
@@ -12,6 +29,7 @@ function getLyricsCatalog() {
 
   return {
     categories: LYRICS_CATEGORIES_.slice(),
+    partsBySong: partsBySong,
     songs: songs.filter(function(row) {
       return counts[asId_(row.SongID)] > 0;
     }).map(function(row) {
