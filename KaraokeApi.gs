@@ -78,6 +78,13 @@ function shuffleKaraokeSong(payload) {
     assignments[user.userId]=shuffled.slice(cursor,cursor+size);
     cursor+=size;
   });
+  const singerMap=buildLyricsSingerMap_();
+  Object.keys(assignments).forEach(function(userId){
+    assignments[userId]=assignments[userId].map(function(id){
+      const singer=singerMap[id]||{name:id,color:'#777777'};
+      return {memberId:id,name:singer.name,color:singer.color};
+    });
+  });
   const result={
     songId:songId,title:String(song.Title||''),artist:String(song.Artist||''),
     assignments:assignments,users:users,createdAt:new Date().toISOString()
