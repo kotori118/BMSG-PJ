@@ -1,5 +1,5 @@
 <script>
-  const karaokeState={users:[{userId:'U001',displayName:'ももたん'},{userId:'U002',displayName:'みおたん'},{userId:'U003',displayName:'りおたん'}],room:null,history:[],songs:[],partsBySong:{},song:null,assignments:{},screen:'entry',busy:false,backParams:{}};
+  const karaokeState={users:[{userId:'U001',displayName:'ももたん'},{userId:'U002',displayName:'みおたん'},{userId:'U003',displayName:'りおたん'}],room:null,history:[],songs:[],partsBySong:{},song:null,assignments:{},screen:'entry',busy:false,roomReady:false,backParams:{}};
 
   function renderKaraoke(){return document.getElementById('karaokePageTemplate').innerHTML;}
 
@@ -19,18 +19,21 @@
   function applyKaraokeCatalog(data,params){
     karaokeState.songs=data.songs||[];
     karaokeState.partsBySong=data.partsBySong||{};
-    if(params&&params.song){openKaraokeSetup(params.song,false);return;}
+    if(params&&params.song){openKaraokeSetup(params.song,false);loadKaraokeRoom(params&&params.room);return;}
     renderKaraokeEntry();
     loadKaraokeRoom(params&&params.room);
   }
 
   function loadKaraokeRoom(roomId){
+    karaokeState.roomReady=false;
     google.script.run.withSuccessHandler(function(data){
+      karaokeState.roomReady=true;
       karaokeState.users=data.users&&data.users.length?data.users:karaokeState.users;
       karaokeState.room=data.room||null;
       karaokeState.history=data.history||[];
       updateKaraokeRoomCard();
     }).withFailureHandler(function(error){
+      karaokeState.roomReady=true;
       karaokeState.room=null;
       updateKaraokeRoomCard();
       showKaraokeError(error);
@@ -165,13 +168,41 @@
 
   function resetKaraoke(){karaokeState.assignments={};renderKaraokeSetup();}
 
-  function startKaraoke(){
-    const missing=karaokeSingers().find(function(singer){return !karaokeState.assignments[singer.key];});
-    if(missing){showKaraokeError(missing.name+'が未設定です');return;}
+  function buildKaraokeResultAssignments(){
+    const result={};
+    karaokeState.users.forEach(function(user){result[user.userId]=[];});
+    karaokeSingers().forEach(function(singer){
+      const userId=karaokeState.assignments[singer.key];
+      if(result[userId])result[userId].push({memberId:singer.key,name:singer.name,color:singer.color});
+    });
+    return result;
+  }
+
+  function showKaraokeSong(){
     karaokeState.screen='song';
     setKaraokeUrl('song');
     renderKaraokeSong();
     scrollKaraokeTop();
+  }
+
+  function startKaraoke(){
+    const missing=karaokeSingers().find(function(singer){return !karaokeState.assignments[singer.key];});
+    if(missing){showKaraokeError(missing.name+'が未設定です');return;}
+    if(karaokeState.busy)return;
+    if(!karaokeState.roomReady){showKaraokeError('ルーム情報を確認中です。少し待ってください。');return;}
+    if(!karaokeState.room){showKaraokeSong();return;}
+    karaokeState.busy=true;
+    google.script.run.withSuccessHandler(function(result){
+      karaokeState.busy=false;
+      karaokeState.history.unshift(result);
+      showKaraokeSong();
+      if(typeof showToast==='function')showToast('振り分けを履歴に保存しました');
+    }).withFailureHandler(karaokeFailure).saveKaraokeAssignment({
+      userId:getUniverseUserId(),
+      roomId:karaokeState.room.roomId,
+      songId:karaokeState.song.songId,
+      assignments:buildKaraokeResultAssignments()
+    });
   }
 
   function karaokePartOwners(part){
