@@ -45,7 +45,7 @@
   function showLyricsGroups(pushUrl){lyricsState.group='';lyricsState.unit='';lyricsState.song=null;if(pushUrl!==false)setLyricsUrl({});document.getElementById('lyricsView').innerHTML='<div id="lyricsKaraokeRoom">'+renderLyricsKaraokeRoom()+'</div><section class="lyrics-groups">'+LYRICS_GROUPS.map(function(group){return '<button class="lyrics-group-card is-colored" style="'+lyricsGroupButtonStyle(group)+'" type="button" onclick="showLyricsGroup(\''+lyricArg(group)+'\')"><strong>'+escapeLyrics(group)+'</strong><span>'+groupSongs(group).length+' SONGS</span></button>';}).join('')+'</section><button class="lyrics-gacha-card" type="button" disabled><strong>SONG GACHA</strong><span>COMING NEXT</span></button>';scrollLyricsTop();}
 
   function renderLyricsKaraokeRoom(){
-    if(!lyricsState.karaokeRoomReady)return '<section class="lyrics-room-card is-loading"><p>KARAOKE ROOM</p><strong>ルーム情報を確認中</strong></section>';
+    if(!lyricsState.karaokeRoomReady)return '<section class="lyrics-room-card is-loading">'+renderUniverseLoading(false,'#9cecff')+'</section>';
     if(!lyricsState.karaokeRoom){
       return '<section class="lyrics-room-card"><p>KARAOKE ROOM</p><button class="lyrics-room-primary" type="button" onclick="createLyricsKaraokeRoom()">ルームを作る</button><div class="lyrics-room-join"><input id="lyricsRoomInput" inputmode="numeric" maxlength="4" placeholder="4桁のルームID"><button type="button" onclick="joinLyricsKaraokeRoom()">参加</button></div></section>';
     }
