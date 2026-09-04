@@ -1,0 +1,142 @@
+<style>
+  /* =========================================================
+     Universe shared polish — SEARCH / SETTINGS
+     Soft Cyan is the primary accent in both dark and light UI.
+     ========================================================= */
+  :root{
+    --cyan-ink:#2f7382;
+  }
+
+  /* Top utility Search / Settings buttons */
+  .utility-actions .utility-btn:not(.utility-home){
+    border-color:rgba(156,236,255,.26);
+    color:var(--cyan-strong);
+    background:linear-gradient(145deg,rgba(156,236,255,.12),rgba(4,9,16,.74));
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.035),0 0 22px rgba(156,236,255,.045);
+    transition:border-color var(--fast) var(--ease),background var(--fast) var(--ease),color var(--fast) var(--ease),transform var(--fast) var(--ease);
+  }
+  @media(hover:hover){
+    .utility-actions .utility-btn:not(.utility-home):hover{
+      border-color:rgba(156,236,255,.46);
+      color:#effdff;
+      background:linear-gradient(145deg,rgba(156,236,255,.18),rgba(4,9,16,.78));
+    }
+  }
+
+  /* SEARCH */
+  #searchOverlay{
+    background:radial-gradient(ellipse at 18% 4%,rgba(96,208,232,.12),transparent 32%),rgba(3,7,13,.988);
+  }
+  #searchOverlay .overlay-title{
+    color:var(--cyan-strong);
+    text-shadow:0 0 28px rgba(156,236,255,.08);
+  }
+  #searchOverlay .search-field{
+    border-color:rgba(156,236,255,.36);
+    background:linear-gradient(145deg,rgba(156,236,255,.075),rgba(255,255,255,.028));
+    transition:border-color var(--fast) var(--ease),background var(--fast) var(--ease),box-shadow var(--fast) var(--ease);
+  }
+  #searchOverlay .search-field:focus-within{
+    border-color:rgba(156,236,255,.66);
+    background:linear-gradient(145deg,rgba(156,236,255,.105),rgba(255,255,255,.035));
+    box-shadow:0 0 0 3px rgba(156,236,255,.065),0 0 30px rgba(156,236,255,.04);
+  }
+  #searchOverlay .search-field svg{stroke:var(--cyan)}
+  #searchOverlay .search-status,
+  #searchOverlay .page-directory-label{color:rgba(198,246,255,.58)}
+  #searchOverlay .search-result{
+    border-color:rgba(156,236,255,.115);
+    background:linear-gradient(145deg,rgba(156,236,255,.035),rgba(255,255,255,.018));
+    transition:border-color var(--fast) var(--ease),background var(--fast) var(--ease),transform var(--fast) var(--ease);
+  }
+  #searchOverlay .search-result-parent{color:rgba(156,236,255,.46)}
+  @media(hover:hover){
+    #searchOverlay .search-result:hover{
+      border-color:rgba(156,236,255,.28);
+      background:linear-gradient(145deg,rgba(156,236,255,.07),rgba(255,255,255,.024));
+    }
+  }
+  #searchOverlay .search-result:focus-visible{
+    outline:1px solid rgba(156,236,255,.6);
+    outline-offset:2px;
+  }
+
+  /* SETTINGS */
+  #settingsOverlay .settings-panel{
+    border-color:rgba(156,236,255,.18);
+    background:radial-gradient(circle at 0 0,rgba(156,236,255,.075),transparent 34%),linear-gradient(180deg,rgba(11,17,28,.99),rgba(5,10,18,.99));
+  }
+  #settingsOverlay .modal-title{
+    color:var(--cyan-strong);
+    text-shadow:0 0 28px rgba(156,236,255,.07);
+  }
+  #settingsOverlay .settings-eyebrow,
+  #settingsOverlay .settings-section-title{color:rgba(198,246,255,.64)}
+  #settingsOverlay .settings-row{
+    border-color:rgba(156,236,255,.11);
+    background:linear-gradient(145deg,rgba(156,236,255,.032),rgba(255,255,255,.018));
+    transition:border-color var(--fast) var(--ease),background var(--fast) var(--ease),transform var(--fast) var(--ease);
+  }
+  #settingsOverlay .settings-action{
+    border-color:rgba(156,236,255,.28);
+    color:var(--cyan-strong);
+    background:rgba(156,236,255,.065);
+  }
+  #settingsOverlay .settings-arrow{color:rgba(156,236,255,.56)}
+  @media(hover:hover){
+    #settingsOverlay .settings-row-button:hover{
+      border-color:rgba(156,236,255,.24);
+      background:rgba(156,236,255,.055);
+    }
+    #settingsOverlay .settings-action:hover{
+      border-color:rgba(156,236,255,.44);
+      background:rgba(156,236,255,.11);
+    }
+  }
+
+  /* Light Theme — keep cyan visible without losing readability */
+  body.theme-light .utility-actions .utility-btn:not(.utility-home){
+    border-color:rgba(73,151,170,.32);
+    color:var(--cyan-ink);
+    background:rgba(156,236,255,.26);
+    box-shadow:none;
+  }
+  body.theme-light #searchOverlay{
+    background:radial-gradient(ellipse at 18% 4%,rgba(156,236,255,.20),transparent 34%),#fff;
+  }
+  body.theme-light #searchOverlay .overlay-title,
+  body.theme-light #settingsOverlay .modal-title{color:var(--cyan-ink);text-shadow:none}
+  body.theme-light #searchOverlay .search-field{
+    border-color:rgba(73,151,170,.28);
+    background:rgba(156,236,255,.10);
+  }
+  body.theme-light #searchOverlay .search-field:focus-within{
+    border-color:rgba(73,151,170,.52);
+    background:rgba(156,236,255,.16);
+    box-shadow:0 0 0 3px rgba(156,236,255,.20);
+  }
+  body.theme-light #searchOverlay .search-field svg{stroke:var(--cyan-ink)}
+  body.theme-light #searchOverlay .search-status,
+  body.theme-light #searchOverlay .page-directory-label,
+  body.theme-light #searchOverlay .search-result-parent{color:rgba(47,115,130,.64)}
+  body.theme-light #searchOverlay .search-result{
+    border-color:rgba(73,151,170,.16);
+    background:rgba(156,236,255,.055);
+  }
+  body.theme-light #settingsOverlay .settings-panel{
+    border-color:rgba(73,151,170,.20);
+    background:radial-gradient(circle at 0 0,rgba(156,236,255,.16),transparent 36%),#fff;
+  }
+  body.theme-light #settingsOverlay .settings-eyebrow,
+  body.theme-light #settingsOverlay .settings-section-title{color:rgba(47,115,130,.68)}
+  body.theme-light #settingsOverlay .settings-row{
+    border-color:rgba(73,151,170,.15);
+    background:rgba(156,236,255,.045);
+  }
+  body.theme-light #settingsOverlay .settings-action{
+    border-color:rgba(73,151,170,.28);
+    color:var(--cyan-ink);
+    background:rgba(156,236,255,.18);
+  }
+  body.theme-light #settingsOverlay .settings-arrow{color:rgba(47,115,130,.58)}
+</style>
