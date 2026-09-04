@@ -1,0 +1,215 @@
+<style>
+  .karaoke-title.is-favorite-ready{position:relative;padding-right:58px}
+  .karaoke-favorite-star{position:absolute;right:0;top:50%;transform:translateY(-50%);width:44px;height:44px;min-width:44px;padding:0;border-radius:50%;font-size:24px;line-height:1;display:grid;place-items:center}
+  .karaoke-favorite-star.is-applied{color:var(--cyan-ink,#2f7382)}
+  .karaoke-favorite-settings-modal{z-index:1220}
+  .karaoke-favorite-settings-panel{max-width:620px;max-height:min(86vh,760px);overflow:auto}
+  .karaoke-favorite-category-row{margin:8px 0 18px}
+  .karaoke-favorite-category-row label{display:block;margin-bottom:7px;color:var(--gray);font:600 10px "Exo 2",Roboto,sans-serif;letter-spacing:.12em}
+  .karaoke-favorite-category-select{width:100%;min-height:48px;padding:0 14px;border:1px solid rgba(156,236,255,.22);border-radius:14px;background:rgba(255,255,255,.04);color:inherit;font:600 14px "Zen Kaku Gothic New",Roboto,sans-serif}
+  body.theme-light .karaoke-favorite-category-select{background:#fff;border-color:rgba(75,165,184,.26);color:var(--ink)}
+  .karaoke-favorite-member-list{display:grid;gap:10px}
+  .karaoke-favorite-member-row{display:grid;grid-template-columns:minmax(92px,1fr) minmax(0,2.2fr);gap:12px;align-items:center;padding:12px;border:1px solid rgba(156,236,255,.14);border-radius:16px}
+  body.theme-light .karaoke-favorite-member-row{border-color:rgba(75,165,184,.18);background:linear-gradient(145deg,#fff,rgba(156,236,255,.05))}
+  .karaoke-favorite-member-name{font:700 14px "Zen Kaku Gothic New",Roboto,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .karaoke-favorite-user-options{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .karaoke-favorite-user-options button{min-height:40px;padding:0 6px;border-radius:12px;font-size:11px}
+  .karaoke-favorite-user-options button.is-selected{border-color:rgba(75,165,184,.62)!important;box-shadow:inset 0 0 0 1px rgba(156,236,255,.28)}
+  .karaoke-favorite-save{width:100%;min-height:50px;margin-top:18px;border-radius:15px}
+  .karaoke-favorite-empty{padding:22px 12px;text-align:center;color:var(--gray);font-size:13px}
+  @media(max-width:520px){
+    .karaoke-favorite-member-row{grid-template-columns:1fr;gap:9px}
+    .karaoke-favorite-user-options button{font-size:10px}
+  }
+</style>
+
+<script>
+  const karaokeFavoriteState={
+    setupApplied:false,
+    setupCategory:'',
+    setupAssignments:null,
+    settings:null,
+    editCategory:'BE:FIRST',
+    editAssignments:{},
+    busy:false
+  };
+
+  function getKaraokeCurrentCategoryKey(){
+    if(typeof karaokeState==='undefined'||!karaokeState.song)return'';
+    const meta=(karaokeState.songs||[]).find(function(item){return String(item.songId)===String(karaokeState.song.songId);});
+    if(!meta)return'';
+    if(['BE:FIRST','MAZZEL','STARGLOW','HANA'].indexOf(String(meta.category||meta.artist||''))>=0)return String(meta.category||meta.artist);
+    return String(meta.unitCategory||'その他UNIT');
+  }
+
+  function injectKaraokeFavoriteStar(){
+    if(typeof karaokeState==='undefined'||karaokeState.screen!=='setup')return;
+    const title=document.querySelector('#karaokeView .karaoke-title');
+    if(!title||title.querySelector('.karaoke-favorite-star'))return;
+    title.classList.add('is-favorite-ready');
+    const button=document.createElement('button');
+    button.type='button';
+    button.className='karaoke-favorite-star'+(karaokeFavoriteState.setupApplied?' is-applied':'');
+    button.textContent=karaokeFavoriteState.setupApplied?'★':'☆';
+    button.setAttribute('aria-label',karaokeFavoriteState.setupApplied?'推しセット適用済み':'推しセットを適用');
+    button.onclick=applyKaraokeFavoriteSet;
+    title.appendChild(button);
+  }
+
+  function applyKaraokeFavoriteSet(){
+    if(karaokeFavoriteState.busy||typeof karaokeState==='undefined'||!karaokeState.song)return;
+    const categoryKey=getKaraokeCurrentCategoryKey();
+    if(!categoryKey){showKaraokeError('この曲の推しセット分類を判定できません。');return;}
+    karaokeFavoriteState.busy=true;
+    google.script.run.withSuccessHandler(function(data){
+      karaokeFavoriteState.busy=false;
+      const map=data&&data.assignments?data.assignments:{};
+      if(!Object.keys(map).length){
+        if(typeof showToast==='function')showToast('この分類の推しセットはまだ未設定です');
+        return;
+      }
+      karaokeState.assignments={};
+      karaokeSingers().forEach(function(singer){
+        if(map[singer.key])karaokeState.assignments[singer.key]=map[singer.key];
+      });
+      karaokeFavoriteState.setupApplied=true;
+      karaokeFavoriteState.setupCategory=categoryKey;
+      karaokeFavoriteState.setupAssignments=map;
+      renderKaraokeSetup();
+      if(typeof showToast==='function')showToast(categoryKey+' の推しセットを適用しました');
+    }).withFailureHandler(function(error){
+      karaokeFavoriteState.busy=false;
+      showKaraokeError(error);
+    }).getKaraokeFavoriteSet(categoryKey);
+  }
+
+  function clearKaraokeFavoriteApplied(){
+    karaokeFavoriteState.setupApplied=false;
+    karaokeFavoriteState.setupCategory='';
+    karaokeFavoriteState.setupAssignments=null;
+  }
+
+  (function bindKaraokeFavoriteSetup(){
+    if(typeof renderKaraokeSetup==='function'){
+      const baseRender=renderKaraokeSetup;
+      renderKaraokeSetup=function(){baseRender();injectKaraokeFavoriteStar();};
+    }
+    if(typeof openKaraokeSetup==='function'){
+      const baseOpen=openKaraokeSetup;
+      openKaraokeSetup=function(songId,pushUrl){clearKaraokeFavoriteApplied();return baseOpen(songId,pushUrl);};
+    }
+    if(typeof toggleKaraokeSinger==='function'){
+      const baseToggle=toggleKaraokeSinger;
+      toggleKaraokeSinger=function(encoded,userId,input){clearKaraokeFavoriteApplied();return baseToggle(encoded,userId,input);};
+    }
+    if(typeof randomizeKaraoke==='function'){
+      const baseRandom=randomizeKaraoke;
+      randomizeKaraoke=function(){clearKaraokeFavoriteApplied();return baseRandom();};
+    }
+    if(typeof resetKaraoke==='function'){
+      const baseReset=resetKaraoke;
+      resetKaraoke=function(){clearKaraokeFavoriteApplied();return baseReset();};
+    }
+  })();
+
+  function ensureKaraokeFavoriteSettingsEntry(){
+    const settings=document.getElementById('settingsOverlay');
+    if(!settings||settings.querySelector('#karaokeFavoriteSettingsSection'))return;
+    const tools=settings.querySelector('.settings-group:last-of-type');
+    const section=document.createElement('section');
+    section.id='karaokeFavoriteSettingsSection';
+    section.className='settings-group';
+    section.innerHTML='<p class="settings-section-title">KARAOKE</p><button class="settings-row settings-row-button" type="button" onclick="openKaraokeFavoriteSettings()"><span class="settings-row-copy"><strong>推しセット</strong><small>分類ごとの担当メンバーを設定</small></span><span class="settings-arrow">›</span></button>';
+    if(tools&&tools.parentNode)tools.parentNode.insertBefore(section,tools);else settings.querySelector('.settings-panel').appendChild(section);
+  }
+
+  function ensureKaraokeFavoriteSettingsModal(){
+    if(document.getElementById('karaokeFavoriteSettingsOverlay'))return;
+    const overlay=document.createElement('div');
+    overlay.id='karaokeFavoriteSettingsOverlay';
+    overlay.className='modal-overlay karaoke-favorite-settings-modal';
+    overlay.onclick=function(event){if(event.target===overlay)closeKaraokeFavoriteSettings();};
+    overlay.innerHTML='<section class="settings-panel karaoke-favorite-settings-panel" role="dialog" aria-modal="true" aria-labelledby="karaokeFavoriteSettingsTitle"><header class="modal-head"><div><p class="settings-eyebrow">KARAOKE</p><h2 id="karaokeFavoriteSettingsTitle" class="modal-title">推しセット</h2></div><button class="overlay-close" type="button" onclick="closeKaraokeFavoriteSettings()" aria-label="Close favorite settings">×</button></header><div id="karaokeFavoriteSettingsBody">'+(typeof renderUniverseLoading==='function'?renderUniverseLoading('LOADING...','#9cecff'):'')+'</div></section>';
+    document.body.appendChild(overlay);
+  }
+
+  function openKaraokeFavoriteSettings(){
+    ensureKaraokeFavoriteSettingsModal();
+    if(typeof closeSettings==='function')closeSettings();
+    const overlay=document.getElementById('karaokeFavoriteSettingsOverlay');
+    overlay.classList.add('open');
+    document.body.style.overflow='hidden';
+    const body=document.getElementById('karaokeFavoriteSettingsBody');
+    if(body)body.innerHTML=typeof renderUniverseLoading==='function'?renderUniverseLoading('LOADING...','#9cecff'):'';
+    google.script.run.withSuccessHandler(function(data){
+      karaokeFavoriteState.settings=data;
+      const hasCurrent=(data.categories||[]).some(function(item){return item.categoryKey===karaokeFavoriteState.editCategory;});
+      if(!hasCurrent&&data.categories&&data.categories.length)karaokeFavoriteState.editCategory=data.categories[0].categoryKey;
+      loadKaraokeFavoriteEditCategory(karaokeFavoriteState.editCategory);
+    }).withFailureHandler(function(error){
+      if(body)body.innerHTML='<div class="karaoke-favorite-empty">読み込みに失敗しました</div>';
+      if(typeof showToast==='function')showToast(error&&error.message?error.message:String(error||'読み込みに失敗しました'));
+    }).getKaraokeFavoriteSettings();
+  }
+
+  function closeKaraokeFavoriteSettings(){
+    const overlay=document.getElementById('karaokeFavoriteSettingsOverlay');
+    if(overlay)overlay.classList.remove('open');
+    document.body.style.overflow='';
+  }
+
+  function loadKaraokeFavoriteEditCategory(categoryKey){
+    karaokeFavoriteState.editCategory=String(categoryKey||'');
+    const data=karaokeFavoriteState.settings||{categories:[],users:[]};
+    const category=(data.categories||[]).find(function(item){return item.categoryKey===karaokeFavoriteState.editCategory;});
+    karaokeFavoriteState.editAssignments=Object.assign({},category&&category.assignments||{});
+    renderKaraokeFavoriteSettingsEditor();
+  }
+
+  function setKaraokeFavoriteMember(memberId,userId){
+    karaokeFavoriteState.editAssignments[String(memberId)]=String(userId);
+    renderKaraokeFavoriteSettingsEditor();
+  }
+
+  function renderKaraokeFavoriteSettingsEditor(){
+    const body=document.getElementById('karaokeFavoriteSettingsBody');
+    if(!body)return;
+    const data=karaokeFavoriteState.settings||{categories:[],users:[]};
+    const category=(data.categories||[]).find(function(item){return item.categoryKey===karaokeFavoriteState.editCategory;});
+    if(!category){body.innerHTML='<div class="karaoke-favorite-empty">設定対象がありません</div>';return;}
+    const options=(data.categories||[]).map(function(item){return '<option value="'+escapeLyrics(item.categoryKey)+'"'+(item.categoryKey===category.categoryKey?' selected':'')+'>'+escapeLyrics(item.categoryKey)+'</option>';}).join('');
+    const members=(category.members||[]).map(function(member){
+      const buttons=(data.users||[]).map(function(user){
+        const selected=karaokeFavoriteState.editAssignments[member.memberId]===user.userId;
+        return '<button type="button" class="'+(selected?'is-selected':'')+'" onclick="setKaraokeFavoriteMember(\''+escapeLyrics(member.memberId)+'\',\''+escapeLyrics(user.userId)+'\')">'+escapeLyrics(user.displayName)+'</button>';
+      }).join('');
+      return '<div class="karaoke-favorite-member-row"><div class="karaoke-favorite-member-name" style="color:'+escapeLyrics(member.color||'#777777')+'">'+escapeLyrics(member.name)+'</div><div class="karaoke-favorite-user-options">'+buttons+'</div></div>';
+    }).join('');
+    const complete=(category.members||[]).every(function(member){return !!karaokeFavoriteState.editAssignments[member.memberId];});
+    body.innerHTML='<div class="karaoke-favorite-category-row"><label>分類</label><select class="karaoke-favorite-category-select" onchange="loadKaraokeFavoriteEditCategory(this.value)">'+options+'</select></div><div class="karaoke-favorite-member-list">'+(members||'<div class="karaoke-favorite-empty">対象メンバーがいません</div>')+'</div><button class="karaoke-favorite-save" type="button" onclick="saveKaraokeFavoriteSettings()"'+(complete?'':' disabled')+'>保存</button>';
+  }
+
+  function saveKaraokeFavoriteSettings(){
+    if(karaokeFavoriteState.busy)return;
+    karaokeFavoriteState.busy=true;
+    google.script.run.withSuccessHandler(function(result){
+      karaokeFavoriteState.busy=false;
+      const category=(karaokeFavoriteState.settings.categories||[]).find(function(item){return item.categoryKey===result.categoryKey;});
+      if(category)category.assignments=Object.assign({},result.assignments||{});
+      if(typeof showToast==='function')showToast(result.categoryKey+' の推しセットを保存しました');
+      renderKaraokeFavoriteSettingsEditor();
+    }).withFailureHandler(function(error){
+      karaokeFavoriteState.busy=false;
+      if(typeof showToast==='function')showToast(error&&error.message?error.message:String(error||'保存に失敗しました'));
+    }).saveKaraokeFavoriteSet({categoryKey:karaokeFavoriteState.editCategory,assignments:karaokeFavoriteState.editAssignments});
+  }
+
+  (function bindKaraokeFavoriteSettings(){
+    ensureKaraokeFavoriteSettingsEntry();
+    ensureKaraokeFavoriteSettingsModal();
+    if(typeof openSettings==='function'){
+      const baseOpenSettings=openSettings;
+      openSettings=function(){ensureKaraokeFavoriteSettingsEntry();return baseOpenSettings();};
+    }
+  })();
+</script>
