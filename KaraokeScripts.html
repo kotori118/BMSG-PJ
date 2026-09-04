@@ -202,12 +202,42 @@
     else if(current===userId)delete karaokeState.assignments[key];
   }
 
-  function randomizeKaraoke(){
+  function randomizeKaraokeLocal(){
     const singers=karaokeSingers().slice();
     for(let i=singers.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));const t=singers[i];singers[i]=singers[j];singers[j]=t;}
     karaokeState.assignments={};
     singers.forEach(function(singer,index){karaokeState.assignments[singer.key]=karaokeState.users[index%karaokeState.users.length].userId;});
     renderKaraokeSetup();
+  }
+
+  function applyFairKaraokeAssignments(result){
+    karaokeState.assignments={};
+    Object.keys(result&&result.assignments||{}).forEach(function(userId){
+      (result.assignments[userId]||[]).forEach(function(slot){
+        const memberId=typeof slot==='string'?slot:slot.memberId;
+        if(memberId)karaokeState.assignments[String(memberId)]=userId;
+      });
+    });
+    renderKaraokeSetup();
+  }
+
+  function randomizeKaraoke(){
+    if(karaokeState.busy)return;
+    if(!karaokeState.roomReady){
+      karaokeState.busy=true;
+      loadKaraokeRoom(null,function(){karaokeState.busy=false;randomizeKaraoke();});
+      return;
+    }
+    if(!karaokeState.room){randomizeKaraokeLocal();return;}
+    karaokeState.busy=true;
+    google.script.run.withSuccessHandler(function(result){
+      karaokeState.busy=false;
+      applyFairKaraokeAssignments(result);
+    }).withFailureHandler(karaokeFailure).shuffleKaraokeSong({
+      userId:getUniverseUserId(),
+      roomId:karaokeState.room.roomId,
+      songId:karaokeState.song.songId
+    });
   }
 
   function resetKaraoke(){karaokeState.assignments={};renderKaraokeSetup();}
