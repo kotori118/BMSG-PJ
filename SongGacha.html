@@ -3,9 +3,8 @@
   .lyrics-gacha-card:not(:disabled) span{color:rgba(21,24,32,.58)!important;}
   .song-gacha-screen{padding:0 0 32px;color:var(--ink);}
   .song-gacha-head{display:flex;align-items:center;gap:14px;margin-bottom:24px;}
-  .song-gacha-back{width:auto!important;height:46px!important;min-width:72px!important;flex:0 0 auto!important;padding:0 18px!important;margin:0!important;border-radius:14px!important;font-family:'Exo 2',sans-serif!important;font-size:12px!important;font-weight:700!important;letter-spacing:.12em!important;line-height:1!important;}
+  .song-gacha-back{width:46px!important;height:46px!important;min-width:46px!important;flex:0 0 46px!important;padding:0!important;margin:0!important;border-radius:14px!important;font-family:'Zen Kaku Gothic New',sans-serif!important;font-size:34px!important;font-weight:400!important;line-height:1!important;display:grid!important;place-items:center!important;}
   .song-gacha-head h2{margin:0;font-family:'Orbitron',sans-serif;font-size:clamp(22px,6vw,32px);letter-spacing:.08em;}
-  .song-gacha-lead{margin:-8px 0 22px;font-family:'Roboto',sans-serif;font-size:12px;line-height:1.75;letter-spacing:.04em;color:color-mix(in srgb,var(--ink) 64%,transparent);}
   .song-gacha-groups{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;}
   .song-gacha-group{min-height:58px;padding:10px 12px!important;border-radius:15px!important;display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left;}
   .song-gacha-group strong{font-family:'Exo 2','Zen Kaku Gothic New',sans-serif;font-size:13px;letter-spacing:.02em;}
@@ -86,8 +85,7 @@
     if(!view)return;
     const pool=songGachaPool();
     view.innerHTML='<section class="song-gacha-screen">'
-      +'<div class="song-gacha-head"><button class="u-btn song-gacha-back" type="button" aria-label="Back" onclick="showLyricsGroups()">BACK</button><h2>SONG GACHA</h2></div>'
-      +'<p class="song-gacha-lead">SELECT GROUPS TO INCLUDE. BMSG ALLSTARS IS DRAWN AS ONE GROUP.</p>'
+      +'<div class="song-gacha-head"><button class="u-btn song-gacha-back" type="button" aria-label="Back" onclick="showLyricsGroups()">‹</button><h2>SONG GACHA</h2></div>'
       +'<div class="song-gacha-groups">'+LYRICS_GROUPS.map(function(group){
         const on=!!songGachaState.enabled[group];
         return '<button class="u-btn song-gacha-group '+(on?'is-on':'is-off')+'" type="button" aria-pressed="'+on+'" onclick="toggleSongGachaGroup(\''+lyricArg(group)+'\')"><strong>'+escapeLyrics(group)+'</strong><span>'+(on?'IN':'OUT')+'</span></button>';
