@@ -139,4 +139,32 @@
     background:rgba(156,236,255,.18);
   }
   body.theme-light #settingsOverlay .settings-arrow{color:rgba(47,115,130,.58)}
+
+  /* LYRICS room — use cyan as an accent, not a full slab CTA. */
+  body.theme-light .lyrics-room-card.is-active .lyrics-room-primary{
+    position:relative;
+    min-height:48px;
+    padding:0 44px 0 18px;
+    border:1px solid rgba(75,165,184,.32);
+    border-radius:14px;
+    color:var(--ink);
+    background:rgba(156,236,255,.12);
+    box-shadow:none;
+    font-size:14px;
+    font-weight:600;
+    letter-spacing:.015em;
+    text-align:left;
+  }
+  body.theme-light .lyrics-room-card.is-active .lyrics-room-primary:not(:disabled)::after{
+    content:'›';
+    position:absolute;
+    right:18px;
+    top:50%;
+    transform:translateY(-52%);
+    color:var(--cyan-ink);
+    font:500 25px/1 Roboto,sans-serif;
+  }
+  body.theme-light .lyrics-room-card.is-active .lyrics-room-primary:not(:disabled):active{
+    background:rgba(156,236,255,.20);
+  }
 </style>
