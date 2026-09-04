@@ -1,12 +1,12 @@
 <style>
-  .karaoke-title.is-favorite-ready{position:relative;padding-right:60px}
-  .karaoke-favorite-star{position:absolute;right:0;top:50%;transform:translateY(-50%);width:48px;height:48px;min-width:48px;padding:0;border-radius:15px!important;font-size:25px;line-height:1;display:grid;place-items:center;color:var(--ink)}
+  .karaoke-title.is-favorite-ready{display:flex;align-items:center;justify-content:center;gap:10px;padding-right:0!important}
+  .karaoke-favorite-star{position:static!important;transform:none!important;width:44px;height:44px;min-width:44px;padding:0!important;border:0!important;border-radius:12px!important;background:transparent!important;box-shadow:none!important;font-size:27px;line-height:1;display:grid;place-items:center;color:var(--ink)}
   .karaoke-favorite-star.is-applied{color:var(--cyan-ink,#2f7382)}
 
   /* Favorite settings is a SETTINGS sub-screen, not a floating service card. */
   .karaoke-favorite-settings-modal{z-index:1220;background:#fff!important;align-items:stretch!important;justify-content:center!important;padding:0!important}
   .karaoke-favorite-settings-panel{width:min(100%,680px)!important;max-width:680px!important;min-height:100dvh;max-height:100dvh!important;margin:0!important;padding:clamp(24px,6vw,48px) clamp(22px,6vw,42px) 40px!important;border:0!important;border-radius:0!important;background:#fff!important;box-shadow:none!important;overflow:auto}
-  .karaoke-favorite-settings-panel .modal-head{position:sticky;top:0;z-index:2;margin:-8px 0 8px;padding:8px 0 18px;background:rgba(255,255,255,.96);backdrop-filter:blur(10px)}
+  .karaoke-favorite-settings-panel .modal-head{position:sticky;top:0;z-index:2;margin:-8px 0 8px;padding:8px 0 18px;background:#fff!important;backdrop-filter:none!important}
   .karaoke-favorite-settings-panel .modal-title{font-family:"Zen Kaku Gothic New",Roboto,sans-serif}
   .karaoke-favorite-settings-panel .settings-eyebrow{color:var(--gray)}
   .karaoke-favorite-category-row{margin:10px 0 18px}
@@ -21,6 +21,7 @@
   .karaoke-favorite-save{width:100%;min-height:50px;margin-top:20px;border-radius:15px!important}
   .karaoke-favorite-empty{padding:28px 12px;text-align:center;color:var(--gray);font-size:13px}
   #karaokeFavoriteSettingsBody>.universe-loading{min-height:160px;justify-content:center}
+  .toast-region{z-index:1400!important}
   @media(max-width:520px){
     .karaoke-favorite-settings-panel{padding:24px 22px 34px!important}
     .karaoke-favorite-member-row{grid-template-columns:1fr;gap:10px;padding:16px 0}
@@ -31,28 +32,46 @@
 <script>
   const karaokeFavoriteState={
     setupApplied:false,
-    setupCategory:'',
+    setupGroupId:'',
     setupAssignments:null,
     settings:null,
     settingsLoading:false,
     settingsWaiters:[],
-    editCategory:'BE:FIRST',
+    editGroupId:'',
     editAssignments:{},
     busy:false
   };
 
-  function getKaraokeCurrentCategoryKey(){
+  function getKaraokeCurrentGroupName(){
     if(typeof karaokeState==='undefined'||!karaokeState.song)return'';
     const meta=(karaokeState.songs||[]).find(function(item){return String(item.songId)===String(karaokeState.song.songId);});
     if(!meta)return'';
     if(['BE:FIRST','MAZZEL','STARGLOW','HANA'].indexOf(String(meta.category||meta.artist||''))>=0)return String(meta.category||meta.artist);
-    return String(meta.unitCategory||'その他UNIT');
+    return String(meta.unitCategory||'');
+  }
+
+  function getKaraokeCurrentFavoriteGroup(){
+    if(!karaokeFavoriteState.settings)return null;
+    const groupName=getKaraokeCurrentGroupName();
+    if(!groupName)return null;
+    return (karaokeFavoriteState.settings.categories||[]).find(function(item){return item.groupName===groupName;})||null;
   }
 
   function injectKaraokeFavoriteStar(){
     if(typeof karaokeState==='undefined'||karaokeState.screen!=='setup')return;
     const title=document.querySelector('#karaokeView .karaoke-title');
-    if(!title||title.querySelector('.karaoke-favorite-star'))return;
+    if(!title)return;
+    const existing=title.querySelector('.karaoke-favorite-star');
+    const group=getKaraokeCurrentFavoriteGroup();
+    if(!group){
+      if(existing)existing.remove();
+      title.classList.remove('is-favorite-ready');
+      if(!karaokeFavoriteState.settings&&!karaokeFavoriteState.settingsLoading){
+        preloadKaraokeFavoriteSettings(function(){injectKaraokeFavoriteStar();});
+      }
+      return;
+    }
+    if(existing)return;
     title.classList.add('is-favorite-ready');
     const button=document.createElement('button');
     button.type='button';
@@ -63,36 +82,35 @@
     title.appendChild(button);
   }
 
-  function applyKaraokeFavoriteMap(categoryKey,map){
+  function applyKaraokeFavoriteMap(group,map){
     if(!Object.keys(map||{}).length){
-      if(typeof showToast==='function')showToast('この分類の推しセットはまだ未設定です');
+      if(typeof showToast==='function')showToast('このグループの推しセットはまだ未設定です');
       return;
     }
     karaokeState.assignments={};
     karaokeSingers().forEach(function(singer){if(map[singer.key])karaokeState.assignments[singer.key]=map[singer.key];});
     karaokeFavoriteState.setupApplied=true;
-    karaokeFavoriteState.setupCategory=categoryKey;
+    karaokeFavoriteState.setupGroupId=group.groupId;
     karaokeFavoriteState.setupAssignments=map;
     renderKaraokeSetup();
-    if(typeof showToast==='function')showToast(categoryKey+' の推しセットを適用しました');
+    if(typeof showToast==='function')showToast(group.groupName+' の推しセットを適用しました');
   }
 
   function applyKaraokeFavoriteSet(){
     if(karaokeFavoriteState.busy||typeof karaokeState==='undefined'||!karaokeState.song)return;
-    const categoryKey=getKaraokeCurrentCategoryKey();
-    if(!categoryKey){showKaraokeError('この曲の推しセット分類を判定できません。');return;}
-    const cachedCategory=karaokeFavoriteState.settings&&(karaokeFavoriteState.settings.categories||[]).find(function(item){return item.categoryKey===categoryKey;});
-    if(cachedCategory){applyKaraokeFavoriteMap(categoryKey,cachedCategory.assignments||{});return;}
+    const group=getKaraokeCurrentFavoriteGroup();
+    if(!group)return;
+    if(group.assignments){applyKaraokeFavoriteMap(group,group.assignments||{});return;}
     karaokeFavoriteState.busy=true;
     google.script.run.withSuccessHandler(function(data){
       karaokeFavoriteState.busy=false;
-      applyKaraokeFavoriteMap(categoryKey,data&&data.assignments?data.assignments:{});
-    }).withFailureHandler(function(error){karaokeFavoriteState.busy=false;showKaraokeError(error);}).getKaraokeFavoriteSet(categoryKey);
+      applyKaraokeFavoriteMap(group,data&&data.assignments?data.assignments:{});
+    }).withFailureHandler(function(error){karaokeFavoriteState.busy=false;showKaraokeError(error);}).getKaraokeFavoriteSet(group.groupId);
   }
 
   function clearKaraokeFavoriteApplied(){
     karaokeFavoriteState.setupApplied=false;
-    karaokeFavoriteState.setupCategory='';
+    karaokeFavoriteState.setupGroupId='';
     karaokeFavoriteState.setupAssignments=null;
   }
 
@@ -126,7 +144,7 @@
     const section=document.createElement('section');
     section.id='karaokeFavoriteSettingsSection';
     section.className='settings-group';
-    section.innerHTML='<p class="settings-section-title">KARAOKE</p><button class="settings-row settings-row-button" type="button" onclick="openKaraokeFavoriteSettings()"><span class="settings-row-copy"><strong>推しセット</strong><small>グループ・ユニットごとの担当を設定</small></span><span class="settings-arrow">›</span></button>';
+    section.innerHTML='<p class="settings-section-title">KARAOKE</p><button class="settings-row settings-row-button" type="button" onclick="openKaraokeFavoriteSettings()"><span class="settings-row-copy"><strong>推しセット</strong><small>正式グループごとの担当を設定</small></span><span class="settings-arrow">›</span></button>';
     if(tools&&tools.parentNode)tools.parentNode.insertBefore(section,tools);else settings.querySelector('.settings-panel').appendChild(section);
   }
 
@@ -153,6 +171,7 @@
     google.script.run.withSuccessHandler(function(data){
       karaokeFavoriteState.settingsLoading=false;
       karaokeFavoriteState.settings=data;
+      if(!karaokeFavoriteState.editGroupId&&data&&data.categories&&data.categories.length)karaokeFavoriteState.editGroupId=data.categories[0].groupId;
       flushKaraokeFavoriteSettingsWaiters(null);
     }).withFailureHandler(function(error){
       karaokeFavoriteState.settingsLoading=false;
@@ -168,7 +187,7 @@
     document.body.style.overflow='hidden';
     const body=document.getElementById('karaokeFavoriteSettingsBody');
     if(karaokeFavoriteState.settings){
-      loadKaraokeFavoriteEditCategory(karaokeFavoriteState.editCategory);
+      loadKaraokeFavoriteEditGroup(karaokeFavoriteState.editGroupId);
       return;
     }
     if(body)body.innerHTML=typeof renderUniverseLoading==='function'?renderUniverseLoading('LOADING...','#9cecff'):'';
@@ -178,9 +197,8 @@
         if(typeof showToast==='function')showToast(error&&error.message?error.message:String(error||'読み込みに失敗しました'));
         return;
       }
-      const hasCurrent=(data.categories||[]).some(function(item){return item.categoryKey===karaokeFavoriteState.editCategory;});
-      if(!hasCurrent&&data.categories&&data.categories.length)karaokeFavoriteState.editCategory=data.categories[0].categoryKey;
-      loadKaraokeFavoriteEditCategory(karaokeFavoriteState.editCategory);
+      if(!karaokeFavoriteState.editGroupId&&data.categories&&data.categories.length)karaokeFavoriteState.editGroupId=data.categories[0].groupId;
+      loadKaraokeFavoriteEditGroup(karaokeFavoriteState.editGroupId);
     });
   }
 
@@ -190,10 +208,10 @@
     document.body.style.overflow='';
   }
 
-  function loadKaraokeFavoriteEditCategory(categoryKey){
-    karaokeFavoriteState.editCategory=String(categoryKey||'');
+  function loadKaraokeFavoriteEditGroup(groupId){
+    karaokeFavoriteState.editGroupId=String(groupId||'');
     const data=karaokeFavoriteState.settings||{categories:[],users:[]};
-    const category=(data.categories||[]).find(function(item){return item.categoryKey===karaokeFavoriteState.editCategory;});
+    const category=(data.categories||[]).find(function(item){return item.groupId===karaokeFavoriteState.editGroupId;});
     karaokeFavoriteState.editAssignments=Object.assign({},category&&category.assignments||{});
     renderKaraokeFavoriteSettingsEditor();
   }
@@ -207,9 +225,9 @@
     const body=document.getElementById('karaokeFavoriteSettingsBody');
     if(!body)return;
     const data=karaokeFavoriteState.settings||{categories:[],users:[]};
-    const category=(data.categories||[]).find(function(item){return item.categoryKey===karaokeFavoriteState.editCategory;});
+    const category=(data.categories||[]).find(function(item){return item.groupId===karaokeFavoriteState.editGroupId;});
     if(!category){body.innerHTML='<div class="karaoke-favorite-empty">設定対象がありません</div>';return;}
-    const options=(data.categories||[]).map(function(item){return '<option value="'+escapeLyrics(item.categoryKey)+'"'+(item.categoryKey===category.categoryKey?' selected':'')+'>'+escapeLyrics(item.categoryKey)+'</option>';}).join('');
+    const options=(data.categories||[]).map(function(item){return '<option value="'+escapeLyrics(item.groupId)+'"'+(item.groupId===category.groupId?' selected':'')+'>'+escapeLyrics(item.groupName)+'</option>';}).join('');
     const members=(category.members||[]).map(function(member){
       const buttons=(data.users||[]).map(function(user){
         const selected=karaokeFavoriteState.editAssignments[member.memberId]===user.userId;
@@ -218,7 +236,7 @@
       return '<div class="karaoke-favorite-member-row"><div class="karaoke-favorite-member-name" style="color:'+escapeLyrics(member.color||'#777777')+'">'+escapeLyrics(member.name)+'</div><div class="karaoke-favorite-user-options">'+buttons+'</div></div>';
     }).join('');
     const complete=(category.members||[]).length>0&&(category.members||[]).every(function(member){return !!karaokeFavoriteState.editAssignments[member.memberId];});
-    body.innerHTML='<div class="karaoke-favorite-category-row"><label>GROUP / UNIT</label><select class="karaoke-favorite-category-select" onchange="loadKaraokeFavoriteEditCategory(this.value)">'+options+'</select></div><div class="karaoke-favorite-member-list">'+(members||'<div class="karaoke-favorite-empty">対象メンバーがいません</div>')+'</div><button class="u-btn karaoke-favorite-save" type="button" onclick="saveKaraokeFavoriteSettings()"'+(complete?'':' disabled')+'>保存</button>';
+    body.innerHTML='<div class="karaoke-favorite-category-row"><label>GROUP</label><select class="karaoke-favorite-category-select" onchange="loadKaraokeFavoriteEditGroup(this.value)">'+options+'</select></div><div class="karaoke-favorite-member-list">'+members+'</div><button class="u-btn karaoke-favorite-save" type="button" onclick="saveKaraokeFavoriteSettings()"'+(complete?'':' disabled')+'>保存</button>';
   }
 
   function saveKaraokeFavoriteSettings(){
@@ -226,14 +244,14 @@
     karaokeFavoriteState.busy=true;
     google.script.run.withSuccessHandler(function(result){
       karaokeFavoriteState.busy=false;
-      const category=(karaokeFavoriteState.settings.categories||[]).find(function(item){return item.categoryKey===result.categoryKey;});
+      const category=(karaokeFavoriteState.settings.categories||[]).find(function(item){return item.groupId===result.groupId;});
       if(category)category.assignments=Object.assign({},result.assignments||{});
-      if(typeof showToast==='function')showToast(result.categoryKey+' の推しセットを保存しました');
+      if(typeof showToast==='function')showToast('保存しました');
       renderKaraokeFavoriteSettingsEditor();
     }).withFailureHandler(function(error){
       karaokeFavoriteState.busy=false;
       if(typeof showToast==='function')showToast(error&&error.message?error.message:String(error||'保存に失敗しました'));
-    }).saveKaraokeFavoriteSet({categoryKey:karaokeFavoriteState.editCategory,assignments:karaokeFavoriteState.editAssignments});
+    }).saveKaraokeFavoriteSet({groupId:karaokeFavoriteState.editGroupId,assignments:karaokeFavoriteState.editAssignments});
   }
 
   (function bindKaraokeFavoriteSettings(){
@@ -243,7 +261,6 @@
       const baseOpenSettings=openSettings;
       openSettings=function(){
         ensureKaraokeFavoriteSettingsEntry();
-        // Start loading while the user is still on the main SETTINGS screen.
         preloadKaraokeFavoriteSettings();
         return baseOpenSettings();
       };
