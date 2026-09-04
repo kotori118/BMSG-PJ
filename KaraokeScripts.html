@@ -61,7 +61,7 @@
     karaokeState.screen='entry';
     document.getElementById('karaokeView').innerHTML=
       '<button class="karaoke-top-back" type="button" onclick="navigateTo(\'lyrics\')">‹ <span>BACK</span></button>'+
-      '<section class="karaoke-room-card"><h2>3人カラオケルーム</h2><div id="karaokeRoomBody"></div></section>'+
+      '<section class="karaoke-room-card"><div id="karaokeRoomBody"></div></section>'+
       '<section id="karaokeHistoryArea" class="karaoke-history-area"></section>';
     updateKaraokeRoomCard();
   }
@@ -86,21 +86,29 @@
     }).join('');
   }
 
-  function renderKaraokeRanking(){
-    const counts={};
-    karaokeState.users.forEach(function(user){counts[user.userId]=0;});
-    karaokeState.history.forEach(function(item){
-      karaokeState.users.forEach(function(user){counts[user.userId]+=((item.assignments&&item.assignments[user.userId])||[]).length;});
-    });
-    const ranking=karaokeState.users.slice().sort(function(a,b){return counts[b.userId]-counts[a.userId];});
-    return '<section class="karaoke-ranking"><p class="karaoke-section-label">ASSIGNMENT RANKING</p><div>'+ranking.map(function(user,index){return '<article><b>'+(index+1)+'</b><span>'+escapeLyrics(user.displayName)+'</span><strong>'+counts[user.userId]+' PARTS</strong></article>';}).join('')+'</div></section>';
+  function karaokeDayKey(value){
+    try{return new Intl.DateTimeFormat('ja-JP',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(value));}
+    catch(error){return'';}
+  }
+
+  function openKaraokeRanking(){
+    karaokeState.screen='ranking';
+    const today=karaokeDayKey(new Date());
+    const daily=karaokeState.history.filter(function(item){return karaokeDayKey(item.createdAt)===today;});
+    document.getElementById('karaokeView').innerHTML='<button class="karaoke-top-back" type="button" onclick="renderKaraokeEntry()">‹ <span>BACK</span></button><div class="karaoke-title"><p>TODAY</p><h2>担当者ランキング</h2></div><section class="karaoke-member-ranking">'+karaokeState.users.map(function(user){
+      const counts={};
+      daily.forEach(function(item){((item.assignments&&item.assignments[user.userId])||[]).forEach(function(slot){const name=typeof slot==='string'?slot:(slot.name||slot.memberId||'');if(name)counts[name]=(counts[name]||0)+1;});});
+      const rows=Object.keys(counts).sort(function(a,b){return counts[b]-counts[a]||a.localeCompare(b,'ja');});
+      return '<article><h3>'+escapeLyrics(user.displayName)+'</h3>'+(rows.length?'<ol>'+rows.map(function(name,index){return '<li><b>'+(index+1)+'</b><span>'+escapeLyrics(name)+'</span><strong>'+counts[name]+'回</strong></li>';}).join('')+'</ol>':'<p>今日の振り分けはまだありません</p>')+'</article>';
+    }).join('')+'</section><button class="karaoke-back-link" type="button" onclick="renderKaraokeEntry()">履歴へ戻る</button>';
+    scrollKaraokeTop();
   }
 
   function renderKaraokeHistory(){
     const area=document.getElementById('karaokeHistoryArea');
     if(!area)return;
     if(!karaokeState.room){area.innerHTML='<p class="karaoke-section-label">HISTORY</p><div class="karaoke-history-empty">ルームに参加すると履歴が表示されます</div>';return;}
-    area.innerHTML=renderKaraokeRanking()+'<p class="karaoke-section-label">HISTORY</p>'+(karaokeState.history.length?'<div class="karaoke-history-list">'+karaokeState.history.map(function(item){return '<article class="karaoke-history-card"><header><strong>'+escapeLyrics(item.title||'曲名なし')+'</strong><small>'+escapeLyrics(formatKaraokeTime(item.createdAt))+'</small></header><div>'+karaokeHistoryRows(item)+'</div></article>';}).join('')+'</div>':'<div class="karaoke-history-empty">まだ振り分け履歴はありません</div>');
+    area.innerHTML='<div class="karaoke-history-heading"><p class="karaoke-section-label">HISTORY</p><button type="button" onclick="openKaraokeRanking()">担当者ランキング</button></div>'+(karaokeState.history.length?'<div class="karaoke-history-list">'+karaokeState.history.map(function(item){return '<article class="karaoke-history-card"><header><strong>'+escapeLyrics(item.title||'曲名なし')+'</strong><small>'+escapeLyrics(formatKaraokeTime(item.createdAt))+'</small></header><div>'+karaokeHistoryRows(item)+'</div></article>';}).join('')+'</div>':'<div class="karaoke-history-empty">まだ振り分け履歴はありません</div>');
   }
 
   function openKaraokeHistory(index){
@@ -227,7 +235,6 @@
       karaokeState.busy=false;
       karaokeState.history=karaokeState.history.filter(function(item){return item.createdAt!==result.createdAt;});
       karaokeState.history.unshift(result);
-      if(typeof showToast==='function')showToast('振り分けを履歴に保存しました');
     }).withFailureHandler(karaokeFailure).saveKaraokeAssignment(payload);
   }
 
@@ -289,7 +296,7 @@
       '<button class="karaoke-top-back" type="button" onclick="'+backAction+'">‹ <span>BACK</span></button><div class="karaoke-title"><p>KARAOKE</p><h2>'+escapeLyrics(song.title)+' <small>（カラオケ）</small></h2></div>'+
       '<section class="karaoke-lyrics">'+song.parts.map(function(part){
         return '<article><div class="karaoke-owner">'+karaokePartOwners(part).map(function(owner){return '<span style="color:'+escapeLyrics(owner.color)+'">'+escapeLyrics(owner.label)+'</span>';}).join(' / ')+'</div><p>'+escapeLyrics(part.lyrics)+'</p></article>';
-      }).join('')+'</section>';
+      }).join('')+'</section><div class="karaoke-song-footer"><button type="button" onclick="'+backAction+'">BACK</button><button type="button" onclick="navigateTo(\'lyrics\')">トップページへ戻る</button></div>';
   }
 
   function setKaraokeUrl(mode){
