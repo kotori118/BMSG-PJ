@@ -1,55 +1,49 @@
-const KARAOKE_FAVORITE_CATEGORIES_ = Object.freeze([
-  'BE:FIRST','MAZZEL','STARGLOW','HANA','BMSG ALLSTARS','ShowMinorSavage','BMSG POSSE',
-  'BMSG EAST','BMSG WEST','BMSG SKY','BMSG GAIA','BMSG MARINE','BMSG STRIKERS','その他UNIT'
-]);
-
-function getKaraokeFavoriteSet(categoryKey) {
-  const key = validateKaraokeFavoriteCategory_(categoryKey);
+function getKaraokeFavoriteSet(groupId) {
+  const core = getKaraokeFavoriteCoreSnapshot_();
+  const group = getKaraokeFavoriteEligibleGroup_(groupId, core);
   const sheet = getLogSheet_(UNIVERSE_CONFIG.SHEETS.KARAOKE_FAVORITES);
   const assignments = {};
   readSheetObjects_(sheet).forEach(function(row) {
-    if (String(row.CategoryKey || '').trim() !== key) return;
+    if (asId_(row.GroupID) !== group.groupId) return;
     const uid = validateKaraokeFavoriteUserLoose_(row.UserID);
     const memberId = asId_(row.MemberID);
     if (uid && memberId) assignments[memberId] = uid;
   });
-  return { categoryKey: key, assignments: assignments };
+  return { groupId: group.groupId, groupName: group.groupName, assignments: assignments };
 }
 
 function getKaraokeFavoriteSettings() {
   const favoriteSheet = getLogSheet_(UNIVERSE_CONFIG.SHEETS.KARAOKE_FAVORITES);
   const saved = {};
   readSheetObjects_(favoriteSheet).forEach(function(row) {
-    const key = String(row.CategoryKey || '').trim();
-    if (KARAOKE_FAVORITE_CATEGORIES_.indexOf(key) < 0) return;
+    const groupId = asId_(row.GroupID);
     const uid = validateKaraokeFavoriteUserLoose_(row.UserID);
     const memberId = asId_(row.MemberID);
-    if (!uid || !memberId) return;
-    if (!saved[key]) saved[key] = {};
-    saved[key][memberId] = uid;
+    if (!groupId || !uid || !memberId) return;
+    if (!saved[groupId]) saved[groupId] = {};
+    saved[groupId][memberId] = uid;
   });
 
-  // Read the Core DB only once for the whole settings screen.
-  // The previous implementation reopened/read the same sheets for every category,
-  // which was especially slow on iPhone Safari through Apps Script Web Apps.
+  // Favorite Sets are available only for formal Groups that have rows in
+  // 04_GroupMembers. No member inference from Songs/Lyrics is allowed.
   const core = getKaraokeFavoriteCoreSnapshot_();
-  return {
-    categories: KARAOKE_FAVORITE_CATEGORIES_.map(function(key) {
-      return {
-        categoryKey: key,
-        members: getKaraokeFavoriteMembersFromSnapshot_(key, core),
-        assignments: saved[key] || {}
-      };
-    }),
-    users: getKaraokeUsers_()
-  };
+  const categories = getKaraokeFavoriteEligibleGroups_(core).map(function(group) {
+    return {
+      groupId: group.groupId,
+      groupName: group.groupName,
+      members: getKaraokeFavoriteMembersForGroup_(group.groupId, core),
+      assignments: saved[group.groupId] || {}
+    };
+  });
+  return { categories: categories, users: getKaraokeUsers_() };
 }
 
 function saveKaraokeFavoriteSet(payload) {
   payload = payload || {};
-  const key = validateKaraokeFavoriteCategory_(payload.categoryKey);
+  const core = getKaraokeFavoriteCoreSnapshot_();
+  const group = getKaraokeFavoriteEligibleGroup_(payload.groupId, core);
+  const members = getKaraokeFavoriteMembersForGroup_(group.groupId, core);
   const allowedUsers = KARAOKE_USERS_.slice();
-  const members = getKaraokeFavoriteMembersFromSnapshot_(key, getKaraokeFavoriteCoreSnapshot_());
   const allowedMembers = members.reduce(function(map, member) {
     map[member.memberId] = true;
     return map;
@@ -72,21 +66,21 @@ function saveKaraokeFavoriteSet(payload) {
     const values = sheet.getDataRange().getValues();
     if (!values.length) throw new Error('KARAOKE_FavoriteSetsのヘッダーがありません。');
     const headers = values[0].map(function(value) { return String(value).trim(); });
-    const categoryCol = headers.indexOf('CategoryKey');
-    if (categoryCol < 0 || headers.indexOf('UserID') < 0 || headers.indexOf('MemberID') < 0) {
+    const groupCol = headers.indexOf('GroupID');
+    if (groupCol < 0 || headers.indexOf('UserID') < 0 || headers.indexOf('MemberID') < 0) {
       throw new Error('KARAOKE_FavoriteSetsの列構成が正しくありません。');
     }
     for (let i = values.length - 1; i >= 1; i--) {
-      if (String(values[i][categoryCol] || '').trim() === key) sheet.deleteRow(i + 1);
+      if (asId_(values[i][groupCol]) === group.groupId) sheet.deleteRow(i + 1);
     }
     members.forEach(function(member) {
       appendByHeaders_(sheet, {
-        CategoryKey: key,
+        GroupID: group.groupId,
         UserID: normalized[member.memberId],
         MemberID: member.memberId
       });
     });
-    return { ok: true, categoryKey: key, assignments: normalized };
+    return { ok: true, groupId: group.groupId, groupName: group.groupName, assignments: normalized };
   });
 }
 
@@ -95,9 +89,7 @@ function getKaraokeFavoriteCoreSnapshot_() {
   return {
     groups: readKaraokeFavoriteSheetObjects_(spreadsheet, UNIVERSE_CONFIG.SHEETS.GROUPS),
     members: readKaraokeFavoriteSheetObjects_(spreadsheet, UNIVERSE_CONFIG.SHEETS.MEMBERS),
-    groupMembers: readKaraokeFavoriteSheetObjects_(spreadsheet, UNIVERSE_CONFIG.SHEETS.GROUP_MEMBERS),
-    songs: readKaraokeFavoriteSheetObjects_(spreadsheet, UNIVERSE_CONFIG.SHEETS.SONGS),
-    lyricsParts: readKaraokeFavoriteSheetObjects_(spreadsheet, UNIVERSE_CONFIG.SHEETS.LYRICS_PARTS)
+    groupMembers: readKaraokeFavoriteSheetObjects_(spreadsheet, UNIVERSE_CONFIG.SHEETS.GROUP_MEMBERS)
   };
 }
 
@@ -118,77 +110,60 @@ function readKaraokeFavoriteSheetObjects_(spreadsheet, sheetName) {
   });
 }
 
-function getKaraokeFavoriteMembersFromSnapshot_(categoryKey, core) {
-  const key = validateKaraokeFavoriteCategory_(categoryKey);
+function getKaraokeFavoriteEligibleGroups_(core) {
+  const counts = {};
+  core.groupMembers.forEach(function(row) {
+    const groupId = asId_(row.GroupID);
+    const memberId = asId_(row.MemberID);
+    if (groupId && memberId) counts[groupId] = (counts[groupId] || 0) + 1;
+  });
+  return core.groups.map(function(row) {
+    return {
+      groupId: asId_(row.GroupID),
+      groupName: String(row.GroupName || '').trim(),
+      order: Number(row.DisplayOrder || 9999)
+    };
+  }).filter(function(group) {
+    return group.groupId && group.groupName && counts[group.groupId] > 0;
+  }).sort(function(a, b) {
+    return a.order - b.order || a.groupName.localeCompare(b.groupName, 'ja');
+  });
+}
+
+function getKaraokeFavoriteEligibleGroup_(groupId, core) {
+  const id = asId_(groupId);
+  const group = getKaraokeFavoriteEligibleGroups_(core).find(function(item) { return item.groupId === id; });
+  if (!group) throw new Error('このグループは推しセット対象外です。');
+  return group;
+}
+
+function getKaraokeFavoriteMembersForGroup_(groupId, core) {
+  const id = asId_(groupId);
   const memberMap = core.members.reduce(function(map, row) {
-    const id = asId_(row.MemberID);
-    if (id) map[id] = row;
+    const memberId = asId_(row.MemberID);
+    if (memberId) map[memberId] = row;
     return map;
   }, {});
-  const group = core.groups.find(function(row) { return String(row.GroupName || '').trim() === key; });
-  let ids = [];
-  const orderMap = {};
-
-  if (group) {
-    const groupId = asId_(group.GroupID);
-    core.groupMembers.filter(function(row) { return asId_(row.GroupID) === groupId; }).forEach(function(row) {
-      const id = asId_(row.MemberID);
-      if (!id || !memberMap[id]) return;
-      ids.push(id);
-      orderMap[id] = Number(row.DisplayOrder || 9999);
-    });
-  }
-
-  if (!ids.length) ids = getKaraokeFavoriteMembersFromSongsSnapshot_(key, memberMap, core.songs, core.lyricsParts);
-
   const seen = {};
-  return ids.filter(function(id) {
-    if (seen[id]) return false;
-    seen[id] = true;
-    return true;
-  }).map(function(id) {
-    const row = memberMap[id];
+  return core.groupMembers.filter(function(row) {
+    return asId_(row.GroupID) === id;
+  }).map(function(row) {
+    const memberId = asId_(row.MemberID);
+    if (!memberId || seen[memberId] || !memberMap[memberId]) return null;
+    seen[memberId] = true;
+    const member = memberMap[memberId];
     return {
-      memberId: id,
-      name: String(row.DisplayName || id),
-      color: /^#[0-9a-f]{6}$/i.test(String(row.ColorHex || '')) ? String(row.ColorHex) : '#777777',
-      order: Object.prototype.hasOwnProperty.call(orderMap, id) ? orderMap[id] : Number(row.DisplayOrder || 9999)
+      memberId: memberId,
+      name: String(member.DisplayName || memberId),
+      color: /^#[0-9a-f]{6}$/i.test(String(member.ColorHex || '')) ? String(member.ColorHex) : '#777777',
+      order: Number(row.DisplayOrder || 9999)
     };
-  }).sort(function(a, b) {
+  }).filter(Boolean).sort(function(a, b) {
     return a.order - b.order || a.name.localeCompare(b.name, 'ja');
   }).map(function(member) {
     delete member.order;
     return member;
   });
-}
-
-function getKaraokeFavoriteMembersFromSongsSnapshot_(categoryKey, memberMap, songs, lyricsParts) {
-  const targetSongIds = {};
-  songs.forEach(function(song) {
-    const artist = String(song.Artist || '').trim();
-    const title = String(song.Title || '').trim();
-    const key = ['BE:FIRST','MAZZEL','STARGLOW','HANA'].indexOf(artist) >= 0 ? artist : lyricsUnitCategory_(title, artist);
-    if (key === categoryKey) targetSongIds[asId_(song.SongID)] = true;
-  });
-  const found = {};
-  lyricsParts.forEach(function(part) {
-    if (!targetSongIds[asId_(part.SongID)]) return;
-    String(part.Singer || '').split(',').forEach(function(token) {
-      const base = token.trim().replace(/_(up|down|sub)$/i, '');
-      const ids = memberMap[base] ? [base] : base.split('_');
-      ids.forEach(function(id) {
-        id = asId_(id);
-        if (id && id !== '99' && memberMap[id]) found[id] = true;
-      });
-    });
-  });
-  return Object.keys(found);
-}
-
-function validateKaraokeFavoriteCategory_(categoryKey) {
-  const key = String(categoryKey || '').trim();
-  if (KARAOKE_FAVORITE_CATEGORIES_.indexOf(key) < 0) throw new Error('推しセットの分類が正しくありません。');
-  return key;
 }
 
 function validateKaraokeFavoriteUserLoose_(userId) {
