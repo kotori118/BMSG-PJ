@@ -1,22 +1,29 @@
 <script>
-    function openSettings() {
-      settingsOverlay.classList.add('open');
-      document.body.style.overflow = 'hidden';
-    }
+  const UNIVERSE_USERS = Object.freeze([
+    { id: 'U001', name: 'ももたん' },
+    { id: 'U002', name: 'みおたん' },
+    { id: 'U003', name: 'りおたん' }
+  ]);
 
-    function openPerformanceTool() {
-      closeSettings();
-      navigateTo('metrics');
-    }
-
-    function closeSettings() {
-      settingsOverlay.classList.remove('open');
-      document.body.style.overflow = '';
-    }
-
-    function cycleDemoUser() {
-      demoUserIndex = (demoUserIndex + 1) % DEMO_USERS.length;
-      document.getElementById('settingsUserName').textContent = DEMO_USERS[demoUserIndex];
-    }
-
+  function getCurrentUniverseUser() {
+    const savedId = localStorage.getItem('bmsgUniverseUserId') || 'U001';
+    return UNIVERSE_USERS.find(function(user) { return user.id === savedId; }) || UNIVERSE_USERS[0];
+  }
+  function syncSettingsUserName() {
+    const label = document.getElementById('settingsUserName');
+    if (label) label.textContent = getCurrentUniverseUser().name;
+  }
+  function openSettings() {
+    syncSettingsUserName(); settingsOverlay.classList.add('open'); document.body.style.overflow = 'hidden';
+  }
+  function openPerformanceTool() { closeSettings(); navigateTo('metrics'); }
+  function closeSettings() { settingsOverlay.classList.remove('open'); document.body.style.overflow = ''; }
+  function cycleDemoUser() {
+    const current = getCurrentUniverseUser();
+    const index = UNIVERSE_USERS.findIndex(function(user) { return user.id === current.id; });
+    const next = UNIVERSE_USERS[(index + 1) % UNIVERSE_USERS.length];
+    localStorage.setItem('bmsgUniverseUserId', next.id); syncSettingsUserName();
+    if (typeof showToast === 'function') showToast(next.name + 'に変更しました');
+  }
+  syncSettingsUserName();
 </script>
