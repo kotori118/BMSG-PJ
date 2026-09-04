@@ -20,7 +20,7 @@
     karaokeState.songs=data.songs||[];
     karaokeState.partsBySong=data.partsBySong||{};
     if(params&&params.mode==='latest'){
-      document.getElementById('karaokeView').innerHTML='<div class="karaoke-loading">読み込み中</div>';
+      document.getElementById('karaokeView').innerHTML='<div class="karaoke-loading is-shared">'+renderUniverseLoading('読み込み中','#9cecff')+'</div>';
       loadKaraokeRoom(params.room,function(){
         if(karaokeState.history.length)openKaraokeResultSong(karaokeState.history[0]);
         else{renderKaraokeEntry();showKaraokeError('まだ振り分け結果がありません。');}
