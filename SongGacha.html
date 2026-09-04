@@ -17,6 +17,7 @@
   .song-gacha-overlay{position:fixed;inset:0;z-index:2400;display:flex;align-items:center;justify-content:center;overflow:hidden;background:radial-gradient(circle at 50% 48%,rgba(44,178,219,.14),transparent 30%),linear-gradient(180deg,#03080f 0%,#06101b 54%,#02060b 100%);color:#fff;opacity:0;animation:songGachaFadeIn .28s ease forwards;}
   .song-gacha-overlay.is-static{opacity:1;animation:none;}
   .song-gacha-overlay.is-leaving{animation:songGachaFadeOut .28s ease forwards;}
+  .song-gacha-reveal-back{position:absolute!important;top:max(18px,env(safe-area-inset-top))!important;left:18px!important;z-index:5!important;min-width:76px!important;height:44px!important;padding:0 16px!important;border:1px solid rgba(156,236,255,.36)!important;border-radius:14px!important;color:#fff!important;background:linear-gradient(145deg,rgba(255,255,255,.06),rgba(156,236,255,.10))!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.08)!important;font-family:'Exo 2',sans-serif!important;font-size:12px!important;font-weight:700!important;letter-spacing:.12em!important;}
   .song-gacha-orbit{position:absolute;width:min(74vw,310px);aspect-ratio:1;border:1px solid rgba(156,236,255,.24);border-radius:50%;box-shadow:0 0 40px rgba(98,218,246,.08),inset 0 0 40px rgba(98,218,246,.05);animation:songGachaOrbit 2.2s linear infinite;}
   .song-gacha-orbit::before,.song-gacha-orbit::after{content:'';position:absolute;inset:16%;border:1px solid rgba(183,153,255,.13);border-radius:50%;transform:rotate(58deg) scaleY(.52);}
   .song-gacha-orbit::after{inset:30%;border-color:rgba(156,236,255,.2);transform:rotate(-38deg) scaleY(.64);}
@@ -115,7 +116,8 @@
   }
 
   function songGachaOverlayMarkup(){
-    return '<div class="song-gacha-orbit"></div>'+Array.from({length:18},function(_,i){
+    return '<button class="u-btn song-gacha-reveal-back" type="button" onclick="backFromSongGachaReveal()">BACK</button>'
+      +'<div class="song-gacha-orbit"></div>'+Array.from({length:18},function(_,i){
       const left=(11+(i*37)%82),top=(7+(i*53)%86),delay=((i%7)*.12).toFixed(2);
       return '<i class="song-gacha-star" style="left:'+left+'%;top:'+top+'%;animation-delay:'+delay+'s"></i>';
     }).join('')+'<div class="song-gacha-stage"><p class="song-gacha-stage-label">BMSG UNIVERSE</p><div class="song-gacha-ticker">...</div><p class="song-gacha-final-group"></p><div class="song-gacha-overlay-actions"><button class="u-btn song-gacha-again" type="button" onclick="drawSongGachaAgain()">DRAW AGAIN</button><button class="u-btn" type="button" onclick="openSongGachaKaraoke()">KARAOKE</button></div></div>';
@@ -167,6 +169,11 @@
     if(immediate){overlay.remove();return;}
     overlay.classList.add('is-leaving');
     setTimeout(function(){overlay.remove();},280);
+  }
+
+  function backFromSongGachaReveal(){
+    songGachaState.drawing=false;
+    closeSongGachaOverlay(true);
   }
 
   function drawSongGachaAgain(){
