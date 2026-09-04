@@ -1,32 +1,54 @@
 <script>
-  const lyricsState={catalog:[],partsBySong:{},group:'',unit:'',query:'',song:null,editing:null,previewed:false};
+  const lyricsState={catalog:[],partsBySong:{},group:'',unit:'',query:'',song:null,editing:null,previewed:false,initialParams:{}};
   const LYRICS_GROUPS=['BE:FIRST','MAZZEL','STARGLOW','HANA','BMSG ALLSTARS'];
   const LYRICS_UNITS=['ALL','BMSG ALLSTARS','ShowMinorSavage','BMSG POSSE','BMSG EAST','BMSG WEST','BMSG SKY','BMSG GAIA','BMSG MARINE','BMSG STRIKERS','その他UNIT'];
   function renderLyrics(){return document.getElementById('lyricsPageTemplate').innerHTML;}
-  function applyLyricsData(data){lyricsState.catalog=data.songs||[];lyricsState.partsBySong=data.partsBySong||{};showLyricsGroups();}
-  function initLyricsPage(){
-    try{const cached=sessionStorage.getItem('bmsgLyricsDataV2');if(cached){applyLyricsData(JSON.parse(cached));return;}}catch(error){}
-    google.script.run.withSuccessHandler(function(data){try{sessionStorage.setItem('bmsgLyricsDataV2',JSON.stringify(data));}catch(error){}applyLyricsData(data);}).withFailureHandler(showLyricsError).getLyricsCatalog();
+  function applyLyricsData(data){
+    lyricsState.catalog=data.songs||[];
+    lyricsState.partsBySong=data.partsBySong||{};
+    const params=lyricsState.initialParams||{};
+    if(params.song){
+      lyricsState.group=params.group||'';
+      lyricsState.unit=params.unit||'';
+      openLyricsSong(lyricArg(params.song),false);
+    }else if(params.group){
+      lyricsState.group=params.group;
+      lyricsState.unit=params.unit||'';
+      if(params.group==='BMSG ALLSTARS'&&!params.unit)renderLyricsUnits();
+      else renderLyricsGroupSongs();
+    }else showLyricsGroups(false);
+  }
+  function initLyricsPage(params){
+    lyricsState.initialParams=params||{};
+    try{const cached=sessionStorage.getItem('bmsgLyricsDataV3');if(cached){applyLyricsData(JSON.parse(cached));return;}}catch(error){}
+    google.script.run.withSuccessHandler(function(data){try{sessionStorage.setItem('bmsgLyricsDataV3',JSON.stringify(data));}catch(error){}applyLyricsData(data);}).withFailureHandler(showLyricsError).getLyricsCatalog();
+  }
+  function setLyricsUrl(values){
+    const params={page:'lyrics'};
+    Object.keys(values||{}).forEach(function(key){if(values[key])params[key]=values[key];});
+    google.script.history.push(params,params,'');
   }
   function lyricArg(value){return encodeURIComponent(String(value));}
   function unitSongs(unit){return lyricsState.catalog.filter(function(song){if(unit==='ALL')return song.category==='UNIT';return song.category==='UNIT'&&song.unitCategory===unit;});}
   function groupSongs(group){if(group==='BMSG ALLSTARS')return unitSongs('ALL');return lyricsState.catalog.filter(function(song){return song.category===group;});}
-  function showLyricsGroups(){lyricsState.group='';lyricsState.unit='';lyricsState.song=null;document.getElementById('lyricsView').innerHTML='<section class="lyrics-groups">'+LYRICS_GROUPS.map(function(group){return '<button class="lyrics-group-card" type="button" onclick="showLyricsGroup(\''+lyricArg(group)+'\')"><strong>'+escapeLyrics(group)+'</strong><span>'+groupSongs(group).length+' SONGS</span></button>';}).join('')+'</section><button class="lyrics-gacha-card" type="button" disabled><strong>SONG GACHA</strong><span>COMING NEXT</span></button>';scrollLyricsTop();}
-  function showLyricsGroup(encoded){const group=decodeURIComponent(encoded);lyricsState.group=group;lyricsState.unit='';lyricsState.query='';if(group==='BMSG ALLSTARS')renderLyricsUnits();else renderLyricsGroupSongs();scrollLyricsTop();}
+  function showLyricsGroups(pushUrl){lyricsState.group='';lyricsState.unit='';lyricsState.song=null;if(pushUrl!==false)setLyricsUrl({});document.getElementById('lyricsView').innerHTML='<section class="lyrics-groups">'+LYRICS_GROUPS.map(function(group){return '<button class="lyrics-group-card" type="button" onclick="showLyricsGroup(\''+lyricArg(group)+'\')"><strong>'+escapeLyrics(group)+'</strong><span>'+groupSongs(group).length+' SONGS</span></button>';}).join('')+'</section><button class="lyrics-gacha-card" type="button" disabled><strong>SONG GACHA</strong><span>COMING NEXT</span></button>';scrollLyricsTop();}
+  function showLyricsGroup(encoded,pushUrl){const group=decodeURIComponent(encoded);lyricsState.group=group;lyricsState.unit='';lyricsState.query='';if(pushUrl!==false)setLyricsUrl({group:group});if(group==='BMSG ALLSTARS')renderLyricsUnits();else renderLyricsGroupSongs();scrollLyricsTop();}
   function renderLyricsUnits(){document.getElementById('lyricsView').innerHTML='<div class="lyrics-subhead"><button type="button" onclick="showLyricsGroups()">‹</button><div><p>LYRICS</p><h2>BMSG ALLSTARS</h2></div></div><section class="lyrics-groups lyrics-unit-groups">'+LYRICS_UNITS.map(function(unit){return '<button class="lyrics-group-card lyrics-unit-card" type="button" onclick="showLyricsUnit(\''+lyricArg(unit)+'\')"><strong>'+escapeLyrics(unit)+'</strong><span>'+unitSongs(unit).length+' SONGS</span></button>';}).join('')+'</section>';scrollLyricsTop();}
-  function showLyricsUnit(encoded){lyricsState.unit=decodeURIComponent(encoded);lyricsState.query='';renderLyricsGroupSongs();scrollLyricsTop();}
-  function activeSongs(){return lyricsState.group==='BMSG ALLSTARS'?unitSongs(lyricsState.unit||'ALL'):groupSongs(lyricsState.group);}
+  function showLyricsUnit(encoded,pushUrl){lyricsState.unit=decodeURIComponent(encoded);lyricsState.query='';if(pushUrl!==false)setLyricsUrl({group:lyricsState.group,unit:lyricsState.unit});renderLyricsGroupSongs();scrollLyricsTop();}
+  function songTime(song){const time=Date.parse(song.releaseDate||'');return Number.isFinite(time)?time:0;}
+  function activeSongs(){const songs=lyricsState.group==='BMSG ALLSTARS'?unitSongs(lyricsState.unit||'ALL'):groupSongs(lyricsState.group);return songs.slice().sort(function(a,b){return songTime(b)-songTime(a)||(Number(b.songId)||0)-(Number(a.songId)||0);});}
   function activeTitle(){return lyricsState.group==='BMSG ALLSTARS'?(lyricsState.unit||'ALL'):lyricsState.group;}
-  function backFromSongs(){if(lyricsState.group==='BMSG ALLSTARS')renderLyricsUnits();else showLyricsGroups();}
-  function renderLyricsGroupSongs(){const songs=activeSongs().filter(function(song){const q=lyricsState.query;return !q||(song.title+' '+song.artist).toLowerCase().includes(q);});document.getElementById('lyricsView').innerHTML='<div class="lyrics-subhead"><button type="button" onclick="backFromSongs()">‹</button><div><p>'+escapeLyrics(lyricsState.group)+'</p><h2>'+escapeLyrics(activeTitle())+'</h2></div></div><input id="lyricsSearch" class="lyrics-search" type="search" placeholder="SEARCH SONGS" value="'+escapeLyrics(lyricsState.query)+'"><p class="lyrics-count">'+songs.length+' SONGS</p><section class="lyrics-song-list">'+(songs.length?songs.map(function(song){return '<button class="lyrics-song-card" type="button" onclick="openLyricsSong(\''+lyricArg(song.songId)+'\')"><strong>'+escapeLyrics(song.title)+'</strong><span>'+escapeLyrics(song.artist)+' · '+song.partCount+' PARTS</span><b>›</b></button>';}).join(''):'<p class="lyrics-empty">NO SONGS</p>')+'</section>';document.getElementById('lyricsSearch').addEventListener('input',function(e){lyricsState.query=e.target.value.trim().toLowerCase();renderLyricsGroupSongs();const input=document.getElementById('lyricsSearch');input.focus();input.setSelectionRange(input.value.length,input.value.length);});}
-  function openLyricsSong(encoded){
+  function backFromSongs(){if(lyricsState.group==='BMSG ALLSTARS'){setLyricsUrl({group:lyricsState.group});renderLyricsUnits();}else showLyricsGroups();}
+  function renderLyricsGroupSongs(){const songs=activeSongs().filter(function(song){const q=lyricsState.query;return !q||song.title.toLowerCase().startsWith(q);});document.getElementById('lyricsView').innerHTML='<div class="lyrics-subhead"><button type="button" onclick="backFromSongs()">‹</button><div><p>'+escapeLyrics(lyricsState.group)+'</p><h2>'+escapeLyrics(activeTitle())+'</h2></div></div><input id="lyricsSearch" class="lyrics-search" type="search" placeholder="SEARCH SONGS" value="'+escapeLyrics(lyricsState.query)+'"><p class="lyrics-count">'+songs.length+' SONGS</p><section class="lyrics-song-list">'+(songs.length?songs.map(function(song){return '<button class="lyrics-song-card" type="button" onclick="openLyricsSong(\''+lyricArg(song.songId)+'\')"><strong>'+escapeLyrics(song.title)+'</strong><span>'+escapeLyrics(song.artist)+' · '+song.partCount+' PARTS</span><b>›</b></button>';}).join(''):'<p class="lyrics-empty">NO SONGS</p>')+'</section>';document.getElementById('lyricsSearch').addEventListener('input',function(e){lyricsState.query=e.target.value.trim().toLowerCase();renderLyricsGroupSongs();const input=document.getElementById('lyricsSearch');input.focus();input.setSelectionRange(input.value.length,input.value.length);});}
+  function openLyricsSong(encoded,pushUrl){
     const songId=decodeURIComponent(encoded);
     const meta=lyricsState.catalog.find(function(item){return item.songId===songId;});
     if(!meta){showLyricsError('曲が見つかりません。');return;}
     lyricsState.song={songId:songId,title:meta.title,artist:meta.artist,parts:lyricsState.partsBySong[songId]||[]};
-    renderLyricsSong();
-    scrollLyricsTop();
+    if(pushUrl!==false)setLyricsUrl({group:lyricsState.group,unit:lyricsState.unit,song:songId});
+    renderLyricsSong();scrollLyricsTop();
   }
+  function backToLyricsSongs(){setLyricsUrl({group:lyricsState.group,unit:lyricsState.unit});renderLyricsGroupSongs();scrollLyricsTop();}
   function renderLyricsSinger(part){
     const items=(part.singers&&part.singers.length)?part.singers:[{name:part.singer,color:'#777777',harmony:''}];
     return items.map(function(singer){
@@ -37,7 +59,7 @@
   function renderLyricsSong(){
     const song=lyricsState.song;
     const editing=typeof isLyricsEditMode==='function'&&isLyricsEditMode();
-    document.getElementById('lyricsView').innerHTML='<div class="lyrics-song-title"><h2>'+escapeLyrics(song.title)+'</h2></div><button class="lyrics-list-back" type="button" onclick="renderLyricsGroupSongs()">一覧へ戻る</button><section class="lyrics-parts '+(editing?'is-editing':'')+'">'+song.parts.map(function(part){
+    document.getElementById('lyricsView').innerHTML='<div class="lyrics-song-title"><h2>'+escapeLyrics(song.title)+'</h2></div><button class="lyrics-list-back" type="button" onclick="backToLyricsSongs()">BACK</button><section class="lyrics-parts '+(editing?'is-editing':'')+'">'+song.parts.map(function(part){
       const tag=editing?'button':'div';
       const action=editing?' type="button" onclick="openLyricsEditor('+part.partOrder+')"':'';
       return '<'+tag+' class="lyrics-part"'+action+'><div class="lyrics-singer">'+renderLyricsSinger(part)+'</div><p>'+escapeLyrics(part.lyrics)+'</p>'+(editing?'<small>EDIT</small>':'')+'</'+tag+'>';
