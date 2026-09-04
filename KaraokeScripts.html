@@ -73,7 +73,6 @@
   }
 
   function formatKaraokeTime(value){try{return new Intl.DateTimeFormat('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}).format(new Date(value));}catch(error){return'';}}
-  }
 
   function createKaraokeRoomUI(){
     if(karaokeState.busy)return;
@@ -140,7 +139,7 @@
           return '<label><input type="checkbox"'+checked+' onchange="toggleKaraokeSinger(\''+encodeURIComponent(singer.key)+'\',\''+user.userId+'\',this)"><span></span><b>'+escapeLyrics(singer.name)+'</b></label>';
         }).join('')+'</div></article>';
       }).join('')+'</section>'+
-      '<div class="karaoke-actions"><button class="karaoke-random" type="button" onclick="randomizeKaraoke()">ランダム振り分け</button><button class="karaoke-reset" type="button" onclick="resetKaraoke()">リセット</button><button class="karaoke-start" type="button" onclick="startKaraoke()">🎤 カラオケ開始</button></div>';
+      '<div class="karaoke-actions"><button class="karaoke-random" type="button" onclick="randomizeKaraoke()">ランダム振り分け</button><button class="karaoke-reset" type="button" onclick="resetKaraoke()">リセット</button><button class="karaoke-start" type="button" onclick="startKaraoke()">カラオケ開始</button></div>';
   }
 
   function toggleKaraokeSinger(encoded,userId,input){
