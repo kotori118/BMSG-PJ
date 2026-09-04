@@ -1,32 +1,192 @@
 <script>
-  const karaokeState={users:[],room:null,history:[],songs:[],category:'',busy:false};
-  const KARAOKE_GROUPS=['BE:FIRST','MAZZEL','STARGLOW','HANA','BMSG ALLSTARS'];
+  const karaokeState={users:[{userId:'U001',displayName:'ももたん'},{userId:'U002',displayName:'みおたん'},{userId:'U003',displayName:'りおたん'}],room:null,history:[],songs:[],partsBySong:{},song:null,assignments:{},screen:'entry',busy:false,backParams:{}};
+
   function renderKaraoke(){return document.getElementById('karaokePageTemplate').innerHTML;}
+
   function initKaraokePage(params){
-    const userId=getUniverseUserId();
+    params=params||{};
+    karaokeState.backParams={group:params.group||'',unit:params.unit||''};
     const cached=sessionStorage.getItem('bmsgLyricsDataV3');
-    if(cached){try{karaokeState.songs=JSON.parse(cached).songs||[];}catch(error){}}
-    let ready=0;function finish(){ready++;if(ready<2)return;renderKaraokeState();}
-    if(karaokeState.songs.length)finish();else google.script.run.withSuccessHandler(function(data){karaokeState.songs=data.songs||[];try{sessionStorage.setItem('bmsgLyricsDataV3',JSON.stringify(data));}catch(error){}finish();}).withFailureHandler(showKaraokeError).getLyricsCatalog();
-    google.script.run.withSuccessHandler(function(data){karaokeState.users=data.users||[];karaokeState.room=data.room||null;karaokeState.history=data.history||[];finish();}).withFailureHandler(showKaraokeError).getKaraokeBootstrap(userId,params&&params.room);
+    if(cached){
+      try{applyKaraokeCatalog(JSON.parse(cached),params);return;}catch(error){}
+    }
+    google.script.run.withSuccessHandler(function(data){
+      try{sessionStorage.setItem('bmsgLyricsDataV3',JSON.stringify(data));}catch(error){}
+      applyKaraokeCatalog(data,params);
+    }).withFailureHandler(showKaraokeError).getLyricsCatalog();
   }
-  function renderKaraokeState(){if(!karaokeState.room)renderKaraokeEntry();else if(karaokeState.category)renderKaraokeSongs();else renderKaraokeRoom();}
-  function renderKaraokeEntry(){document.getElementById('karaokeView').innerHTML='<section class="karaoke-entry"><p class="karaoke-label">3 PERSON ROOM</p><button class="karaoke-primary" type="button" onclick="createKaraokeRoomUI()">CREATE ROOM</button><div class="karaoke-join"><input id="karaokeRoomInput" inputmode="numeric" maxlength="4" placeholder="4 DIGIT ROOM ID"><button type="button" onclick="joinKaraokeRoomUI()">JOIN</button></div></section><button class="karaoke-back-link" type="button" onclick="navigateTo(\'lyrics\')">BACK TO LYRICS</button>';}
-  function createKaraokeRoomUI(){if(karaokeState.busy)return;karaokeState.busy=true;google.script.run.withSuccessHandler(function(room){karaokeState.busy=false;karaokeState.room=room;karaokeState.history=[];setKaraokeUrl();renderKaraokeRoom();}).withFailureHandler(karaokeFailure).createKaraokeRoom(getUniverseUserId());}
-  function joinKaraokeRoomUI(){const value=document.getElementById('karaokeRoomInput').value;if(!/^\d{4}$/.test(value)){showKaraokeError('4桁のルームIDを入力してね。');return;}karaokeState.busy=true;google.script.run.withSuccessHandler(function(data){karaokeState.busy=false;karaokeState.room=data.room;karaokeState.history=data.history||[];setKaraokeUrl();renderKaraokeRoom();}).withFailureHandler(karaokeFailure).joinKaraokeRoom(getUniverseUserId(),value);}
+
+  function applyKaraokeCatalog(data,params){
+    karaokeState.songs=data.songs||[];
+    karaokeState.partsBySong=data.partsBySong||{};
+    if(params&&params.song){openKaraokeSetup(params.song,false);return;}
+    renderKaraokeEntry();
+    loadKaraokeRoom(params&&params.room);
+  }
+
+  function loadKaraokeRoom(roomId){
+    google.script.run.withSuccessHandler(function(data){
+      karaokeState.users=data.users&&data.users.length?data.users:karaokeState.users;
+      karaokeState.room=data.room||null;
+      karaokeState.history=data.history||[];
+      updateKaraokeRoomCard();
+    }).withFailureHandler(function(error){
+      karaokeState.room=null;
+      updateKaraokeRoomCard();
+      showKaraokeError(error);
+    }).getKaraokeBootstrap(getUniverseUserId(),roomId);
+  }
+
+  function renderKaraokeEntry(){
+    karaokeState.screen='entry';
+    document.getElementById('karaokeView').innerHTML=
+      '<section class="karaoke-room-card"><h2>🎤 3人カラオケルーム</h2><div id="karaokeRoomBody"><button class="karaoke-primary" type="button" onclick="createKaraokeRoomUI()">カラオケルームを作る</button><div class="karaoke-join"><input id="karaokeRoomInput" inputmode="numeric" maxlength="4" placeholder="4桁のルームID"><button type="button" onclick="joinKaraokeRoomUI()">参加</button></div></div></section>'+
+      '<button class="karaoke-back-link" type="button" onclick="navigateTo(\'lyrics\')">BACK</button>';
+  }
+
+  function updateKaraokeRoomCard(){
+    const body=document.getElementById('karaokeRoomBody');
+    if(!body)return;
+    if(!karaokeState.room){
+      body.innerHTML='<button class="karaoke-primary" type="button" onclick="createKaraokeRoomUI()">カラオケルームを作る</button><div class="karaoke-join"><input id="karaokeRoomInput" inputmode="numeric" maxlength="4" placeholder="4桁のルームID"><button type="button" onclick="joinKaraokeRoomUI()">参加</button></div>';
+      return;
+    }
+    body.innerHTML='<div class="karaoke-active-room"><span>ROOM ID</span><strong>'+escapeLyrics(karaokeState.room.roomId)+'</strong></div><button class="karaoke-secondary" type="button" onclick="leaveKaraokeRoomUI()">ルームを抜ける</button>';
+  }
+
+  function createKaraokeRoomUI(){
+    if(karaokeState.busy)return;
+    karaokeState.busy=true;
+    google.script.run.withSuccessHandler(function(room){
+      karaokeState.busy=false;karaokeState.room=room;karaokeState.history=[];updateKaraokeRoomCard();
+      if(typeof showToast==='function')showToast('ルーム '+room.roomId+' を作成しました');
+    }).withFailureHandler(karaokeFailure).createKaraokeRoom(getUniverseUserId());
+  }
+
+  function joinKaraokeRoomUI(){
+    const input=document.getElementById('karaokeRoomInput');
+    const value=input?input.value.trim():'';
+    if(!/^\d{4}$/.test(value)){showKaraokeError('4桁のルームIDを入力してね。');return;}
+    karaokeState.busy=true;
+    google.script.run.withSuccessHandler(function(data){
+      karaokeState.busy=false;karaokeState.room=data.room;karaokeState.history=data.history||[];updateKaraokeRoomCard();
+      if(typeof showToast==='function')showToast('ルーム '+data.room.roomId+' に参加しました');
+    }).withFailureHandler(karaokeFailure).joinKaraokeRoom(getUniverseUserId(),value);
+  }
+
+  function leaveKaraokeRoomUI(){
+    google.script.run.withSuccessHandler(function(){karaokeState.room=null;karaokeState.history=[];updateKaraokeRoomCard();}).withFailureHandler(showKaraokeError).leaveKaraokeRoom(getUniverseUserId());
+  }
+
   function karaokeFailure(error){karaokeState.busy=false;showKaraokeError(error);}
-  function setKaraokeUrl(){const params={page:'karaoke'};if(karaokeState.room)params.room=karaokeState.room.roomId;google.script.history.push(params,params,'');}
-  function renderKaraokeRoom(){karaokeState.category='';document.getElementById('karaokeView').innerHTML='<section class="karaoke-room-bar"><div><small>ROOM</small><strong>'+karaokeState.room.roomId+'</strong></div><button type="button" onclick="newKaraokeRoom()">NEW ROOM</button></section><p class="karaoke-label">SELECT ARTIST</p><section class="karaoke-groups">'+KARAOKE_GROUPS.map(function(group){return '<button type="button" onclick="openKaraokeGroup(\''+encodeURIComponent(group)+'\')">'+escapeLyrics(group)+'</button>';}).join('')+'</section>'+renderKaraokeHistory();}
-  function newKaraokeRoom(){google.script.run.withSuccessHandler(function(){karaokeState.room=null;karaokeState.history=[];karaokeState.category='';setKaraokeUrl();renderKaraokeEntry();}).withFailureHandler(showKaraokeError).leaveKaraokeRoom(getUniverseUserId());}
-  function karaokeGroupSongs(group){return karaokeState.songs.filter(function(song){if(group==='BMSG ALLSTARS')return song.category==='UNIT';return song.category===group;}).sort(function(a,b){return Date.parse(b.releaseDate||'')-Date.parse(a.releaseDate||'')||(Number(b.songId)||0)-(Number(a.songId)||0);});}
-  function openKaraokeGroup(encoded){karaokeState.category=decodeURIComponent(encoded);renderKaraokeSongs();scrollKaraokeTop();}
-  function renderKaraokeSongs(){const songs=karaokeGroupSongs(karaokeState.category);document.getElementById('karaokeView').innerHTML='<div class="karaoke-subhead"><button onclick="renderKaraokeRoom()">‹</button><h2>'+escapeLyrics(karaokeState.category)+'</h2></div><button class="karaoke-gacha" type="button" onclick="karaokeGacha()">RANDOM SONG</button><section class="karaoke-songs">'+songs.map(function(song){return '<button type="button" onclick="runKaraokeShuffle(\''+encodeURIComponent(song.songId)+'\')">'+escapeLyrics(song.title)+'<span>›</span></button>';}).join('')+'</section>';}
-  function karaokeGacha(){const songs=karaokeGroupSongs(karaokeState.category);if(!songs.length)return;runKaraokeShuffle(encodeURIComponent(songs[Math.floor(Math.random()*songs.length)].songId));}
-  function runKaraokeShuffle(encoded){if(karaokeState.busy)return;karaokeState.busy=true;google.script.run.withSuccessHandler(function(result){karaokeState.busy=false;karaokeState.history.unshift(result);renderKaraokeResult(result);scrollKaraokeTop();}).withFailureHandler(karaokeFailure).shuffleKaraokeSong({userId:getUniverseUserId(),roomId:karaokeState.room.roomId,songId:decodeURIComponent(encoded)});}
-  function renderKaraokeResult(result){document.getElementById('karaokeView').innerHTML='<div class="karaoke-subhead"><button onclick="renderKaraokeSongs()">‹</button><div><small>SHUFFLE RESULT</small><h2>'+escapeLyrics(result.title)+'</h2></div></div><section class="karaoke-assignments">'+result.users.map(function(user){const slots=result.assignments[user.userId]||[];return '<article><p>'+escapeLyrics(user.displayName)+'</p><strong>'+slots.map(function(slot){return '<span style="color:'+escapeLyrics(slot.color||'#777777')+'">'+escapeLyrics(typeof slot==='string'?slot:slot.name)+'</span>';}).join(' / ')+'</strong></article>';}).join('')+'</section><button class="karaoke-primary" type="button" onclick="runKaraokeShuffle(\''+encodeURIComponent(result.songId)+'\')">SHUFFLE AGAIN</button>';}
-  function renderKaraokeHistory(){if(!karaokeState.history.length)return'';return '<section class="karaoke-history"><p class="karaoke-label">HISTORY</p>'+karaokeState.history.slice(0,10).map(function(item){return '<button type="button" onclick="showKaraokeHistoryItem('+karaokeState.history.indexOf(item)+')"><strong>'+escapeLyrics(item.title)+'</strong><span>'+formatKaraokeTime(item.createdAt)+'</span></button>';}).join('')+'</section>';}
-  function showKaraokeHistoryItem(index){renderKaraokeResult(karaokeState.history[index]);}
-  function formatKaraokeTime(value){try{return new Intl.DateTimeFormat('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}).format(new Date(value));}catch(error){return'';}}
+
+  function openKaraokeSetup(songId,pushUrl){
+    const id=decodeURIComponent(String(songId));
+    const meta=karaokeState.songs.find(function(item){return String(item.songId)===id;});
+    if(!meta){showKaraokeError('曲が見つかりません。');return;}
+    karaokeState.song={songId:id,title:meta.title,artist:meta.artist,parts:karaokeState.partsBySong[id]||[]};
+    karaokeState.assignments={};
+    karaokeState.screen='setup';
+    if(pushUrl!==false)setKaraokeUrl('setup');
+    renderKaraokeSetup();
+    scrollKaraokeTop();
+  }
+
+  function karaokeSingerKey(item){return String(item.raw||item.name||'').replace(/_(up|down|sub)$/i,'');}
+
+  function karaokeSingers(){
+    const seen={};
+    const out=[];
+    (karaokeState.song.parts||[]).forEach(function(part){
+      const items=part.singers&&part.singers.length?part.singers:[{raw:part.singer,name:part.singer,color:'#777777'}];
+      items.forEach(function(item){
+        const key=karaokeSingerKey(item);
+        if(!key||seen[key])return;
+        seen[key]=true;
+        out.push({key:key,name:item.name||key,color:item.color||'#777777'});
+      });
+    });
+    return out;
+  }
+
+  function renderKaraokeSetup(){
+    const singers=karaokeSingers();
+    document.getElementById('karaokeView').innerHTML=
+      '<div class="karaoke-title"><h2>カラオケ設定</h2></div>'+
+      '<section class="karaoke-user-settings">'+karaokeState.users.map(function(user){
+        return '<article><h3>'+escapeLyrics(user.displayName)+'</h3><div>'+singers.map(function(singer){
+          const checked=karaokeState.assignments[singer.key]===user.userId?' checked':'';
+          return '<label><input type="checkbox"'+checked+' onchange="toggleKaraokeSinger(\''+encodeURIComponent(singer.key)+'\',\''+user.userId+'\',this)"><span></span><b>'+escapeLyrics(singer.name)+'</b></label>';
+        }).join('')+'</div></article>';
+      }).join('')+'</section>'+
+      '<div class="karaoke-actions"><button class="karaoke-random" type="button" onclick="randomizeKaraoke()">ランダム振り分け</button><button class="karaoke-reset" type="button" onclick="resetKaraoke()">リセット</button><button class="karaoke-start" type="button" onclick="startKaraoke()">🎤 カラオケ開始</button><button class="karaoke-back-link" type="button" onclick="backToLyricsSong()">BACK</button></div>';
+  }
+
+  function toggleKaraokeSinger(encoded,userId,input){
+    const key=decodeURIComponent(encoded);
+    const singer=karaokeSingers().find(function(item){return item.key===key;});
+    const current=karaokeState.assignments[key];
+    if(input.checked&&current&&current!==userId){
+      input.checked=false;
+      showKaraokeError((singer?singer.name:key)+'は既に選択済みです');
+      return;
+    }
+    if(input.checked)karaokeState.assignments[key]=userId;
+    else if(current===userId)delete karaokeState.assignments[key];
+  }
+
+  function randomizeKaraoke(){
+    const singers=karaokeSingers().slice();
+    for(let i=singers.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));const t=singers[i];singers[i]=singers[j];singers[j]=t;}
+    karaokeState.assignments={};
+    singers.forEach(function(singer,index){karaokeState.assignments[singer.key]=karaokeState.users[index%karaokeState.users.length].userId;});
+    renderKaraokeSetup();
+  }
+
+  function resetKaraoke(){karaokeState.assignments={};renderKaraokeSetup();}
+
+  function startKaraoke(){
+    const missing=karaokeSingers().find(function(singer){return !karaokeState.assignments[singer.key];});
+    if(missing){showKaraokeError(missing.name+'が未設定です');return;}
+    karaokeState.screen='song';
+    setKaraokeUrl('song');
+    renderKaraokeSong();
+    scrollKaraokeTop();
+  }
+
+  function karaokePartOwners(part){
+    const items=part.singers&&part.singers.length?part.singers:[{raw:part.singer,name:part.singer,color:'#777777'}];
+    const owners=[];
+    items.forEach(function(item){
+      const userId=karaokeState.assignments[karaokeSingerKey(item)];
+      const user=karaokeState.users.find(function(person){return person.userId===userId;});
+      const label=(user?user.displayName:'未設定')+'（'+(item.name||karaokeSingerKey(item))+'）';
+      if(!owners.some(function(owner){return owner.label===label;}))owners.push({label:label,color:item.color||'#777777'});
+    });
+    return owners;
+  }
+
+  function renderKaraokeSong(){
+    const song=karaokeState.song;
+    document.getElementById('karaokeView').innerHTML=
+      '<div class="karaoke-title"><h2>'+escapeLyrics(song.title)+' <small>（カラオケ）</small></h2></div>'+
+      '<section class="karaoke-lyrics">'+song.parts.map(function(part){
+        return '<article><div class="karaoke-owner">'+karaokePartOwners(part).map(function(owner){return '<span style="color:'+escapeLyrics(owner.color)+'">'+escapeLyrics(owner.label)+'</span>';}).join(' / ')+'</div><p>'+escapeLyrics(part.lyrics)+'</p></article>';
+      }).join('')+'</section>'+
+      '<button class="karaoke-back-link" type="button" onclick="renderKaraokeSetup();karaokeState.screen=\'setup\';setKaraokeUrl(\'setup\')">設定へ戻る</button>';
+  }
+
+  function setKaraokeUrl(mode){
+    const params={page:'karaoke',song:karaokeState.song&&karaokeState.song.songId,mode:mode,group:karaokeState.backParams.group,unit:karaokeState.backParams.unit};
+    google.script.history.push(params,params,'');
+  }
+
+  function backToLyricsSong(){
+    const params={page:'lyrics',song:karaokeState.song.songId,group:karaokeState.backParams.group,unit:karaokeState.backParams.unit};
+    google.script.history.push(params,params,'');
+    renderRoute('lyrics',params);
+  }
+
   function scrollKaraokeTop(){const scroller=document.querySelector('.page-wrap');if(scroller)scroller.scrollTo({top:0,behavior:'smooth'});}
   function showKaraokeError(error){const message=error&&error.message?error.message:String(error);if(typeof showToast==='function')showToast(message);else alert(message);}
 </script>
