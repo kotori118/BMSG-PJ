@@ -1,5 +1,19 @@
 <style>
-  :root{--u-loading-accent:var(--cyan)}
+  /* =========================================================
+     Universe Shared Loading System v2
+     PROFILE ring spinner is the visual source of truth.
+     Existing service DOM stays intact; this layer owns the
+     loading surface, accent, motion and accessibility rhythm.
+     ========================================================= */
+  :root{
+    --u-loading-accent:var(--cyan,#9cecff);
+    --u-loading-size:18px;
+    --u-loading-ring:2px;
+    --u-loading-gap:12px;
+    --u-loading-speed:.8s;
+    --u-loading-label-dark:rgba(232,242,247,.62);
+    --u-loading-label-light:rgba(21,24,32,.46);
+  }
 
   .universe-loading,
   .profile-detail-loading,
@@ -11,14 +25,21 @@
     display:flex;
     align-items:center;
     justify-content:center;
-    gap:12px;
-    color:rgba(232,242,247,.62);
+    gap:var(--u-loading-gap);
+    color:var(--u-loading-label-dark);
     font:600 10px "Exo 2",Roboto,sans-serif;
     letter-spacing:.12em;
   }
 
-  body.theme-light :is(.universe-loading,.karaoke-loading,.lyrics-loading){
-    color:rgba(21,24,32,.46);
+  body.theme-light :is(
+    .universe-loading,
+    .profile-detail-loading,
+    .profile-map-loading,
+    .profile-search-loading,
+    .karaoke-loading,
+    .lyrics-loading
+  ){
+    color:var(--u-loading-label-light);
   }
 
   .universe-spinner,
@@ -26,24 +47,29 @@
   .profile-map-spinner,
   .profile-search-spinner,
   .karaoke-loading::before,
-  .lyrics-loading::before{
+  .lyrics-loading::before,
+  .lyrics-room-card.is-loading::before{
     box-sizing:border-box;
-    width:18px;
-    height:18px;
+    width:var(--u-loading-size);
+    height:var(--u-loading-size);
     flex:0 0 auto;
-    border:2px solid color-mix(in srgb,var(--loading-accent) 18%,transparent);
-    border-top-color:var(--loading-accent);
+    border:var(--u-loading-ring) solid color-mix(in srgb,var(--loading-accent,var(--u-loading-accent)) 18%,transparent);
+    border-top-color:var(--loading-accent,var(--u-loading-accent));
     border-radius:50%;
-    animation:universeSpinner .8s linear infinite;
-    box-shadow:0 0 12px color-mix(in srgb,var(--loading-accent) 12%,transparent);
+    animation:universeSpinner var(--u-loading-speed) linear infinite;
+    box-shadow:0 0 12px color-mix(in srgb,var(--loading-accent,var(--u-loading-accent)) 12%,transparent);
   }
 
   .karaoke-loading::before,
-  .lyrics-loading::before{content:""}
+  .lyrics-loading::before,
+  .lyrics-room-card.is-loading::before{content:""}
 
-  .profile-member-detail{
-    --loading-accent:var(--member-accent,var(--cyan));
+  /* Member detail inherits its member color instead of falling back to cyan. */
+  .profile-member-detail .profile-detail-loading{
+    --loading-accent:var(--member-accent,var(--u-loading-accent));
   }
+
+  /* General PROFILE / LYRICS / KARAOKE loaders use Soft Cyan. */
   .profile-map-loading,
   .profile-search-loading,
   .karaoke-loading,
@@ -52,36 +78,58 @@
     --loading-accent:var(--u-loading-accent);
   }
 
+  /* LYRICS room bootstrap uses the same ring without changing room logic. */
+  .lyrics-room-card.is-loading{
+    --loading-accent:var(--u-loading-accent);
+  }
+  .lyrics-room-card.is-loading::before{
+    display:block;
+    margin:10px 0 4px;
+  }
+
+  /* Full-screen / state-check loading. Legacy star markup is harmless if
+     encountered, but the visible system is always the common ring. */
   .loading-space{
+    --loading-accent:var(--u-loading-accent);
     display:grid;
     place-items:center;
     gap:14px;
     min-height:220px;
+    color:var(--u-loading-label-dark);
   }
-  .loading-space .loading-svg{display:none!important}
+  body.theme-light .loading-space{color:var(--u-loading-label-light)}
+  .loading-space .loading-svg,
   .loading-space .loading-label{display:none!important}
   .loading-space::before{
     content:"";
     box-sizing:border-box;
     width:22px;
     height:22px;
-    border:2px solid color-mix(in srgb,var(--u-loading-accent) 18%,transparent);
-    border-top-color:var(--u-loading-accent);
+    border:2px solid color-mix(in srgb,var(--loading-accent) 18%,transparent);
+    border-top-color:var(--loading-accent);
     border-radius:50%;
-    animation:universeSpinner .8s linear infinite;
-    box-shadow:0 0 14px color-mix(in srgb,var(--u-loading-accent) 14%,transparent);
+    animation:universeSpinner var(--u-loading-speed) linear infinite;
+    box-shadow:0 0 14px color-mix(in srgb,var(--loading-accent) 14%,transparent);
   }
   .loading-space::after{
     content:"LOADING UNIVERSE";
-    color:rgba(232,242,247,.58);
     font:600 10px "Exo 2",Roboto,sans-serif;
     letter-spacing:.13em;
   }
-  body.theme-light .loading-space::after{color:rgba(21,24,32,.46)}
 
   @keyframes universeSpinner{to{transform:rotate(360deg)}}
+
   @media(prefers-reduced-motion:reduce){
-    .universe-spinner,.profile-detail-spinner,.profile-map-spinner,.profile-search-spinner,.karaoke-loading::before,.lyrics-loading::before,.loading-space::before{animation:none}
+    .universe-spinner,
+    .profile-detail-spinner,
+    .profile-map-spinner,
+    .profile-search-spinner,
+    .karaoke-loading::before,
+    .lyrics-loading::before,
+    .lyrics-room-card.is-loading::before,
+    .loading-space::before{
+      animation:none;
+    }
   }
 </style>
 <script>
@@ -89,9 +137,11 @@
     const color=String(value||'').trim();
     return /^#[0-9a-f]{6}$/i.test(color)?color:'#9cecff';
   }
+
   function renderUniverseLoading(label,accent){
-    const safeLabel=typeof escapeHtml==='function'?escapeHtml(label||'LOADING...'):String(label||'LOADING...');
+    const text=String(label||'読み込み中');
+    const safeLabel=typeof escapeHtml==='function'?escapeHtml(text):text;
     const safeAccent=normalizeUniverseLoadingAccent(accent);
-    return '<div class="universe-loading" style="--loading-accent:'+safeAccent+'"><span class="universe-spinner" aria-hidden="true"></span><span>'+safeLabel+'</span></div>';
+    return '<div class="universe-loading" role="status" aria-live="polite" style="--loading-accent:'+safeAccent+'"><span class="universe-spinner" aria-hidden="true"></span><span>'+safeLabel+'</span></div>';
   }
 </script>
