@@ -2265,4 +2265,36 @@
         transition-duration: .01ms !important;
       }
     }
-  </style>
+  
+    /* Unified global settings */
+    #settingsOverlay .settings-panel{box-sizing:border-box;width:min(100%,560px);padding:22px;border-radius:24px}
+    #settingsOverlay .modal-head{align-items:flex-start;margin-bottom:24px}
+    #settingsOverlay .settings-eyebrow{margin:1px 0 5px;color:rgba(156,236,255,.62);font:600 9px "Exo 2",sans-serif;letter-spacing:.18em}
+    #settingsOverlay .modal-title{font-size:clamp(30px,7vw,42px);line-height:1}
+    #settingsOverlay .overlay-close{width:44px;height:44px;flex:0 0 auto}
+    #settingsOverlay .settings-group{margin-top:22px}
+    #settingsOverlay .settings-section-title{margin:0 0 9px;padding-left:2px;color:rgba(247,251,255,.38);font:600 9px "Exo 2",sans-serif;letter-spacing:.16em}
+    #settingsOverlay .settings-row{box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%;min-height:70px;padding:14px 16px;border:1px solid rgba(255,255,255,.08);border-radius:17px;color:rgba(247,251,255,.9);background:rgba(255,255,255,.025);text-align:left}
+    #settingsOverlay .settings-row-button{cursor:pointer;-webkit-tap-highlight-color:transparent}
+    #settingsOverlay .settings-row-copy{display:grid;gap:4px;min-width:0}
+    #settingsOverlay .settings-row-copy strong{font-family:"Zen Kaku Gothic New",sans-serif;font-size:15px;font-weight:700}
+    #settingsOverlay .settings-row-copy small{color:rgba(247,251,255,.4);font:600 9px "Exo 2","Zen Kaku Gothic New",sans-serif;letter-spacing:.1em}
+    #settingsOverlay .settings-action{min-height:38px;padding:0 13px;border:1px solid rgba(255,255,255,.11);border-radius:12px;color:rgba(247,251,255,.84);background:transparent;font:600 9px "Exo 2",sans-serif;letter-spacing:.1em}
+    #settingsOverlay .settings-switch{display:grid;place-items:center;width:48px;height:27px;flex:0 0 auto;border-radius:999px;color:rgba(247,251,255,.48);background:rgba(255,255,255,.08);font:700 8px "Exo 2",sans-serif;letter-spacing:.08em}
+    #settingsOverlay .settings-switch.active{color:#061018;background:var(--cyan)}
+    #settingsOverlay .settings-arrow{color:rgba(247,251,255,.42);font-size:25px}
+    #settingsOverlay .settings-row-button:focus{outline:none}
+    #settingsOverlay .settings-row-button:focus-visible{outline:1px solid rgba(156,236,255,.5);outline-offset:2px}
+    #settingsOverlay .settings-row-button:active{filter:none;background:rgba(255,255,255,.05)}
+    body.theme-light #settingsOverlay .settings-panel{border-color:rgba(21,24,32,.12);color:var(--ink);background:#fff}
+    body.theme-light #settingsOverlay .settings-eyebrow{color:rgba(21,24,32,.42)}
+    body.theme-light #settingsOverlay .settings-section-title{color:rgba(21,24,32,.38)}
+    body.theme-light #settingsOverlay .settings-row{border-color:rgba(21,24,32,.11);color:var(--ink);background:#fff}
+    body.theme-light #settingsOverlay .settings-row-copy small{color:rgba(21,24,32,.42)}
+    body.theme-light #settingsOverlay .settings-action{border-color:rgba(21,24,32,.13);color:var(--ink);background:#fff}
+    body.theme-light #settingsOverlay .settings-switch{color:rgba(21,24,32,.46);background:#eceff0}
+    body.theme-light #settingsOverlay .settings-switch.active{color:#061018;background:var(--cyan)}
+    body.theme-light #settingsOverlay .settings-arrow{color:rgba(21,24,32,.36)}
+    body.theme-light #settingsOverlay .settings-row-button:active{background:#f5f7f7}
+    @media(max-width:560px){#settingsOverlay.settings-overlay{}#settingsOverlay .settings-panel{padding:20px;border-radius:22px}#settingsOverlay .settings-group{margin-top:19px}}
+</style>
