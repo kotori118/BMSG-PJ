@@ -282,13 +282,7 @@
     const owners=[];
     items.forEach(function(item){
       const key=karaokeSingerKey(item);
-      if(key==='99'){
-        karaokeState.users.forEach(function(user){
-          const label=user.displayName+'（ALL）';
-          if(!owners.some(function(owner){return owner.label===label;}))owners.push({label:label,color:item.color||'#777777'});
-        });
-        return;
-      }
+      if(key==='99')return;
       const userId=karaokeState.assignments[key];
       const user=karaokeState.users.find(function(person){return person.userId===userId;});
       const label=(user?user.displayName:'未設定')+'（'+(item.name||key)+'）';
