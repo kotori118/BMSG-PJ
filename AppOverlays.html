@@ -35,8 +35,8 @@
         <section class="settings-group">
           <p class="settings-section-title">ACCOUNT</p>
           <div class="settings-row">
-            <div class="settings-row-copy"><small>CURRENT USER</small><strong id="settingsUserName">ももたん</strong></div>
-            <button class="settings-action" onclick="cycleDemoUser()">CHANGE</button>
+            <div class="settings-row-copy"><small>CURRENT USER</small><strong id="settingsUserName">未選択</strong></div>
+            <button class="settings-action" onclick="openUserChooser(false)">CHANGE</button>
           </div>
         </section>
 
@@ -55,7 +55,23 @@
             <span class="settings-arrow">›</span>
           </button>
         </section>
-      </section>   </div>
+      </section>
+    </div>
+
+    <div id="userChooserOverlay" class="modal-overlay user-chooser-overlay" onclick="closeUserChooserOnBackdrop(event)">
+      <section class="settings-panel user-chooser-panel" role="dialog" aria-modal="true" aria-labelledby="userChooserTitle">
+        <header class="modal-head">
+          <div><p class="settings-eyebrow">BMSG UNIVERSE</p><h2 id="userChooserTitle" class="modal-title">USER</h2></div>
+          <button id="userChooserClose" class="overlay-close" onclick="closeUserChooser()" aria-label="Close user selection">×</button>
+        </header>
+        <p class="user-chooser-copy">利用するユーザーを選択</p>
+        <div class="user-chooser-list">
+          <button type="button" class="user-choice" data-user-id="U001" onclick="selectUniverseUser('U001')"><span>U001</span><strong>ももたん</strong><b>›</b></button>
+          <button type="button" class="user-choice" data-user-id="U002" onclick="selectUniverseUser('U002')"><span>U002</span><strong>みおたん</strong><b>›</b></button>
+          <button type="button" class="user-choice" data-user-id="U003" onclick="selectUniverseUser('U003')"><span>U003</span><strong>りおたん</strong><b>›</b></button>
+        </div>
+      </section>
+    </div>
 
     <div id="stateCheckOverlay" class="modal-overlay" onclick="closeOnBackdrop(event, 'stateCheckOverlay')">
       <section class="state-panel" role="dialog" aria-modal="true" aria-labelledby="stateCheckTitle">
@@ -85,3 +101,19 @@
       aria-live="polite"
       aria-atomic="true"
     ></div>
+
+    <style>
+      .user-chooser-overlay{z-index:1200}
+      .user-chooser-panel{max-width:520px}
+      .user-chooser-copy{margin:8px 2px 18px;color:var(--gray);font:500 13px "Zen Kaku Gothic New",Roboto,sans-serif}
+      .user-chooser-list{display:grid;gap:10px}
+      .user-choice{width:100%;min-height:72px;padding:0 18px;display:grid;grid-template-columns:54px 1fr 24px;align-items:center;text-align:left;border:1px solid rgba(156,236,255,.16);border-radius:18px;background:linear-gradient(145deg,rgba(156,236,255,.055),rgba(255,255,255,.02));color:var(--white)}
+      .user-choice span{color:rgba(156,236,255,.58);font:600 10px "Exo 2",Roboto,sans-serif;letter-spacing:.12em}
+      .user-choice strong{font:700 18px "Zen Kaku Gothic New",Roboto,sans-serif}
+      .user-choice b{color:rgba(156,236,255,.62);font:400 28px/1 Roboto,sans-serif;text-align:right}
+      .user-choice.is-current{border-color:rgba(156,236,255,.48);background:linear-gradient(145deg,rgba(156,236,255,.14),rgba(255,255,255,.028))}
+      .user-chooser-overlay.is-required #userChooserClose{display:none}
+      body.theme-light .user-choice{border-color:rgba(75,165,184,.22);background:linear-gradient(145deg,#fff,rgba(156,236,255,.10));color:var(--ink)}
+      body.theme-light .user-choice span,body.theme-light .user-choice b{color:var(--cyan-ink,#2f7382)}
+      body.theme-light .user-choice.is-current{border-color:rgba(75,165,184,.48);background:linear-gradient(145deg,#fff,rgba(156,236,255,.22))}
+    </style>
