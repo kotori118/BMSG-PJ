@@ -36,6 +36,7 @@ function getLyricsSong(songId) {
   });
   if (!song) throw new Error('Song not found: ' + id);
 
+  const singerMap = buildLyricsSingerMap_();
   const parts = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.LYRICS_PARTS)
     .filter(function(row) { return asId_(row.SongID) === id; })
     .sort(function(a, b) { return Number(a.PartOrder) - Number(b.PartOrder); })
@@ -44,6 +45,7 @@ function getLyricsSong(songId) {
         songId: id,
         partOrder: Number(row.PartOrder),
         singer: String(row.Singer || ''),
+        singers: formatLyricsSingers_(String(row.Singer || ''), singerMap),
         lyrics: String(row.Lyrics || '')
       };
     });
@@ -106,4 +108,39 @@ function lyricsUnitCategory_(title, artist) {
   if (artist === 'BMSG ALLSTARS' || ['New Chapter', 'Grand Champ', "Grand Champ -from BMSG FES'2025-"].indexOf(title) >= 0) return 'BMSG ALLSTARS';
   const units = ['ShowMinorSavage', 'BMSG POSSE', 'BMSG EAST', 'BMSG WEST', 'BMSG SKY', 'BMSG GAIA', 'BMSG MARINE', 'BMSG STRIKERS'];
   return units.indexOf(artist) >= 0 ? artist : 'その他UNIT';
+}
+
+function buildLyricsSingerMap_() {
+  const map = {
+    '99': { name: 'ALL', color: '#777777' },
+    '109': { name: 'その他', color: '#777777' }
+  };
+  readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.MEMBERS).forEach(function(row) {
+    const id = asId_(row.MemberID);
+    if (id) map[id] = { name: String(row.DisplayName || id), color: String(row.ColorHex || '#777777') };
+  });
+  readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.GUESTS).forEach(function(row) {
+    const id = asId_(row.GuestID);
+    if (id) map[id] = { name: String(row.DisplayName || id), color: '#777777' };
+  });
+  return map;
+}
+
+function formatLyricsSingers_(raw, singerMap) {
+  return String(raw || '').split(',').map(function(token) {
+    token = token.trim();
+    const harmonyMatch = token.match(/_(up|down|sub)$/i);
+    const harmony = harmonyMatch ? harmonyMatch[1].toLowerCase() : '';
+    const base = harmonyMatch ? token.slice(0, -harmonyMatch[0].length) : token;
+    const ids = singerMap[base] ? [base] : base.split('_');
+    const people = ids.map(function(id) {
+      return singerMap[id] || { name: id, color: '#777777' };
+    });
+    return {
+      raw: token,
+      name: people.map(function(person) { return person.name; }).join(' & '),
+      color: people[0].color,
+      harmony: harmony
+    };
+  }).filter(function(item) { return item.name; });
 }
