@@ -1,7 +1,23 @@
 <style>
-  /* TRADING CARD visual v2: borderless front, NEW badge, textless cosmic back, clean actions. */
-  .card-front-face{background:transparent!important;border:0!important;box-shadow:none!important;overflow:hidden!important;}
-  .card-front-face img{width:100%!important;height:100%!important;object-fit:cover!important;transform:scale(1.055)!important;transform-origin:center!important;border-radius:18px!important;}
+  /* TRADING CARD visual v2: crop source-image black rim, delayed NEW badge, textless cosmic back, clean actions. */
+  .card-front-face{
+    background:transparent!important;
+    border:0!important;
+    box-shadow:none!important;
+    overflow:hidden!important;
+  }
+  /* Source card images include a dark printed rim. Crop that rim itself, not only the CSS frame. */
+  .card-front-face img{
+    position:absolute!important;
+    inset:-5.8%!important;
+    width:111.6%!important;
+    height:111.6%!important;
+    max-width:none!important;
+    max-height:none!important;
+    object-fit:cover!important;
+    transform:none!important;
+    border-radius:19px!important;
+  }
   .card-reveal.is-new-card .card-front-face::after{
     content:'NEW';position:absolute;z-index:5;left:12px;top:12px;padding:7px 11px 6px;border-radius:999px;
     font:800 10px 'Orbitron',sans-serif;letter-spacing:.12em;color:#fff;
@@ -10,6 +26,16 @@
     box-shadow:0 4px 16px rgba(0,0,0,.34),0 0 14px var(--rarity-soft,rgba(156,236,255,.18));
   }
   .card-result-meta{display:none!important;}
+
+  /* Gacha screen itself must not rubber-band / pull vertically on iPhone. */
+  .card-page.is-gacha-mode,
+  .card-page.is-gacha-mode .card-app,
+  .card-page.is-gacha-mode .card-gacha-scene{
+    overscroll-behavior:none!important;
+  }
+  .card-page.is-gacha-mode .card-gacha-scene{
+    touch-action:manipulation!important;
+  }
 
   /* Textless symmetric Universe card back. */
   .card-back-face{background:
