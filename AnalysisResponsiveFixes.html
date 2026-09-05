@@ -1,0 +1,26 @@
+<script>
+  /* Restore the original ANALYSIS line texture while keeping missing-data filtering and tooltip fixes. */
+  function analysisLineDataset(label,data,color){
+    return{
+      label:label,
+      data:data,
+      borderColor:color,
+      backgroundColor:color,
+      fill:false,
+      spanGaps:false,
+      tension:.1
+    };
+  }
+
+  /* Other-analysis hierarchy uses the same compact square back navigation language. */
+  function otherShell(title,html){
+    document.getElementById('analysisPanel').innerHTML='<div class="analysis-section"><div class="analysis-subhead"><button class="u-btn analysis-back" aria-label="戻る" onclick="analysisOtherView=\'\';renderAnalysisOther()">‹</button><h2>'+title+'</h2></div>'+html+'</div>';
+  }
+
+  /* Keep transfer ranking and member search as separate information blocks. */
+  function renderOtherTransfer(){
+    const d=analysisData.partTransferData;
+    otherShell('パート継承分析','<div class="analysis-card"><h3>引き継ぎパート数ランキング</h3>'+genericTable(['順位','メンバー','引き継ぎパート数'],d.ranking.map((r,i)=>[i+1,r.name,r.count]))+'</div><div class="analysis-card"><h3>メンバー検索</h3><div class="analysis-controls"><select id="analysisTransferMember" onchange="renderTransferSongs()"><option value="all">全メンバー表示</option>'+d.ranking.map(r=>'<option>'+escapeHtml(r.name)+'</option>').join('')+'</select></div></div><div id="analysisTransferSongs"></div>');
+    renderTransferSongs();
+  }
+</script>
