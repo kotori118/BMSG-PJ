@@ -1,16 +1,63 @@
 <script>
-  /* Present NEW as a badge on the card itself; keep legacy result text hidden. */
+  /* Present NEW only after the front image is actually visible; keep legacy result text hidden. */
   (function(){
     if(typeof runCardReveal!=='function')return;
     const baseRunCardReveal=runCardReveal;
-    runCardReveal=function(card,isNew){
+    let newBadgeTimer=0;
+
+    function clearNewBadgeState(){
+      if(newBadgeTimer){window.clearTimeout(newBadgeTimer);newBadgeTimer=0;}
       const overlay=document.getElementById('cardReveal');
-      if(overlay)overlay.classList.toggle('is-new-card',!!isNew);
+      if(overlay)overlay.classList.remove('is-new-card');
+    }
+
+    runCardReveal=function(card,isNew){
+      clearNewBadgeState();
+      const overlay=document.getElementById('cardReveal');
+      const image=document.getElementById('cardRevealImage');
       const legacy=document.getElementById('cardResultNew');
       if(legacy)legacy.textContent='';
+
+      const startedAt=(window.performance&&performance.now)?performance.now():Date.now();
+      const reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const revealDelay=reduced?0:940;
+
+      function showBadgeAfterFace(){
+        if(!isNew||!overlay)return;
+        const now=(window.performance&&performance.now)?performance.now():Date.now();
+        const wait=Math.max(0,revealDelay-(now-startedAt));
+        newBadgeTimer=window.setTimeout(function(){
+          newBadgeTimer=0;
+          if(overlay.classList.contains('is-open')&&overlay.classList.contains('is-revealed')){
+            overlay.classList.add('is-new-card');
+          }
+        },wait);
+      }
+
       baseRunCardReveal(card,isNew);
-      if(overlay)overlay.classList.toggle('is-new-card',!!isNew);
       if(legacy)legacy.textContent='';
+
+      if(isNew&&image){
+        if(image.complete&&image.naturalWidth>0){
+          showBadgeAfterFace();
+        }else{
+          image.addEventListener('load',showBadgeAfterFace,{once:true});
+        }
+      }
     };
+
+    if(typeof openCardRevealPending==='function'){
+      const baseOpenCardRevealPending=openCardRevealPending;
+      openCardRevealPending=function(){
+        clearNewBadgeState();
+        return baseOpenCardRevealPending.apply(this,arguments);
+      };
+    }
+
+    /* Prevent iPhone rubber-band dragging on the non-scrollable gacha screen only. */
+    document.addEventListener('touchmove',function(event){
+      const target=event.target&&event.target.closest?event.target.closest('.card-page.is-gacha-mode .card-gacha-scene'):null;
+      if(target&&event.cancelable)event.preventDefault();
+    },{passive:false});
   })();
 </script>
