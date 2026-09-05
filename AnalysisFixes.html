@@ -24,7 +24,7 @@
 
   function rankBlock(title,rows,key,bucket){
     const top=rows.slice(0,3),worst=rows.slice(-3).reverse();
-    return '<div class="analysis-card"><h3>'+title+'</h3><div class="analysis-rank-grid"><div><p class="analysis-muted">TOP 3</p>'+simpleRank(top,key)+'</div><div><p class="analysis-muted">WORST 3</p>'+simpleRank(worst,key)+'</div></div><button class="u-btn" onclick="showAnalysisMemberRanking(\''+bucket+'\')">もっと見る（全曲ランキング）</button></div>';
+    return '<div class="analysis-card"><h3>'+title+'</h3><div class="analysis-rank-grid"><div><p class="analysis-muted">TOP 3</p>'+simpleRank(top,key)+'</div><div><p class="analysis-muted">WORST 3</p>'+simpleRank(worst,key)+'</div></div><button class="analysis-more-btn u-btn" onclick="showAnalysisMemberRanking(\''+bucket+'\')">さらに表示</button></div>';
   }
 
   function showAnalysisMemberSongList(type){
@@ -63,6 +63,108 @@
   function drawPie(id,data){
     if(typeof Chart==='undefined')return;
     const el=document.getElementById(id);if(!el)return;
-    analysisCharts.push(new Chart(el,{type:'pie',data:{labels:analysisData.members.map(m=>m.name),datasets:[{data:data,backgroundColor:analysisData.members.map(m=>m.color),borderColor:'#07101a',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.label+': '+c.raw+'%'}},datalabels:{display:false}},onClick:function(event,elements,chart){if(elements&&elements.length){renderAnalysisSongLyrics(chart.data.labels[elements[0].index]);}else{renderAnalysisSongLyrics('ALL');}}}}));
+    analysisCharts.push(new Chart(el,{type:'pie',data:{labels:analysisData.members.map(m=>m.name),datasets:[{data:data,backgroundColor:analysisData.members.map(m=>m.color),borderColor:'#07101a',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.label+': '+Number(c.raw).toFixed(1)+'%'}},datalabels:{display:false}},onClick:function(event,elements,chart){if(elements&&elements.length){renderAnalysisSongLyrics(chart.data.labels[elements[0].index]);}else{renderAnalysisSongLyrics('ALL');}}}}));
+  }
+
+  function analysisClearTooltip(chart){
+    if(!chart||!chart.tooltip)return;
+    chart.tooltip.setActiveElements([], {x:0,y:0});
+    chart.update('none');
+  }
+
+  function analysisScheduleTooltipClear(chart){
+    if(!chart)return;
+    if(chart.$analysisTooltipTimer)clearTimeout(chart.$analysisTooltipTimer);
+    chart.$analysisTooltipTimer=setTimeout(function(){analysisClearTooltip(chart);},1600);
+  }
+
+  function chartOptions(){
+    return{
+      responsive:true,
+      maintainAspectRatio:false,
+      interaction:{mode:'nearest',intersect:false},
+      onClick:function(evt,elements,chart){
+        if(elements&&elements.length)analysisScheduleTooltipClear(chart);
+        else analysisClearTooltip(chart);
+      },
+      plugins:{
+        legend:{labels:{color:'#c9d4df',usePointStyle:true,boxWidth:9,boxHeight:9,padding:14}},
+        tooltip:{
+          displayColors:true,
+          backgroundColor:'rgba(5,9,15,.94)',
+          titleColor:'#fff',
+          bodyColor:'#dce5ee',
+          borderColor:'rgba(156,236,255,.18)',
+          borderWidth:1,
+          padding:10,
+          callbacks:{label:function(c){const v=c.parsed&&c.parsed.y!=null?c.parsed.y:c.raw;return (c.dataset.label?c.dataset.label+': ':'')+Number(v).toFixed(1)+'%';}}
+        },
+        datalabels:{display:false}
+      },
+      scales:{
+        x:{border:{display:false},ticks:{color:'#94a1af',maxRotation:45,minRotation:45},grid:{display:false}},
+        y:{beginAtZero:true,border:{display:false},ticks:{color:'#94a1af',callback:function(v){return v+'%';}},grid:{color:'rgba(156,236,255,.065)',lineWidth:1}}
+      }
+    };
+  }
+
+  function analysisLineDataset(label,data,color){
+    return{
+      label:label,
+      data:data,
+      borderColor:color,
+      backgroundColor:color,
+      borderWidth:2,
+      pointRadius:3,
+      pointHoverRadius:4,
+      pointBorderWidth:1.5,
+      pointBorderColor:color,
+      pointBackgroundColor:'#0a1019',
+      pointHoverBackgroundColor:color,
+      pointHoverBorderColor:'#0a1019',
+      fill:false,
+      spanGaps:false,
+      tension:.28
+    };
+  }
+
+  function drawMemberChart(rows,name){
+    if(typeof Chart==='undefined')return;
+    const m=analysisData.members.find(x=>x.name===name)||{};
+    const ctx=document.getElementById('analysisMemberChart');if(!ctx)return;
+    const visibleRows=rows.filter(function(r){return typeof r.singRatio==='number'||typeof r.centerRatio==='number';});
+    const singColor=m.color||'#9cecff';
+    analysisCharts.push(new Chart(ctx,{type:'line',data:{labels:visibleRows.map(r=>r.songName),datasets:[
+      analysisLineDataset('歌唱割合(%)',visibleRows.map(r=>typeof r.singRatio==='number'?r.singRatio:null),singColor),
+      analysisLineDataset('センター割合(%)',visibleRows.map(r=>typeof r.centerRatio==='number'?r.centerRatio:null),'#9cecff')
+    ]},options:chartOptions()}));
+  }
+
+  function drawTimelineChart(id,rows,type){
+    if(typeof Chart==='undefined')return;
+    const el=document.getElementById(id);if(!el)return;
+    const visibleRows=rows.filter(function(r){return Number(r[type+'Total'])>0;});
+    const datasets=analysisData.members.map(function(m){
+      const values=visibleRows.map(function(r){
+        return r[type+'Sec'][m.name]!=null?+(r[type+'Sec'][m.name]/r[type+'Total']*100).toFixed(1):null;
+      });
+      return analysisLineDataset(m.name,values,m.color);
+    });
+    analysisCharts.push(new Chart(el,{type:'line',data:{labels:visibleRows.map(r=>r.name),datasets:datasets},options:chartOptions()}));
+  }
+
+  function showAnalysisModal(title,html){
+    let m=document.getElementById('analysisModal');
+    if(!m){
+      m=document.createElement('div');
+      m.id='analysisModal';
+      m.className='analysis-modal';
+      m.innerHTML='<div class="analysis-modal-card" role="dialog" aria-modal="true" aria-labelledby="analysisModalTitle"><div class="analysis-modal-head"><h2 id="analysisModalTitle"></h2><button class="analysis-modal-close u-btn" onclick="closeAnalysisModal()">CLOSE</button></div><div id="analysisModalBody" class="analysis-modal-body"></div></div>';
+      m.addEventListener('click',function(e){if(e.target===m)closeAnalysisModal();});
+      document.body.appendChild(m);
+    }
+    document.getElementById('analysisModalTitle').textContent=title;
+    document.getElementById('analysisModalBody').innerHTML=html;
+    m.hidden=false;
   }
 </script>
