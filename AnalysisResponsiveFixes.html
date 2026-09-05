@@ -1,3 +1,108 @@
+<style>
+  /* ANALYSIS mobile containment: no child may widen the page itself. */
+  .analysis-page,
+  .analysis-panel,
+  .analysis-section,
+  .analysis-card,
+  .analysis-rank-grid,
+  .analysis-pies,
+  .analysis-controls,
+  #analysisCreatorBody,
+  #analysisReleaseBody,
+  #analysisTransferSongs{
+    min-width:0;
+    max-width:100%;
+  }
+
+  .analysis-section{
+    grid-template-columns:minmax(0,1fr);
+  }
+
+  /* Keep the service title below the shared utility row so HOME never overlaps ANALYSIS. */
+  .analysis-page{
+    padding-top:74px;
+  }
+
+  /* Long data tables scroll inside their own card instead of stretching the page. */
+  .analysis-card{
+    overflow:hidden;
+  }
+  .analysis-card > .analysis-table-wrap,
+  .analysis-card .analysis-table-wrap{
+    display:block;
+    width:100%;
+    max-width:100%;
+    min-width:0;
+    overflow-x:auto;
+    overflow-y:hidden;
+    -webkit-overflow-scrolling:touch;
+    overscroll-behavior-x:contain;
+  }
+  .analysis-table{
+    width:max-content;
+    min-width:100%;
+  }
+
+  /* Creator mode tabs stay inside the card; creator selector gets its own row. */
+  .analysis-creator-tabs{
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    width:100%;
+    min-width:0;
+    gap:8px;
+  }
+  .analysis-creator-tab{
+    width:100%;
+    min-width:0;
+    white-space:nowrap;
+    padding-left:8px!important;
+    padding-right:8px!important;
+  }
+  .analysis-creator-tabs + .analysis-controls{
+    display:block;
+    width:100%;
+    margin-top:12px;
+  }
+  .analysis-creator-tabs + .analysis-controls select{
+    width:100%;
+    max-width:100%;
+  }
+
+  /* Dynamically rendered cards need explicit spacing too. */
+  #analysisCreatorBody,
+  #analysisReleaseBody,
+  #analysisTransferSongs{
+    display:grid;
+    grid-template-columns:minmax(0,1fr);
+    gap:16px;
+  }
+
+  .analysis-subhead{
+    min-width:0;
+  }
+  .analysis-subhead h2{
+    min-width:0;
+    overflow-wrap:anywhere;
+  }
+  .analysis-back{
+    width:46px!important;
+    min-width:46px!important;
+    height:46px!important;
+    min-height:46px!important;
+    padding:0!important;
+    border-radius:14px!important;
+    display:inline-grid!important;
+    place-items:center!important;
+    font-size:31px!important;
+    line-height:1!important;
+  }
+
+  @media(max-width:680px){
+    .analysis-page{padding-top:70px}
+    .analysis-card{padding:14px}
+    .analysis-table th,.analysis-table td{white-space:nowrap}
+  }
+</style>
 <script>
   /* Restore the original ANALYSIS line texture while keeping missing-data filtering and tooltip fixes. */
   function analysisLineDataset(label,data,color){
