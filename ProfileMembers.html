@@ -1,13 +1,57 @@
 <script>
+  const PROFILE_MEMBERS_SESSION_KEY = 'bmsgProfileMembersV1';
+  const PROFILE_MEMBERS_SESSION_TTL = 5 * 60 * 1000;
+
   let profileMembersState = {
     status: 'idle', groups: [], members: [], error: '',
     detailStatus: 'idle', detailMemberId: '', detailFields: [], detailError: ''
   };
 
+  function readProfileMembersSessionCache() {
+    try {
+      const raw = sessionStorage.getItem(PROFILE_MEMBERS_SESSION_KEY);
+      if (!raw) return null;
+      const cached = JSON.parse(raw);
+      if (!cached || !cached.savedAt || Date.now() - Number(cached.savedAt) > PROFILE_MEMBERS_SESSION_TTL) {
+        sessionStorage.removeItem(PROFILE_MEMBERS_SESSION_KEY);
+        return null;
+      }
+      if (!Array.isArray(cached.groups) || !Array.isArray(cached.members)) return null;
+      return cached;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function writeProfileMembersSessionCache() {
+    try {
+      sessionStorage.setItem(PROFILE_MEMBERS_SESSION_KEY, JSON.stringify({
+        savedAt: Date.now(),
+        groups: profileMembersState.groups,
+        members: profileMembersState.members
+      }));
+    } catch (error) {
+      // sessionStorage is only a speed cache; PROFILE must still work without it.
+    }
+  }
+
   function loadProfileMembers(forceReload = false) {
     if (!forceReload && (profileMembersState.status === 'loading' || profileMembersState.status === 'ready')) {
       renderProfileMembersPanel(); return;
     }
+
+    if (!forceReload) {
+      const cached = readProfileMembersSessionCache();
+      if (cached) {
+        profileMembersState.status = 'ready';
+        profileMembersState.groups = cached.groups;
+        profileMembersState.members = cached.members;
+        profileMembersState.error = '';
+        renderProfileMembersPanel();
+        return;
+      }
+    }
+
     profileMembersState.status = 'loading'; profileMembersState.error = '';
     renderProfilePanel();
     google.script.run.withSuccessHandler(handleProfileMembersSuccess)
@@ -23,6 +67,7 @@
     profileMembersState.groups = Array.isArray(response.data.groups) ? response.data.groups : [];
     profileMembersState.members = Array.isArray(response.data.members) ? response.data.members : [];
     profileMembersState.error = '';
+    writeProfileMembersSessionCache();
     renderProfilePanel();
   }
 
