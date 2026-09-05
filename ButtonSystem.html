@@ -78,11 +78,20 @@
   }
 
   /* Utility/icon family shares one HOME-derived texture. */
-  .utility-actions .utility-btn,.overlay-close{
+  .app-shell .utility-actions .utility-btn,.overlay-close{
     border:1px solid var(--btn-line-dark);
     color:var(--white);
     background:var(--btn-bg-dark);
     box-shadow:var(--btn-shadow-dark);
+  }
+  @media(hover:hover){
+    .app-shell .utility-actions .utility-btn:not(:disabled):hover,
+    .overlay-close:not(:disabled):hover{
+      border-color:var(--btn-line-dark-hover);
+      color:var(--white);
+      background:var(--btn-bg-dark-hover);
+      box-shadow:var(--btn-shadow-dark);
+    }
   }
   body.theme-light .app-shell .utility-actions .utility-btn,
   body.theme-light .overlay-close{
@@ -90,6 +99,15 @@
     color:var(--ink);
     background:linear-gradient(145deg,#fff,rgba(156,236,255,.22));
     box-shadow:var(--btn-shadow-light);
+  }
+  @media(hover:hover){
+    body.theme-light .app-shell .utility-actions .utility-btn:not(:disabled):hover,
+    body.theme-light .overlay-close:not(:disabled):hover{
+      border-color:var(--btn-line-light-hover);
+      color:var(--ink);
+      background:var(--btn-bg-light-hover);
+      box-shadow:var(--btn-shadow-light);
+    }
   }
 
   /* Content-card family keeps its layout/content identity. */
