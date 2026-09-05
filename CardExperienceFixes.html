@@ -1,0 +1,117 @@
+<style>
+  /* TRADING CARD final visual refinement: printed card-back + true diagonal meteors. */
+
+  /* A real card-back reads as a framed, symmetrical printed object rather than a floating emblem. */
+  .card-back-face{
+    background:
+      radial-gradient(circle at 50% 50%,rgba(156,236,255,.055),transparent 35%),
+      linear-gradient(145deg,#05070a 0%,#000 48%,#05070a 100%)!important;
+    border:1px solid rgba(220,248,255,.26)!important;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.025),inset 0 0 36px rgba(156,236,255,.028)!important;
+  }
+  .card-back-face::before{
+    content:''!important;
+    position:absolute!important;
+    inset:9px!important;
+    border:1px solid rgba(198,243,255,.30)!important;
+    border-radius:13px!important;
+    box-shadow:inset 0 0 0 4px rgba(0,0,0,.7),inset 0 0 0 5px rgba(156,236,255,.08)!important;
+    opacity:1!important;
+    pointer-events:none!important;
+  }
+  .card-back-face::after{
+    content:'✦'!important;
+    position:absolute!important;
+    inset:17px!important;
+    display:grid!important;
+    place-items:start center!important;
+    padding-top:9px!important;
+    border:1px solid rgba(255,255,255,.075)!important;
+    border-radius:10px!important;
+    color:rgba(190,241,252,.48)!important;
+    font-size:9px!important;
+    letter-spacing:0!important;
+    background:
+      radial-gradient(circle at 18% 19%,rgba(255,255,255,.72) 0 1px,transparent 1.4px),
+      radial-gradient(circle at 82% 22%,rgba(156,236,255,.62) 0 1px,transparent 1.4px),
+      radial-gradient(circle at 23% 78%,rgba(156,236,255,.48) 0 .9px,transparent 1.4px),
+      radial-gradient(circle at 77% 82%,rgba(255,255,255,.6) 0 .9px,transparent 1.4px)!important;
+    pointer-events:none!important;
+  }
+  .card-back-design{position:absolute!important;inset:24px!important;overflow:hidden!important;border-radius:8px!important;}
+  .card-back-design::before,
+  .card-back-design::after{
+    content:'';
+    position:absolute;
+    left:50%;top:50%;
+    transform:translate(-50%,-50%);
+    border-radius:50%;
+    pointer-events:none;
+  }
+  .card-back-design::before{
+    width:78%;aspect-ratio:1;
+    border:1px solid rgba(156,236,255,.12);
+    box-shadow:0 0 0 8px rgba(156,236,255,.018),0 0 0 9px rgba(255,255,255,.035);
+  }
+  .card-back-design::after{
+    width:57%;aspect-ratio:1;
+    border:1px solid rgba(255,255,255,.09);
+    background:radial-gradient(circle,rgba(156,236,255,.05),rgba(0,0,0,.82) 68%);
+  }
+  .card-back-orbit{position:absolute!important;left:50%!important;top:50%!important;border-radius:50%!important;border:1px solid rgba(156,236,255,.15)!important;pointer-events:none!important;}
+  .card-back-orbit.o1{width:82%!important;height:38%!important;transform:translate(-50%,-50%) rotate(28deg)!important;}
+  .card-back-orbit.o2{width:82%!important;height:38%!important;transform:translate(-50%,-50%) rotate(-28deg)!important;border-color:rgba(255,255,255,.10)!important;}
+  .card-back-orbit.o3{width:61%!important;height:61%!important;transform:translate(-50%,-50%)!important;border-color:rgba(156,236,255,.10)!important;}
+  .card-back-seal{
+    position:absolute!important;z-index:4!important;left:50%!important;top:50%!important;transform:translate(-50%,-50%)!important;
+    width:48%!important;aspect-ratio:1!important;border-radius:50%!important;
+    display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;
+    border:1px solid rgba(214,248,255,.34)!important;
+    background:radial-gradient(circle at 50% 38%,rgba(156,236,255,.11),rgba(1,4,7,.97) 62%)!important;
+    box-shadow:0 0 0 5px rgba(0,0,0,.66),0 0 0 6px rgba(156,236,255,.10),inset 0 0 24px rgba(156,236,255,.05)!important;
+  }
+  .card-back-seal::before{content:'✦';position:absolute;top:15%;font-size:7px;color:rgba(189,239,250,.58);}
+  .card-back-seal::after{content:'✦';position:absolute;bottom:15%;font-size:7px;color:rgba(189,239,250,.58);}
+  .card-back-seal small{font:600 7px 'Exo 2',sans-serif!important;letter-spacing:.32em!important;margin-left:.32em!important;color:rgba(205,244,252,.58)!important;}
+  .card-back-seal strong{margin-top:5px!important;font:700 11px 'Orbitron',sans-serif!important;letter-spacing:.12em!important;color:#f5fdff!important;text-shadow:0 0 11px rgba(156,236,255,.16)!important;}
+  .card-back-seal i{width:28px!important;height:1px!important;margin-top:7px!important;background:linear-gradient(90deg,transparent,rgba(156,236,255,.5),transparent)!important;}
+  .card-back-star{z-index:3!important;width:2px!important;height:2px!important;background:#eafcff!important;box-shadow:0 0 6px rgba(156,236,255,.38)!important;opacity:.72!important;}
+  .card-back-star.s1{left:15%!important;top:35%!important}.card-back-star.s2{right:15%!important;top:35%!important}.card-back-star.s3{left:19%!important;bottom:31%!important}.card-back-star.s4{right:19%!important;bottom:31%!important}.card-back-star.s5{left:50%!important;top:13%!important}
+
+  /* Shooting stars cross the sky on a true diagonal path; the tail follows the travel vector. */
+  .card-shooting-star{
+    left:auto!important;
+    right:-24vw!important;
+    width:96px!important;
+    height:1px!important;
+    opacity:0!important;
+    transform-origin:right center!important;
+    background:linear-gradient(90deg,transparent 0%,rgba(156,236,255,.06) 18%,rgba(214,248,255,.72) 78%,#fff 100%)!important;
+    filter:drop-shadow(0 0 4px rgba(156,236,255,.42))!important;
+    animation-name:cardMeteorDiagonalA!important;
+    animation-timing-function:linear!important;
+    animation-iteration-count:infinite!important;
+  }
+  .card-shooting-star::after{
+    content:'';position:absolute;right:-2px;top:50%;width:3px;height:3px;border-radius:50%;transform:translateY(-50%);
+    background:#fff;box-shadow:0 0 7px rgba(190,244,255,.9);
+  }
+  .card-shooting-star.shoot-0{top:8%!important;--shoot-duration:13.8s!important;animation-name:cardMeteorDiagonalA!important;}
+  .card-shooting-star.shoot-1{top:27%!important;right:-30vw!important;width:72px!important;--shoot-duration:16.2s!important;animation-name:cardMeteorDiagonalB!important;background:linear-gradient(90deg,transparent,rgba(255,255,255,.05),rgba(226,250,255,.65),#fff)!important;}
+  .card-shooting-star.shoot-2{display:none!important;}
+
+  @keyframes cardMeteorDiagonalA{
+    0%,69%{opacity:0;transform:translate3d(0,0,0) rotate(-31deg)}
+    71%{opacity:.92;transform:translate3d(0,0,0) rotate(-31deg)}
+    88%{opacity:.72;transform:translate3d(-122vw,58vh,0) rotate(-31deg)}
+    90%,100%{opacity:0;transform:translate3d(-132vw,63vh,0) rotate(-31deg)}
+  }
+  @keyframes cardMeteorDiagonalB{
+    0%,77%{opacity:0;transform:translate3d(0,0,0) rotate(-24deg)}
+    79%{opacity:.72;transform:translate3d(0,0,0) rotate(-24deg)}
+    94%{opacity:.54;transform:translate3d(-112vw,43vh,0) rotate(-24deg)}
+    96%,100%{opacity:0;transform:translate3d(-120vw,47vh,0) rotate(-24deg)}
+  }
+
+  @media(prefers-reduced-motion:reduce){.card-shooting-star{display:none!important;}}
+</style>
