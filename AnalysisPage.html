@@ -1,0 +1,20 @@
+<template id="analysisPageTemplate">
+  <section class="view analysis-page">
+    <header class="analysis-header">
+      <div>
+        <h1 class="analysis-title">ANALYSIS</h1>
+        <p class="analysis-copy">BE:FIRST performance & song data.</p>
+      </div>
+    </header>
+
+    <nav class="analysis-local-nav" aria-label="Analysis navigation">
+      <button type="button" class="analysis-tab active" data-analysis-view="top" onclick="selectAnalysisView('top')">トップ</button>
+      <button type="button" class="analysis-tab" data-analysis-view="member" onclick="selectAnalysisView('member')">メンバー別</button>
+      <button type="button" class="analysis-tab" data-analysis-view="song" onclick="selectAnalysisView('song')">楽曲別</button>
+      <button type="button" class="analysis-tab" data-analysis-view="timeline" onclick="selectAnalysisView('timeline')">時系列別</button>
+      <button type="button" class="analysis-tab" data-analysis-view="other" onclick="selectAnalysisView('other')">その他</button>
+    </nav>
+
+    <div id="analysisPanel" class="analysis-panel" aria-live="polite"></div>
+  </section>
+</template>
