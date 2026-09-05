@@ -1,0 +1,68 @@
+<script>
+  let analysisMemberModalRows={first:[],last:[],sing:[],center:[]};
+  let analysisCurrentSongDetail=null;
+
+  function renderAnalysisMember(){
+    const p=document.getElementById('analysisPanel');
+    p.innerHTML='<div class="analysis-section"><div class="analysis-card"><h2>メンバー別 楽曲割合分析</h2><div class="analysis-controls"><select id="analysisMemberSelect" onchange="analysisMember=this.value;analysisYear=\'all\';renderAnalysisMember()"><option value="">メンバーを選択してください</option>'+memberOptions()+'</select><select id="analysisYearSelect" onchange="analysisYear=this.value;renderAnalysisMember()" '+(!analysisMember?'disabled':'')+'></select></div></div><div id="analysisMemberBody"></div></div>';
+    const y=document.getElementById('analysisYearSelect');
+    if(!analysisMember){y.innerHTML='<option>全期間</option>';return;}
+    const rows=(analysisData.memberAnalysis[analysisMember]||{songs:[]}).songs;
+    const years=[...new Set(rows.map(r=>r.year).filter(Boolean))].sort();
+    y.innerHTML='<option value="all">全期間</option>'+years.map(v=>'<option value="'+v+'"'+(analysisYear===v?' selected':'')+'>'+v+'年</option>').join('');
+    const list=analysisYear==='all'?rows:rows.filter(r=>r.year===analysisYear);
+    const validS=list.filter(r=>typeof r.singRatio==='number');
+    const validC=list.filter(r=>typeof r.centerRatio==='number');
+    const avg=a=>a.length?(a.reduce((s,r)=>s+r,0)/a.length).toFixed(1):'--';
+    const lyric=list.filter(r=>r.hasLyric);
+    const first=lyric.filter(r=>r.isFirst),last=lyric.filter(r=>r.isLast);
+    const rankS=[...validS].sort((a,b)=>b.singRatio-a.singRatio),rankC=[...validC].sort((a,b)=>b.centerRatio-a.centerRatio);
+    analysisMemberModalRows={first:first,last:last,sing:rankS,center:rankC};
+    document.getElementById('analysisMemberBody').innerHTML='<div class="analysis-section"><div class="analysis-card"><div class="analysis-chart"><canvas id="analysisMemberChart"></canvas></div></div><div class="analysis-stats"><div class="analysis-stat"><span class="analysis-stat-label">平均歌唱割合</span><span class="analysis-stat-value">'+avg(validS.map(r=>r.singRatio))+(validS.length?'%':'')+'</span></div><div class="analysis-stat"><span class="analysis-stat-label">平均センター割合</span><span class="analysis-stat-value">'+avg(validC.map(r=>r.centerRatio))+(validC.length?'%':'')+'</span></div><button class="analysis-stat u-btn" onclick="showAnalysisMemberSongList(\'first\')"><span class="analysis-stat-label">歌い出し回数</span><span class="analysis-stat-value">'+first.length+' / '+lyric.length+'</span></button><button class="analysis-stat u-btn" onclick="showAnalysisMemberSongList(\'last\')"><span class="analysis-stat-label">歌い終わり回数</span><span class="analysis-stat-value">'+last.length+' / '+lyric.length+'</span></button></div><div class="analysis-rank-grid">'+rankBlock('歌唱割合ランキング',rankS,'singRatio','sing')+rankBlock('センター割合ランキング',rankC,'centerRatio','center')+'</div></div>';
+    drawMemberChart(list,analysisMember);
+  }
+
+  function rankBlock(title,rows,key,bucket){
+    const top=rows.slice(0,3),worst=rows.slice(-3).reverse();
+    return '<div class="analysis-card"><h3>'+title+'</h3><div class="analysis-rank-grid"><div><p class="analysis-muted">TOP 3</p>'+simpleRank(top,key)+'</div><div><p class="analysis-muted">WORST 3</p>'+simpleRank(worst,key)+'</div></div><button class="u-btn" onclick="showAnalysisMemberRanking(\''+bucket+'\')">もっと見る（全曲ランキング）</button></div>';
+  }
+
+  function showAnalysisMemberSongList(type){
+    const rows=analysisMemberModalRows[type]||[];
+    showAnalysisSongList(type==='first'?'歌い出し楽曲':'歌い終わり楽曲',rows);
+  }
+
+  function showAnalysisMemberRanking(type){
+    const rows=analysisMemberModalRows[type]||[];
+    showAnalysisRanking(type==='sing'?'歌唱割合ランキング':'センター割合ランキング',rows,type==='sing'?'singRatio':'centerRatio');
+  }
+
+  function renderAnalysisSongBody(d){
+    analysisCurrentSongDetail=d;
+    const body=document.getElementById('analysisSongBody');
+    if(!body||!d)return;
+    body.innerHTML='<div class="analysis-section"><div class="analysis-stats"><div class="analysis-stat"><div class="analysis-stat-label">歌唱割当て</div><div class="analysis-stat-value">'+escapeHtml(d.singBalance.type)+'</div><div class="analysis-muted">'+(d.singBalance.level==null?'':'特化度: '+d.singBalance.level)+'</div></div><div class="analysis-stat"><div class="analysis-stat-label">センター配置</div><div class="analysis-stat-value">'+escapeHtml(d.centerBalance.type)+'</div><div class="analysis-muted">'+(d.centerBalance.level==null?'':'特化度: '+d.centerBalance.level)+'</div></div></div>'+(d.hasSing||d.hasDance?'<div class="analysis-card"><p class="analysis-muted">円グラフのメンバー部分をタップすると、その人の歌詞が表示されます</p><div class="analysis-pies">'+(d.hasSing?'<div><h3>歌唱割合</h3><div class="analysis-pie"><canvas id="analysisSingPie"></canvas></div></div>':'')+(d.hasDance?'<div><h3>センター割合</h3><div class="analysis-pie"><canvas id="analysisCenterPie"></canvas></div></div>':'')+'</div><div class="analysis-legend">'+analysisData.members.map(m=>'<span class="analysis-legend-item"><i class="analysis-legend-dot" style="background:'+m.color+'"></i>'+escapeHtml(m.name)+'</span>').join('')+'</div></div>':'<div class="analysis-card"><p class="analysis-muted">秒数データが未登録です</p></div>')+'<div class="analysis-stats"><div class="analysis-stat"><div class="analysis-stat-label">歌い出し</div><div class="analysis-stat-value">'+escapeHtml(d.firstSinger)+'</div></div><div class="analysis-stat"><div class="analysis-stat-label">歌い終わり</div><div class="analysis-stat-value">'+escapeHtml(d.lastSinger)+'</div></div></div><div class="analysis-card"><h3 id="analysisLyricsTitle">歌詞一覧（全員）</h3><div id="analysisLyricsBody" class="analysis-lyrics"></div></div></div>';
+    renderAnalysisSongLyrics('ALL');
+    if(d.hasSing)drawPie('analysisSingPie',d.singData);
+    if(d.hasDance)drawPie('analysisCenterPie',d.centerData);
+  }
+
+  function renderAnalysisSongLyrics(target){
+    const d=analysisCurrentSongDetail;
+    const title=document.getElementById('analysisLyricsTitle');
+    const host=document.getElementById('analysisLyricsBody');
+    if(!d||!title||!host)return;
+    title.textContent=target==='ALL'?'歌詞一覧（全員）':'歌詞一覧（'+target+' 歌唱パート）';
+    const rows=d.lyrics.filter(function(line){
+      if(target==='ALL')return true;
+      return String(line.members||'').split(',').map(function(v){return v.trim();}).indexOf(target)!==-1;
+    });
+    host.innerHTML=rows.length?rows.map(function(line){return '<div class="analysis-lyric"><div class="analysis-lyric-member">'+escapeHtml(line.members)+'</div><div class="analysis-lyric-text">'+escapeHtml(line.text)+'</div></div>';}).join(''):'<p class="analysis-muted">該当する歌詞データがありません。</p>';
+  }
+
+  function drawPie(id,data){
+    if(typeof Chart==='undefined')return;
+    const el=document.getElementById(id);if(!el)return;
+    analysisCharts.push(new Chart(el,{type:'pie',data:{labels:analysisData.members.map(m=>m.name),datasets:[{data:data,backgroundColor:analysisData.members.map(m=>m.color),borderColor:'#07101a',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.label+': '+c.raw+'%'}},datalabels:{display:false}},onClick:function(event,elements,chart){if(elements&&elements.length){renderAnalysisSongLyrics(chart.data.labels[elements[0].index]);}else{renderAnalysisSongLyrics('ALL');}}}}));
+  }
+</script>
