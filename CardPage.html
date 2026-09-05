@@ -1,5 +1,5 @@
 <template id="cardPageTemplate">
-  <section class="view card-page">
+  <section class="view card-page" id="cardPageRoot">
     <header class="card-header">
       <div>
         <p class="eyebrow">LAB</p>
@@ -22,12 +22,19 @@
     <div class="card-reveal-sparks" aria-hidden="true"></div>
     <button type="button" class="u-btn card-reveal-back" onclick="closeCardReveal()" aria-label="Back">‹</button>
     <div class="card-reveal-stage">
-      <div class="card-reveal-kicker" id="cardRevealKicker">DRAWING...</div>
+      <div class="card-reveal-kicker" id="cardRevealKicker"></div>
       <div class="card-flip-wrap" id="cardFlipWrap">
         <div class="card-flip-inner">
-          <div class="card-back-face">
-            <div class="card-back-logo-wrap"><img id="cardBackLogo" class="card-back-logo" alt=""></div>
-            <div id="cardBackGroup" class="card-back-group"></div>
+          <div class="card-back-face" aria-label="BMSG Universe card back">
+            <div class="card-back-cosmos" aria-hidden="true">
+              <i class="card-back-orbit orbit-1"></i>
+              <i class="card-back-orbit orbit-2"></i>
+              <i class="card-back-orbit orbit-3"></i>
+              <i class="card-back-star star-a"></i>
+              <i class="card-back-star star-b"></i>
+              <i class="card-back-star star-c"></i>
+              <div class="card-back-core"><span>BMSG</span><strong>UNIVERSE</strong></div>
+            </div>
           </div>
           <div class="card-front-face"><img id="cardRevealImage" alt="Trading card"></div>
         </div>
