@@ -16,4 +16,44 @@
       randomizeKaraokeLocal();
     };
   }
+
+  /* Keep the last verified room snapshot visible during SPA returns, then refresh silently. */
+  if(typeof loadLyricsKaraokeRoom==='function'){
+    loadLyricsKaraokeRoom=function(){
+      const userId=requireLyricsUniverseUser();
+      if(!userId){
+        lyricsState.karaokeRoomReady=true;
+        lyricsState.karaokeRoomUserId='';
+        lyricsState.karaokeRoom=null;
+        lyricsState.karaokeHistory=[];
+        updateLyricsKaraokeRoom();
+        return;
+      }
+
+      const canReuse=lyricsState.karaokeRoomReady===true&&lyricsState.karaokeRoomUserId===userId;
+      if(!canReuse){
+        lyricsState.karaokeRoomReady=false;
+        lyricsState.karaokeRoom=null;
+        lyricsState.karaokeHistory=[];
+        updateLyricsKaraokeRoom();
+      }
+
+      google.script.run.withSuccessHandler(function(data){
+        lyricsState.karaokeRoomReady=true;
+        lyricsState.karaokeRoomUserId=userId;
+        lyricsState.karaokeRoom=data.room||null;
+        lyricsState.karaokeHistory=data.history||[];
+        updateLyricsKaraokeRoom();
+      }).withFailureHandler(function(error){
+        if(!canReuse){
+          lyricsState.karaokeRoomReady=true;
+          lyricsState.karaokeRoomUserId=userId;
+          lyricsState.karaokeRoom=null;
+          lyricsState.karaokeHistory=[];
+          updateLyricsKaraokeRoom();
+          showLyricsError(error);
+        }
+      }).getKaraokeBootstrap(userId);
+    };
+  }
 </script>
