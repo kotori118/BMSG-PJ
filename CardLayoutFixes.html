@@ -1,81 +1,86 @@
 <style>
-  /* TRADING CARD mobile/layout + experience refinements */
-  .card-page{padding-top:86px;}
+  /* TRADING CARD mobile/layout + cosmic experience refinements */
+  .card-page{padding-top:86px;min-width:0;overscroll-behavior-y:none;}
   .card-header{display:block!important;margin-bottom:30px;}
   .card-header>div{min-width:0;}
   .card-title{line-height:.94;max-width:100%;}
+  .card-page.is-gacha-mode .card-header{margin-bottom:12px!important;}
+  .card-page.is-gacha-mode .card-book-btn{display:none!important;}
 
-  .card-book-btn,
-  .card-reveal-back,
-  .card-collection-close,
-  .card-gacha-tool{
-    width:46px!important;
-    height:46px!important;
-    min-width:46px!important;
-    min-height:46px!important;
-    padding:0!important;
-    display:grid!important;
-    place-items:center!important;
-    flex:0 0 46px!important;
-    border-radius:14px!important;
-    border:1px solid var(--btn-line-dark)!important;
-    color:var(--white)!important;
-    background:var(--btn-bg-dark)!important;
-    box-shadow:var(--btn-shadow-dark)!important;
+  /* Geometry only: ButtonSystem remains the surface / interaction authority. */
+  .card-book-btn,.card-reveal-back,.card-collection-close,.card-gacha-tool{
+    width:46px!important;height:46px!important;min-width:46px!important;min-height:46px!important;padding:0!important;
+    display:grid!important;place-items:center!important;flex:0 0 46px!important;
   }
   .card-book-btn{margin:16px 0 0 auto!important;}
   .card-book-btn svg,.card-gacha-tool svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}
-  .card-reveal-back{font-size:28px!important;line-height:1!important;}
+  .card-reveal-back,.card-gacha-tool.is-back{font-size:28px!important;line-height:1!important;}
   .card-collection-close{font-size:25px!important;line-height:1!important;}
 
-  .card-gacha-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 18px;}
-  .card-gacha-tool.is-back{font-size:28px!important;line-height:1!important;}
-  .card-gacha-head{margin:0 0 14px!important;align-items:flex-end!important;}
-  .card-gacha-title{font-size:clamp(28px,8vw,44px)!important;line-height:1!important;}
-  .card-progress{padding:7px 10px;border:1px solid rgba(156,236,255,.16);border-radius:999px;background:rgba(156,236,255,.045);color:rgba(220,248,255,.8);}
+  .card-gacha-scene{position:relative;isolation:isolate;overflow:hidden;border-radius:24px;padding:10px 0 4px;overscroll-behavior:none;}
+  .card-gacha-scene::before{content:'';position:absolute;z-index:-3;inset:0;background:radial-gradient(circle at 20% 18%,rgba(156,236,255,.07),transparent 22%),radial-gradient(circle at 82% 38%,rgba(118,74,190,.07),transparent 26%),radial-gradient(circle at 54% 80%,rgba(176,28,48,.035),transparent 18%);pointer-events:none;}
+  .card-space-field{position:absolute;z-index:-2;inset:0;overflow:hidden;pointer-events:none;}
+  .card-space-star{position:absolute;width:var(--s,1.5px);height:var(--s,1.5px);border-radius:50%;opacity:var(--o,.65);animation:cardSpaceTwinkle var(--d,4s) ease-in-out infinite;animation-delay:var(--delay,0s);}
+  .card-space-star.tone-white{background:#fff;box-shadow:0 0 5px rgba(255,255,255,.35)}
+  .card-space-star.tone-cyan{background:#8feaff;box-shadow:0 0 8px rgba(100,224,255,.65)}
+  .card-space-star.tone-red{background:#ff6d79;box-shadow:0 0 8px rgba(255,75,92,.48)}
+  .card-shooting-star{position:absolute;z-index:-1;left:-42%;width:150px;height:1px;background:linear-gradient(90deg,transparent,rgba(156,236,255,.12),rgba(220,250,255,.9),transparent);transform:rotate(-21deg);opacity:0;filter:drop-shadow(0 0 5px rgba(156,236,255,.55));animation:cardShoot var(--shoot-duration,1.4s) cubic-bezier(.22,.72,.35,1) infinite;animation-delay:var(--shoot-delay,2s);}
+  .card-shooting-star.shoot-1{width:105px;transform:rotate(-28deg);background:linear-gradient(90deg,transparent,rgba(255,255,255,.15),rgba(255,255,255,.8),transparent)}
+  .card-shooting-star.shoot-2{width:125px;transform:rotate(-17deg);background:linear-gradient(90deg,transparent,rgba(255,92,107,.08),rgba(156,236,255,.78),transparent)}
 
-  .card-draw-stage{
-    min-height:430px!important;
-    padding:26px 18px 22px!important;
-    border-color:rgba(156,236,255,.24)!important;
-    background:
-      radial-gradient(circle at 50% 42%,rgba(156,236,255,.12),transparent 25%),
-      radial-gradient(circle at 76% 18%,rgba(154,115,255,.10),transparent 24%),
-      linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.012))!important;
-    box-shadow:inset 0 0 70px rgba(156,236,255,.025),0 18px 50px rgba(0,0,0,.12);
-  }
+  .card-gacha-toolbar{position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 14px;}
+  .card-gacha-head{position:relative;z-index:2;margin:0 0 12px!important;align-items:flex-end!important;}
+  .card-gacha-title{font-size:clamp(28px,8vw,44px)!important;line-height:1!important;}
+  .card-progress{padding:7px 10px;border:1px solid rgba(156,236,255,.16);border-radius:999px;background:rgba(3,8,14,.64);color:rgba(220,248,255,.8);backdrop-filter:blur(5px);}
+
+  .card-draw-stage{position:relative;z-index:1;min-height:365px!important;padding:20px 18px 18px!important;border-color:rgba(156,236,255,.22)!important;background:radial-gradient(circle at 50% 40%,rgba(156,236,255,.09),transparent 28%),linear-gradient(180deg,rgba(3,9,15,.58),rgba(2,5,9,.68))!important;box-shadow:inset 0 0 70px rgba(156,236,255,.02),0 18px 50px rgba(0,0,0,.10);backdrop-filter:blur(1px);}
   .card-draw-stage::before{display:none!important;}
-  .card-portal-shell{position:relative;width:min(76vw,330px);aspect-ratio:1;margin:0 auto 18px;display:grid;place-items:center;isolation:isolate;}
-  .card-portal-shell::before,.card-portal-shell::after{content:'';position:absolute;inset:8%;border-radius:50%;border:1px solid rgba(156,236,255,.19);box-shadow:0 0 28px rgba(156,236,255,.05);animation:cardIdleOrbit 8s linear infinite;}
-  .card-portal-shell::after{inset:20%;border-color:rgba(177,151,255,.17);animation-duration:5.5s;animation-direction:reverse;}
-  .card-portal-ring{position:absolute;border-radius:50%;border:1px solid rgba(255,255,255,.09);}
+  .card-portal-shell{position:relative;width:min(62vw,270px);aspect-ratio:1;margin:0 auto 12px;display:grid;place-items:center;isolation:isolate;}
+  .card-portal-shell::before,.card-portal-shell::after{content:'';position:absolute;inset:8%;border-radius:50%;border:1px solid rgba(156,236,255,.17);box-shadow:0 0 28px rgba(156,236,255,.04);animation:cardIdleOrbit 8s linear infinite;}
+  .card-portal-shell::after{inset:20%;border-color:rgba(177,151,255,.14);animation-duration:5.5s;animation-direction:reverse;}
+  .card-portal-ring{position:absolute;border-radius:50%;border:1px solid rgba(255,255,255,.08);}
   .card-portal-ring.r1{inset:1%;transform:rotate(18deg) scaleY(.52);}
-  .card-portal-ring.r2{inset:13%;transform:rotate(-32deg) scaleY(.64);border-color:rgba(156,236,255,.14);}
-  .card-portal-ring.r3{inset:27%;transform:rotate(58deg) scaleY(.78);border-color:rgba(255,255,255,.07);}
-  .card-portal-core{position:relative;z-index:2;width:46%;aspect-ratio:1;border-radius:50%;display:grid;place-items:center;text-align:center;background:radial-gradient(circle at 42% 35%,rgba(255,255,255,.16),rgba(156,236,255,.07) 30%,rgba(6,12,20,.92) 72%);border:1px solid rgba(156,236,255,.26);box-shadow:0 0 30px rgba(156,236,255,.08),inset 0 0 28px rgba(156,236,255,.06);}
-  .card-portal-core::before{content:'';position:absolute;inset:-18%;border-radius:50%;background:conic-gradient(from 0deg,transparent 0 18%,rgba(156,236,255,.12) 24%,transparent 31% 60%,rgba(177,151,255,.10) 68%,transparent 76%);filter:blur(2px);animation:cardPortalSpin 9s linear infinite;z-index:-1;}
+  .card-portal-ring.r2{inset:13%;transform:rotate(-32deg) scaleY(.64);border-color:rgba(156,236,255,.13);}
+  .card-portal-ring.r3{inset:27%;transform:rotate(58deg) scaleY(.78);border-color:rgba(255,255,255,.06);}
+  .card-portal-core{position:relative;z-index:2;width:46%;aspect-ratio:1;border-radius:50%;display:grid;place-items:center;text-align:center;background:radial-gradient(circle at 42% 35%,rgba(255,255,255,.12),rgba(156,236,255,.06) 30%,rgba(3,8,14,.94) 72%);border:1px solid rgba(156,236,255,.22);box-shadow:0 0 34px rgba(156,236,255,.07),inset 0 0 28px rgba(156,236,255,.05);}
+  .card-portal-core::before{content:'';position:absolute;inset:-18%;border-radius:50%;background:conic-gradient(from 0deg,transparent 0 18%,rgba(156,236,255,.1) 24%,transparent 31% 60%,rgba(177,151,255,.08) 68%,transparent 76%);filter:blur(2px);animation:cardPortalSpin 9s linear infinite;z-index:-1;}
   .card-portal-core strong{display:block;font:700 13px 'Orbitron',sans-serif;letter-spacing:.18em;color:#eafdff;}
-  .card-portal-core span{display:block;margin-top:6px;font:600 9px 'Exo 2',sans-serif;letter-spacing:.2em;color:rgba(226,248,255,.48);}
-  .card-portal-stars{position:absolute;inset:0;border-radius:50%;background-image:radial-gradient(circle at 19% 27%,#fff 0 1px,transparent 1.5px),radial-gradient(circle at 72% 14%,#9cecff 0 1.5px,transparent 2px),radial-gradient(circle at 88% 64%,#fff 0 .8px,transparent 1.4px),radial-gradient(circle at 14% 81%,#bcaeff 0 1.4px,transparent 2px),radial-gradient(circle at 61% 91%,#9cecff 0 .8px,transparent 1.4px),radial-gradient(circle at 38% 8%,#fff 0 .7px,transparent 1.2px);opacity:.8;animation:cardStarPulse 2.8s ease-in-out infinite;}
-  .card-draw-mark{font-size:11px!important;letter-spacing:.28em!important;color:#baf4ff;opacity:.78!important;}
-  .card-draw-copy{margin-top:8px!important;font:500 12px 'Exo 2',sans-serif!important;letter-spacing:.08em;color:rgba(240,249,255,.52);}
-  .card-rarity-track{width:100%;display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:20px;}
-  .card-rarity-chip{min-width:0;padding:9px 4px 8px;border-radius:10px;text-align:center;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.025);}
+  .card-portal-core span{display:block;margin-top:6px;font:600 9px 'Exo 2',sans-serif;letter-spacing:.2em;color:rgba(226,248,255,.46);}
+  .card-draw-mark{font-size:11px!important;letter-spacing:.28em!important;color:#baf4ff;opacity:.75!important;}
+  .card-draw-copy{margin-top:7px!important;font:500 12px 'Exo 2',sans-serif!important;letter-spacing:.08em;color:rgba(240,249,255,.50);}
+  .card-rarity-track{width:100%;display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:16px;}
+  .card-rarity-chip{min-width:0;padding:8px 4px 7px;border-radius:10px;text-align:center;border:1px solid rgba(255,255,255,.075);background:rgba(2,6,11,.52);}
   .card-rarity-chip b{display:block;font:800 10px 'Orbitron',sans-serif;letter-spacing:.08em;}
   .card-rarity-chip small{display:block;margin-top:4px;font:600 8px 'Exo 2',sans-serif;letter-spacing:.08em;opacity:.48;}
   .card-rarity-chip.rarity-n b{color:#b9c7d0}.card-rarity-chip.rarity-r b{color:#c98955}.card-rarity-chip.rarity-sr b{color:#e8f2fb;text-shadow:0 0 8px rgba(220,238,255,.22)}.card-rarity-chip.rarity-ssr b{color:#ffd76a;text-shadow:0 0 10px rgba(255,215,106,.26)}
-  .card-draw-actions{margin-top:14px!important;display:block!important;}
-  .card-draw-main{width:100%;position:relative;overflow:hidden;border-color:rgba(156,236,255,.28)!important;background:linear-gradient(145deg,rgba(156,236,255,.11),rgba(255,255,255,.025))!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 0 26px rgba(156,236,255,.035)!important;letter-spacing:.12em;font-weight:700;}
+  .card-draw-actions{position:relative;z-index:2;margin-top:12px!important;display:block!important;}
+  .card-draw-main{width:100%;letter-spacing:.12em;font-weight:700;}
 
   /* Reveal starts neutral. Rarity appears only after the card flips. */
   .card-reveal{--rarity-accent:#9cecff!important;--rarity-soft:rgba(156,236,255,.14)!important;background:radial-gradient(circle at 50% 45%,#10151b 0,#05070a 45%,#010203 100%)!important;}
   .card-reveal::before{display:none!important;}
+  .card-reveal-kicker:empty{opacity:0!important;}
   .card-reveal-stars{position:absolute;inset:0;overflow:hidden;pointer-events:none;}
-  .card-reveal-stars .card-star{position:absolute;width:var(--s,2px);height:var(--s,2px);border-radius:50%;background:rgba(255,255,255,var(--o,.7));box-shadow:0 0 calc(var(--s,2px) * 4) rgba(156,236,255,.24);animation:cardTwinkle var(--d,3.6s) ease-in-out infinite;animation-delay:var(--delay,0s);}
-  .card-back-face{background:#000!important;border-color:rgba(255,255,255,.22)!important;box-shadow:inset 0 0 42px rgba(156,236,255,.035),0 0 0 1px rgba(255,255,255,.02)!important;}
-  .card-back-logo-wrap{width:78%!important;height:36%!important;}
-  .card-back-logo{max-width:100%!important;max-height:100%!important;object-fit:contain!important;filter:invert(1) grayscale(1) contrast(1.35) drop-shadow(0 0 14px rgba(255,255,255,.16))!important;}
-  .card-back-group{color:rgba(255,255,255,.42)!important;}
+  .card-reveal-stars .card-space-star{z-index:0;}
+  .card-reveal-stars .card-shooting-star{z-index:0;}
+
+  /* Shared CSS-only card back: no group/brand image dependency. */
+  .card-back-face{background:radial-gradient(circle at 50% 43%,rgba(156,236,255,.055),transparent 31%),radial-gradient(circle at 72% 70%,rgba(126,86,190,.045),transparent 23%),#000!important;border-color:rgba(156,236,255,.25)!important;box-shadow:inset 0 0 60px rgba(156,236,255,.035),0 0 0 1px rgba(255,255,255,.018)!important;}
+  .card-back-face::before{content:'';position:absolute;inset:12px;border:1px solid rgba(156,236,255,.12);border-radius:14px;pointer-events:none;}
+  .card-back-face::after{content:'';position:absolute;inset:20px;border:1px solid rgba(255,255,255,.035);border-radius:11px;pointer-events:none;}
+  .card-back-cosmos{position:absolute;inset:0;display:grid;place-items:center;overflow:hidden;}
+  .card-back-cosmos::before{content:'';position:absolute;width:74%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,rgba(156,236,255,.055),transparent 58%);box-shadow:0 0 42px rgba(156,236,255,.035);}
+  .card-back-orbit{position:absolute;left:50%;top:50%;border:1px solid rgba(156,236,255,.18);border-radius:50%;transform:translate(-50%,-50%);}
+  .card-back-orbit.orbit-1{width:70%;height:70%;}
+  .card-back-orbit.orbit-2{width:78%;height:38%;transform:translate(-50%,-50%) rotate(31deg);border-color:rgba(255,255,255,.11);}
+  .card-back-orbit.orbit-3{width:76%;height:31%;transform:translate(-50%,-50%) rotate(-42deg);border-color:rgba(173,139,233,.12);}
+  .card-back-core{position:relative;z-index:2;width:42%;aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;transform:rotate(45deg);border:1px solid rgba(156,236,255,.25);background:rgba(1,4,8,.9);box-shadow:0 0 26px rgba(156,236,255,.08),inset 0 0 25px rgba(156,236,255,.035);}
+  .card-back-core span,.card-back-core strong{transform:rotate(-45deg);display:block;text-align:center;}
+  .card-back-core span{font:600 8px 'Exo 2',sans-serif;letter-spacing:.28em;color:rgba(190,240,250,.62);margin-left:.28em;}
+  .card-back-core strong{margin-top:5px;font:700 12px 'Orbitron',sans-serif;letter-spacing:.12em;color:#f4fdff;text-shadow:0 0 12px rgba(156,236,255,.22);}
+  .card-back-star{position:absolute;width:3px;height:3px;border-radius:50%;background:#eafcff;box-shadow:0 0 8px rgba(156,236,255,.65);}
+  .card-back-star.star-a{left:20%;top:25%}.card-back-star.star-b{right:18%;top:35%;width:2px;height:2px;background:#9cecff}.card-back-star.star-c{left:28%;bottom:20%;width:2px;height:2px;background:#bc9cff;box-shadow:0 0 7px rgba(188,156,255,.55)}
+
   .card-reveal:not(.is-rarity-burst) .card-reveal-orbit,.card-reveal:not(.is-rarity-burst) .card-reveal-burst,.card-reveal:not(.is-rarity-burst) .card-reveal-meteors,.card-reveal:not(.is-rarity-burst) .card-reveal-sparks{animation:none!important;opacity:0!important;}
   .card-reveal.is-rarity-burst.rarity-n{--rarity-accent:#aab7c2!important;--rarity-soft:rgba(170,183,194,.18)!important;}
   .card-reveal.is-rarity-burst.rarity-r{--rarity-accent:#c98955!important;--rarity-soft:rgba(201,137,85,.28)!important;background:radial-gradient(circle at 50% 45%,#23160f 0,#080604 46%,#010203 100%)!important;}
@@ -89,17 +94,25 @@
 
   @keyframes cardIdleOrbit{to{transform:rotate(360deg)}}
   @keyframes cardPortalSpin{to{transform:rotate(360deg)}}
-  @keyframes cardStarPulse{0%,100%{opacity:.45;transform:scale(.98)}50%{opacity:.95;transform:scale(1.02)}}
-  @keyframes cardTwinkle{0%,100%{opacity:.22;transform:scale(.72)}45%{opacity:1;transform:scale(1.22)}70%{opacity:.42;transform:scale(.92)}}
+  @keyframes cardSpaceTwinkle{0%,100%{opacity:calc(var(--o,.65) * .35);transform:scale(.72)}45%{opacity:var(--o,.65);transform:scale(1.28)}70%{opacity:calc(var(--o,.65) * .58);transform:scale(.9)}}
+  @keyframes cardShoot{0%,72%{opacity:0;transform:translate3d(0,0,0) rotate(-21deg)}76%{opacity:.95}92%{opacity:.18}100%{opacity:0;transform:translate3d(185vw,64vh,0) rotate(-21deg)}}
 
   @media(max-width:560px){
     .card-page{padding-top:92px;}
-    .card-header{display:block!important;margin-bottom:30px!important;}
+    .card-header{display:block!important;margin-bottom:28px!important;}
+    .card-page.is-gacha-mode .card-header{margin-bottom:8px!important;}
     .card-book-btn{margin:14px 0 0 auto!important;}
     .card-title{font-size:clamp(31px,9.2vw,44px)!important;white-space:nowrap;}
     .card-group-grid{margin-top:2px;}
-    .card-draw-stage{min-height:410px!important;}
-    .card-portal-shell{width:min(78vw,310px);}
+    .card-gacha-scene{padding-top:6px;}
+    .card-draw-stage{min-height:340px!important;padding-top:16px!important;}
+    .card-portal-shell{width:min(58vw,235px);margin-bottom:8px;}
+    .card-rarity-track{margin-top:13px;}
   }
-  @media(prefers-reduced-motion:reduce){.card-portal-shell::before,.card-portal-shell::after,.card-portal-core::before,.card-portal-stars,.card-reveal-stars .card-star{animation:none!important;}}
+  @media(max-height:760px) and (max-width:560px){
+    .card-draw-stage{min-height:300px!important;}
+    .card-portal-shell{width:min(48vw,190px);}
+    .card-draw-copy{display:none;}
+  }
+  @media(prefers-reduced-motion:reduce){.card-portal-shell::before,.card-portal-shell::after,.card-portal-core::before,.card-space-star,.card-shooting-star{animation:none!important}.card-shooting-star{display:none!important;}}
 </style>
