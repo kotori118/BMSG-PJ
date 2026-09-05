@@ -1,0 +1,16 @@
+<script>
+  /* Present NEW as a badge on the card itself; keep legacy result text hidden. */
+  (function(){
+    if(typeof runCardReveal!=='function')return;
+    const baseRunCardReveal=runCardReveal;
+    runCardReveal=function(card,isNew){
+      const overlay=document.getElementById('cardReveal');
+      if(overlay)overlay.classList.toggle('is-new-card',!!isNew);
+      const legacy=document.getElementById('cardResultNew');
+      if(legacy)legacy.textContent='';
+      baseRunCardReveal(card,isNew);
+      if(overlay)overlay.classList.toggle('is-new-card',!!isNew);
+      if(legacy)legacy.textContent='';
+    };
+  })();
+</script>
