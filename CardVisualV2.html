@@ -1,22 +1,27 @@
 <style>
   /* TRADING CARD visual v2: crop source-image black rim, delayed NEW badge, textless cosmic back, clean actions. */
+  .card-flip-wrap,
+  .card-flip-inner,
   .card-front-face{
     background:transparent!important;
+  }
+  .card-front-face{
     border:0!important;
     box-shadow:none!important;
     overflow:hidden!important;
   }
-  /* Source card images include a dark printed rim. Crop that rim itself, not only the CSS frame. */
+  /* Source card images include a thick dark printed rim. Crop the full printed rim so only the photo surface remains visible. */
   .card-front-face img{
     position:absolute!important;
-    inset:-5.8%!important;
-    width:111.6%!important;
-    height:111.6%!important;
+    left:-12.5%!important;
+    top:-12.5%!important;
+    width:125%!important;
+    height:125%!important;
     max-width:none!important;
     max-height:none!important;
     object-fit:cover!important;
     transform:none!important;
-    border-radius:19px!important;
+    border-radius:16px!important;
   }
   .card-reveal.is-new-card .card-front-face::after{
     content:'NEW';position:absolute;z-index:5;left:12px;top:12px;padding:7px 11px 6px;border-radius:999px;
