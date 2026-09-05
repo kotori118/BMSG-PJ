@@ -7,7 +7,6 @@
       </div>
       <button type="button" class="u-btn card-book-btn" onclick="openCardCollection()">COLLECTION</button>
     </header>
-
     <div id="cardApp" class="card-app" aria-live="polite"></div>
   </section>
 
@@ -18,12 +17,16 @@
     <div class="card-reveal-orbit orbit-c" aria-hidden="true"></div>
     <div class="card-reveal-burst" aria-hidden="true"></div>
     <div class="card-reveal-meteors" aria-hidden="true"></div>
-    <button type="button" class="u-btn card-reveal-back" onclick="closeCardReveal()">BACK</button>
+    <div class="card-reveal-sparks" aria-hidden="true"></div>
+    <button type="button" class="u-btn card-reveal-back" onclick="closeCardReveal()" aria-label="Back">‹</button>
     <div class="card-reveal-stage">
       <div class="card-reveal-kicker" id="cardRevealKicker">DRAWING...</div>
       <div class="card-flip-wrap" id="cardFlipWrap">
         <div class="card-flip-inner">
-          <div class="card-back-face"><span>BMSG</span><strong>UNIVERSE</strong></div>
+          <div class="card-back-face">
+            <div class="card-back-logo-wrap"><img id="cardBackLogo" class="card-back-logo" alt=""></div>
+            <div id="cardBackGroup" class="card-back-group"></div>
+          </div>
           <div class="card-front-face"><img id="cardRevealImage" alt="Trading card"></div>
         </div>
       </div>
@@ -42,13 +45,15 @@
   <div id="cardCollectionOverlay" class="card-collection-overlay" aria-hidden="true">
     <div class="card-collection-panel">
       <div class="card-collection-head">
-        <div>
+        <div class="card-collection-head-main">
           <p class="eyebrow">TRADING CARD</p>
           <h2>COLLECTION</h2>
           <div id="cardCollectionProgress" class="card-collection-progress"></div>
+          <div class="card-collection-meter" aria-hidden="true"><span id="cardCollectionMeterFill"></span></div>
         </div>
-        <button type="button" class="u-btn card-collection-close" onclick="closeCardCollection()">CLOSE</button>
+        <button type="button" class="u-btn card-collection-close" onclick="closeCardCollection()" aria-label="Close collection">×</button>
       </div>
+      <div class="card-collection-intro"><span>ORBIT ARCHIVE</span><small>Collect every rarity and complete the constellation.</small></div>
       <div id="cardCollectionBody" class="card-collection-body"></div>
       <button id="cardResetCollectionBtn" type="button" class="u-btn card-reset-btn" onclick="resetCardCollection()" hidden>RESET COLLECTION</button>
     </div>

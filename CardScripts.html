@@ -1,196 +1,22 @@
 <script>
-  const cardState = {
-    ready:false,
-    userId:'',
-    groups:[],
-    cards:[],
-    currentGroup:'ALL',
-    totalCount:0,
-    collectedCount:0,
-    drawing:false
-  };
-
-  function renderCards(){
-    const template=document.getElementById('cardPageTemplate');
-    return template?template.innerHTML:'<section class="view"><h1 class="title">TRADING CARD</h1></section>';
-  }
-
-  function initCardPage(){
-    const userId=typeof getUniverseUserId==='function'?getUniverseUserId():'';
-    if(!userId){
-      cardState.ready=false;
-      cardState.userId='';
-      const host=document.getElementById('cardApp');
-      if(host)host.innerHTML='<div class="placeholder"><p>USERを選択してください。</p></div>';
-      if(typeof openUserChooser==='function')openUserChooser(true);
-      return;
-    }
-    cardState.userId=userId;
-    renderCardLoading();
-    google.script.run.withSuccessHandler(function(data){
-      cardState.ready=true;
-      cardState.groups=data.groups||[];
-      cardState.cards=data.cards||[];
-      cardState.totalCount=Number(data.totalCount||0);
-      cardState.collectedCount=Number(data.collectedCount||0);
-      cardState.currentGroup='ALL';
-      renderCardGroupSelection();
-    }).withFailureHandler(cardFailure).getTradingCardBootstrap(userId);
-  }
-
-  function renderCardLoading(){
-    const host=document.getElementById('cardApp');
-    if(host)host.innerHTML=typeof renderUniverseLoading==='function'?renderUniverseLoading('LOADING...','#9cecff'):'<div>LOADING...</div>';
-  }
-
-  function renderCardGroupSelection(){
-    const host=document.getElementById('cardApp');
-    if(!host)return;
-    host.innerHTML='<div class="card-group-grid">'+cardState.groups.map(function(group){
-      const count=getCardGroupCards(group.name).length;
-      return '<button type="button" class="u-btn card-group-btn" style="--card-group-color:'+escapeHtml(group.color||'#9cecff')+'" onclick="selectTradingCardGroup(\''+escapeHtml(group.name).replaceAll("'","\\'")+'\')">'+
-        '<span class="card-group-name">'+escapeHtml(group.name)+'</span><span class="card-group-sub">'+count+' CARDS</span></button>';
-    }).join('')+'</div>';
-  }
-
-  function selectTradingCardGroup(groupName){
-    cardState.currentGroup=groupName||'ALL';
-    renderCardGacha();
-    scrollAppToTop('smooth');
-  }
-
-  function renderCardGacha(){
-    const host=document.getElementById('cardApp');
-    if(!host)return;
-    const groupCards=getCardGroupCards(cardState.currentGroup);
-    const drawn=groupCards.filter(function(card){return card.isDrawn;}).length;
-    host.innerHTML='<div class="card-gacha-head"><h2 class="card-gacha-title">'+escapeHtml(cardState.currentGroup)+'</h2><div class="card-progress">'+drawn+' / '+groupCards.length+'</div></div>'+
-      '<div class="card-draw-stage"><div class="card-draw-mark">BMSG UNIVERSE</div><div class="card-draw-copy">Tap DRAW to open a card portal.</div></div>'+
-      '<div class="card-draw-actions"><button type="button" class="u-btn card-draw-main" onclick="drawTradingCard()">DRAW</button><button type="button" class="u-btn" onclick="renderCardGroupSelection()">GROUPS</button><button type="button" class="u-btn" onclick="openCardCollection()">COLLECTION</button></div>';
-  }
-
-  function getCardGroupCards(groupName){
-    const group=cardState.groups.find(function(item){return item.name===groupName;});
-    if(!group||groupName==='ALL')return cardState.cards.slice();
-    const allowed={};(group.memberIds||[]).forEach(function(id){allowed[String(id)]=true;});
-    return cardState.cards.filter(function(card){return allowed[String(card.memberId)];});
-  }
-
-  function drawTradingCard(){
-    if(cardState.drawing)return;
-    cardState.drawing=true;
-    openCardRevealPending();
-    google.script.run.withSuccessHandler(function(result){
-      cardState.drawing=false;
-      if(result&&result.card){
-        const found=cardState.cards.find(function(card){return String(card.imageId)===String(result.card.imageId);});
-        if(found)found.isDrawn=true;
-        cardState.totalCount=Number(result.totalCount||cardState.totalCount);
-        cardState.collectedCount=Number(result.collectedCount||cardState.collectedCount);
-        runCardReveal(result.card,!!result.isNew);
-      }else{
-        closeCardReveal();
-        cardNotify('カードを取得できませんでした。');
-      }
-    }).withFailureHandler(function(error){cardState.drawing=false;closeCardReveal();cardFailure(error);}).drawTradingCard(cardState.userId,cardState.currentGroup);
-  }
-
-  function drawTradingCardFromReveal(){
-    if(cardState.drawing)return;
-    document.getElementById('cardReveal').classList.remove('is-revealed','rarity-n','rarity-r','rarity-sr','rarity-ssr');
-    drawTradingCard();
-  }
-
-  function openCardRevealPending(){
-    const overlay=document.getElementById('cardReveal');
-    if(!overlay)return;
-    overlay.className='card-reveal is-open';
-    overlay.setAttribute('aria-hidden','false');
-    document.body.style.overflow='hidden';
-    const kicker=document.getElementById('cardRevealKicker');if(kicker)kicker.textContent='OPENING PORTAL...';
-    const image=document.getElementById('cardRevealImage');if(image)image.removeAttribute('src');
-    document.getElementById('cardResultRarity').textContent='';
-    document.getElementById('cardResultName').textContent='';
-    document.getElementById('cardResultNew').textContent='';
-  }
-
-  function runCardReveal(card,isNew){
-    const overlay=document.getElementById('cardReveal');
-    if(!overlay)return;
-    const rarity=String(card.rarity||'N').toLowerCase();
-    overlay.classList.add('rarity-'+rarity);
-    const image=document.getElementById('cardRevealImage');
-    image.src='https://lh3.googleusercontent.com/d/'+encodeURIComponent(card.driveFileId);
-    document.getElementById('cardResultRarity').textContent=String(card.rarity||'');
-    document.getElementById('cardResultName').textContent=String(card.memberName||'');
-    document.getElementById('cardResultNew').textContent=isNew?'NEW COLLECTION':'';
-    const kicker=document.getElementById('cardRevealKicker');
-    const labels={n:'STARDUST GATE',r:'METEOR RING',sr:'NEBULA WARP',ssr:'SUPERNOVA'};
-    kicker.textContent=labels[rarity]||'CARD FOUND';
-    const reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const delays={n:850,r:1100,sr:1450,ssr:1850};
-    window.setTimeout(function(){overlay.classList.add('is-revealed');},reduced?0:(delays[rarity]||900));
-  }
-
-  function closeCardReveal(){
-    const overlay=document.getElementById('cardReveal');
-    if(!overlay)return;
-    overlay.className='card-reveal';
-    overlay.setAttribute('aria-hidden','true');
-    document.body.style.overflow='';
-    if(currentRoute==='cards')renderCardGacha();
-  }
-
-  function openCardCollection(){
-    if(!cardState.ready)return;
-    const overlay=document.getElementById('cardCollectionOverlay');
-    if(!overlay)return;
-    renderCardCollection();
-    overlay.classList.add('is-open');
-    overlay.setAttribute('aria-hidden','false');
-    document.body.style.overflow='hidden';
-  }
-
-  function closeCardCollection(){
-    const overlay=document.getElementById('cardCollectionOverlay');
-    if(!overlay)return;
-    overlay.classList.remove('is-open');overlay.setAttribute('aria-hidden','true');document.body.style.overflow='';
-  }
-
-  function renderCardCollection(){
-    const body=document.getElementById('cardCollectionBody');
-    const progress=document.getElementById('cardCollectionProgress');
-    if(!body||!progress)return;
-    const cards=getCardGroupCards(cardState.currentGroup||'ALL');
-    const collected=cards.filter(function(card){return card.isDrawn;}).length;
-    progress.textContent=(cardState.currentGroup||'ALL')+'  '+collected+' / '+cards.length+'  ('+(cards.length?Math.round(collected/cards.length*100):0)+'%)';
-    const byMember={};
-    cards.forEach(function(card){if(!byMember[card.memberId])byMember[card.memberId]=[];byMember[card.memberId].push(card);});
-    body.innerHTML=Object.keys(byMember).map(function(memberId){
-      const memberCards=byMember[memberId];const first=memberCards[0];
-      const order={N:0,R:1,SR:2,SSR:3};memberCards.sort(function(a,b){return order[a.rarity]-order[b.rarity];});
-      return '<section class="card-collection-member"><div class="card-collection-member-title" style="--member-color:'+escapeHtml(first.memberColor||'#9cecff')+'">'+escapeHtml(first.memberName)+'</div><div class="card-collection-grid">'+memberCards.map(function(card){
-        return '<div class="card-collection-item">'+(card.isDrawn?'<img src="https://lh3.googleusercontent.com/d/'+encodeURIComponent(card.driveFileId)+'" alt="'+escapeHtml(card.memberName)+' '+escapeHtml(card.rarity)+'">':'<div class="card-collection-locked">?</div>')+'<span class="card-collection-rarity">'+escapeHtml(card.rarity)+'</span></div>';
-      }).join('')+'</div></section>';
-    }).join('') || '<div class="placeholder"><p>カードがありません。</p></div>';
-    const reset=document.getElementById('cardResetCollectionBtn');
-    if(reset)reset.hidden=!(cardState.totalCount>0&&cardState.collectedCount>=cardState.totalCount);
-  }
-
-  function resetCardCollection(){
-    if(!(cardState.totalCount>0&&cardState.collectedCount>=cardState.totalCount))return;
-    if(!window.confirm('コレクションを0%へリセットしますか？'))return;
-    google.script.run.withSuccessHandler(function(){
-      cardState.cards.forEach(function(card){card.isDrawn=false;});cardState.collectedCount=0;renderCardCollection();cardNotify('コレクションをリセットしました。');
-    }).withFailureHandler(cardFailure).resetTradingCardCollection(cardState.userId);
-  }
-
-  function cardFailure(error){
-    const message=error&&error.message?error.message:String(error||'エラーが発生しました。');
-    cardNotify(message);
-  }
-  function cardNotify(message){
-    if(typeof showToast==='function'){showToast(message);return;}
-    window.alert(message);
-  }
+  const cardState={ready:false,userId:'',groups:[],cards:[],currentGroup:'ALL',totalCount:0,collectedCount:0,drawing:false,brandLogoDriveFileId:''};
+  function renderCards(){const template=document.getElementById('cardPageTemplate');return template?template.innerHTML:'<section class="view"><h1 class="title">TRADING CARD</h1></section>';}
+  function initCardPage(){const userId=typeof getUniverseUserId==='function'?getUniverseUserId():'';if(!userId){cardState.ready=false;cardState.userId='';const host=document.getElementById('cardApp');if(host)host.innerHTML='<div class="placeholder"><p>USERを選択してください。</p></div>';if(typeof openUserChooser==='function')openUserChooser(true);return;}cardState.userId=userId;renderCardLoading();google.script.run.withSuccessHandler(function(data){cardState.ready=true;cardState.groups=data.groups||[];cardState.cards=data.cards||[];cardState.brandLogoDriveFileId=String(data.brandLogoDriveFileId||'');cardState.totalCount=Number(data.totalCount||0);cardState.collectedCount=Number(data.collectedCount||0);cardState.currentGroup='ALL';renderCardGroupSelection();}).withFailureHandler(cardFailure).getTradingCardBootstrap(userId);}
+  function renderCardLoading(){const host=document.getElementById('cardApp');if(host)host.innerHTML=typeof renderUniverseLoading==='function'?renderUniverseLoading('LOADING...','#9cecff'):'<div>LOADING...</div>';}
+  function renderCardGroupSelection(){const host=document.getElementById('cardApp');if(!host)return;host.innerHTML='<div class="card-group-grid">'+cardState.groups.map(function(group){const count=getCardGroupCards(group.name).length;return '<button type="button" class="u-btn card-group-btn" style="--card-group-color:'+escapeHtml(group.color||'#9cecff')+'" onclick="selectTradingCardGroup(\''+escapeHtml(group.name).replaceAll("'","\\'")+'\')"><span class="card-group-name">'+escapeHtml(group.name)+'</span><span class="card-group-sub">'+count+' CARDS</span></button>';}).join('')+'</div>';}
+  function selectTradingCardGroup(groupName){cardState.currentGroup=groupName||'ALL';renderCardGacha();scrollAppToTop('smooth');}
+  function renderCardGacha(){const host=document.getElementById('cardApp');if(!host)return;const groupCards=getCardGroupCards(cardState.currentGroup);const drawn=groupCards.filter(function(card){return card.isDrawn;}).length;host.innerHTML='<div class="card-gacha-head"><h2 class="card-gacha-title">'+escapeHtml(cardState.currentGroup)+'</h2><div class="card-progress">'+drawn+' / '+groupCards.length+'</div></div><div class="card-draw-stage"><div class="card-draw-mark">BMSG UNIVERSE</div><div class="card-draw-copy">Tap DRAW to open a card portal.</div></div><div class="card-draw-actions"><button type="button" class="u-btn card-draw-main" onclick="drawTradingCard()">DRAW</button><button type="button" class="u-btn" onclick="renderCardGroupSelection()">GROUPS</button><button type="button" class="u-btn" onclick="openCardCollection()">COLLECTION</button></div>';}
+  function getCardGroupCards(groupName){const group=cardState.groups.find(function(item){return item.name===groupName;});if(!group||groupName==='ALL')return cardState.cards.slice();const allowed={};(group.memberIds||[]).forEach(function(id){allowed[String(id)]=true;});return cardState.cards.filter(function(card){return allowed[String(card.memberId)];});}
+  function getCurrentCardGroup(){return cardState.groups.find(function(item){return item.name===cardState.currentGroup;})||null;}
+  function setCardBackLogo(){const group=getCurrentCardGroup();const fileId=cardState.currentGroup==='ALL'?cardState.brandLogoDriveFileId:String(group&&group.logoDriveFileId||cardState.brandLogoDriveFileId||'');const image=document.getElementById('cardBackLogo');const label=document.getElementById('cardBackGroup');if(image){if(fileId){image.src='https://lh3.googleusercontent.com/d/'+encodeURIComponent(fileId);image.hidden=false;}else{image.removeAttribute('src');image.hidden=true;}}if(label)label.textContent=cardState.currentGroup==='ALL'?'BMSG':cardState.currentGroup;}
+  function drawTradingCard(){if(cardState.drawing)return;cardState.drawing=true;openCardRevealPending();google.script.run.withSuccessHandler(function(result){cardState.drawing=false;if(result&&result.card){const found=cardState.cards.find(function(card){return String(card.imageId)===String(result.card.imageId);});if(found)found.isDrawn=true;cardState.totalCount=Number(result.totalCount||cardState.totalCount);cardState.collectedCount=Number(result.collectedCount||cardState.collectedCount);runCardReveal(result.card,!!result.isNew);}else{closeCardReveal();cardNotify('カードを取得できませんでした。');}}).withFailureHandler(function(error){cardState.drawing=false;closeCardReveal();cardFailure(error);}).drawTradingCard(cardState.userId,cardState.currentGroup);}
+  function drawTradingCardFromReveal(){if(cardState.drawing)return;const overlay=document.getElementById('cardReveal');if(overlay)overlay.className='card-reveal is-open';drawTradingCard();}
+  function openCardRevealPending(){const overlay=document.getElementById('cardReveal');if(!overlay)return;overlay.className='card-reveal is-open';overlay.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';setCardBackLogo();const kicker=document.getElementById('cardRevealKicker');if(kicker)kicker.textContent='OPENING PORTAL...';const image=document.getElementById('cardRevealImage');if(image)image.removeAttribute('src');document.getElementById('cardResultRarity').textContent='';document.getElementById('cardResultName').textContent='';document.getElementById('cardResultNew').textContent='';}
+  function runCardReveal(card,isNew){const overlay=document.getElementById('cardReveal');if(!overlay)return;const rarity=String(card.rarity||'N').toLowerCase();overlay.classList.add('rarity-'+rarity);const image=document.getElementById('cardRevealImage');image.src='https://lh3.googleusercontent.com/d/'+encodeURIComponent(card.driveFileId);document.getElementById('cardResultRarity').textContent=String(card.rarity||'');document.getElementById('cardResultName').textContent=String(card.memberName||'');document.getElementById('cardResultNew').textContent=isNew?'NEW COLLECTION':'';const kicker=document.getElementById('cardRevealKicker');const labels={n:'STARDUST SIGNAL',r:'BRONZE METEOR',sr:'SILVER NEBULA',ssr:'GOLD SUPERNOVA'};kicker.textContent=labels[rarity]||'CARD FOUND';const reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;const delays={n:900,r:1400,sr:1950,ssr:2550};window.setTimeout(function(){overlay.classList.add('is-revealed');},reduced?0:(delays[rarity]||900));}
+  function closeCardReveal(){const overlay=document.getElementById('cardReveal');if(!overlay)return;overlay.className='card-reveal';overlay.setAttribute('aria-hidden','true');document.body.style.overflow='';if(currentRoute==='cards')renderCardGacha();}
+  function openCardCollection(){if(!cardState.ready)return;const overlay=document.getElementById('cardCollectionOverlay');if(!overlay)return;renderCardCollection();overlay.classList.add('is-open');overlay.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';const panel=overlay.querySelector('.card-collection-panel');if(panel)panel.scrollTop=0;}
+  function closeCardCollection(){const overlay=document.getElementById('cardCollectionOverlay');if(!overlay)return;overlay.classList.remove('is-open');overlay.setAttribute('aria-hidden','true');document.body.style.overflow='';}
+  function renderCardCollection(){const body=document.getElementById('cardCollectionBody');const progress=document.getElementById('cardCollectionProgress');const meter=document.getElementById('cardCollectionMeterFill');if(!body||!progress)return;const cards=getCardGroupCards(cardState.currentGroup||'ALL');const collected=cards.filter(function(card){return card.isDrawn;}).length;const percent=cards.length?Math.round(collected/cards.length*100):0;progress.textContent=(cardState.currentGroup||'ALL')+'  '+collected+' / '+cards.length+'  ('+percent+'%)';if(meter)meter.style.width=percent+'%';const byMember={};cards.forEach(function(card){if(!byMember[card.memberId])byMember[card.memberId]=[];byMember[card.memberId].push(card);});body.innerHTML=Object.keys(byMember).map(function(memberId){const memberCards=byMember[memberId];const first=memberCards[0];const order={N:0,R:1,SR:2,SSR:3};memberCards.sort(function(a,b){return order[a.rarity]-order[b.rarity];});const owned=memberCards.filter(function(card){return card.isDrawn;}).length;return '<section class="card-collection-member" style="--member-color:'+escapeHtml(first.memberColor||'#9cecff')+'"><div class="card-collection-member-title-row"><div class="card-collection-member-title">'+escapeHtml(first.memberName)+'</div><div class="card-collection-member-count">'+owned+' / '+memberCards.length+'</div></div><div class="card-collection-grid">'+memberCards.map(function(card){const rarity=String(card.rarity||'N').toLowerCase();return '<div class="card-collection-item rarity-'+rarity+(card.isDrawn?' is-owned':'')+'">'+(card.isDrawn?'<img src="https://lh3.googleusercontent.com/d/'+encodeURIComponent(card.driveFileId)+'" alt="'+escapeHtml(card.memberName)+' '+escapeHtml(card.rarity)+'">':'<div class="card-collection-locked">?</div>')+'<span class="card-collection-rarity">'+escapeHtml(card.rarity)+'</span></div>';}).join('')+'</div></section>';}).join('')||'<div class="placeholder"><p>カードがありません。</p></div>';const reset=document.getElementById('cardResetCollectionBtn');if(reset)reset.hidden=!(cardState.totalCount>0&&cardState.collectedCount>=cardState.totalCount);}
+  function resetCardCollection(){if(!(cardState.totalCount>0&&cardState.collectedCount>=cardState.totalCount))return;if(!window.confirm('コレクションを0%へリセットしますか？'))return;google.script.run.withSuccessHandler(function(){cardState.cards.forEach(function(card){card.isDrawn=false;});cardState.collectedCount=0;renderCardCollection();cardNotify('コレクションをリセットしました。');}).withFailureHandler(cardFailure).resetTradingCardCollection(cardState.userId);}
+  function cardFailure(error){const message=error&&error.message?error.message:String(error||'エラーが発生しました。');cardNotify(message);}function cardNotify(message){if(typeof showToast==='function'){showToast(message);return;}window.alert(message);}
 </script>
