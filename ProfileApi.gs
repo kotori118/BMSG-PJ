@@ -296,6 +296,31 @@ function readProfileSheetObjects_(spreadsheetId, sheetName) {
   });
 }
 
+function readProfileCoreSheetObjects_(spreadsheet, sheetName) {
+  const sheet = spreadsheet.getSheetByName(sheetName);
+  if (!sheet) throw new Error('Core DB sheet not found: ' + sheetName);
+
+  const lastRow = sheet.getLastRow();
+  const lastColumn = sheet.getLastColumn();
+  if (lastRow < 2 || lastColumn < 1) return [];
+
+  const values = sheet.getRange(1, 1, lastRow, lastColumn).getValues();
+  const headers = values[0].map(function(header) {
+    return String(header || '').trim();
+  });
+
+  return values.slice(1).filter(function(row) {
+    return row.some(function(value) {
+      return value !== '' && value !== null;
+    });
+  }).map(function(row) {
+    return headers.reduce(function(record, header, index) {
+      if (header) record[header] = row[index];
+      return record;
+    }, {});
+  });
+}
+
 function formatProfileDetailValue_(value, dataType, isMultiValue) {
   const text = String(value == null ? '' : value).trim();
   if (!text) return '—';
@@ -310,10 +335,11 @@ function formatProfileDetailValue_(value, dataType, isMultiValue) {
 }
 
 function buildProfileMembersPayload_() {
-  const groups = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.GROUPS);
-  const members = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.MEMBERS);
-  const groupMembers = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.GROUP_MEMBERS);
-  const images = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.IMAGES);
+  const spreadsheet = SpreadsheetApp.openById(UNIVERSE_CONFIG.CORE_DB_ID);
+  const groups = readProfileCoreSheetObjects_(spreadsheet, UNIVERSE_CONFIG.SHEETS.GROUPS);
+  const members = readProfileCoreSheetObjects_(spreadsheet, UNIVERSE_CONFIG.SHEETS.MEMBERS);
+  const groupMembers = readProfileCoreSheetObjects_(spreadsheet, UNIVERSE_CONFIG.SHEETS.GROUP_MEMBERS);
+  const images = readProfileCoreSheetObjects_(spreadsheet, UNIVERSE_CONFIG.SHEETS.IMAGES);
 
   const groupsById = groups.reduce(function(map, group) {
     const groupId = asId_(group.GroupID);
