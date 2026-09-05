@@ -1,0 +1,48 @@
+<style>
+  /* TRADING CARD visual v2: borderless front, NEW badge, textless cosmic back, clean actions. */
+  .card-front-face{background:transparent!important;border:0!important;box-shadow:none!important;overflow:hidden!important;}
+  .card-front-face img{width:100%!important;height:100%!important;object-fit:cover!important;transform:scale(1.055)!important;transform-origin:center!important;border-radius:18px!important;}
+  .card-reveal.is-new-card .card-front-face::after{
+    content:'NEW';position:absolute;z-index:5;left:12px;top:12px;padding:7px 11px 6px;border-radius:999px;
+    font:800 10px 'Orbitron',sans-serif;letter-spacing:.12em;color:#fff;
+    background:linear-gradient(145deg,rgba(24,31,38,.94),rgba(5,8,12,.96));
+    border:1px solid color-mix(in srgb,var(--rarity-accent,#9cecff) 72%,white 8%);
+    box-shadow:0 4px 16px rgba(0,0,0,.34),0 0 14px var(--rarity-soft,rgba(156,236,255,.18));
+  }
+  .card-result-meta{display:none!important;}
+
+  /* Textless symmetric Universe card back. */
+  .card-back-face{background:
+    radial-gradient(circle at 50% 50%,rgba(156,236,255,.075),transparent 29%),
+    radial-gradient(circle at 20% 22%,rgba(72,132,196,.08),transparent 22%),
+    radial-gradient(circle at 80% 78%,rgba(105,83,160,.06),transparent 24%),
+    linear-gradient(145deg,#02060b 0%,#000 48%,#030812 100%)!important;
+    border:1px solid rgba(189,240,252,.52)!important;
+    box-shadow:inset 0 0 40px rgba(80,196,231,.05),0 0 16px rgba(110,220,255,.08)!important;
+  }
+  .card-back-face::before{inset:8px!important;border:1px solid rgba(211,247,255,.56)!important;border-radius:13px!important;box-shadow:inset 0 0 0 5px rgba(0,0,0,.76),inset 0 0 0 6px rgba(156,236,255,.08)!important;}
+  .card-back-face::after{content:''!important;inset:18px!important;padding:0!important;border:1px solid rgba(255,255,255,.10)!important;border-radius:10px!important;background:
+    linear-gradient(90deg,transparent 49.7%,rgba(191,240,251,.22) 50%,transparent 50.3%),
+    linear-gradient(0deg,transparent 49.7%,rgba(191,240,251,.16) 50%,transparent 50.3%),
+    radial-gradient(circle at 50% 8%,rgba(255,255,255,.85) 0 1px,transparent 1.5px),
+    radial-gradient(circle at 50% 92%,rgba(156,236,255,.8) 0 1px,transparent 1.5px),
+    radial-gradient(circle at 8% 50%,rgba(255,255,255,.72) 0 1px,transparent 1.5px),
+    radial-gradient(circle at 92% 50%,rgba(156,236,255,.72) 0 1px,transparent 1.5px)!important;}
+  .card-back-design{inset:22px!important;}
+  .card-back-design::before{width:82%!important;aspect-ratio:1!important;border:1px solid rgba(156,236,255,.20)!important;box-shadow:0 0 0 10px rgba(156,236,255,.015),0 0 0 11px rgba(255,255,255,.045)!important;}
+  .card-back-design::after{width:58%!important;aspect-ratio:1!important;border:1px solid rgba(255,255,255,.18)!important;background:radial-gradient(circle,rgba(156,236,255,.055),rgba(0,0,0,.76) 70%)!important;box-shadow:0 0 28px rgba(156,236,255,.04)!important;}
+  .card-back-orbit.o1{width:88%!important;height:38%!important;transform:translate(-50%,-50%) rotate(24deg)!important;border-color:rgba(156,236,255,.22)!important;}
+  .card-back-orbit.o2{width:88%!important;height:38%!important;transform:translate(-50%,-50%) rotate(-24deg)!important;border-color:rgba(255,255,255,.14)!important;}
+  .card-back-orbit.o3{width:66%!important;height:66%!important;border-color:rgba(156,236,255,.15)!important;}
+  .card-back-seal{width:31%!important;aspect-ratio:1!important;border:0!important;background:transparent!important;box-shadow:none!important;}
+  .card-back-seal small,.card-back-seal strong,.card-back-seal i{display:none!important;}
+  .card-back-seal::before,.card-back-seal::after{content:''!important;position:absolute!important;left:50%!important;top:50%!important;transform:translate(-50%,-50%)!important;padding:0!important;}
+  .card-back-seal::before{width:100%!important;height:2px!important;background:linear-gradient(90deg,transparent,#dffaff 18%,#fff 50%,#dffaff 82%,transparent)!important;box-shadow:0 0 10px rgba(156,236,255,.55)!important;}
+  .card-back-seal::after{width:2px!important;height:100%!important;background:linear-gradient(180deg,transparent,#dffaff 18%,#fff 50%,#dffaff 82%,transparent)!important;box-shadow:0 0 10px rgba(156,236,255,.55)!important;}
+  .card-back-star{opacity:.82!important;}
+
+  /* Stars remain behind controls instead of showing through the buttons. */
+  .card-result-actions{position:relative!important;z-index:20!important;isolation:isolate!important;}
+  .card-result-actions .u-btn{background:linear-gradient(145deg,rgba(14,20,26,.98),rgba(4,7,10,.99))!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 8px 20px rgba(0,0,0,.34)!important;}
+  .card-result-actions .u-btn::before,.card-result-actions .u-btn::after{pointer-events:none!important;}
+</style>
