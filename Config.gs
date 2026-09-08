@@ -10,6 +10,8 @@ const UNIVERSE_CONFIG = Object.freeze({
     GROUP_MEMBERS: '04_GroupMembers', PROFILES: '05_Profiles', SONGS: '06_Songs',
     LYRICS_PARTS: '08_LyricsParts', IMAGES: '09_Images', PROFILE_SETTINGS: 'ProfileSettings', USERS: 'Users',
     KARAOKE_ROOMS: 'KARAOKE_Rooms', KARAOKE_RESULTS: 'KARAOKE_ShuffleResults', KARAOKE_FAVORITES: 'KARAOKE_FavoriteSets',
-    CARD_COLLECTIONS: 'CardCollections', RECENT_ACTIVITIES: 'RecentActivities'
+    CARD_COLLECTIONS: 'CardCollections', RECENT_ACTIVITIES: 'RecentActivities',
+    POKER_ROOMS: 'PokerRooms', POKER_PLAYERS: 'PokerPlayers',
+    POKER_VOTES: 'PokerVotes', POKER_HIGHLIGHTS: 'PokerHighlights'
   })
 });

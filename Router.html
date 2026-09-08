@@ -14,6 +14,7 @@
     else if(route==='karaoke'){pageContent.innerHTML=renderKaraoke();initKaraokePage(routeParams||{});}
     else if(route==='analysis'){pageContent.innerHTML=renderAnalysis();initAnalysisPage(routeParams||{});}
     else if(route==='cards'){pageContent.innerHTML=renderCards();initCardPage(routeParams||{});}
+    else if(route==='poker'){pageContent.innerHTML=renderPoker();initPokerPage(routeParams||{});}
     else{pageContent.innerHTML=renderPlaceholder(route);}
     document.title=meta.title+' | BMSG UNIVERSE'; scrollAppToTop('smooth');
   }
