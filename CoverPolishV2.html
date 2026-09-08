@@ -1,0 +1,127 @@
+<style>
+  /* COVER MAKER iPhone polish: layout only. Shared ButtonSystem remains surface/interaction authority. */
+  .cover-page{
+    background:#fff!important;
+  }
+  .cover-page.is-cover-editor .cover-header{
+    margin-bottom:8px;
+  }
+  .cover-page.is-cover-editor .cover-editor-head{
+    padding-top:0;
+  }
+
+  /* Compact selection cards: avoid long full-width bars on mobile. */
+  .cover-page.is-cover-choice .cover-stack{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:12px;
+  }
+  .cover-page.is-cover-choice .cover-content-card{
+    min-height:76px;
+    padding:12px 10px!important;
+    justify-content:center!important;
+    text-align:center!important;
+    border-left:1px solid rgba(21,24,32,.10)!important;
+    border-bottom:3px solid var(--cover-accent,#9cecff)!important;
+    border-radius:18px!important;
+  }
+  .cover-page.is-cover-choice .cover-content-card strong{
+    font-size:14px;
+    line-height:1.25;
+    overflow-wrap:anywhere;
+  }
+  .cover-page.is-cover-choice .cover-content-card:last-child:nth-child(odd){
+    grid-column:1 / -1;
+    width:calc(50% - 6px);
+    justify-self:center;
+  }
+
+  /* Song list keeps ReleaseDate sorting in data, but does not display the date. */
+  .cover-page .cover-song-row .cover-row-meta{
+    display:none!important;
+  }
+  .cover-page .cover-song-row{
+    min-height:58px;
+  }
+
+  /* Editor controls stay centered and compact instead of stretching into long bars. */
+  .cover-page.is-cover-editor .cover-tabs,
+  .cover-page.is-cover-editor .cover-tools{
+    display:flex;
+    justify-content:center;
+    align-items:stretch;
+    gap:10px;
+  }
+  .cover-page.is-cover-editor .cover-tab,
+  .cover-page.is-cover-editor .cover-tools .u-btn{
+    flex:0 1 152px;
+    width:min(152px,calc(50% - 5px));
+    min-height:50px!important;
+    padding:0 12px!important;
+    justify-content:center!important;
+    text-align:center!important;
+    border-radius:16px!important;
+  }
+
+  /* Member picker is an editing control too: use compact tappable tiles. */
+  .cover-page .cover-member-list{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:10px;
+  }
+  .cover-page .cover-member-option{
+    min-height:52px!important;
+    padding:10px 8px!important;
+    justify-content:center!important;
+    text-align:center!important;
+    border-left:1px solid rgba(21,24,32,.10)!important;
+    border-bottom:3px solid var(--member-color,#9cecff)!important;
+    border-radius:16px!important;
+  }
+
+  @media(max-width:380px){
+    .cover-page.is-cover-choice .cover-stack{gap:9px}
+    .cover-page.is-cover-choice .cover-content-card{min-height:70px}
+    .cover-page.is-cover-editor .cover-tab,
+    .cover-page.is-cover-editor .cover-tools .u-btn{min-height:48px!important;font-size:12px!important}
+  }
+</style>
+<script>
+(function(){
+  function coverPageElement(){return document.querySelector('.cover-page');}
+  function setCoverVisualMode(mode){
+    var page=coverPageElement();
+    if(!page)return;
+    page.classList.toggle('is-cover-choice',mode==='choice');
+    page.classList.toggle('is-cover-editor',mode==='editor');
+  }
+  function wrapCoverRender(name,mode){
+    var original=window[name];
+    if(typeof original!=='function')return;
+    window[name]=function(){
+      var result=original.apply(this,arguments);
+      setCoverVisualMode(mode);
+      return result;
+    };
+  }
+
+  wrapCoverRender('renderCoverHome','home');
+  wrapCoverRender('openCoverGroupSelect','choice');
+  wrapCoverRender('openCoverArtistSelect','choice');
+  wrapCoverRender('renderCoverSongs','songs');
+  wrapCoverRender('openCoverProjects','projects');
+  wrapCoverRender('renderCoverEditor','editor');
+
+  /* Saving returns to COVER MAKER top after bootstrap refresh. */
+  window.refreshCoverAfterSave=function(){
+    google.script.run.withSuccessHandler(function(data){
+      coverState.bootstrap=data||coverState.bootstrap;
+      coverState.editor=null;
+      coverState.coverGroup=null;
+      coverState.artist='';
+      coverState.songs=[];
+      coverState.viewMode='cover';
+      coverState.dirty=false;
+      renderCoverHome();
+    }).withFailureHandler(showCoverError).getCoverMakerBootstrap(getUniverseUserId());
+  };
+})();
+</script>
