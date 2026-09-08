@@ -1,0 +1,112 @@
+<style>
+  /* Final POKER UI alignment: match shared Universe button/navigation language. */
+  .poker-header{align-items:center!important;}
+  .poker-home-btn{margin-left:auto!important;}
+  .poker-section-head{align-items:center!important;}
+  .poker-section-head > div{min-width:0;}
+  .poker-back{margin-left:auto!important;flex:0 0 46px!important;}
+
+  .poker-mode-card,.poker-rule-card{
+    text-align:left!important;
+    align-items:flex-start!important;
+    justify-content:center!important;
+  }
+  .poker-mode-card strong,.poker-rule-card strong{
+    display:block!important;
+    width:100%!important;
+    text-align:left!important;
+  }
+  .poker-mode-card.is-wide{
+    flex-direction:column!important;
+    align-items:flex-start!important;
+    justify-content:center!important;
+    text-align:left!important;
+  }
+
+  /* Use the shared .u-btn surface/interaction; only POKER layout stays local. */
+  .poker-mode-card,.poker-rule-card,.poker-back,.poker-home-btn,.poker-actions .u-btn,.poker-vote-btn{
+    font-family:inherit;
+  }
+
+  /* True two-sided card flip: back -> front. */
+  .poker-slot{perspective:900px;transform-style:preserve-3d;transition:transform .2s ease,opacity .2s ease;}
+  .poker-card{
+    overflow:visible!important;
+    transform-style:preserve-3d!important;
+    -webkit-transform-style:preserve-3d!important;
+    transform:rotateY(0deg);
+    transition:transform .22s ease,border-color .22s ease,box-shadow .22s ease!important;
+  }
+  .poker-card.is-face-up{transform:rotateY(180deg)!important;}
+  .poker-card.is-revealing{
+    animation:pokerRealFlip .56s cubic-bezier(.2,.72,.2,1) both!important;
+  }
+  .poker-card-face{
+    position:absolute;
+    inset:0;
+    border-radius:inherit;
+    overflow:hidden;
+    -webkit-backface-visibility:hidden;
+    backface-visibility:hidden;
+  }
+  .poker-card-back-face{
+    transform:rotateY(0deg);
+    background:radial-gradient(circle at 50% 28%,rgba(156,236,255,.12),transparent 45%),#090d14;
+  }
+  .poker-card-back-face::before{
+    content:'BMSG';
+    position:absolute;
+    inset:8px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border:1px solid rgba(156,236,255,.24);
+    border-radius:8px;
+    color:rgba(255,255,255,.72);
+    font:700 clamp(7px,2vw,13px) 'Orbitron',sans-serif;
+    letter-spacing:.08em;
+  }
+  .poker-card-front-face{transform:rotateY(180deg);background:#090d14;}
+  .poker-card-front-face img{width:100%;height:100%;object-fit:cover;object-position:center top;display:block;}
+  .poker-card-front-face .poker-card-label{z-index:2;}
+
+  /* Move selection offset to the slot so it never cancels rotateY(180deg). */
+  .poker-slot.is-sort{transform:translateY(-10px)!important;}
+  .poker-slot.is-exchange{transform:translateY(10px)!important;opacity:.48;}
+  .poker-slot.is-sort .poker-card,
+  .poker-slot.is-exchange .poker-card{transform:rotateY(180deg)!important;opacity:1!important;}
+
+  @keyframes pokerRealFlip{
+    0%{transform:rotateY(0deg) scale(.985);}
+    44%{transform:rotateY(88deg) scale(.97);}
+    56%{transform:rotateY(102deg) scale(.97);}
+    100%{transform:rotateY(180deg) scale(1);}
+  }
+  @media(prefers-reduced-motion:reduce){
+    .poker-card.is-revealing{animation:none!important;transform:rotateY(180deg)!important;}
+    .poker-slot{transition:none!important;}
+  }
+</style>
+<script>
+  /* Override only the hand renderer so all existing game logic remains untouched. */
+  function renderPokerHand(hand,revealed,mode){
+    const list=Array.isArray(hand)?hand:[];
+    let html='<div class="poker-board">';
+    for(let i=0;i<5;i++){
+      const card=list[i],visible=!!(card&&i<revealed);
+      const selected=pokerState.interaction==='exchange'?pokerState.exchangeIndices.indexOf(i)>=0:pokerState.sortIndex===i;
+      const selectedClass=selected?(pokerState.interaction==='exchange'?' is-exchange':' is-sort'):'';
+      const revealing=visible&&Array.isArray(pokerState.flipIndices)&&pokerState.flipIndices.indexOf(i)>=0;
+      const action=(mode==='offline'||mode==='online')&&revealed>=5?'onclick="handlePokerCardTap('+i+',\''+mode+'\')"':'';
+      const rarity=visible?String(card.rarity||'N').toLowerCase():'n';
+      const memberLabel=visible?String(card.memberName||card.displayName||card.memberId||''):'';
+      const cardClass=visible?'rarity-'+rarity+(revealing?' is-revealing':' is-face-up'):'is-back';
+      html+='<button type="button" class="poker-slot'+selectedClass+'" '+action+' aria-label="カード '+(i+1)+'">'
+        +'<span class="poker-card '+cardClass+'">'
+        +'<span class="poker-card-face poker-card-back-face"></span>'
+        +(visible?'<span class="poker-card-face poker-card-front-face"><img src="https://lh3.googleusercontent.com/d/'+encodeURIComponent(card.driveFileId)+'" alt="">'+(memberLabel?'<span class="poker-card-label">'+escapeHtml(memberLabel)+'</span>':'')+'</span>':'')
+        +'</span></button>';
+    }
+    return html+'</div>';
+  }
+</script>
