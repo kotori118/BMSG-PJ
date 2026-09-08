@@ -13,6 +13,8 @@ const UNIVERSE_CONFIG = Object.freeze({
     CARD_COLLECTIONS: 'CardCollections', RECENT_ACTIVITIES: 'RecentActivities',
     POKER_ROOMS: 'PokerRooms', POKER_PLAYERS: 'PokerPlayers',
     POKER_VOTES: 'PokerVotes', POKER_HIGHLIGHTS: 'PokerHighlights',
+    QUIZ_ROOMS: 'QuizRooms', QUIZ_QUESTIONS: 'QuizQuestions',
+    QUIZ_RESULTS: 'QuizRoomResults', QUIZ_SCORES: 'QuizScores',
     COVER_PROJECTS: 'COVER_Projects', COVER_ASSIGNMENTS: 'COVER_Assignments'
   })
 });

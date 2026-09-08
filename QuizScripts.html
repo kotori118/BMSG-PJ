@@ -1,0 +1,115 @@
+<script>
+  const quizState={ready:false,busy:false,userId:'',users:[],courses:[],screen:'setup',settings:{mode:'OFFLINE',genre:'LYRICS',course:'BE:FIRST',difficulty:'NORMAL'},selectedPlayers:[],game:null,index:0,stage:'question',answers:[],awards:[],selected:null,startedAt:0,completed:false};
+
+  function renderQuiz(){const template=document.getElementById('quizPageTemplate');return template?template.innerHTML:'';}
+
+  function initQuizPage(params){
+    quizResetState_();
+    const uid=typeof getUniverseUserId==='function'?getUniverseUserId():'';
+    if(!uid){renderQuizNeedsUser_();if(typeof openUserChooser==='function')openUserChooser(true);return;}
+    quizState.userId=uid;quizState.selectedPlayers=[uid];renderQuizLoading_();
+    google.script.run.withSuccessHandler(function(data){quizState.ready=true;quizState.users=data.users||[];quizState.courses=data.courses||[];if(data.room){startQuizClientGame_(data.room);}else{renderQuizSetup_();}}).withFailureHandler(quizFailure_).getQuizBootstrap(uid,params&&params.room?params.room:'');
+  }
+
+  function quizResetState_(){quizState.ready=false;quizState.busy=false;quizState.screen='setup';quizState.game=null;quizState.index=0;quizState.stage='question';quizState.answers=[];quizState.awards=[];quizState.selected=null;quizState.startedAt=0;quizState.completed=false;}
+  function quizHost_(){return document.getElementById('quizApp');}
+  function renderQuizLoading_(){const host=quizHost_();if(host)host.innerHTML='<div class="quiz-panel">'+(typeof renderUniverseLoading==='function'?renderUniverseLoading('LOADING QUIZ...','#9cecff'):'LOADING...')+'</div>';}
+  function renderQuizNeedsUser_(){const host=quizHost_();if(host)host.innerHTML='<section class="quiz-panel"><p class="quiz-kicker">PLAYER</p><h2 class="quiz-panel-title">USERを選択</h2><p class="quiz-muted">QUIZを始めるUserを選んでください。</p><div class="quiz-actions"><button class="quiz-action is-primary" onclick="openUserChooser(true)">USER SELECT</button></div></section>';}
+
+  function renderQuizSetup_(){
+    quizState.screen='setup';quizState.completed=false;
+    const s=quizState.settings,offlineLyrics=s.mode==='OFFLINE'&&s.genre==='LYRICS';
+    const host=quizHost_();if(!host)return;
+    host.innerHTML='<section class="quiz-panel"><p class="quiz-kicker">GAME SETUP</p><h2 class="quiz-panel-title">PLAY QUIZ</h2><div class="quiz-settings">'+
+      quizSetting_('01 / MODE',[['OFFLINE','OFFLINE'],['ONLINE','ONLINE']],s.mode,'mode')+
+      quizSetting_('02 / GENRE',[['LYRICS','歌詞'],['PROFILE','プロフィール']],s.genre,'genre')+
+      quizSetting_('03 / COURSE',(quizState.courses.length?quizState.courses:[{value:'BE:FIRST',label:'BE:FIRST'},{value:'MAZZEL',label:'MAZZEL'},{value:'STARGLOW',label:'STARGLOW'},{value:'HANA',label:'HANA'},{value:'UNIT',label:'ユニット'},{value:'ALL',label:'全部'}]).map(function(x){return[x.value,x.label];}),s.course,'course','is-course')+
+      quizSetting_('04 / DIFFICULTY',[['NORMAL','普通'],['ADVANCED','上級']],s.difficulty,'difficulty')+
+      (offlineLyrics?renderQuizPlayerSelect_():'')+
+      '</div><div class="quiz-actions"><button class="quiz-action is-primary" onclick="createQuizFromSetup_()">'+(s.mode==='ONLINE'?'ROOMを作る':'START')+'</button><button class="quiz-action" onclick="navigateTo(\'lab\')">BACK</button></div>'+
+      (s.mode==='ONLINE'?'<div class="quiz-online-join"><input id="quizRoomInput" class="quiz-room-input" inputmode="numeric" maxlength="4" aria-label="4桁のROOM ID" placeholder="0000"><button class="quiz-join-button" onclick="joinQuizFromSetup_()">参加</button></div>':'')+'</section>';
+  }
+
+  function quizSetting_(title,options,current,key,extra){return '<section class="quiz-setting"><p class="quiz-setting-title">'+quizEscape_(title)+'</p><div class="quiz-options '+(extra||'')+'">'+options.map(function(option){return '<button type="button" class="quiz-choice '+(current===option[0]?'is-selected':'')+'" onclick="setQuizSetting_(\''+key+'\',\''+quizArg_(option[0])+'\')">'+quizEscape_(option[1])+'</button>';}).join('')+'</div></section>';}
+  function renderQuizPlayerSelect_(){return '<section class="quiz-setting"><p class="quiz-setting-title">05 / PLAYERS（2〜3人）</p><div class="quiz-player-grid">'+quizState.users.map(function(user){const active=quizState.selectedPlayers.indexOf(user.userId)>=0;return '<button type="button" class="quiz-player '+(active?'is-selected':'')+'" onclick="toggleQuizPlayer_(\''+quizArg_(user.userId)+'\')">'+quizEscape_(user.displayName)+'<small>'+quizEscape_(user.userId)+'</small></button>';}).join('')+'</div></section>';}
+  function setQuizSetting_(key,value){quizState.settings[key]=decodeURIComponent(value);if(key==='mode'||key==='genre'){if(!(quizState.settings.mode==='OFFLINE'&&quizState.settings.genre==='LYRICS'))quizState.selectedPlayers=[quizState.userId];}renderQuizSetup_();}
+  function toggleQuizPlayer_(encoded){const id=decodeURIComponent(encoded),index=quizState.selectedPlayers.indexOf(id);if(index>=0)quizState.selectedPlayers.splice(index,1);else if(quizState.selectedPlayers.length<3)quizState.selectedPlayers.push(id);renderQuizSetup_();}
+
+  function createQuizFromSetup_(){
+    if(quizState.busy)return;
+    const s=quizState.settings;
+    if(s.mode==='OFFLINE'&&s.genre==='LYRICS'&&(quizState.selectedPlayers.length<2||quizState.selectedPlayers.length>3)){quizNotify_('2〜3人を選択してください。');return;}
+    quizState.busy=true;renderQuizLoading_();
+    google.script.run.withSuccessHandler(function(game){quizState.busy=false;if(game.roomId)setQuizRoomUrl_(game.roomId);startQuizClientGame_(game);}).withFailureHandler(quizFailure_).createQuizGame({userId:quizState.userId,mode:s.mode,genre:s.genre,course:s.course,difficulty:s.difficulty,playerUserIds:quizState.selectedPlayers});
+  }
+
+  function joinQuizFromSetup_(){const input=document.getElementById('quizRoomInput'),id=String(input&&input.value||'').replace(/\D/g,'');if(!/^\d{4}$/.test(id)){quizNotify_('4桁のROOM IDを入力してください。');return;}if(quizState.busy)return;quizState.busy=true;renderQuizLoading_();google.script.run.withSuccessHandler(function(game){quizState.busy=false;setQuizRoomUrl_(game.roomId);startQuizClientGame_(game);}).withFailureHandler(quizFailure_).joinQuizRoom(quizState.userId,id);}
+  function setQuizRoomUrl_(roomId){const params={page:'quiz',room:String(roomId)};google.script.history.replace(params,params,'');}
+
+  function startQuizClientGame_(game){
+    quizState.game=game;quizState.screen='game';quizState.index=0;quizState.stage='question';quizState.answers=[];quizState.awards=[];quizState.selected=null;quizState.startedAt=Date.now();quizState.completed=!!game.hasAnswered;
+    if(game.hasAnswered){quizState.screen='result';renderQuizResult_(game.scoreboard||[]);return;}
+    renderQuizQuestion_();
+  }
+
+  function renderQuizQuestion_(){
+    const game=quizState.game,question=game&&game.questions&&game.questions[quizState.index];if(!question)return finishQuiz_();
+    const host=quizHost_();if(!host)return;
+    const progress=Math.round((quizState.index/game.questions.length)*100);
+    host.innerHTML=(game.roomId?renderQuizRoomBanner_(game.roomId):'')+'<div class="quiz-progress" aria-label="進行度"><span style="width:'+progress+'%"></span></div><section class="quiz-panel"><div class="quiz-question-head"><p class="quiz-step-label">'+quizEscape_(quizGenreLabel_(game.genre))+' / '+quizEscape_(quizDifficultyLabel_(game.difficulty))+'</p><span class="quiz-question-count">'+String(quizState.index+1).padStart(2,'0')+' / 10</span></div><div id="quizQuestionBody">'+renderQuizQuestionBody_(question)+'</div><div class="quiz-actions"><button class="quiz-action quiz-danger" onclick="abandonQuiz_()">諦める</button><button id="quizNextButton" class="quiz-action is-primary" onclick="advanceQuiz_()" disabled>次へ</button></div></section>';
+  }
+
+  function renderQuizQuestionBody_(question){
+    const game=quizState.game;
+    if(game.genre==='PROFILE')return renderProfileQuizBody_(question);
+    if(game.mode==='OFFLINE')return renderOfflineLyricsBody_(question);
+    return renderOnlineLyricsBody_(question);
+  }
+
+  function renderProfileQuizBody_(question){return '<p class="quiz-question-text">'+quizEscape_(question.text)+'</p><div class="quiz-answer-list">'+question.choices.map(function(choice){return '<button class="quiz-answer" onclick="answerProfileQuiz_(this,\''+quizArg_(choice.value)+'\')">'+quizEscape_(choice.label)+'</button>';}).join('')+'</div><div id="quizFeedback"></div>';}
+  function answerProfileQuiz_(button,encoded){if(quizState.stage==='answered')return;const value=decodeURIComponent(encoded),question=quizState.game.questions[quizState.index],correct=String(value)===String(question.correct.value);quizState.answers[quizState.index]={value:value};quizState.stage='answered';document.querySelectorAll('.quiz-answer').forEach(function(item){item.disabled=true;const itemValue=decodeURIComponent((item.getAttribute('onclick').match(/'([^']+)'\)$/)||[])[1]||'');if(String(itemValue)===String(question.correct.value))item.classList.add('is-correct');});button.classList.add(correct?'is-correct':'is-wrong');document.getElementById('quizFeedback').innerHTML='<div class="quiz-feedback">'+(correct?'CORRECT':'ANSWER：'+quizEscape_(question.correct.value))+'</div>';enableQuizNext_();}
+
+  function renderOnlineLyricsBody_(question){
+    if(quizState.stage==='question'||quizState.stage==='song')return '<p class="quiz-question-text is-lyrics">'+quizEscape_(question.text)+'</p><p class="quiz-setting-title">曲名を選択</p><div class="quiz-answer-list">'+question.choices.songs.map(function(choice){return '<button class="quiz-answer" onclick="answerOnlineLyricsSong_(\''+quizArg_(choice.value)+'\')">'+quizEscape_(choice.label)+'</button>';}).join('')+'</div>';
+    if(quizState.stage==='singer')return '<p class="quiz-question-text is-lyrics">'+quizEscape_(question.text)+'</p><p class="quiz-setting-title">歌唱Memberを選択</p><div class="quiz-answer-list">'+question.choices.singers.map(function(choice){return '<button class="quiz-answer" onclick="answerOnlineLyricsSinger_(\''+quizArg_(choice.value)+'\')">'+quizEscape_(choice.label)+'</button>';}).join('')+'</div>';
+    const answer=quizState.answers[quizState.index];return '<p class="quiz-question-text is-lyrics">'+quizEscape_(question.text)+'</p><div class="quiz-feedback">曲名：'+quizEscape_(question.source.title)+'<br>歌唱：'+quizEscape_((question.source.singerNames||[]).join(' / '))+'<br><small>'+(answer.songCorrect?'曲名 +1':'曲名 0')+' / '+(answer.singerCorrect?'歌唱 +1':'歌唱 0')+'</small></div>'+renderQuizLyricsLink_(question);
+  }
+  function answerOnlineLyricsSong_(encoded){const value=decodeURIComponent(encoded);quizState.answers[quizState.index]={songId:value};quizState.stage='singer';replaceQuizBody_();}
+  function answerOnlineLyricsSinger_(encoded){const value=decodeURIComponent(encoded),question=quizState.game.questions[quizState.index],answer=quizState.answers[quizState.index];answer.singerValue=value;answer.songCorrect=String(answer.songId)===String(question.correct.songId);answer.singerCorrect=String(value)===String(question.correct.singerValue);quizState.stage='answered';replaceQuizBody_();enableQuizNext_();}
+
+  function renderOfflineLyricsBody_(question){
+    if(quizState.stage==='question')return '<p class="quiz-question-text is-lyrics">'+quizEscape_(question.text)+'</p><button class="quiz-action is-primary" style="width:100%" onclick="revealOfflineLyrics_()">答えを見る</button>';
+    if(quizState.stage==='songAward')return '<p class="quiz-question-text is-lyrics">'+quizEscape_(question.text)+'</p><div class="quiz-feedback">曲名：'+quizEscape_(question.source.title)+'</div><div class="quiz-award-step"><p class="quiz-setting-title">曲名の正解者</p>'+renderQuizAwardButtons_('song')+'</div>';
+    if(quizState.stage==='singerAward')return '<p class="quiz-question-text is-lyrics">'+quizEscape_(question.text)+'</p><div class="quiz-feedback">歌唱：'+quizEscape_((question.source.singerNames||[]).join(' / '))+'</div><div class="quiz-award-step"><p class="quiz-setting-title">歌唱Memberの正解者</p>'+renderQuizAwardButtons_('singer')+'</div>';
+    const award=quizState.awards[quizState.index]||{};return '<p class="quiz-question-text is-lyrics">'+quizEscape_(question.text)+'</p><div class="quiz-feedback">曲名：'+quizEscape_(question.source.title)+'<br>歌唱：'+quizEscape_((question.source.singerNames||[]).join(' / '))+'<br><small>'+quizEscape_(quizUserName_(award.songWinner)||'正解者なし')+' / '+quizEscape_(quizUserName_(award.singerWinner)||'正解者なし')+'</small></div>'+renderQuizLyricsLink_(question);
+  }
+  function revealOfflineLyrics_(){quizState.stage='songAward';replaceQuizBody_();}
+  function renderQuizAwardButtons_(kind){const buttons=quizState.game.players.map(function(id){return '<button class="quiz-award" onclick="awardOfflineLyrics_(\''+kind+'\',\''+quizArg_(id)+'\')">'+quizEscape_(quizUserName_(id))+'</button>';});buttons.push('<button class="quiz-award is-none" onclick="awardOfflineLyrics_(\''+kind+'\',\'\')">なし</button>');return '<div class="quiz-award-grid">'+buttons.join('')+'</div>';}
+  function awardOfflineLyrics_(kind,encoded){const id=encoded?decodeURIComponent(encoded):'';if(!quizState.awards[quizState.index])quizState.awards[quizState.index]={songWinner:'',singerWinner:''};if(kind==='song'){quizState.awards[quizState.index].songWinner=id;quizState.stage='singerAward';}else{quizState.awards[quizState.index].singerWinner=id;quizState.stage='answered';}replaceQuizBody_();if(quizState.stage==='answered')enableQuizNext_();}
+
+  function replaceQuizBody_(){const body=document.getElementById('quizQuestionBody'),question=quizState.game.questions[quizState.index];if(body)body.innerHTML=renderQuizQuestionBody_(question);}
+  function enableQuizNext_(){const button=document.getElementById('quizNextButton');if(button){button.disabled=false;button.textContent=quizState.index>=9?'結果を見る':'次へ';}}
+  function advanceQuiz_(){if(quizState.stage!=='answered')return;if(quizState.index>=quizState.game.questions.length-1){finishQuiz_();return;}quizState.index+=1;quizState.stage='question';quizState.selected=null;renderQuizQuestion_();scrollAppToTop('smooth');}
+
+  function finishQuiz_(){if(quizState.busy||quizState.completed)return;quizState.busy=true;renderQuizLoading_();const payload={userId:quizState.userId,quizGameId:quizState.game.gameId,totalAnswerTimeMs:Date.now()-quizState.startedAt};if(quizState.game.mode==='OFFLINE'&&quizState.game.genre==='LYRICS')payload.awards=quizState.awards;else payload.answers=quizState.answers;google.script.run.withSuccessHandler(function(result){quizState.busy=false;quizState.completed=true;quizState.screen='result';renderQuizResult_(result.scoreboard||[]);}).withFailureHandler(quizFailure_).submitQuizResult(payload);}
+
+  function renderQuizResult_(scoreboard){const game=quizState.game,host=quizHost_();if(!host)return;const max=game.genre==='LYRICS'?20:10;host.innerHTML=(game.roomId?renderQuizRoomBanner_(game.roomId):'')+'<section class="quiz-panel"><p class="quiz-kicker">RESULT</p><h2 class="quiz-panel-title">SCORE</h2><div class="quiz-score-list">'+(scoreboard.length?scoreboard.map(function(row){return '<div class="quiz-score-row"><span class="quiz-score-rank">#'+row.rank+'</span><strong class="quiz-score-name">'+quizEscape_(row.displayName)+'</strong><span class="quiz-score-points">'+row.score+'<small> / '+max+'</small></span></div>';}).join(''):'<div class="quiz-empty-score">まだ回答者がいません。</div>')+'</div><div class="quiz-actions">'+(game.roomId?'<button class="quiz-action" onclick="refreshQuizResult_()">更新</button>':'')+'<button class="quiz-action is-primary" onclick="returnQuizTop_()">QUIZ TOP</button></div></section>';}
+  function refreshQuizResult_(){if(quizState.busy)return;quizState.busy=true;google.script.run.withSuccessHandler(function(scoreboard){quizState.busy=false;renderQuizResult_(scoreboard||[]);}).withFailureHandler(quizFailure_).getQuizScoreboard(quizState.userId,quizState.game.gameId);}
+
+  function renderQuizRoomBanner_(roomId){return '<div class="quiz-room-banner"><span><small class="quiz-room-label">ROOM ID</small><br><span class="quiz-muted">同じ問題でプレイ</span></span><strong>'+quizEscape_(roomId)+'</strong></div>';}
+  function renderQuizLyricsLink_(question){return '<button type="button" class="quiz-lyrics-link" onclick="openQuizLyrics_(\''+quizArg_(question.source.songId)+'\',\''+quizArg_(question.source.artist)+'\')">全文歌詞を見る ›</button>';}
+  function openQuizLyrics_(songId,artist){const url=new URL(window.location.href);url.search='';url.searchParams.set('page','lyrics');url.searchParams.set('song',decodeURIComponent(songId));url.searchParams.set('group',decodeURIComponent(artist));window.open(url.toString(),'_blank','noopener');}
+
+  function abandonQuiz_(){if(!quizState.game||quizState.completed)return returnQuizTop_();if(!window.confirm('このクイズを諦めますか？\n途中の成績は保存されません。'))return;const id=quizState.game.gameId;quizState.completed=true;google.script.run.withFailureHandler(function(){}).abandonQuizGame(quizState.userId,id);returnQuizTop_();}
+  function returnQuizTop_(){quizState.game=null;quizState.completed=true;google.script.history.replace({page:'quiz'},{page:'quiz'},'');renderQuizSetup_();scrollAppToTop('smooth');}
+  function quizBackToLab(){if(!quizCanLeave_())return;navigateTo('lab');}
+  function quizCanLeave_(){if(currentRoute!=='quiz'||!quizState.game||quizState.completed||quizState.screen==='result')return true;if(!window.confirm('このクイズを諦めますか？\n途中の成績は保存されません。'))return false;const id=quizState.game.gameId;quizState.completed=true;google.script.run.withFailureHandler(function(){}).abandonQuizGame(quizState.userId,id);return true;}
+
+  function quizFailure_(error){quizState.busy=false;const message=String(error&&error.message||error||'クイズの処理に失敗しました。');const host=quizHost_();if(host)host.innerHTML='<section class="quiz-panel"><p class="quiz-kicker">ERROR</p><h2 class="quiz-panel-title">読み込みに失敗しました</h2><p class="quiz-muted">'+quizEscape_(message)+'</p><div class="quiz-actions"><button class="quiz-action is-primary" onclick="initQuizPage({})">RETRY</button><button class="quiz-action" onclick="navigateTo(\'lab\')">BACK</button></div></section>';quizNotify_(message);}
+  function quizNotify_(message){if(typeof showToast==='function')showToast(message);}
+  function quizUserName_(id){const user=quizState.users.find(function(item){return item.userId===id;});return user?user.displayName:'';}
+  function quizGenreLabel_(value){return value==='LYRICS'?'歌詞':'プロフィール';}
+  function quizDifficultyLabel_(value){return value==='NORMAL'?'普通':'上級';}
+  function quizArg_(value){return encodeURIComponent(String(value==null?'':value));}
+  function quizEscape_(value){return typeof escapeHtml==='function'?escapeHtml(value):String(value);}
+</script>

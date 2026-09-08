@@ -1,0 +1,55 @@
+<style>
+  .quiz-page{--quiz-cyan:#9cecff;--quiz-panel:rgba(255,255,255,.045);--quiz-line:rgba(156,236,255,.17);padding-bottom:12px}
+  .quiz-header{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:26px}
+  .quiz-header .title{margin:4px 0 0;font-size:clamp(42px,12vw,72px);line-height:.9}
+  .quiz-back-btn{width:46px!important;min-width:46px!important;height:46px!important;min-height:46px!important;padding:0!important;border-radius:15px!important;font-size:28px!important;line-height:1!important}
+  .quiz-app{display:grid;gap:16px;max-width:760px;margin:0 auto}
+  .quiz-panel{border:1px solid var(--quiz-line);border-radius:24px;background:linear-gradient(145deg,rgba(156,236,255,.055),rgba(255,255,255,.022));box-shadow:inset 0 1px 0 rgba(255,255,255,.035);padding:clamp(18px,4.5vw,28px)}
+  .quiz-kicker,.quiz-step-label,.quiz-room-label{margin:0;color:rgba(156,236,255,.68);font:700 10px/1.2 "Exo 2",Roboto,sans-serif;letter-spacing:.16em;text-transform:uppercase}
+  .quiz-panel-title{margin:8px 0 4px;color:var(--white);font:700 clamp(22px,6vw,32px)/1.15 "Zen Kaku Gothic New",Roboto,sans-serif}
+  .quiz-muted{margin:8px 0 0;color:var(--muted-dark);font:500 13px/1.7 "Zen Kaku Gothic New",Roboto,sans-serif}
+  .quiz-settings{display:grid;gap:20px}
+  .quiz-setting{display:grid;gap:10px}
+  .quiz-setting-title{margin:0;color:rgba(247,251,255,.72);font:700 11px/1.2 "Exo 2",Roboto,sans-serif;letter-spacing:.13em}
+  .quiz-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+  .quiz-options.is-course{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .quiz-choice,.quiz-answer,.quiz-player,.quiz-award,.quiz-action,.quiz-join-button{min-height:48px;border:1px solid rgba(194,232,244,.14);border-radius:15px;color:var(--white);background:linear-gradient(145deg,rgba(255,255,255,.052),rgba(255,255,255,.022));font:700 13px/1.25 "Zen Kaku Gothic New",Roboto,sans-serif}
+  .quiz-choice.is-selected,.quiz-player.is-selected{border-color:rgba(156,236,255,.58);background:linear-gradient(145deg,rgba(156,236,255,.16),rgba(156,236,255,.045));box-shadow:0 0 20px rgba(156,236,255,.055)}
+  .quiz-player-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+  .quiz-player small{display:block;margin-top:3px;color:rgba(156,236,255,.6);font:600 9px "Exo 2",sans-serif;letter-spacing:.08em}
+  .quiz-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px}
+  .quiz-action{min-height:52px}
+  .quiz-action.is-primary{border-color:rgba(156,236,255,.48);color:#061019;background:linear-gradient(135deg,#c6f6ff,#83ddef)}
+  .quiz-action:disabled,.quiz-choice:disabled,.quiz-answer:disabled{cursor:default;opacity:.42}
+  .quiz-online-join{display:grid;grid-template-columns:minmax(0,1fr) 110px;gap:10px;margin-top:12px}
+  .quiz-room-input{width:100%;min-height:50px;border:1px solid var(--quiz-line);border-radius:15px;background:rgba(0,0,0,.18);color:var(--white);font:700 20px "Orbitron",sans-serif;letter-spacing:.2em;text-align:center;outline:none}
+  .quiz-room-input:focus{border-color:rgba(156,236,255,.58)}
+  .quiz-room-banner{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 16px;border:1px solid rgba(156,236,255,.22);border-radius:18px;background:rgba(156,236,255,.055)}
+  .quiz-room-banner strong{color:var(--white);font:700 25px "Orbitron",sans-serif;letter-spacing:.16em}
+  .quiz-progress{height:4px;overflow:hidden;border-radius:999px;background:rgba(255,255,255,.08)}
+  .quiz-progress span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--quiz-cyan),rgba(171,155,255,.72));transition:width .22s ease}
+  .quiz-question-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+  .quiz-question-count{color:rgba(247,251,255,.56);font:600 11px "Orbitron",sans-serif;letter-spacing:.09em}
+  .quiz-question-text{margin:4px 0 24px;color:var(--white);font:700 clamp(21px,5.8vw,30px)/1.55 "Zen Kaku Gothic New",Roboto,sans-serif;letter-spacing:.015em;overflow-wrap:anywhere}
+  .quiz-question-text.is-lyrics{padding:22px 12px;text-align:center;font-family:"Noto Serif JP",serif;line-height:1.8}
+  .quiz-answer-list{display:grid;gap:10px}
+  .quiz-answer{width:100%;padding:13px 16px;text-align:left;overflow-wrap:anywhere}
+  .quiz-answer.is-selected{border-color:rgba(156,236,255,.62);background:rgba(156,236,255,.13)}
+  .quiz-answer.is-correct{border-color:rgba(113,232,181,.62);background:rgba(113,232,181,.13)}
+  .quiz-answer.is-wrong{border-color:rgba(255,135,151,.58);background:rgba(255,135,151,.11)}
+  .quiz-feedback{margin:18px 0 0;padding:14px 16px;border-left:2px solid var(--quiz-cyan);background:rgba(156,236,255,.055);color:rgba(247,251,255,.8);font:600 13px/1.7 "Zen Kaku Gothic New",sans-serif}
+  .quiz-lyrics-link{display:inline-flex;align-items:center;min-height:44px;margin-top:10px;color:var(--quiz-cyan);font:700 12px "Zen Kaku Gothic New",sans-serif;text-decoration:none}
+  .quiz-award-step{display:grid;gap:12px}
+  .quiz-award-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+  .quiz-award.is-none{color:rgba(247,251,255,.56)}
+  .quiz-score-list{display:grid;gap:10px;margin-top:18px}
+  .quiz-score-row{display:grid;grid-template-columns:48px 1fr auto;align-items:center;gap:12px;min-height:66px;padding:10px 14px;border:1px solid var(--quiz-line);border-radius:18px;background:rgba(255,255,255,.025)}
+  .quiz-score-rank{color:var(--quiz-cyan);font:700 18px "Orbitron",sans-serif}
+  .quiz-score-name{font:700 16px "Zen Kaku Gothic New",sans-serif}
+  .quiz-score-points{font:700 22px "Orbitron",sans-serif}.quiz-score-points small{font-size:10px;color:var(--muted-dark)}
+  .quiz-empty-score{padding:24px 8px;text-align:center;color:var(--muted-dark);font:500 13px "Zen Kaku Gothic New",sans-serif}
+  .quiz-danger{color:rgba(255,181,191,.85)}
+  @media(min-width:680px){.quiz-options.is-course{grid-template-columns:repeat(3,minmax(0,1fr))}.quiz-answer-list{grid-template-columns:repeat(2,minmax(0,1fr))}.quiz-award-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+  @media(max-width:420px){.quiz-player-grid{grid-template-columns:1fr}.quiz-actions{grid-template-columns:1fr}.quiz-online-join{grid-template-columns:1fr 96px}.quiz-panel{border-radius:20px}}
+  @media(prefers-reduced-motion:reduce){.quiz-progress span{transition:none}}
+</style>
