@@ -1,0 +1,50 @@
+<script>
+(function(){
+  function auditQuizUi_(root){
+    root=root||document;
+    var scope=root.querySelectorAll?root:document;
+
+    scope.querySelectorAll('.quiz-panel-title').forEach(function(el){
+      if((el.textContent||'').trim()==='クイズ設定')el.classList.add('quiz-audit-redundant');
+    });
+
+    var replacements={
+      '01 / モード':'モード',
+      '02 / ジャンル':'ジャンル',
+      '03 / コース':'コース',
+      '04 / 難易度':'難易度',
+      '01 / MODE':'モード',
+      '02 / GENRE':'ジャンル',
+      '03 / COURSE':'コース',
+      '04 / DIFFICULTY':'難易度',
+      '諦める':'終了する',
+      '4桁のROOM IDを入力してください。':'4桁のルームIDを入力してください。'
+    };
+
+    var nodes=[];
+    if(root.nodeType===1)nodes.push(root);
+    if(root.querySelectorAll)root.querySelectorAll('*').forEach(function(el){nodes.push(el);});
+    nodes.forEach(function(el){
+      if(el.children&&el.children.length)return;
+      var text=(el.textContent||'').trim();
+      if(Object.prototype.hasOwnProperty.call(replacements,text))el.textContent=replacements[text];
+      if(el.getAttribute&&el.getAttribute('aria-label')==='4桁のROOM ID')el.setAttribute('aria-label','4桁のルームID');
+    });
+  }
+
+  function installQuizUiAudit_(){
+    auditQuizUi_(document);
+    if(window.__quizUiAuditObserver)return;
+    window.__quizUiAuditObserver=new MutationObserver(function(mutations){
+      mutations.forEach(function(m){
+        m.addedNodes.forEach(function(node){if(node.nodeType===1)auditQuizUi_(node);});
+        if(m.type==='characterData'&&m.target.parentElement)auditQuizUi_(m.target.parentElement);
+      });
+    });
+    window.__quizUiAuditObserver.observe(document.body,{childList:true,subtree:true,characterData:true});
+  }
+
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',installQuizUiAudit_);
+  else installQuizUiAudit_();
+})();
+</script>
