@@ -37,6 +37,7 @@
     transform:rotateY(0deg);
     transition:transform .22s ease,border-color .22s ease,box-shadow .22s ease!important;
   }
+  .poker-card.is-back::before{display:none!important;}
   .poker-card.is-face-up{transform:rotateY(180deg)!important;}
   .poker-card.is-revealing{
     animation:pokerRealFlip .56s cubic-bezier(.2,.72,.2,1) both!important;
@@ -88,6 +89,16 @@
   }
 </style>
 <script>
+  /* Keep reveal state alive for the full flip animation. */
+  function markPokerFlip(indices){
+    if(pokerState.flipTimer)clearTimeout(pokerState.flipTimer);
+    pokerState.flipIndices=Array.isArray(indices)?indices.slice():[indices];
+    pokerState.flipTimer=setTimeout(function(){
+      pokerState.flipIndices=[];
+      pokerState.flipTimer=null;
+    },640);
+  }
+
   /* Override only the hand renderer so all existing game logic remains untouched. */
   function renderPokerHand(hand,revealed,mode){
     const list=Array.isArray(hand)?hand:[];
