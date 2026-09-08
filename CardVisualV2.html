@@ -32,14 +32,16 @@
   }
   .card-result-meta{display:none!important;}
 
-  /* Gacha screen itself must not rubber-band / pull vertically on iPhone. */
+  /* The pre-draw gacha page must stay normally scrollable. Lock only the full-screen reveal overlay. */
   .card-page.is-gacha-mode,
   .card-page.is-gacha-mode .card-app,
   .card-page.is-gacha-mode .card-gacha-scene{
-    overscroll-behavior:none!important;
+    overscroll-behavior-y:auto!important;
+    touch-action:pan-y!important;
   }
-  .card-page.is-gacha-mode .card-gacha-scene{
-    touch-action:manipulation!important;
+  .card-reveal.is-open{
+    overscroll-behavior:none!important;
+    touch-action:none!important;
   }
 
   /* Textless symmetric Universe card back. */
