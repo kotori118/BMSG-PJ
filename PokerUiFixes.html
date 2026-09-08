@@ -26,8 +26,16 @@
     font:700 11px 'Zen Kaku Gothic New',sans-serif;
   }
 
-  /* Card front is image-only. Rarity is shown only by the edge color. */
-  .poker-card-label,.poker-card-rarity,.poker-rarity{display:none!important;}
+  /* Member name stays neutral white. Rarity is shown only by the edge color. */
+  .poker-card-rarity,.poker-rarity{display:none!important;}
+  .poker-card-label{
+    display:block!important;
+    color:#fff!important;
+    background:rgba(2,4,8,.78)!important;
+    font-family:'Zen Kaku Gothic New',sans-serif!important;
+    font-weight:700!important;
+    letter-spacing:0!important;
+  }
   .poker-card.rarity-n{
     --poker-rarity-border:#9cecff;
     border-color:var(--poker-rarity-border)!important;
@@ -152,7 +160,7 @@
     const room=pokerState.room;const canStart=room.isCreator&&room.players.length>=2;
     const rows=room.players.map(function(player){return '<div class="poker-player-row"><strong>'+escapeHtml(player.displayName)+'</strong><span>'+(player.userId===room.creatorUserId?'作成者':'参加済み')+'</span></div>';}).join('');
     const host=document.getElementById('pokerApp');
-    host.innerHTML=pokerSectionHead('みんなで','', 'leaveOnlinePokerRoom()')+'<div class="poker-panel"><div class="poker-room-meta"><div><span class="poker-panel-label">ルームID</span><div class="poker-room-code">'+escapeHtml(room.roomId)+'</div></div><div class="poker-room-rule">'+pokerRuleLabel(room.ruleType)+' · '+room.players.length+' / 3</div></div><div class="poker-player-list">'+rows+'</div>'+(room.isCreator?'<div class="poker-actions"><button type="button" class="u-btn poker-primary" '+(canStart?'onclick="startOnlinePokerRoom()"':'disabled')+'>開始する</button></div>':'<div class="poker-status"><span>作成者の開始を待っています。</span></div>')+'</div>';
+    host.innerHTML=pokerSectionHead('みんなで','', 'leaveOnlinePokerRoom()')+'<div class="poker-panel"><div class="poker-room-meta"><div><span class="poker-panel-label">ルームID</span><div class="poker-room-code">'+escapeHtml(room.roomId)+'</div></div><div class="poker-room-rule">'+pokerRuleLabel(room.ruleType)+' · '+room.players.length+' / 3</div></div><div class="poker-player-list">'+rows+'</div>'+(room.isCreator?'<div class="poker-actions"><button type="button" class="u-btn poker-primary" '+(canStart?'onclick="startOnlinePokerRoom()"':'disabled')+'>開始する</button></div>':'')+'</div>';
   }
 
   function renderPokerOnlinePlay(){
@@ -182,21 +190,21 @@
     const room=pokerState.room;
     const rows=room.players.map(function(player){return '<div class="poker-player-row '+(player.isFinalized?'is-ready':'')+'"><strong>'+escapeHtml(player.displayName)+'</strong><span>'+(player.isFinalized?'確定済み':'プレイ中')+'</span></div>';}).join('');
     const host=document.getElementById('pokerApp');
-    host.innerHTML=pokerSectionHead('みんなで','', 'leaveOnlinePokerRoom()')+'<div class="poker-panel"><div class="poker-status"><strong>手札確定</strong><span>全員の確定を待っています。</span></div>'+renderPokerHand(room.currentPlayer.hand,5,'locked')+'<div class="poker-player-list">'+rows+'</div></div>';
+    host.innerHTML=pokerSectionHead('みんなで','', 'leaveOnlinePokerRoom()')+'<div class="poker-panel"><div class="poker-status"><strong>全員の確定待ち</strong></div>'+renderPokerHand(room.currentPlayer.hand,5,'locked')+'<div class="poker-player-list">'+rows+'</div></div>';
   }
 
   function renderPokerRevealAndVote(){
     const room=pokerState.room,completed=room.status==='COMPLETED';
     const cards=room.players.map(function(player){
       const canVote=!completed&&!room.hasVoted&&player.userId!==pokerState.userId;
-      return '<article class="poker-panel"><div class="poker-player-row is-ready"><strong>'+escapeHtml(player.displayName)+'</strong><span>'+(completed?(room.voteCounts[player.userId]||0)+'票':'手札確定')+'</span></div><div style="margin-top:12px">'+renderPokerHand(player.hand,5,'locked')+'</div>'+(canVote?'<button type="button" class="u-btn poker-primary poker-vote-btn" onclick="voteOnlinePoker(\''+escapeHtml(player.userId)+'\')">投票する</button>':'')+'</article>';
+      return '<article class="poker-panel"><div class="poker-player-row is-ready"><strong>'+escapeHtml(player.displayName)+'</strong><span>'+(completed?(room.voteCounts[player.userId]||0)+'票':'')+'</span></div><div style="margin-top:12px">'+renderPokerHand(player.hand,5,'locked')+'</div>'+(canVote?'<button type="button" class="u-btn poker-primary poker-vote-btn" onclick="voteOnlinePoker(\''+escapeHtml(player.userId)+'\')">投票する</button>':'')+'</article>';
     }).join('');
     let result='';
     if(completed){
       const names=room.players.filter(function(player){return room.winnerUserIds.indexOf(player.userId)>=0;}).map(function(player){return player.displayName;});
       result='<div class="poker-panel poker-status"><strong>'+(names.length>1?'同点':'勝者')+'</strong><div class="poker-room-code" style="font-size:clamp(25px,8vw,46px)">'+escapeHtml(names.join(' / '))+'</div></div>';
     }else if(room.hasVoted){
-      result='<div class="poker-panel poker-status"><strong>投票済み</strong><span>全員の投票を待っています。</span></div>';
+      result='<div class="poker-panel poker-status"><strong>投票済み</strong></div>';
     }
     const save='<div class="poker-actions is-stack"><button type="button" class="u-btn poker-primary" '+(room.highlightSaved?'disabled':'onclick="saveOnlinePokerHighlight()"')+'>'+(room.highlightSaved?'保存済み':'保存する')+'</button><button type="button" class="u-btn" onclick="leaveOnlinePokerRoom()">終了する</button></div>';
     const host=document.getElementById('pokerApp');
@@ -211,7 +219,7 @@
       const selectedClass=selected?(pokerState.interaction==='exchange'?' is-exchange':' is-sort'):'';
       const revealing=visible&&Array.isArray(pokerState.flipIndices)&&pokerState.flipIndices.indexOf(i)>=0?' is-revealing':'';
       const action=(mode==='offline'||mode==='online')&&revealed>=5?'onclick="handlePokerCardTap('+i+',\''+mode+'\')"':'';
-      html+='<button type="button" class="poker-slot'+selectedClass+'" '+action+' aria-label="カード '+(i+1)+'"><span class="poker-card '+(visible?'rarity-'+String(card.rarity||'N').toLowerCase()+revealing:'is-back')+'">'+(visible?'<img src="https://lh3.googleusercontent.com/d/'+encodeURIComponent(card.driveFileId)+'" alt="">':'')+'</span></button>';
+      html+='<button type="button" class="poker-slot'+selectedClass+'" '+action+' aria-label="カード '+(i+1)+'"><span class="poker-card '+(visible?'rarity-'+String(card.rarity||'N').toLowerCase()+revealing:'is-back')+'">'+(visible?'<img src="https://lh3.googleusercontent.com/d/'+encodeURIComponent(card.driveFileId)+'" alt=""><span class="poker-card-label">'+escapeHtml(card.memberName)+'</span>':'')+'</span></button>';
     }
     return html+'</div>';
   }
@@ -241,7 +249,7 @@
     const host=document.getElementById('pokerApp');
     const body=(items||[]).map(function(item){
       const mode=pokerModeLabel(item.mode);
-      return '<article class="poker-panel"><div class="poker-room-meta"><span class="poker-panel-label">'+escapeHtml(mode)+' · '+escapeHtml(pokerRuleLabel(item.ruleType))+'</span><span class="poker-room-rule">'+escapeHtml(formatPokerDate(item.savedAt))+'</span></div><div class="poker-reveal-list">'+item.players.map(function(player){return '<div style="margin-top:14px"><div class="poker-player-row is-ready"><strong>'+escapeHtml(player.displayName)+'</strong><span>手札確定</span></div><div style="margin-top:10px">'+renderPokerHand(player.hand,5,'locked')+'</div></div>';}).join('')+'</div><p class="poker-room-rule" style="margin-top:14px">保存: '+escapeHtml(item.savedByName)+'</p></article>';
+      return '<article class="poker-panel"><div class="poker-room-meta"><span class="poker-panel-label">'+escapeHtml(mode)+' · '+escapeHtml(pokerRuleLabel(item.ruleType))+'</span><span class="poker-room-rule">'+escapeHtml(formatPokerDate(item.savedAt))+'</span></div><div class="poker-reveal-list">'+item.players.map(function(player){return '<div style="margin-top:14px"><div class="poker-player-row is-ready"><strong>'+escapeHtml(player.displayName)+'</strong></div><div style="margin-top:10px">'+renderPokerHand(player.hand,5,'locked')+'</div></div>';}).join('')+'</div></article>';
     }).join('')||'<div class="poker-panel poker-status"><strong>神回はまだありません</strong></div>';
     host.innerHTML=pokerSectionHead('神回','', 'renderPokerMenu()')+body;
   }
