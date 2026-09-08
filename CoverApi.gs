@@ -62,7 +62,7 @@ function getCoverEditorData(payload) {
     title: buildCoverTitle_(song, group),
     isCreator: true,
     isSaved: false,
-    isComplete: isCoverComplete_(parts.map(function(part){return {order:part.order,memberId:part.originalMemberId};}), members)
+    isComplete: isCoverComplete_(parts.map(function(part){return {order:part.order,memberId:part.originalMemberId};}), members, parts)
   };
 }
 
@@ -112,7 +112,7 @@ function getCoverProject(payload) {
     creatorUserId: asId_(project.CreatorUserID),
     isCreator: asId_(project.CreatorUserID) === uid,
     isSaved: true,
-    isComplete: isCoverComplete_(assignments, members),
+    isComplete: isCoverComplete_(assignments, members, parts),
     createdAt: toCoverIso_(project.CreatedAt)
   };
 }
@@ -155,7 +155,11 @@ function saveCoverProject(payload) {
       return {order:order,memberId:memberId};
     }).sort(function(a,b){return a.order-b.order;});
 
-    const incomplete = assignments.some(function(item){ return !allowed[item.memberId]; });
+    const coverParts = parts.map(function(row){
+      const singer = String(row.Singer || '').trim();
+      return {order:Number(row.PartOrder || 0),originalMemberId:getCoverPrimarySingerId_(singer)};
+    });
+    const incomplete = !isCoverComplete_(assignments, members, coverParts);
     if (incomplete && !payload.confirmIncomplete) {
       return { requiresConfirm: true, message: '原曲担当のまま残っているパートがあります。', isComplete: false };
     }
@@ -163,8 +167,8 @@ function saveCoverProject(payload) {
     const beforeAssignments = existing ? readSheetObjects_(assignmentSheet)
       .filter(function(row){ return asId_(row.CoverProjectID) === projectIdInput; })
       .map(function(row){ return {order:Number(row.Order || 0),memberId:asId_(row.MemberID)}; }) : [];
-    const wasComplete = existing ? isCoverComplete_(beforeAssignments, members) : false;
-    const nowComplete = isCoverComplete_(assignments, members);
+    const wasComplete = existing ? isCoverComplete_(beforeAssignments, members, coverParts) : false;
+    const nowComplete = isCoverComplete_(assignments, members, coverParts);
     const projectId = existing ? projectIdInput : Utilities.getUuid();
     const title = buildCoverTitle_(song, group);
     const createdAt = existing ? existing.CreatedAt : new Date();
@@ -301,10 +305,26 @@ function formatCoverDate_(value) {
 
 function buildCoverTitle_(song, group) { return String(song.Title || '') + '(' + String(group.GroupName || '') + ' ver)'; }
 
-function isCoverComplete_(assignments, members) {
-  if (!assignments || !assignments.length) return false;
+function isCoverComplete_(assignments, members, parts) {
+  if (!assignments || !assignments.length || !parts || assignments.length !== parts.length) return false;
   const allowed = {}; members.forEach(function(member){allowed[member.memberId]=true;}); allowed[COVER_ALL_ID_] = true;
-  return assignments.every(function(item){return !!allowed[asId_(item.memberId)];});
+  const originals = {};
+  parts.forEach(function(part){
+    const order = Number(part.order !== undefined ? part.order : part.PartOrder || 0);
+    const original = part.originalMemberId !== undefined
+      ? asId_(part.originalMemberId)
+      : getCoverPrimarySingerId_(String(part.originalSinger !== undefined ? part.originalSinger : part.Singer || '').trim());
+    originals[String(order)] = original;
+  });
+  const seen = {};
+  return assignments.every(function(item){
+    const order = String(Number(item.order || 0));
+    const memberId = asId_(item.memberId);
+    if (!Object.prototype.hasOwnProperty.call(originals, order) || seen[order] || !allowed[memberId]) return false;
+    seen[order] = true;
+    const originalId = originals[order];
+    return memberId === COVER_ALL_ID_ || originalId === COVER_ALL_ID_ || !originalId || memberId !== originalId;
+  });
 }
 
 function listCoverProjects_(snapshot) {
@@ -323,7 +343,11 @@ function listCoverProjects_(snapshot) {
       projectId:asId_(row.CoverProjectID),creatorUserId:asId_(row.CreatorUserID),sourceSongId:asId_(row.SourceSongID),
       sourceTitle:String(song.Title || ''),sourceArtist:String(song.Artist || ''),coverGroupId:asId_(row.CoverGroupID),
       coverGroupName:String(group.GroupName || ''),coverGroupColor:normalizeHex_(group.ColorHex,'#9cecff'),title:String(row.Title || ''),
-      createdAt:toCoverIso_(row.CreatedAt),isComplete:isCoverComplete_(assignmentsByProject[asId_(row.CoverProjectID)] || [], members)
+      createdAt:toCoverIso_(row.CreatedAt),isComplete:isCoverComplete_(
+        assignmentsByProject[asId_(row.CoverProjectID)] || [],
+        members,
+        snapshot.lyrics.filter(function(part){return asId_(part.SongID) === asId_(row.SourceSongID);})
+      )
     };
   }).sort(function(a,b){return String(b.createdAt).localeCompare(String(a.createdAt));});
 }
