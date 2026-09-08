@@ -27,11 +27,7 @@
       filter:none!important;
     }
   }
-  .cover-page .cover-project-row:focus-visible{
-    outline:2px solid rgba(21,24,32,.28)!important;
-    outline-offset:2px!important;
-    box-shadow:none!important;
-  }
+  /* Focus-visible remains owned by ButtonSystem.html. */
   .cover-page .cover-project-row strong{
     font-size:16px!important;
     line-height:1.35!important;
@@ -55,6 +51,10 @@
     place-items:center!important;
     font-size:28px!important;
     line-height:1!important;
+  }
+  /* Editor/view use the in-content BACK only; avoid duplicate navigation controls. */
+  .cover-page.is-cover-editor .cover-back-btn{
+    display:none!important;
   }
 
   /* Saved-cover viewing is normal document flow: no sticky title/tabs/tools. */
@@ -97,7 +97,7 @@
     });
   }
 
-  /* Only the current user's projects are surfaced on HOME / projects list. */
+  /* Server already returns only the current user's projects; keep the client filter as defense in depth. */
   window.renderCoverHome=function(){
     coverState.screen='home';
     coverState.dirty=false;
@@ -130,7 +130,7 @@
     }).join('')+'</div>';
   };
 
-  /* Add an in-content BACK after every editor/view render and separate view from edit layout. */
+  /* Add one in-content BACK after every editor/view render and separate view from edit layout. */
   var originalRenderCoverEditor=window.renderCoverEditor;
   if(typeof originalRenderCoverEditor==='function'){
     window.renderCoverEditor=function(){
