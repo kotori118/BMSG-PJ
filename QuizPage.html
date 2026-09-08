@@ -1,11 +1,10 @@
 <template id="quizPageTemplate">
   <section class="view quiz-page">
     <header class="quiz-header">
-      <div>
-        <p class="eyebrow">LAB / KNOWLEDGE GAME</p>
+      <button type="button" class="u-btn quiz-back-btn" onclick="quizBackToLab()" aria-label="LABへ戻る">‹</button>
+      <div class="quiz-title-block">
         <h1 class="title">QUIZ</h1>
       </div>
-      <button type="button" class="u-btn quiz-back-btn" onclick="quizBackToLab()" aria-label="Back to LAB">‹</button>
     </header>
     <div id="quizApp" class="quiz-app"></div>
   </section>
