@@ -1,6 +1,6 @@
 /** BMSG Universe COVER MAKER */
 const COVER_USERS_ = Object.freeze(['U001','U002','U003']);
-const COVER_SOURCE_ARTISTS_ = Object.freeze(['BE:FIRST','MAZZEL','STARGLOW','HANA']);
+const COVER_SOURCE_ARTISTS_ = Object.freeze(['BE:FIRST','MAZZEL','STARGLOW','HANA','ShowMinorSavage']);
 const COVER_DESTINATION_GROUPS_ = Object.freeze(['BE:FIRST','MAZZEL','STARGLOW','HANA','ShowMinorSavage']);
 const COVER_ALL_ID_ = '99';
 
