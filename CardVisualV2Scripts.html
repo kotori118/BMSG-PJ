@@ -54,10 +54,10 @@
       };
     }
 
-    /* Prevent iPhone rubber-band dragging on the non-scrollable gacha screen only. */
+    /* Prevent iPhone rubber-band only while the full-screen reveal is open. The pre-draw page remains scrollable. */
     document.addEventListener('touchmove',function(event){
-      const target=event.target&&event.target.closest?event.target.closest('.card-page.is-gacha-mode .card-gacha-scene'):null;
-      if(target&&event.cancelable)event.preventDefault();
+      const reveal=event.target&&event.target.closest?event.target.closest('.card-reveal.is-open'):null;
+      if(reveal&&event.cancelable)event.preventDefault();
     },{passive:false});
   })();
 </script>
