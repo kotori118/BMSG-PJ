@@ -130,6 +130,7 @@ function reorderPokerHand(payload) {
   const uid = validatePokerUser_(payload.userId);
   return withPokerLock_(function() {
     const context = requirePokerPlayContext_(uid, payload.roomId);
+    if (context.player.isFinalized) throw new Error('手札は確定済みです。');
     const submitted = Array.isArray(payload.imageIds) ? payload.imageIds.map(asId_) : [];
     if (submitted.length !== 5 || submitted.slice().sort().join('|') !== context.player.handIds.slice().sort().join('|')) {
       throw new Error('手札の並び順が正しくありません。');
