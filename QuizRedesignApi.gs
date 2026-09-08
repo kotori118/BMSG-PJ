@@ -289,7 +289,7 @@ function buildProfileCommonalityPoolV2_(rows, memberById, settings, facts, out) 
       const options = [{ value: value, label: value }].concat(quizShuffle_(others).slice(0, 3).map(function(v) { return { value: v, label: v }; }));
       out.push({
         type: 'PROFILE_COMMONALITY',
-        text: memberById[pair[0]].name + 'と' + memberById[pair[1]].name に共通する「' + String(setting.FieldName || pid) + '」は？',
+        text: memberById[pair[0]].name + 'と' + memberById[pair[1]].name + 'に共通する「' + String(setting.FieldName || pid) + '」は？',
         source: { key: pid + ':' + pair.join('-') + ':' + value, profileId: pid, memberIds: pair, fieldName: String(setting.FieldName || pid) },
         choices: quizShuffle_(options),
         correct: { value: value, label: value }
