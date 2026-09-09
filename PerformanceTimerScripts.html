@@ -39,11 +39,15 @@
   }
   function restoreSnapshot(snapshot){
     if(!snapshot)return;
+    const ts=now();
+    const snapshotAtMs=Number(snapshot.at);
+    const replayMs=!!snapshot.running&&Number.isFinite(snapshotAtMs)?Math.max(0,ts-snapshotAtMs):0;
     state.started=!!snapshot.started;state.running=!!snapshot.running;state.activeMemberId=snapshot.activeMemberId||'';state.pendingMemberId=snapshot.pendingMemberId||'';
     state.elapsed=Object.assign({},snapshot.elapsed||{});MEMBER_IDS.forEach(id=>{if(!Number.isFinite(Number(state.elapsed[id])))state.elapsed[id]=0;});
-    state.totalElapsedMs=Number(snapshot.totalElapsedMs||0);
-    state.totalRunningSince=state.running?now():0;
-    state.memberRunningSince=state.running&&state.activeMemberId?state.totalRunningSince:0;
+    state.totalElapsedMs=Number(snapshot.totalElapsedMs||0)+replayMs;
+    if(replayMs&&state.activeMemberId)state.elapsed[state.activeMemberId]=Number(state.elapsed[state.activeMemberId]||0)+replayMs;
+    state.totalRunningSince=state.running?ts:0;
+    state.memberRunningSince=state.running&&state.activeMemberId?ts:0;
     state.dirty=true;
   }
   function rollbackSwitch(entry){
@@ -186,11 +190,28 @@
   window.performanceTimerChangeSelection_=function(){if(!state.started)return;openPtDialog('選択を変更しますか？','今回の計測は破棄されます。',[{label:'キャンセル',action:'closePtDialog()'},{label:'変更',primary:true,action:'performanceTimerChangeSelectionConfirmed_()'}]);};
   window.performanceTimerChangeSelectionConfirmed_=function(){closePtDialog();clearAll();renderTimerBody();};
 
-  window.performanceTimerOpenSummary_=function(){if(!state.started)return;const ts=now();if(state.running)settleAt(ts);const items=(state.bootstrap.members||[]).map(m=>({name:m.name,value:Number(state.elapsed[String(m.memberId)]||0)/1000}));const html='<div class="pt-summary-head"><strong>'+esc(state.songTitle)+'</strong><span>'+esc(TYPE_LABELS[state.type])+'</span></div><ul class="pt-dialog-list">'+items.map(x=>'<li><span>'+esc(x.name)+'</span><strong>'+Number(x.value).toFixed(2)+'s</strong></li>').join('')+'</ul>';openPtDialog('保存',html,[{label:'閉じる',action:'closePtDialog()'},{label:'保存',primary:true,action:'performanceTimerSave_(false)'}],true);};
+  window.performanceTimerOpenSummary_=function(){
+    if(!state.started)return;
+    const ts=now();
+    if(state.running){
+      settleAt(ts);
+      state.running=false;
+      state.totalRunningSince=0;
+      state.memberRunningSince=0;
+      state.pendingMemberId=state.activeMemberId||state.pendingMemberId||'';
+      state.activeMemberId='';
+      state.dirty=true;
+      stopTick();
+      renderTimerBody();
+    }
+    const items=(state.bootstrap.members||[]).map(m=>({name:m.name,value:Number(state.elapsed[String(m.memberId)]||0)/1000}));
+    const html='<div class="pt-summary-head"><strong>'+esc(state.songTitle)+'</strong><span>'+esc(TYPE_LABELS[state.type])+'</span></div><ul class="pt-dialog-list">'+items.map(x=>'<li><span>'+esc(x.name)+'</span><strong>'+Number(x.value).toFixed(2)+'s</strong></li>').join('')+'</ul>';
+    openPtDialog('保存',html,[{label:'閉じる',action:'closePtDialog()'},{label:'保存',primary:true,action:'performanceTimerSave_(false)'}],true);
+  };
 
   window.performanceTimerSave_=function(overwriteConfirmed){
     if(state.loading)return;
-    const ts=now();if(state.running)settleAt(ts);state.loading=true;
+    state.loading=true;
     const payload={songId:state.songId,type:state.type,overwriteConfirmed:!!overwriteConfirmed,values:{}};
     MEMBER_IDS.forEach(id=>payload.values[id]=Math.round((Number(state.elapsed[id]||0)/1000)*100)/100);
     const saveButton=document.getElementById('ptDialogPrimary');if(saveButton)saveButton.disabled=true;
