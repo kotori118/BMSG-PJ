@@ -1,0 +1,19 @@
+<template id="performanceTimerTemplate">
+  <section id="performanceTimerPage" class="performance-timer-page" aria-label="歌唱・ダンス秒数計測">
+    <header class="performance-timer-header">
+      <button type="button" class="u-btn performance-timer-back" onclick="performanceTimerOpenSettings_()" aria-label="設定へ戻る">‹</button>
+      <div class="performance-timer-title-wrap">
+        <h1 class="performance-timer-title">歌唱・ダンス秒数計測</h1>
+      </div>
+    </header>
+
+    <div id="performanceTimerApp" class="performance-timer-app"></div>
+  </section>
+</template>
+
+<script>
+  function renderPerformanceTimer(){
+    const template=document.getElementById('performanceTimerTemplate');
+    return template ? template.innerHTML : '<section class="performance-timer-page"><div id="performanceTimerApp"></div></section>';
+  }
+</script>
