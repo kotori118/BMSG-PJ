@@ -22,13 +22,13 @@
       );
 
       status.textContent = q
-        ? `${matches.length} RESULT${matches.length === 1 ? '' : 'S'}`
-        : 'PAGES';
+        ? `検索結果 ${matches.length}件`
+        : 'ページ';
 
       if (!matches.length) {
         results.innerHTML = `
           <div class="search-no-results">
-            <h3 class="search-no-results-title">NO RESULTS</h3>
+            <h3 class="search-no-results-title">該当なし</h3>
             <p class="search-no-results-copy">一致するページがありません。</p>
           </div>
         `;
