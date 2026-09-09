@@ -1,11 +1,11 @@
 <template id="cardPageTemplate">
   <section class="view card-page" id="cardPageRoot">
     <header class="card-header">
+      <button type="button" class="u-btn card-service-back" onclick="navigateTo('lab')" aria-label="LABへ戻る">‹</button>
       <div>
-        <p class="eyebrow">LAB</p>
         <h1 class="card-title">TRADING CARD</h1>
       </div>
-      <button type="button" class="u-btn card-book-btn" onclick="openCardCollection()" aria-label="Collection">
+      <button type="button" class="u-btn card-book-btn" onclick="openCardCollection()" aria-label="コレクションを開く">
         <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="5" width="10.5" height="14" rx="2"></rect><path d="M9 5.2V4.5A1.5 1.5 0 0 1 10.5 3h7A1.5 1.5 0 0 1 19 4.5v11A1.5 1.5 0 0 1 17.5 17H15"></path><path d="M7.5 9h4.5M7.5 12h4.5M7.5 15h3"></path></svg>
       </button>
     </header>
@@ -20,7 +20,7 @@
     <div class="card-reveal-burst" aria-hidden="true"></div>
     <div class="card-reveal-meteors" aria-hidden="true"></div>
     <div class="card-reveal-sparks" aria-hidden="true"></div>
-    <button type="button" class="u-btn card-reveal-back" onclick="closeCardReveal()" aria-label="Back">‹</button>
+    <button type="button" class="u-btn card-reveal-back" onclick="closeCardReveal()" aria-label="戻る">‹</button>
     <div class="card-reveal-stage">
       <div class="card-reveal-kicker" id="cardRevealKicker"></div>
       <div class="card-flip-wrap" id="cardFlipWrap">
@@ -41,8 +41,7 @@
         <div class="card-result-new" id="cardResultNew"></div>
       </div>
       <div class="card-result-actions" id="cardResultActions">
-        <button type="button" class="u-btn" onclick="drawTradingCardFromReveal()">DRAW AGAIN</button>
-        <button type="button" class="u-btn" onclick="closeCardReveal()">BACK</button>
+        <button type="button" class="u-btn" onclick="drawTradingCardFromReveal()">もう一度引く</button>
       </div>
     </div>
   </div>
@@ -56,11 +55,10 @@
           <div id="cardCollectionProgress" class="card-collection-progress"></div>
           <div class="card-collection-meter" aria-hidden="true"><span id="cardCollectionMeterFill"></span></div>
         </div>
-        <button type="button" class="u-btn card-collection-close" onclick="closeCardCollection()" aria-label="Close collection">×</button>
+        <button type="button" class="u-btn card-collection-close" onclick="closeCardCollection()" aria-label="コレクションを閉じる">×</button>
       </div>
-      <div class="card-collection-intro"><span>ORBIT ARCHIVE</span><small>Collect every rarity and complete the constellation.</small></div>
       <div id="cardCollectionBody" class="card-collection-body"></div>
-      <button id="cardResetCollectionBtn" type="button" class="u-btn card-reset-btn" onclick="resetCardCollection()" hidden>RESET COLLECTION</button>
+      <button id="cardResetCollectionBtn" type="button" class="u-btn card-reset-btn" onclick="resetCardCollection()" hidden>コレクションをリセット</button>
     </div>
   </div>
 </template>
