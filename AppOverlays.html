@@ -1,8 +1,8 @@
-    <section id="searchOverlay" class="screen-overlay" aria-label="Search">
+    <section id="searchOverlay" class="screen-overlay" aria-label="検索">
       <div class="overlay-inner">
         <header class="overlay-head">
           <h2 class="overlay-title">SEARCH</h2>
-          <button class="overlay-close" onclick="closeSearch()" aria-label="Close search">×</button>
+          <button class="overlay-close" onclick="closeSearch()" aria-label="検索を閉じる">×</button>
         </header>
 
         <label class="search-field">
@@ -14,13 +14,13 @@
             id="globalSearchInput"
             class="search-input"
             type="search"
-            placeholder="Search BMSG Universe"
+            placeholder="BMSG Universeを検索"
             autocomplete="off"
             oninput="runPageSearch(this.value)"
           >
         </label>
 
-        <div id="searchStatus" class="search-status">PAGES</div>
+        <div id="searchStatus" class="search-status">ページ</div>
         <div id="searchResults" class="search-results"></div>
       </div>
     </section>
@@ -28,15 +28,15 @@
     <div id="settingsOverlay" class="modal-overlay" onclick="closeOnBackdrop(event, 'settingsOverlay')">
       <section class="settings-panel" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
         <header class="modal-head">
-          <div><p class="settings-eyebrow">BMSG UNIVERSE</p><h2 id="settingsTitle" class="modal-title">SETTINGS</h2></div>
-          <button class="overlay-close" onclick="closeSettings()" aria-label="Close settings">×</button>
+          <div><h2 id="settingsTitle" class="modal-title">SETTINGS</h2></div>
+          <button class="overlay-close" onclick="closeSettings()" aria-label="設定を閉じる">×</button>
         </header>
 
         <section class="settings-group">
-          <p class="settings-section-title">ACCOUNT</p>
+          <p class="settings-section-title">アカウント</p>
           <div class="settings-row">
-            <div class="settings-row-copy"><small>CURRENT USER</small><strong id="settingsUserName">未選択</strong></div>
-            <button class="settings-action" onclick="openUserChooser(false)">CHANGE</button>
+            <div class="settings-row-copy"><small>現在のユーザー</small><strong id="settingsUserName">未選択</strong></div>
+            <button class="settings-action" onclick="openUserChooser(false)">変更</button>
           </div>
         </section>
 
@@ -49,7 +49,7 @@
         </section>
 
         <section class="settings-group">
-          <p class="settings-section-title">TOOLS</p>
+          <p class="settings-section-title">ツール</p>
           <button class="settings-row settings-row-button" onclick="openPerformanceTool()">
             <span class="settings-row-copy"><strong>歌唱・ダンス秒数計測</strong><small>PERFORMANCE TIMER</small></span>
             <span class="settings-arrow">›</span>
@@ -61,8 +61,8 @@
     <div id="userChooserOverlay" class="modal-overlay user-chooser-overlay" onclick="closeUserChooserOnBackdrop(event)">
       <section class="settings-panel user-chooser-panel" role="dialog" aria-modal="true" aria-labelledby="userChooserTitle">
         <header class="modal-head">
-          <div><p class="settings-eyebrow">BMSG UNIVERSE</p><h2 id="userChooserTitle" class="modal-title">USER</h2></div>
-          <button id="userChooserClose" class="overlay-close" onclick="closeUserChooser()" aria-label="Close user selection">×</button>
+          <div><h2 id="userChooserTitle" class="modal-title">USER</h2></div>
+          <button id="userChooserClose" class="overlay-close" onclick="closeUserChooser()" aria-label="ユーザー選択を閉じる">×</button>
         </header>
         <p class="user-chooser-copy">利用するユーザーを選択</p>
         <div class="user-chooser-list">
@@ -77,7 +77,7 @@
       <section class="state-panel" role="dialog" aria-modal="true" aria-labelledby="stateCheckTitle">
         <header class="modal-head">
           <h2 id="stateCheckTitle" class="modal-title">STATE CHECK</h2>
-          <button class="overlay-close" onclick="closeStateCheck()" aria-label="Close state check">×</button>
+          <button class="overlay-close" onclick="closeStateCheck()" aria-label="状態確認を閉じる">×</button>
         </header>
 
         <div class="state-actions">
