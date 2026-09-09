@@ -1,0 +1,58 @@
+<style>
+  /* Universe Japanese typography authority: all Japanese text uses Zen Kaku Gothic New. */
+  .u-jp-font {
+    font-family: "Zen Kaku Gothic New", sans-serif !important;
+  }
+</style>
+<script>
+(function(){
+  'use strict';
+  const JP_RE=/[ぁ-ゖァ-ヺ一-龯々〆ヵヶー]/;
+  const SKIP_TAGS=new Set(['SCRIPT','STYLE','NOSCRIPT','SVG','PATH']);
+
+  function markElement(el){
+    if(!el||el.nodeType!==1||SKIP_TAGS.has(el.tagName))return;
+    let hasJapanese=false;
+    for(const node of el.childNodes){
+      if(node.nodeType===Node.TEXT_NODE&&JP_RE.test(node.nodeValue||'')){
+        hasJapanese=true;
+        break;
+      }
+    }
+    el.classList.toggle('u-jp-font',hasJapanese);
+  }
+
+  function scan(root){
+    if(!root)return;
+    if(root.nodeType===Node.TEXT_NODE){
+      markElement(root.parentElement);
+      return;
+    }
+    if(root.nodeType!==1&&root.nodeType!==9&&root.nodeType!==11)return;
+    if(root.nodeType===1)markElement(root);
+    const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
+    let node;
+    while((node=walker.nextNode())){
+      if(JP_RE.test(node.nodeValue||''))markElement(node.parentElement);
+    }
+  }
+
+  function start(){
+    scan(document.body);
+    const observer=new MutationObserver(mutations=>{
+      for(const mutation of mutations){
+        if(mutation.type==='characterData'){
+          markElement(mutation.target.parentElement);
+          continue;
+        }
+        for(const node of mutation.addedNodes)scan(node);
+      }
+    });
+    observer.observe(document.body,{subtree:true,childList:true,characterData:true});
+    window.__universeTypographyObserver=observer;
+  }
+
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});
+  else start();
+})();
+</script>
