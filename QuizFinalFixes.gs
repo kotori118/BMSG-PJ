@@ -18,6 +18,15 @@ function getQuizBootstrapFinal(userId, requestedRoomId) {
   return response;
 }
 
+function validateQuizPlayersFinal_(mode, uid, values) {
+  if (mode !== 'OFFLINE') return [uid];
+  const players = Array.isArray(values)
+    ? values.map(validateQuizUser_).filter(function(id, index, all) { return all.indexOf(id) === index; })
+    : [];
+  if (players.length < 2 || players.length > 3) throw new Error('オフラインは2〜3人を選択してください。');
+  return players;
+}
+
 function createQuizGameFinal(payload) {
   payload = payload || {};
   const uid = validateQuizUser_(payload.userId);
@@ -25,7 +34,7 @@ function createQuizGameFinal(payload) {
   const genre = validateQuizEnum_(payload.genre, QUIZ_GENRES_, 'GENRE');
   const difficulty = validateQuizEnum_(payload.difficulty, QUIZ_DIFFICULTIES_, 'DIFFICULTY');
   const course = genre === 'PROFILE' ? 'ALL' : validateQuizEnum_(payload.course, QUIZ_COURSES_, 'COURSE');
-  const players = validateQuizPlayers_(mode, genre, uid, payload.playerUserIds);
+  const players = validateQuizPlayersFinal_(mode, uid, payload.playerUserIds);
 
   return withQuizLock_(function() {
     cleanupExpiredQuizGamesUnsafe_();
