@@ -20,22 +20,21 @@
   function restore(snapshot){if(!snapshot)return;state.started=!!snapshot.started;state.running=!!snapshot.running;state.activeMemberId=snapshot.activeMemberId||'';state.elapsed=Object.assign({},snapshot.elapsed||{});MEMBER_IDS.forEach(id=>{if(!Number.isFinite(Number(state.elapsed[id])))state.elapsed[id]=0;});state.runningSince=state.running?now():0;state.dirty=true;renderTimerBody();}
   function stopTick(){if(state.tickId){clearInterval(state.tickId);state.tickId=null;}}
   function startTick(){stopTick();state.tickId=setInterval(updateTimes,100);}
-  function updateTimes(){
-    MEMBER_IDS.forEach(id=>{const el=document.querySelector('[data-pt-time="'+id+'"]');if(el)el.textContent=fmt(currentElapsed(id));});
-    const total=document.getElementById('ptTotalTime');if(total)total.textContent=fmt(totalElapsed());
-  }
+  function updateTimes(){MEMBER_IDS.forEach(id=>{const el=document.querySelector('[data-pt-time="'+id+'"]');if(el)el.textContent=fmt(currentElapsed(id));});const total=document.getElementById('ptTotalTime');if(total)total.textContent=fmt(totalElapsed());}
   function selectedSong(){return state.bootstrap&&state.bootstrap.songs?state.bootstrap.songs.find(x=>String(x.songId)===String(state.songId)):null;}
   function memberInfo(id){return state.bootstrap&&state.bootstrap.members?state.bootstrap.members.find(x=>String(x.memberId)===String(id)):null;}
   function savedValue(id){const block=state.type==='SING'?state.saved.sing:state.saved.dance;const v=block&&Object.prototype.hasOwnProperty.call(block,id)?block[id]:null;return v===null||typeof v==='undefined'?'未登録':Number(v).toFixed(2)+'s';}
-  function notify(message){if(typeof showToast==='function')showToast(message);else if(typeof showToastMessage==='function')showToastMessage(message);else window.alert(message);}
+  function notify(message){if(typeof showToast==='function')showToast(message);else window.alert(message);}
+  function clearMeasurement(){stopTick();MEMBER_IDS.forEach(id=>state.elapsed[id]=0);state.started=false;state.running=false;state.runningSince=0;state.activeMemberId='';state.history=[];state.dirty=false;state.loading=false;}
+  function clearAll(){clearMeasurement();state.songId='';state.songTitle='';state.type='';state.saved={sing:{},dance:{}};}
 
   window.initPerformanceTimerPage=function(){
     document.body.classList.add('performance-timer-active');
     const host=document.getElementById('performanceTimerApp');if(!host)return;
     host.innerHTML='<div class="pt-panel pt-loading">'+(typeof renderUniverseLoading==='function'?renderUniverseLoading('LOADING...','#9cecff'):'LOADING...')+'</div>';
-    google.script.run.withSuccessHandler(function(data){state.bootstrap=data||{songs:[],members:[]};renderTimerBody();}).withFailureHandler(function(error){renderLoadError(error);}).getPerformanceTimerBootstrap();
+    google.script.run.withSuccessHandler(function(data){state.bootstrap=data||{songs:[],members:[]};renderTimerBody();}).withFailureHandler(renderLoadError).getPerformanceTimerBootstrap();
   };
-  window.cleanupPerformanceTimerPage=function(){settle();stopTick();document.body.classList.remove('performance-timer-active');closePtDialog();};
+  window.cleanupPerformanceTimerPage=function(){settle();clearAll();document.body.classList.remove('performance-timer-active');closePtDialog();};
   window.performanceTimerOpenSettings_=function(){if(typeof openSettings==='function')openSettings();};
 
   function renderLoadError(error){const host=document.getElementById('performanceTimerApp');if(!host)return;host.innerHTML='<div class="pt-error">読み込みに失敗しました。<br>'+esc(error&&error.message?error.message:error)+'</div><button class="u-btn" onclick="initPerformanceTimerPage()">再読み込み</button>';}
@@ -61,7 +60,6 @@
           ${song?'<div class="pt-selected-song"><strong>'+esc(song.title)+'</strong></div>':''}
         </div>
       </section>
-
       <section class="pt-panel">
         <h2 class="pt-section-title">計測するもの</h2>
         <div class="pt-type-grid">
@@ -70,7 +68,6 @@
         </div>
         ${locked?'<div class="pt-lock-note">計測中は曲と種別を固定しています。変更するときは「選択を変更」を使ってください。</div>':''}
       </section>
-
       <section class="pt-panel">
         <div class="pt-status-bar ${statusClass}">
           <div class="pt-status-main"><span class="pt-status-dot"></span><span class="pt-status-label">${esc(status)}</span></div>
@@ -78,12 +75,10 @@
         </div>
         <p class="pt-help">計測中は歌っている／踊っているメンバーをタップ。切り替えると前のメンバーは自動で止まります。</p>
       </section>
-
       <section class="pt-panel">
         <h2 class="pt-section-title">メンバー</h2>
         <div class="pt-members">${renderMembers()}</div>
       </section>
-
       <section class="pt-panel">
         <div class="pt-main-actions">
           <button type="button" class="u-btn pt-action-primary" ${(!state.songId||!state.type)?'disabled':''} onclick="performanceTimerToggleRun_()">${state.running?'一時停止':(state.started?'再開':'計測開始')}</button>
@@ -101,27 +96,59 @@
 
   function renderMembers(){return (state.bootstrap.members||[]).map(function(member){const id=String(member.memberId);const active=state.activeMemberId===id;return `<button type="button" class="u-btn pt-member ${active?'is-active':''}" style="--member-accent:${esc(member.color||'#9cecff')}" ${!state.started?'disabled':''} onclick="performanceTimerSelectMember_('${esc(id)}')"><span><span class="pt-member-name">${esc(member.name)}</span><span class="pt-member-sub">${active?(state.running?'計測中':'選択中'):'タップで切替'}</span></span><span><span class="pt-member-time" data-pt-time="${esc(id)}">${fmt(currentElapsed(id))}</span><span class="pt-member-saved">保存済み ${esc(savedValue(id))}</span></span></button>`;}).join('');}
 
-  window.performanceTimerSearchSongs_=function(query,showAll){if(state.started)return;const host=document.getElementById('ptSongResults');if(!host)return;const q=String(query||'').trim().toLowerCase();const songs=(state.bootstrap.songs||[]).filter(s=>showAll&&!q||String(s.title||'').toLowerCase().startsWith(q)).slice(0,12);host.hidden=false;host.innerHTML=songs.length?songs.map(s=>`<button type="button" class="pt-song-option" onclick="performanceTimerChooseSong_('${esc(s.songId)}')"><strong>${esc(s.title)}</strong><small>${esc(s.releaseDate||'')}</small></button>`).join(''):'<div class="pt-song-empty">一致する曲がありません</div>';};
+  window.performanceTimerSearchSongs_=function(query,showAll){if(state.started)return;const host=document.getElementById('ptSongResults');if(!host)return;const q=String(query||'').trim().toLowerCase();const songs=(state.bootstrap.songs||[]).filter(s=>(showAll&&!q)||String(s.title||'').toLowerCase().startsWith(q)).slice(0,12);host.hidden=false;host.innerHTML=songs.length?songs.map(s=>`<button type="button" class="pt-song-option" onclick="performanceTimerChooseSong_('${esc(s.songId)}')"><strong>${esc(s.title)}</strong><small>${esc(s.releaseDate||'')}</small></button>`).join(''):'<div class="pt-song-empty">一致する曲がありません</div>';};
   window.performanceTimerChooseSong_=function(songId){if(state.started)return;const song=(state.bootstrap.songs||[]).find(s=>String(s.songId)===String(songId));if(!song)return;state.songId=String(song.songId);state.songTitle=song.title;state.saved={sing:{},dance:{}};renderTimerBody();loadSnapshot();};
   window.performanceTimerClearSong_=function(){if(state.started)return;state.songId='';state.songTitle='';state.saved={sing:{},dance:{}};renderTimerBody();};
   window.performanceTimerSelectType_=function(type){if(state.started||!TYPE_LABELS[type])return;state.type=type;renderTimerBody();};
 
-  function loadSnapshot(){if(!state.songId)return;google.script.run.withSuccessHandler(function(data){['sing','dance'].forEach(key=>{state.saved[key]={};(data&&data[key]||[]).forEach(item=>state.saved[key][String(item.memberId)]=item.value);});renderTimerBody();}).withFailureHandler(function(error){notify('保存済み値を取得できませんでした');}).getPerformanceTimerSnapshot(state.songId);}
+  function loadSnapshot(){
+    if(!state.songId)return;
+    const requestedSongId=String(state.songId);
+    google.script.run.withSuccessHandler(function(data){
+      if(String(state.songId)!==requestedSongId)return;
+      ['sing','dance'].forEach(key=>{state.saved[key]={};(data&&data[key]||[]).forEach(item=>state.saved[key][String(item.memberId)]=item.value);});
+      renderTimerBody();
+    }).withFailureHandler(function(){if(String(state.songId)===requestedSongId)notify('保存済み値を取得できませんでした');}).getPerformanceTimerSnapshot(requestedSongId);
+  }
 
   window.performanceTimerToggleRun_=function(){if(!state.songId||!state.type)return;if(!state.started){state.history=[];state.started=true;state.running=true;state.runningSince=now();state.dirty=false;}else{pushHistory();if(state.running){settle();state.running=false;state.runningSince=0;}else{state.running=true;state.runningSince=now();}}renderTimerBody();};
   window.performanceTimerSelectMember_=function(memberId){if(!state.started)return;pushHistory();settle();const id=String(memberId);state.activeMemberId=state.activeMemberId===id?'':id;state.runningSince=state.running?now():0;state.dirty=true;renderTimerBody();};
   window.performanceTimerUndo_=function(){if(!state.history.length)return;settle();restore(state.history.pop());};
 
   window.performanceTimerReset_=function(){if(!state.started)return;openPtDialog('計測をリセットしますか？','この曲と計測種別はそのままに、今回の秒数だけを0に戻します。',[{label:'キャンセル',action:'closePtDialog()'},{label:'リセット',primary:true,action:'performanceTimerResetConfirmed_()'}]);};
-  window.performanceTimerResetConfirmed_=function(){closePtDialog();stopTick();MEMBER_IDS.forEach(id=>state.elapsed[id]=0);state.started=false;state.running=false;state.runningSince=0;state.activeMemberId='';state.history=[];state.dirty=false;renderTimerBody();};
+  window.performanceTimerResetConfirmed_=function(){closePtDialog();clearMeasurement();renderTimerBody();};
   window.performanceTimerChangeSelection_=function(){if(!state.started)return;openPtDialog('選択を変更しますか？','今回の計測内容は破棄され、曲と計測種別を選び直します。',[{label:'キャンセル',action:'closePtDialog()'},{label:'変更する',primary:true,action:'performanceTimerChangeSelectionConfirmed_()'}]);};
-  window.performanceTimerChangeSelectionConfirmed_=function(){closePtDialog();stopTick();MEMBER_IDS.forEach(id=>state.elapsed[id]=0);state.songId='';state.songTitle='';state.type='';state.started=false;state.running=false;state.runningSince=0;state.activeMemberId='';state.history=[];state.saved={sing:{},dance:{}};state.dirty=false;renderTimerBody();};
+  window.performanceTimerChangeSelectionConfirmed_=function(){closePtDialog();clearAll();renderTimerBody();};
 
-  window.performanceTimerOpenSummary_=function(){if(!state.started)return;settle();if(state.running){state.runningSince=now();}const items=(state.bootstrap.members||[]).map(m=>({name:m.name,value:currentElapsed(String(m.memberId))/1000}));const html='<ul class="pt-dialog-list">'+items.map(x=>'<li><span>'+esc(x.name)+'</span><strong>'+Number(x.value).toFixed(2)+'s</strong></li>').join('')+'</ul>';openPtDialog('集計結果','<strong>'+esc(state.songTitle)+'</strong> / '+esc(TYPE_LABELS[state.type])+'<br>未計測のメンバーは0.00秒で保存します。'+html,[{label:'閉じる',action:'closePtDialog()'},{label:'保存する',primary:true,action:'performanceTimerSave_(false)'}],true);};
+  window.performanceTimerOpenSummary_=function(){if(!state.started)return;settle();if(state.running)state.runningSince=now();const items=(state.bootstrap.members||[]).map(m=>({name:m.name,value:currentElapsed(String(m.memberId))/1000}));const html='<div><strong>'+esc(state.songTitle)+'</strong> / '+esc(TYPE_LABELS[state.type])+'<br><span>未計測のメンバーは0.00秒で保存します。</span></div><ul class="pt-dialog-list">'+items.map(x=>'<li><span>'+esc(x.name)+'</span><strong>'+Number(x.value).toFixed(2)+'s</strong></li>').join('')+'</ul>';openPtDialog('集計結果',html,[{label:'閉じる',action:'closePtDialog()'},{label:'保存する',primary:true,action:'performanceTimerSave_(false)'}],true);};
 
-  window.performanceTimerSave_=function(overwriteConfirmed){if(state.loading)return;settle();state.loading=true;const payload={songId:state.songId,type:state.type,overwriteConfirmed:!!overwriteConfirmed,values:{}};MEMBER_IDS.forEach(id=>payload.values[id]=Math.round((Number(state.elapsed[id]||0)/1000)*100)/100);const saveButton=document.getElementById('ptDialogPrimary');if(saveButton)saveButton.disabled=true;google.script.run.withSuccessHandler(function(result){state.loading=false;if(result&&result.requiresConfirmation){const old=(result.existing||[]).map(item=>{const m=memberInfo(String(item.memberId));return '<li><span>'+esc(m?m.name:item.memberId)+'</span><strong>'+(item.value===null?'未登録':Number(item.value).toFixed(2)+'s')+'</strong></li>';}).join('');openPtDialog('上書きしますか？','この曲の「'+esc(TYPE_LABELS[state.type])+'」には保存済みの値があります。反対側の計測値は変更しません。<ul class="pt-dialog-list">'+old+'</ul>',[{label:'キャンセル',action:'closePtDialog()'},{label:'上書きする',primary:true,action:'performanceTimerSave_(true)'}],true);return;}if(result&&result.ok){closePtDialog();notify('保存しました');state.dirty=false;state.started=false;state.running=false;state.runningSince=0;state.activeMemberId='';state.history=[];loadSnapshot();renderTimerBody();}else{notify('保存できませんでした');}}).withFailureHandler(function(error){state.loading=false;const button=document.getElementById('ptDialogPrimary');if(button)button.disabled=false;notify(error&&error.message?error.message:'保存に失敗しました');}).savePerformanceTimer(payload);};
+  window.performanceTimerSave_=function(overwriteConfirmed){
+    if(state.loading)return;
+    settle();state.loading=true;
+    const payload={songId:state.songId,type:state.type,overwriteConfirmed:!!overwriteConfirmed,values:{}};
+    MEMBER_IDS.forEach(id=>payload.values[id]=Math.round((Number(state.elapsed[id]||0)/1000)*100)/100);
+    const saveButton=document.getElementById('ptDialogPrimary');if(saveButton)saveButton.disabled=true;
+    google.script.run.withSuccessHandler(function(result){
+      state.loading=false;
+      if(result&&result.requiresConfirmation){
+        const old=(result.existing||[]).map(item=>{const m=memberInfo(String(item.memberId));return '<li><span>'+esc(m?m.name:item.memberId)+'</span><strong>'+(item.value===null?'未登録':Number(item.value).toFixed(2)+'s')+'</strong></li>';}).join('');
+        openPtDialog('上書きしますか？','<div>この曲の「'+esc(TYPE_LABELS[state.type])+'」には保存済みの値があります。反対側の計測値は変更しません。</div><ul class="pt-dialog-list">'+old+'</ul>',[{label:'キャンセル',action:'closePtDialog()'},{label:'上書きする',primary:true,action:'performanceTimerSave_(true)'}],true);return;
+      }
+      if(result&&result.ok){
+        closePtDialog();notify('保存しました');
+        clearMeasurement();
+        loadSnapshot();
+        renderTimerBody();
+      }else notify('保存できませんでした');
+    }).withFailureHandler(function(error){state.loading=false;const button=document.getElementById('ptDialogPrimary');if(button)button.disabled=false;notify(error&&error.message?error.message:'保存に失敗しました');}).savePerformanceTimer(payload);
+  };
 
-  function openPtDialog(title,body,actions,bodyIsHtml){closePtDialog();const overlay=document.createElement('div');overlay.id='ptDialogBackdrop';overlay.className='pt-dialog-backdrop';overlay.innerHTML='<section class="pt-dialog" role="dialog" aria-modal="true"><h2>'+esc(title)+'</h2><p>'+(bodyIsHtml?body:esc(body))+'</p><div class="pt-dialog-actions">'+actions.map(function(a,index){return '<button '+(a.primary?'id="ptDialogPrimary" ':'')+'type="button" class="u-btn '+(a.primary?'pt-action-primary':'')+'" onclick="'+a.action+'">'+esc(a.label)+'</button>';}).join('')+'</div></section>';overlay.addEventListener('click',function(event){if(event.target===overlay)closePtDialog();});document.body.appendChild(overlay);}
+  function openPtDialog(title,body,actions,bodyIsHtml){
+    closePtDialog();
+    const overlay=document.createElement('div');overlay.id='ptDialogBackdrop';overlay.className='pt-dialog-backdrop';
+    overlay.innerHTML='<section class="pt-dialog" role="dialog" aria-modal="true"><h2>'+esc(title)+'</h2><div class="pt-dialog-copy">'+(bodyIsHtml?body:esc(body))+'</div><div class="pt-dialog-actions">'+actions.map(function(a){return '<button '+(a.primary?'id="ptDialogPrimary" ':'')+'type="button" class="u-btn '+(a.primary?'pt-action-primary':'')+'" onclick="'+a.action+'">'+esc(a.label)+'</button>';}).join('')+'</div></section>';
+    overlay.addEventListener('click',function(event){if(event.target===overlay)closePtDialog();});document.body.appendChild(overlay);
+  }
   window.closePtDialog=closePtDialog;
   function closePtDialog(){const el=document.getElementById('ptDialogBackdrop');if(el)el.remove();}
 
