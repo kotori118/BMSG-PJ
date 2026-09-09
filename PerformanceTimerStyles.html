@@ -11,12 +11,13 @@
     min-height:100%;padding:72px 16px calc(88px + env(safe-area-inset-bottom));color:var(--pt-ink);background:#fff;
     font-family:"Zen Kaku Gothic New",Roboto,sans-serif;
   }
-  .performance-timer-header{max-width:760px;margin:0 auto 12px;display:flex;align-items:center;gap:12px;min-width:0}
+  .performance-timer-header{max-width:760px;margin:0 auto 10px;display:flex;align-items:center;gap:12px;min-width:0}
   .performance-timer-back{width:46px!important;height:46px!important;min-width:46px!important;padding:0!important;border-radius:14px!important;font-size:30px!important;line-height:1!important;color:var(--pt-ink)!important}
   .performance-timer-title-wrap{min-width:0}
   .performance-timer-title{margin:0;font:700 clamp(20px,5.3vw,32px)/1.15 "Zen Kaku Gothic New",Roboto,sans-serif;color:var(--pt-ink)}
-  .performance-timer-app{max-width:760px;margin:0 auto;display:grid;gap:9px}
+  .performance-timer-app{max-width:760px;margin:0 auto;display:grid;gap:7px}
   .pt-panel{border:1px solid var(--pt-line);border-radius:17px;background:#fff;padding:12px;box-shadow:0 5px 18px rgba(17,24,32,.035)}
+  .pt-setup-panel{padding:9px}
   .pt-section-title{margin:0 0 7px;font:700 12px/1.2 "Zen Kaku Gothic New",Roboto,sans-serif;color:var(--pt-ink)}
   .pt-type-title{margin-top:10px}
 
@@ -31,28 +32,29 @@
   .pt-song-option:last-child{border-bottom:0}
   .pt-song-option strong{font:600 14px/1.35 "Zen Kaku Gothic New",Roboto,sans-serif}
   .pt-song-empty{padding:14px;color:var(--pt-muted);font-size:13px}
-  .pt-type-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-  .pt-type{min-height:46px!important}
+  .pt-type-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:7px}
+  .pt-type{min-height:44px!important}
   .pt-type.is-selected{border-color:#66cce2!important;background:linear-gradient(145deg,#fff,rgba(156,236,255,.22))!important;color:var(--pt-cyan-ink)!important}
 
-  .pt-context{min-height:42px;padding:8px 12px;border:1px solid var(--pt-line);border-radius:14px;display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fff}
+  .pt-context{min-height:38px;padding:6px 11px;border:1px solid var(--pt-line);border-radius:14px;display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fff}
   .pt-context strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
   .pt-context span{flex:0 0 auto;font-size:12px;color:var(--pt-cyan-ink);font-weight:700}
 
-  .pt-timer-panel{min-height:92px;padding:10px 14px;border:1px solid var(--pt-line);border-radius:18px;background:#fff;display:grid;grid-template-columns:auto 1fr;align-items:center;gap:12px}
+  .pt-timer-panel{min-height:88px;padding:9px 14px;border:1px solid var(--pt-line);border-radius:18px;background:#fff;display:grid;grid-template-columns:minmax(0,auto) 1fr;align-items:center;gap:12px}
   .pt-status-main{display:flex;align-items:center;gap:8px;min-width:0}
-  .pt-status-dot{width:9px;height:9px;border-radius:50%;background:#aab2b8;box-shadow:0 0 0 4px rgba(170,178,184,.11)}
+  .pt-status-dot{width:10px;height:10px;flex:0 0 10px;border-radius:50%;background:#aab2b8;box-shadow:0 0 0 4px rgba(170,178,184,.11)}
   .pt-timer-panel.is-running .pt-status-dot{background:#42bed8;box-shadow:0 0 0 4px rgba(156,236,255,.28)}
   .pt-timer-panel.is-paused .pt-status-dot{background:#77818a}
-  .pt-status-label{font:700 12px "Zen Kaku Gothic New",Roboto,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pt-status-label{font:700 14px/1.05 "Zen Kaku Gothic New",Roboto,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--pt-ink)}
+  .pt-status-label.is-member{font-size:clamp(20px,5.5vw,28px);font-weight:900;color:var(--pt-status-member-color,var(--pt-ink));letter-spacing:-.02em;overflow:visible;text-overflow:clip}
   .pt-total{text-align:right;font:700 clamp(38px,12vw,58px)/1 Roboto,sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.035em;color:var(--pt-ink)}
 
-  .pt-actions-panel{padding:9px;order:3}
+  .pt-actions-panel{padding:8px;order:3}
   .pt-main-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px}
   .pt-main-actions .u-btn{min-height:48px!important}
   .pt-action-primary{border-color:#68cee4!important;background:linear-gradient(145deg,#fff,rgba(156,236,255,.22))!important}
-  .pt-secondary-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:6px}
-  .pt-secondary-actions .u-btn{min-height:44px!important;padding:0 6px!important;font-size:11px!important}
+  .pt-secondary-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:6px}
+  .pt-secondary-actions .u-btn{min-height:44px!important;padding:0 8px!important;font-size:12px!important}
 
   .pt-member-panel{padding:8px 10px;order:4}
   .pt-members{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
@@ -90,11 +92,13 @@
 
   @media(max-width:560px){
     .performance-timer-page{padding:68px 10px calc(84px + env(safe-area-inset-bottom))}
-    .performance-timer-header{margin-bottom:9px;gap:10px}
+    .performance-timer-header{margin-bottom:7px;gap:10px}
     .performance-timer-title{font-size:20px}
-    .performance-timer-app{gap:7px}
+    .performance-timer-app{gap:6px}
     .pt-panel{border-radius:15px}
-    .pt-timer-panel{min-height:82px;padding:8px 11px}
+    .pt-setup-panel{padding:8px}
+    .pt-timer-panel{min-height:78px;padding:7px 11px}
+    .pt-status-label.is-member{font-size:clamp(20px,6vw,25px)}
     .pt-total{font-size:clamp(36px,11.5vw,48px)}
     .pt-member{min-height:60px!important;padding:6px 7px!important}
     .pt-member-name{font-size:12px}
@@ -106,7 +110,8 @@
     .pt-member-name{font-size:11px}
     .pt-member-time{font-size:15px;min-width:50px}
     .pt-member-saved{font-size:7.5px}
-    .pt-status-label{max-width:82px}
+    .pt-status-label{max-width:86px}
+    .pt-status-label.is-member{max-width:none;font-size:19px}
   }
   @media(prefers-reduced-motion:reduce){.performance-timer-page *{scroll-behavior:auto!important}}
 </style>
