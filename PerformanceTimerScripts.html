@@ -82,23 +82,23 @@
     const host=document.getElementById('performanceTimerApp');if(!host||!state.bootstrap)return;
     const locked=state.started;
     const statusClass=state.running?'is-running':(state.started?'is-paused':'');
+    const statusMemberId=state.running?state.activeMemberId:state.pendingMemberId;
+    const statusMember=statusMemberId?memberInfo(statusMemberId):null;
     let status='準備';
-    if(state.started&&!state.running)status=state.pendingMemberId?(memberInfo(state.pendingMemberId)||{}).name||'一時停止':'一時停止';
-    if(!state.started&&state.pendingMemberId)status=(memberInfo(state.pendingMemberId)||{}).name||'準備';
-    if(state.running&&state.activeMemberId){const m=memberInfo(state.activeMemberId);status=(m?m.name:state.activeMemberId);}
+    if(statusMember)status=statusMember.name||statusMemberId;
+    else if(state.started&&!state.running)status='一時停止';
     else if(state.running)status='メンバー未選択';
+    const statusColor=statusMember?(statusMember.color||'#9cecff'):'';
     const song=selectedSong();
     const setup=locked?`<section class="pt-context"><strong>${esc(state.songTitle)}</strong><span>${esc(TYPE_LABELS[state.type]||'')}</span></section>`:`
       <section class="pt-panel pt-setup-panel">
-        <h2 class="pt-section-title">曲</h2>
         <div class="pt-search-wrap">
           <div class="pt-search-line">
-            <input id="ptSongSearch" class="pt-search-input" type="search" autocomplete="off" placeholder="曲名を検索" value="${esc(song?state.songTitle:'')}" onfocus="performanceTimerSearchSongs_(this.value,true)" oninput="performanceTimerSearchSongs_(this.value,false)">
+            <input id="ptSongSearch" class="pt-search-input" type="search" autocomplete="off" aria-label="曲を選択" placeholder="曲名を検索" value="${esc(song?state.songTitle:'')}" onfocus="performanceTimerSearchSongs_(this.value,true)" oninput="performanceTimerSearchSongs_(this.value,false)">
             <button type="button" class="u-btn pt-clear" aria-label="曲選択をクリア" onclick="performanceTimerClearSong_()">×</button>
           </div>
           <div id="ptSongResults" class="pt-song-results" hidden></div>
         </div>
-        <h2 class="pt-section-title pt-type-title">種別</h2>
         <div class="pt-type-grid">
           <button type="button" class="u-btn pt-type ${state.type==='SING'?'is-selected':''}" onclick="performanceTimerSelectType_('SING')">歌唱</button>
           <button type="button" class="u-btn pt-type ${state.type==='DANCE'?'is-selected':''}" onclick="performanceTimerSelectType_('DANCE')">ダンス</button>
@@ -106,7 +106,7 @@
       </section>`;
     host.innerHTML=`${setup}
       <section class="pt-timer-panel ${statusClass}">
-        <div class="pt-status-main"><span class="pt-status-dot"></span><span class="pt-status-label">${esc(status)}</span></div>
+        <div class="pt-status-main"><span class="pt-status-dot"></span><span class="pt-status-label ${statusMember?'is-member':''}"${statusColor?' style="--pt-status-member-color:'+esc(statusColor)+'"':''}>${esc(status)}</span></div>
         <div id="ptTotalTime" class="pt-total">${fmt(totalElapsed())}</div>
       </section>
       <section class="pt-panel pt-actions-panel">
@@ -115,9 +115,8 @@
           <button type="button" class="u-btn" ${!state.started?'disabled':''} onclick="performanceTimerOpenSummary_()">保存</button>
         </div>
         <div class="pt-secondary-actions">
-          <button type="button" class="u-btn" ${!state.history.length?'disabled':''} onclick="performanceTimerUndo_()">1つ戻す</button>
+          <button type="button" class="u-btn" ${!state.history.length?'disabled':''} onclick="performanceTimerUndo_()">1つ戻る</button>
           <button type="button" class="u-btn" ${!state.started?'disabled':''} onclick="performanceTimerReset_()">リセット</button>
-          <button type="button" class="u-btn" ${!state.started?'disabled':''} onclick="performanceTimerChangeSelection_()">選択変更</button>
         </div>
       </section>
       <section class="pt-panel pt-member-panel">
@@ -174,9 +173,11 @@
   window.performanceTimerUndo_=function(){
     if(!state.history.length)return;
     const entry=state.history.pop();
+    const stoppedMemberId=entry&&entry.kind==='switch'&&entry.snapshot?entry.snapshot.activeMemberId:'';
+    const stoppedMember=stoppedMemberId?memberInfo(stoppedMemberId):null;
     if(state.eventLog.length)state.eventLog.pop();
     if(entry.kind==='switch')rollbackSwitch(entry);else restoreSnapshot(entry.snapshot);
-    logEvent('1つ戻す',now(),state.totalElapsedMs);
+    logEvent(stoppedMember?stoppedMember.name+'が停止':'1つ戻る',now(),state.totalElapsedMs);
     renderTimerBody();
   };
 
