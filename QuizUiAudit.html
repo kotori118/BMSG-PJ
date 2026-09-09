@@ -171,7 +171,7 @@
     safeClearQuizTimer_();quizState.screen='setup';quizState.completed=false;
     var s=quizState.settings;
     if(s.genre==='PROFILE')s.course='ALL';
-    var offlineMode=s.mode==='OFFLINE',host=quizHost_();if(!host)return;
+    var offlineLyrics=s.mode==='OFFLINE'&&s.genre==='LYRICS',host=quizHost_();if(!host)return;
     var courseHtml=s.genre==='PROFILE'?'':quizSetting_('コース',(quizState.courses.length?quizState.courses:[
       {value:'BE:FIRST',label:'BE:FIRST'},{value:'MAZZEL',label:'MAZZEL'},{value:'STARGLOW',label:'STARGLOW'},
       {value:'HANA',label:'HANA'},{value:'UNIT',label:'ユニット'},{value:'ALL',label:'全部'}
@@ -181,7 +181,7 @@
       quizSetting_('ジャンル',[['LYRICS','歌詞'],['PROFILE','プロフィール']],s.genre,'genre')+
       courseHtml+
       quizSetting_('難易度',[['NORMAL','普通'],['ADVANCED','上級']],s.difficulty,'difficulty')+
-      (offlineMode?renderQuizPlayerSelect_():'')+'</div><div class="quiz-actions">'+
+      (offlineLyrics?renderQuizPlayerSelect_():'')+'</div><div class="quiz-actions">'+
       (s.mode==='ONLINE'?'<button class="quiz-action is-primary" onclick="createQuizFromSetup_()">ルームを作る</button><button class="quiz-action" onclick="openQuizRoomJoinV3_()">ルームに参加する</button>':'<button class="quiz-action is-primary" onclick="createQuizFromSetup_()">開始</button>')+
       '<button class="quiz-action" onclick="navigateTo(\'lab\')">戻る</button></div></section>';
     auditQuizUi_(host);
@@ -191,7 +191,7 @@
     if(quizState.busy)return;
     var s=quizState.settings;
     if(s.genre==='PROFILE')s.course='ALL';
-    if(s.mode==='OFFLINE'&&(!Array.isArray(quizState.selectedPlayers)||quizState.selectedPlayers.length<2||quizState.selectedPlayers.length>3)){
+    if(s.mode==='OFFLINE'&&s.genre==='LYRICS'&&(!Array.isArray(quizState.selectedPlayers)||quizState.selectedPlayers.length<2||quizState.selectedPlayers.length>3)){
       quizNotify_('2〜3人を選択してください。');return;
     }
     quizState.busy=true;renderQuizLoading_();
