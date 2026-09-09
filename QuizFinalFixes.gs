@@ -1,3 +1,23 @@
+function getQuizBootstrapFinal(userId, requestedRoomId) {
+  const uid = validateQuizUser_(userId);
+  const response = {
+    users: getQuizUsers_(),
+    courses: getQuizCourses_(),
+    room: null
+  };
+  const roomId = String(requestedRoomId || '').replace(/\D/g, '');
+  if (roomId) {
+    const game = findQuizGameByRoomId_(roomId);
+    if (game) {
+      const expiresAt = new Date(game.ExpiresAt);
+      if (!Number.isFinite(expiresAt.getTime()) || expiresAt.getTime() > Date.now()) {
+        response.room = buildQuizGameStateV2_(game, uid);
+      }
+    }
+  }
+  return response;
+}
+
 function createQuizGameFinal(payload) {
   payload = payload || {};
   const uid = validateQuizUser_(payload.userId);
