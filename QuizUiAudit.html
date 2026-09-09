@@ -40,6 +40,54 @@
     if(count)count.textContent=selected.length+'人選択中';
   }
 
+  function renderQuizBootstrapTimeout_(){
+    var host=quizHost_();
+    if(!host)return;
+    host.innerHTML='<section class="quiz-panel"><p class="quiz-v3-note">読み込みに時間がかかっています。もう一度お試しください。</p><div class="quiz-actions"><button class="quiz-action is-primary" onclick="initQuizPage({})">再読み込み</button><button class="quiz-action" onclick="navigateTo(\'lab\')">戻る</button></div></section>';
+  }
+
+  window.initQuizPage=function(params){
+    if(typeof clearTimer==='function')clearTimer();
+    if(typeof quizResetState_==='function')quizResetState_();
+    if(typeof window.resetRuntime==='function')window.resetRuntime();
+    var uid=typeof getUniverseUserId==='function'?getUniverseUserId():'';
+    if(!uid){
+      var emptyHost=quizHost_();
+      if(emptyHost)emptyHost.innerHTML='<section class="quiz-panel"><p class="quiz-v3-note">利用者を選択してください。</p></section>';
+      return;
+    }
+    quizState.userId=uid;
+    quizState.selectedPlayers=[uid];
+    quizState.busy=false;
+    renderQuizLoading_();
+    var settled=false;
+    var timer=setTimeout(function(){
+      if(settled)return;
+      settled=true;
+      quizState.busy=false;
+      renderQuizBootstrapTimeout_();
+    },10000);
+    google.script.run
+      .withSuccessHandler(function(data){
+        if(settled)return;
+        settled=true;
+        clearTimeout(timer);
+        quizState.ready=true;
+        quizState.users=data&&data.users?data.users:[];
+        quizState.courses=data&&data.courses?data.courses:[];
+        if(data&&data.room)startQuizClientGame_(data.room);
+        else renderQuizSetup_();
+      })
+      .withFailureHandler(function(error){
+        if(settled)return;
+        settled=true;
+        clearTimeout(timer);
+        quizState.busy=false;
+        quizFailure_(error);
+      })
+      .getQuizBootstrapFinal(uid,params&&params.room?params.room:'');
+  };
+
   window.renderQuizPlayerSelect_=function(){
     var users=quizOfflineUsers_();
     var selected=Array.isArray(quizState.selectedPlayers)?quizState.selectedPlayers:[];
