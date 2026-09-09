@@ -18,6 +18,13 @@
     });
   }
 
+  function safeClearQuizTimer_(){
+    if(window.quizState&&quizState.v3Timer){
+      clearInterval(quizState.v3Timer);
+      quizState.v3Timer=0;
+    }
+  }
+
   function quizOfflineUsers_(){
     var users=Array.isArray(window.quizState&&quizState.users)?quizState.users:[];
     if(users.length)return users;
@@ -74,7 +81,7 @@
     params=params||{};
     var requestedRoom=String(params.room||'').replace(/\D/g,'');
     try{
-      if(typeof clearTimer==='function')clearTimer();
+      safeClearQuizTimer_();
       if(typeof quizResetState_==='function')quizResetState_();
       var uid=typeof getUniverseUserId==='function'?getUniverseUserId():'';
       if(!uid){
@@ -161,7 +168,7 @@
   };
 
   renderQuizSetup_=function(){
-    clearTimer();quizState.screen='setup';quizState.completed=false;
+    safeClearQuizTimer_();quizState.screen='setup';quizState.completed=false;
     var s=quizState.settings;
     if(s.genre==='PROFILE')s.course='ALL';
     var offlineLyrics=s.mode==='OFFLINE'&&s.genre==='LYRICS',host=quizHost_();if(!host)return;
