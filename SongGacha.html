@@ -4,6 +4,13 @@
   .song-gacha-screen{padding:0 0 32px;color:var(--ink);}
   .song-gacha-head{display:flex;align-items:center;gap:14px;margin-bottom:24px;}
   .song-gacha-back{width:46px!important;height:46px!important;min-width:46px!important;flex:0 0 46px!important;padding:0!important;margin:0!important;border-radius:14px!important;font-family:'Zen Kaku Gothic New',sans-serif!important;font-size:34px!important;font-weight:400!important;line-height:1!important;display:grid!important;place-items:center!important;}
+  body.theme-light .song-gacha-back,
+  .song-gacha-back{
+    background:#fff!important;
+    border-color:rgba(21,24,32,.14)!important;
+    color:var(--ink)!important;
+    box-shadow:0 5px 16px rgba(21,24,32,.035),inset 0 1px 0 rgba(255,255,255,.98)!important;
+  }
   .song-gacha-head h2{margin:0;font-family:'Orbitron',sans-serif;font-size:clamp(22px,6vw,32px);letter-spacing:.08em;}
   .song-gacha-groups{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;}
   .song-gacha-group{min-height:58px;padding:10px 12px!important;border-radius:15px!important;display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left;}
