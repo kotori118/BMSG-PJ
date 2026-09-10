@@ -1,107 +1,54 @@
-BMSG Universe PHASE3 Gradient Background v2.1 MEMBER DETAIL
-2026-09-03
+BMSG Universe
+2026-09-10
 
-基準版:
-BMSG_Universe_PHASE3_GradientBackground_v2.0.1_MOBILE_IMAGE_FIX.zip
+このRepositoryは BMSG Universe サイト本体の現行実装を管理する。
 
-【今回の追加】
-- メンバーカードをタップすると詳細画面を表示
-- 詳細画面にプロフィール画像、所属グループ、表示名を表示
-- 左上のUniverse HOMEボタンは詳細画面でも常時維持
-- 詳細画面内にMEMBERS戻るボタンを追加
-- 詳細表示中はグループフィルターとPROFILE内タブを隠す
-- Enter / Spaceによるカード操作に対応
-- DBに存在しないプロフィール項目は表示しない
-- 書込処理なし（READ ONLY）
+【現行Authority】
+- 実装正本: GitHub `kotori118/BMSG-PJ` main
+- DB管理GAS正本: GitHub `kotori118/BMSG-DB` main
+- 仕様正本: Google Drive の最新「BMSG Universe 現行仕様書」
+- デザイン正本: Google Drive の最新「BMSG Universe PHASE3 デザイン仕様書」
+- 変更履歴: Google Drive の最新「BMSG Universe 変更履歴」
+- GAS構成・実装方針: Google Drive の最新「GAS一括実装仕様書」
 
-【確認された症状】
-- PCではメンバー画像がすぐ表示される
-- iPhone SafariのApps Script Web Appでは3分後も画像が表示されない
-- Memberデータ、Group切替、Fallback initialsは正常
-- Drive画像は「リンクを知っている全員が閲覧可」
+【開発原則】
+- コード変更前に必ずDriveの最新仕様書・指示書を確認する。
+- 変更があった場合は新規文書を作らず、既存の最新正本へ追記し、変更履歴を残す。
+- 現行機能・UI・文言・Motion・保存挙動を壊さない非破壊変更を原則とする。
+- Runtimeには最終版だけを残し、Fixes / Polish / V2 / V3 / Final等の一時的Override層は、Source Ownerへ最終挙動を吸収・検証後に削除する。
+- 修正履歴はGitに残す。
+- GAS変更はGitHub main反映後、Deploy to GAS workflowの成功まで確認する。
 
-【原因判断】
-DBやDrive共有権限ではなく、iPhone Safari＋Apps Script内からの
-drive.google.com/thumbnail直読みによる認証／Cookie／配信相性の可能性が高い。
+【現行構成方針】
+1. APP CORE
+   - Entry / Config
+   - Repository
+   - Router / Shared UI
+   - Shared Component
+2. SERVICE SERVER
+   - Profile
+   - Lyrics / Karaoke
+   - Analysis
+   - Card
+   - Poker
+   - Quiz
+   - Cover
+   - Performance Timer
+3. SERVICE CLIENT
+   - Page / Styles / Scripts
+4. FEATURE-SPECIFIC MODULE
+   - 責務分割が必要な大規模機能のみ
 
-【修正】
-- 第一画像URLを公開Google Content CDNへ変更
-  https://lh3.googleusercontent.com/d/{DriveFileID}=w600
-- 第一URL失敗時はDriveのuc表示URLへ1回だけFallback
-- 第二URLも失敗した場合だけ既存の頭文字表示へFallback
-- referrerpolicy=no-referrer
-- decoding=async / loading=lazy
-- Cache keyをV2_0_1へ変更し、古いthumbnail URLを即時無効化
-- 画像のobject-positionをcenter topへ変更
-- 縦横比で見切れる場合は上側を残し、下側を切る
+【非破壊リファクタリング】
+成功条件は、現行の機能・UI・操作・文言・Motion・保存挙動に意図しない差がないこと。
+旧Override層を削除する前に、最終挙動をSource Ownerへ吸収し、依存・Load Order・CSS specificity・media query・Safari対策・reduced-motionを含めて同値確認する。
+実機確認が必要なClient変更は、Desktop / iPhoneの確認を通過するまで旧Runtime Authorityを削除しない。
 
-【変更ファイル】
-- Code.gs
-- ProfileApi.gs
-- ProfileMembers.html
-- ProfileStyles.html
+【共通デザインAuthority】
+- 常設共通UIに星モチーフを使用しない。
+- 星・Orbit・流星等はSONG GACHA / TRADING CARD Reveal等の一時的ゲーム演出に限定する。
+- 日本語は Zen Kaku Gothic New。
+- 英字Role Fontは Orbitron / Exo 2 / Roboto。
+- 共通Motionと機能固有Effectを分離し、prefers-reduced-motionを尊重する。
 
-【変更していない】
-- Core DB
-- 読取対象と結合ロジック
-- Member並び順
-- PROFILE Layout
-- HOME / DATA / LAB
-- 共通Styles / Shell / Router
-- Spreadsheet書込なし
-
-【実機確認】
-1. 新しいデプロイを発行する
-2. iPhone SafariでPROFILEを開く
-3. 最初に見えるMember画像が短時間で表示される
-4. スクロール後の画像もLazy Loadされる
-5. 顔や頭など画像上部が優先され、見切れは下側に発生する
-6. PC表示が引き続き正常
-
-【共通UI仕様 2026-09-03】
-- HOME・検索・設定は固定ヘッダーにせず、ページと一緒にスクロールさせる
-- HOME以外では左に家アイコンのHOME、右に検索・設定を同一列で配置する
-- HOME画面では家アイコンのHOMEを表示しない
-- 各機能ページ内に重複する大きなHOMEボタンは置かない
-- PROFILEのグループ絞り込みも固定せず、ページと一緒にスクロールさせる
-- 機能名や項目名で意味が伝わる場合、補足的な日本語説明文は置かない
-
-【共通操作仕様 2026-09-03】
-- HOME／DATA／LABでは上部の家アイコンを表示しない
-- ブラウザのルートは固定し、全ページ共通でアプリ領域だけを専用スクロール領域とする
-- CSSに加えてタッチ境界判定を行い、全ページの上下端で外側の領域を露出させない
-- スクロールはsmoothを標準とし、iOSのネイティブ慣性を維持する
-- HOME／DATA／LABの家アイコンはルート切替時にhidden属性でも直接非表示にする
-- タッチ端末の全ボタンは、押下中に縮小・明度・透明度が滑らかに変化する
-- prefers-reduced-motion指定時は動きを最小化する
-
-【PROFILE SEARCH v1 2026-09-03】
-- ProfileSettingsのIsActiveかつIsCompareTarget項目をDisplayOrder順で動的取得
-- 誕生日の全日付は検索対象外とし、誕生月へ変換
-- 誕生日から星座・干支を自動生成して検索対象に追加
-- 検索項目は初期状態で項目名のみ表示し、1項目ずつタグを展開
-- 複数タグはAND検索
-- グループ絞り込みと連動
-- タグ・メンバー名・プロフィール値の文字検索に対応
-- 検索結果からメンバー詳細へ遷移
-- 16px入力、14pxタグ、15px結果名、50px画像をスマホ基準とする
-- 補足的な日本語説明文は置かない
-- SpreadsheetはREAD ONLY
-
-
-【PROFILE SEARCH v1.1 2026-09-03】
-- 検索項目は初期状態ですべて閉じ、同時に開ける項目は1つだけに固定
-- 日本語IMEの変換中は入力欄を再描画せず、確定後に候補と結果だけ更新
-- 文字検索は部分一致ではなく前方一致（startsWith）
-
-【PROFILE CHEMISTRY v1 2026-09-03】
-- 2つの選択枠からメンバーを選び、同一人物の重複選択を防止
-- ProfileSettingsのIsActiveかつIsCompareTarget項目のみを比較
-- CHEMISTRY対象の全項目数を全メンバー共通の母数とし、空欄でも母数を減らさない
-- 完全一致した項目数を分子として一致率を動的計算
-- 複数値項目は1つ以上の共通値があれば一致
-- 誕生月・星座・干支はSEARCHと同じ自動生成値を使用
-- グループ絞り込みとメンバー候補を連動
-- 共通項目と共通値を一覧表示
-- 補足的な日本語説明文は置かない
-- SpreadsheetはREAD ONLY
+※ 過去のPrototype ZIP名・個別Fix手順はGit履歴およびDrive変更履歴を参照し、このREADMEを現行実装Authorityの代替にはしない。
