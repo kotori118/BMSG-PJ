@@ -154,6 +154,13 @@
     const raw=(button.textContent||'').trim();
     if(!raw) return;
 
+    if(raw==='← BACK' && button.classList.contains('profile-chemistry-back')){
+      setText(button,'‹');
+      button.classList.add('audit-local-back');
+      button.setAttribute('aria-label','戻る');
+      return;
+    }
+
     if(raw==='BACK'){
       if(button.closest('.card-result-actions')){
         button.remove();
