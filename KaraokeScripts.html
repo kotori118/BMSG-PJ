@@ -223,21 +223,7 @@
 
   function randomizeKaraoke(){
     if(karaokeState.busy)return;
-    if(!karaokeState.roomReady){
-      karaokeState.busy=true;
-      loadKaraokeRoom(null,function(){karaokeState.busy=false;randomizeKaraoke();});
-      return;
-    }
-    if(!karaokeState.room){randomizeKaraokeLocal();return;}
-    karaokeState.busy=true;
-    google.script.run.withSuccessHandler(function(result){
-      karaokeState.busy=false;
-      applyFairKaraokeAssignments(result);
-    }).withFailureHandler(karaokeFailure).shuffleKaraokeSong({
-      userId:getUniverseUserId(),
-      roomId:karaokeState.room.roomId,
-      songId:karaokeState.song.songId
-    });
+    randomizeKaraokeLocal();
   }
 
   function resetKaraoke(){karaokeState.assignments={};renderKaraokeSetup();}
