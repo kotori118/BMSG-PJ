@@ -60,4 +60,54 @@
   .cover-view-actions.is-single{display:flex}
   @media(max-width:600px){.cover-page{padding-top:14px}.cover-header{margin-bottom:14px}.cover-app{max-width:none}.cover-editor-head{top:0}.cover-lyric-text{font-size:14px}.cover-tools{gap:8px}.cover-tools .u-btn{min-width:118px!important;padding:0 14px!important}.cover-choice-stack{max-width:none}.cover-content-card{min-height:52px}.cover-member-list{grid-template-columns:1fr 1fr}}
   @media(min-width:780px){.cover-save-bar{position:sticky;bottom:0;margin-top:10px;padding-left:0;padding-right:0}.cover-sheet{align-items:center}.cover-sheet-panel{border-radius:22px;max-height:70vh}.cover-page{padding-bottom:36px}}
+
+  /* 2026-09-11: final COVER style authority absorbed from CoverPolishV2/V3/V4. */
+  body:has(#pageContent > .cover-page),.app-shell:has(#pageContent > .cover-page),.page-wrap:has(#pageContent > .cover-page),.page-content:has(> .cover-page){background:#fff!important}
+  .app-shell:has(#pageContent > .cover-page) .cosmic-bg,.app-shell:has(#pageContent > .cover-page) .home-glow{display:none!important}
+  .cover-page{min-width:0;padding-top:86px!important;background:#fff!important;color:var(--ink,#151820)!important;font-family:'Roboto','Zen Kaku Gothic New',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif!important}
+  .cover-app{background:#fff!important}
+  .app-shell:has(#pageContent > .cover-page) .utility-actions{z-index:40}
+  .cover-header{display:flex!important;flex-direction:column!important;align-items:flex-start!important;gap:14px!important;margin:0 0 28px!important}
+  .cover-back-btn{width:46px!important;height:46px!important;min-width:46px!important;min-height:46px!important;padding:0!important;display:grid!important;place-items:center!important;font-size:28px!important;line-height:1!important}
+  .cover-page.is-cover-home .cover-back-btn{display:none!important}
+  .cover-title{margin:0!important;max-width:100%;font-family:'Orbitron',sans-serif!important;font-size:clamp(30px,8vw,48px)!important;line-height:.96!important;letter-spacing:.04em!important}
+  .cover-section-title{margin:0 0 16px!important;font-size:14px!important;letter-spacing:.08em!important}
+  .cover-page.is-cover-choice .cover-choice-stack{max-width:none!important;display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important}
+  .cover-page.is-cover-choice .cover-content-card{position:relative!important;isolation:isolate;overflow:hidden!important;min-width:0!important;min-height:98px!important;padding:18px!important;justify-content:flex-start!important;align-items:center!important;text-align:left!important;border:1px solid color-mix(in srgb,var(--cover-accent,#9cecff) 38%,rgba(21,24,32,.18))!important;border-radius:24px!important;background:#fff!important;box-shadow:0 6px 18px rgba(21,24,32,.045),inset 0 1px 0 rgba(255,255,255,1)!important;color:var(--ink,#151820)!important;filter:none!important}
+  .cover-page.is-cover-choice .cover-content-card::after{content:'';position:absolute;z-index:-1;right:-28px!important;bottom:-30px!important;width:76px!important;height:76px!important;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--cover-accent,#9cecff) 16%,transparent),transparent 72%)!important;filter:none!important;pointer-events:none}
+  .cover-page.is-cover-choice .cover-content-card strong{position:relative;z-index:1;display:block;color:var(--ink,#151820)!important;font-family:'Exo 2','Zen Kaku Gothic New',sans-serif!important;font-size:17px!important;font-weight:700!important;line-height:1.2!important;letter-spacing:.02em!important;overflow-wrap:anywhere}
+  .cover-page.is-cover-choice .cover-content-card:not(:disabled):active{background:#fff!important;box-shadow:0 3px 10px rgba(21,24,32,.035)!important;filter:none!important}
+  @media(hover:hover){.cover-page.is-cover-choice .cover-content-card:not(:disabled):hover{background:#fff!important;box-shadow:0 6px 18px rgba(21,24,32,.045)!important;filter:none!important}}
+  .cover-page.is-cover-group .cover-content-card:last-child:nth-child(odd),.cover-page.is-cover-artist .cover-content-card:last-child:nth-child(odd){grid-column:1!important}
+  .cover-song-row,.cover-project-row{min-height:68px!important;padding:15px 17px!important;border-left:0!important;border-bottom:3px solid var(--cover-accent,#9cecff)!important;border-radius:18px!important;background:linear-gradient(145deg,#fff,#f9fdff)!important;box-shadow:0 7px 20px rgba(21,24,32,.045)!important}
+  .cover-song-row .cover-row-meta{display:none!important}
+  .cover-search{height:52px!important;border-radius:16px!important;background:#fff!important}
+  .cover-page.is-cover-editor .cover-header{margin-bottom:16px!important}
+  .cover-page.is-cover-editor .cover-editor-head{top:0!important;padding:0 0 14px!important;background:#fff!important;position:sticky!important;isolation:isolate}
+  .cover-page.is-cover-editor .cover-editor-head::before{content:'';position:absolute;z-index:-1;left:-2px;right:-2px;bottom:100%;height:120px;background:#fff;pointer-events:none}
+  .cover-page.is-cover-editor .cover-tabs,.cover-page.is-cover-editor .cover-tools{display:grid!important;grid-template-columns:repeat(2,minmax(0,152px))!important;justify-content:center!important;gap:10px!important;max-width:none!important;margin-left:auto!important;margin-right:auto!important}
+  .cover-page.is-cover-editor .cover-tabs{margin-bottom:10px!important}
+  .cover-page.is-cover-editor .cover-tab,.cover-page.is-cover-editor .cover-tools .u-btn{width:100%!important;min-width:0!important;min-height:52px!important;padding:0 12px!important;justify-content:center!important;text-align:center!important;border-radius:18px!important}
+  .cover-page.is-cover-editor .cover-tools .u-btn{font-weight:700!important}
+  .cover-page .cover-member-list{grid-template-columns:1fr!important;gap:10px}
+  .cover-page .cover-member-option{min-height:54px!important;padding:10px!important;justify-content:center!important;text-align:center!important;border-left:0!important;border-bottom:3px solid var(--member-color,#9cecff)!important;border-radius:17px!important}
+  .cover-page .cover-assignee{min-height:44px!important;padding-block:8px!important}
+  .cover-section-title,.cover-song-heading,.cover-assignee,.cover-original-label,.cover-content-card strong,.cover-song-row strong,.cover-project-row strong{font-family:'Exo 2','Zen Kaku Gothic New',sans-serif!important}
+  .cover-lyric-text{font-family:'Noto Serif JP',serif!important}
+  .cover-page button,.cover-page input,.cover-page select{font-family:inherit!important}
+  .cover-page.is-cover-songs .cover-song-row{min-height:64px!important;padding:14px 16px!important;border:1px solid rgba(21,24,32,.12)!important;border-bottom:1px solid rgba(21,24,32,.12)!important;border-radius:16px!important;background:#fff!important;color:var(--ink,#151820)!important;box-shadow:none!important;filter:none!important;transition:transform var(--fast) var(--ease),border-color var(--fast) var(--ease)!important}
+  .cover-page.is-cover-songs .cover-song-row:not(:disabled):active{background:#fff!important;border-color:rgba(21,24,32,.20)!important;box-shadow:none!important;filter:none!important}
+  @media(hover:hover){.cover-page.is-cover-songs .cover-song-row:not(:disabled):hover{background:#fff!important;border-color:rgba(21,24,32,.18)!important;box-shadow:none!important;filter:none!important}}
+  .cover-page .cover-project-row{min-height:70px!important;padding:14px 16px!important;border:1px solid rgba(21,24,32,.12)!important;border-bottom:1px solid rgba(21,24,32,.12)!important;border-radius:16px!important;background:#fff!important;color:var(--ink,#151820)!important;box-shadow:none!important;filter:none!important}
+  .cover-page .cover-project-row:not(:disabled):active{background:#fff!important;border-color:rgba(21,24,32,.20)!important;box-shadow:none!important;filter:none!important}
+  @media(hover:hover){.cover-page .cover-project-row:not(:disabled):hover{background:#fff!important;border-color:rgba(21,24,32,.18)!important;box-shadow:none!important;filter:none!important}}
+  .cover-page .cover-project-row strong{font-size:16px!important;line-height:1.35!important}
+  .cover-page .cover-project-row .cover-row-meta{margin-top:5px!important;font-size:12px!important;color:rgba(21,24,32,.56)!important;opacity:1!important}
+  .cover-inline-back{width:46px!important;height:46px!important;min-width:46px!important;min-height:46px!important;padding:0!important;margin:0 0 16px!important;display:grid!important;place-items:center!important;font-size:28px!important;line-height:1!important}
+  .cover-page.is-cover-editor .cover-back-btn{display:none!important}
+  .cover-page.is-cover-saved-view .cover-editor-head{position:static!important;top:auto!important}
+  .cover-page.is-cover-saved-view .cover-editor-head::before{display:none!important;content:none!important}
+  .cover-page.is-cover-saved-view .cover-view-actions{margin:14px 0 18px!important}
+  @media(max-width:600px){.cover-page{padding-top:82px!important}.cover-title{font-size:clamp(28px,9vw,40px)!important}.cover-page.is-cover-choice .cover-content-card{min-height:94px!important;padding:16px!important;border-radius:22px!important}.cover-page.is-cover-choice .cover-content-card strong{font-size:16px!important}.cover-page.is-cover-editor .cover-tab,.cover-page.is-cover-editor .cover-tools .u-btn{min-height:50px!important}}
+  @media(max-width:380px){.cover-page.is-cover-choice .cover-choice-stack{gap:9px!important}.cover-page.is-cover-choice .cover-content-card{min-height:90px!important;padding:13px!important}.cover-page.is-cover-choice .cover-content-card strong{font-size:14px!important}}
 </style>
