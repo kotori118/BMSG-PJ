@@ -48,4 +48,178 @@
   function showAnalysisModal(title,html){let m=document.getElementById('analysisModal');if(!m){m=document.createElement('div');m.id='analysisModal';m.className='analysis-modal';m.innerHTML='<div class="analysis-modal-card"><div class="analysis-modal-head"><h2 id="analysisModalTitle"></h2><button class="u-btn" onclick="closeAnalysisModal()">CLOSE</button></div><div id="analysisModalBody"></div></div>';document.body.appendChild(m);}document.getElementById('analysisModalTitle').textContent=title;document.getElementById('analysisModalBody').innerHTML=html;m.hidden=false;}
   function closeAnalysisModal(){const m=document.getElementById('analysisModal');if(m)m.hidden=true;}
   function htmlJson(value){return JSON.stringify(value).replace(/</g,'\\u003c').replace(/>/g,'\\u003e');}
+
+  /* 2026-09-11: final ANALYSIS runtime authority absorbed from legacy fix layers. */
+  window.__analysisCanonicalRuntimeState=window.__analysisCanonicalRuntimeState||{
+    memberModalRows:{first:[],last:[],sing:[],center:[]},
+    currentSongDetail:null
+  };
+
+  function renderAnalysisMember(){
+    const p=document.getElementById('analysisPanel');
+    p.innerHTML='<div class="analysis-section"><div class="analysis-card"><h2>メンバー別 楽曲割合分析</h2><div class="analysis-controls"><select id="analysisMemberSelect" onchange="analysisMember=this.value;analysisYear=\'all\';renderAnalysisMember()"><option value="">メンバーを選択してください</option>'+memberOptions()+'</select><select id="analysisYearSelect" onchange="analysisYear=this.value;renderAnalysisMember()" '+(!analysisMember?'disabled':'')+'></select></div></div><div id="analysisMemberBody"></div></div>';
+    const y=document.getElementById('analysisYearSelect');
+    if(!analysisMember){y.innerHTML='<option>全期間</option>';return;}
+    const rows=(analysisData.memberAnalysis[analysisMember]||{songs:[]}).songs;
+    const years=[...new Set(rows.map(r=>r.year).filter(Boolean))].sort();
+    y.innerHTML='<option value="all">全期間</option>'+years.map(v=>'<option value="'+v+'"'+(analysisYear===v?' selected':'')+'>'+v+'年</option>').join('');
+    const list=analysisYear==='all'?rows:rows.filter(r=>r.year===analysisYear);
+    const validS=list.filter(r=>typeof r.singRatio==='number');
+    const validC=list.filter(r=>typeof r.centerRatio==='number');
+    const avg=a=>a.length?(a.reduce((s,r)=>s+r,0)/a.length).toFixed(1):'--';
+    const lyric=list.filter(r=>r.hasLyric);
+    const first=lyric.filter(r=>r.isFirst),last=lyric.filter(r=>r.isLast);
+    const rankS=[...validS].sort((a,b)=>b.singRatio-a.singRatio),rankC=[...validC].sort((a,b)=>b.centerRatio-a.centerRatio);
+    window.__analysisCanonicalRuntimeState.memberModalRows={first:first,last:last,sing:rankS,center:rankC};
+    document.getElementById('analysisMemberBody').innerHTML='<div class="analysis-section"><div class="analysis-card"><div class="analysis-chart"><canvas id="analysisMemberChart"></canvas></div></div><div class="analysis-stats"><div class="analysis-stat"><span class="analysis-stat-label">平均歌唱割合</span><span class="analysis-stat-value">'+avg(validS.map(r=>r.singRatio))+(validS.length?'%':'')+'</span></div><div class="analysis-stat"><span class="analysis-stat-label">平均センター割合</span><span class="analysis-stat-value">'+avg(validC.map(r=>r.centerRatio))+(validC.length?'%':'')+'</span></div><button class="analysis-stat u-btn" onclick="showAnalysisMemberSongList(\'first\')"><span class="analysis-stat-label">歌い出し回数</span><span class="analysis-stat-value">'+first.length+' / '+lyric.length+'</span></button><button class="analysis-stat u-btn" onclick="showAnalysisMemberSongList(\'last\')"><span class="analysis-stat-label">歌い終わり回数</span><span class="analysis-stat-value">'+last.length+' / '+lyric.length+'</span></button></div><div class="analysis-rank-grid">'+rankBlock('歌唱割合ランキング',rankS,'singRatio','sing')+rankBlock('センター割合ランキング',rankC,'centerRatio','center')+'</div></div>';
+    drawMemberChart(list,analysisMember);
+  }
+
+  function rankBlock(title,rows,key,bucket){
+    const top=rows.slice(0,3),worst=rows.slice(-3).reverse();
+    return '<div class="analysis-card"><h3>'+title+'</h3><div class="analysis-rank-grid"><div><p class="analysis-muted">TOP 3</p>'+simpleRank(top,key)+'</div><div><p class="analysis-muted">WORST 3</p>'+simpleRank(worst,key)+'</div></div><button class="analysis-more-btn u-btn" onclick="showAnalysisMemberRanking(\''+bucket+'\')">さらに表示</button></div>';
+  }
+
+  function showAnalysisMemberSongList(type){
+    const rows=window.__analysisCanonicalRuntimeState.memberModalRows[type]||[];
+    showAnalysisSongList(type==='first'?'歌い出し楽曲':'歌い終わり楽曲',rows);
+  }
+
+  function showAnalysisMemberRanking(type){
+    const rows=window.__analysisCanonicalRuntimeState.memberModalRows[type]||[];
+    showAnalysisRanking(type==='sing'?'歌唱割合ランキング':'センター割合ランキング',rows,type==='sing'?'singRatio':'centerRatio');
+  }
+
+  function renderAnalysisSongBody(d){
+    window.__analysisCanonicalRuntimeState.currentSongDetail=d;
+    const body=document.getElementById('analysisSongBody');
+    if(!body||!d)return;
+    body.innerHTML='<div class="analysis-section"><div class="analysis-stats"><div class="analysis-stat"><div class="analysis-stat-label">歌唱割当て</div><div class="analysis-stat-value">'+escapeHtml(d.singBalance.type)+'</div><div class="analysis-muted">'+(d.singBalance.level==null?'':'特化度: '+d.singBalance.level)+'</div></div><div class="analysis-stat"><div class="analysis-stat-label">センター配置</div><div class="analysis-stat-value">'+escapeHtml(d.centerBalance.type)+'</div><div class="analysis-muted">'+(d.centerBalance.level==null?'':'特化度: '+d.centerBalance.level)+'</div></div></div>'+(d.hasSing||d.hasDance?'<div class="analysis-card"><p class="analysis-muted">円グラフのメンバー部分をタップすると、その人の歌詞が表示されます</p><div class="analysis-pies">'+(d.hasSing?'<div><h3>歌唱割合</h3><div class="analysis-pie"><canvas id="analysisSingPie"></canvas></div></div>':'')+(d.hasDance?'<div><h3>センター割合</h3><div class="analysis-pie"><canvas id="analysisCenterPie"></canvas></div></div>':'')+'</div><div class="analysis-legend">'+analysisData.members.map(m=>'<span class="analysis-legend-item"><i class="analysis-legend-dot" style="background:'+m.color+'"></i>'+escapeHtml(m.name)+'</span>').join('')+'</div></div>':'<div class="analysis-card"><p class="analysis-muted">秒数データが未登録です</p></div>')+'<div class="analysis-stats"><div class="analysis-stat"><div class="analysis-stat-label">歌い出し</div><div class="analysis-stat-value">'+escapeHtml(d.firstSinger)+'</div></div><div class="analysis-stat"><div class="analysis-stat-label">歌い終わり</div><div class="analysis-stat-value">'+escapeHtml(d.lastSinger)+'</div></div></div><div class="analysis-card"><h3 id="analysisLyricsTitle">歌詞一覧（全員）</h3><div id="analysisLyricsBody" class="analysis-lyrics"></div></div></div>';
+    renderAnalysisSongLyrics('ALL');
+    if(d.hasSing)drawPie('analysisSingPie',d.singData);
+    if(d.hasDance)drawPie('analysisCenterPie',d.centerData);
+  }
+
+  function renderAnalysisSongLyrics(target){
+    const d=window.__analysisCanonicalRuntimeState.currentSongDetail;
+    const title=document.getElementById('analysisLyricsTitle');
+    const host=document.getElementById('analysisLyricsBody');
+    if(!d||!title||!host)return;
+    title.textContent=target==='ALL'?'歌詞一覧（全員）':'歌詞一覧（'+target+' 歌唱パート）';
+    const rows=d.lyrics.filter(function(line){
+      if(target==='ALL')return true;
+      return String(line.members||'').split(',').map(function(v){return v.trim();}).indexOf(target)!==-1;
+    });
+    host.innerHTML=rows.length?rows.map(function(line){return '<div class="analysis-lyric"><div class="analysis-lyric-member">'+escapeHtml(line.members)+'</div><div class="analysis-lyric-text">'+escapeHtml(line.text)+'</div></div>';}).join(''):'<p class="analysis-muted">該当する歌詞データがありません。</p>';
+  }
+
+  function drawPie(id,data){
+    if(typeof Chart==='undefined')return;
+    const el=document.getElementById(id);if(!el)return;
+    analysisCharts.push(new Chart(el,{type:'pie',data:{labels:analysisData.members.map(m=>m.name),datasets:[{data:data,backgroundColor:analysisData.members.map(m=>m.color),borderColor:'#07101a',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.label+': '+Number(c.raw).toFixed(1)+'%'}},datalabels:{display:false}},onClick:function(event,elements,chart){if(elements&&elements.length){renderAnalysisSongLyrics(chart.data.labels[elements[0].index]);}else{renderAnalysisSongLyrics('ALL');}}}}));
+  }
+
+  function analysisClearTooltip(chart){
+    if(!chart||!chart.tooltip)return;
+    chart.tooltip.setActiveElements([], {x:0,y:0});
+    chart.update('none');
+  }
+
+  function analysisScheduleTooltipClear(chart){
+    if(!chart)return;
+    if(chart.$analysisTooltipTimer)clearTimeout(chart.$analysisTooltipTimer);
+    chart.$analysisTooltipTimer=setTimeout(function(){analysisClearTooltip(chart);},1600);
+  }
+
+  function chartOptions(){
+    return{
+      responsive:true,
+      maintainAspectRatio:false,
+      interaction:{mode:'nearest',intersect:false},
+      onClick:function(evt,elements,chart){
+        if(elements&&elements.length)analysisScheduleTooltipClear(chart);
+        else analysisClearTooltip(chart);
+      },
+      plugins:{
+        legend:{labels:{color:'#c9d4df',usePointStyle:true,boxWidth:9,boxHeight:9,padding:14}},
+        tooltip:{
+          displayColors:true,
+          backgroundColor:'rgba(5,9,15,.94)',
+          titleColor:'#fff',
+          bodyColor:'#dce5ee',
+          borderColor:'rgba(156,236,255,.18)',
+          borderWidth:1,
+          padding:10,
+          callbacks:{label:function(c){const v=c.parsed&&c.parsed.y!=null?c.parsed.y:c.raw;return (c.dataset.label?c.dataset.label+': ':'')+Number(v).toFixed(1)+'%';}}
+        },
+        datalabels:{display:false}
+      },
+      scales:{
+        x:{border:{display:false},ticks:{color:'#94a1af',maxRotation:45,minRotation:45},grid:{display:false}},
+        y:{beginAtZero:true,border:{display:false},ticks:{color:'#94a1af',callback:function(v){return v+'%';}},grid:{color:'rgba(156,236,255,.065)',lineWidth:1}}
+      }
+    };
+  }
+
+  function analysisLineDataset(label,data,color){
+    return{
+      label:label,
+      data:data,
+      borderColor:color,
+      backgroundColor:color,
+      fill:false,
+      spanGaps:false,
+      tension:.1
+    };
+  }
+
+  function drawMemberChart(rows,name){
+    if(typeof Chart==='undefined')return;
+    const m=analysisData.members.find(x=>x.name===name)||{};
+    const ctx=document.getElementById('analysisMemberChart');if(!ctx)return;
+    const visibleRows=rows.filter(function(r){return typeof r.singRatio==='number'||typeof r.centerRatio==='number';});
+    const singColor=m.color||'#9cecff';
+    analysisCharts.push(new Chart(ctx,{type:'line',data:{labels:visibleRows.map(r=>r.songName),datasets:[
+      analysisLineDataset('歌唱割合(%)',visibleRows.map(r=>typeof r.singRatio==='number'?r.singRatio:null),singColor),
+      analysisLineDataset('センター割合(%)',visibleRows.map(r=>typeof r.centerRatio==='number'?r.centerRatio:null),'#9cecff')
+    ]},options:chartOptions()}));
+  }
+
+  function drawTimelineChart(id,rows,type){
+    if(typeof Chart==='undefined')return;
+    const el=document.getElementById(id);if(!el)return;
+    const visibleRows=rows.filter(function(r){return Number(r[type+'Total'])>0;});
+    const datasets=analysisData.members.map(function(m){
+      const values=visibleRows.map(function(r){
+        return r[type+'Sec'][m.name]!=null?+(r[type+'Sec'][m.name]/r[type+'Total']*100).toFixed(1):null;
+      });
+      return analysisLineDataset(m.name,values,m.color);
+    });
+    analysisCharts.push(new Chart(el,{type:'line',data:{labels:visibleRows.map(r=>r.name),datasets:datasets},options:chartOptions()}));
+  }
+
+  function showAnalysisModal(title,html){
+    let m=document.getElementById('analysisModal');
+    if(!m){
+      m=document.createElement('div');
+      m.id='analysisModal';
+      m.className='analysis-modal';
+      m.innerHTML='<div class="analysis-modal-card" role="dialog" aria-modal="true" aria-labelledby="analysisModalTitle"><div class="analysis-modal-head"><h2 id="analysisModalTitle"></h2><button class="analysis-modal-close u-btn" onclick="closeAnalysisModal()">CLOSE</button></div><div id="analysisModalBody" class="analysis-modal-body"></div></div>';
+      m.addEventListener('click',function(e){if(e.target===m)closeAnalysisModal();});
+      document.body.appendChild(m);
+    }
+    document.getElementById('analysisModalTitle').textContent=title;
+    document.getElementById('analysisModalBody').innerHTML=html;
+    m.hidden=false;
+  }
+
+  function otherShell(title,html){
+    document.getElementById('analysisPanel').innerHTML='<div class="analysis-section"><div class="analysis-subhead"><button class="u-btn analysis-back" aria-label="戻る" onclick="analysisOtherView=\'\';renderAnalysisOther()">‹</button><h2>'+title+'</h2></div>'+html+'</div>';
+  }
+
+  function renderOtherTransfer(){
+    const d=analysisData.partTransferData;
+    otherShell('パート継承分析','<div class="analysis-card"><h3>引き継ぎパート数ランキング</h3>'+genericTable(['順位','メンバー','引き継ぎパート数'],d.ranking.map((r,i)=>[i+1,r.name,r.count]))+'</div><div class="analysis-card"><h3>メンバー検索</h3><div class="analysis-controls"><select id="analysisTransferMember" onchange="renderTransferSongs()"><option value="all">全メンバー表示</option>'+d.ranking.map(r=>'<option>'+escapeHtml(r.name)+'</option>').join('')+'</select></div></div><div id="analysisTransferSongs"></div>');
+    renderTransferSongs();
+  }
 </script>
