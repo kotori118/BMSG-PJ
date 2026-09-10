@@ -229,9 +229,6 @@ function withKaraokeLock_(callback) {
 }
 
 function validateKaraokeUser_(userId){const id=asId_(userId);if(KARAOKE_USERS_.indexOf(id)<0)throw new Error('利用ユーザーを選択してください。');return id;}
-function getLogSheet_(name){const sheet=SpreadsheetApp.openById(UNIVERSE_CONFIG.LOG_DB_ID).getSheetByName(name);if(!sheet)throw new Error('Log sheet not found: '+name);return sheet;}
-function readSheetObjects_(sheet){const values=sheet.getDataRange().getValues();if(values.length<2)return[];const headers=values[0].map(function(v){return String(v).trim();});return values.slice(1).filter(function(row){return row.some(function(v){return v!=='';});}).map(function(row){const obj={};headers.forEach(function(h,i){if(h)obj[h]=row[i];});return obj;});}
-function appendByHeaders_(sheet,record){const headers=sheet.getRange(1,1,1,sheet.getLastColumn()).getValues()[0].map(String);sheet.appendRow(headers.map(function(h){return Object.prototype.hasOwnProperty.call(record,h)?record[h]:'';}));}
 function karaokePropertyKey_(uid){return 'KARAOKE_ACTIVE_ROOM_'+uid;}
 function setKaraokeRoomProperty_(uid,roomId){PropertiesService.getScriptProperties().setProperty(karaokePropertyKey_(uid),roomId);}
 function getKaraokeRoomProperty_(uid){return PropertiesService.getScriptProperties().getProperty(karaokePropertyKey_(uid));}
