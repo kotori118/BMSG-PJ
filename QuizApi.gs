@@ -224,13 +224,6 @@ function saveOfflineLyricsQuizResults_(game, questions, payload) {
   return { ok: true, alreadySaved: false, scoreboard: buildQuizScoreboard_(game) };
 }
 
-function saveQuizUserResult_(game, uid, score, totalMs, details) {
-  const now = new Date();
-  appendByHeaders_(getLogSheet_(UNIVERSE_CONFIG.SHEETS.QUIZ_RESULTS), { QuizGameID: game.gameId, UserID: uid, Score: score, TotalAnswerTimeMs: Math.max(0, Math.round(totalMs || 0)), AnswerDetailsJSON: JSON.stringify(details || []), AnsweredAt: now });
-  appendByHeaders_(getLogSheet_(UNIVERSE_CONFIG.SHEETS.QUIZ_SCORES), { QuizScoreID: Utilities.getUuid(), SourceGameID: game.gameId, UserID: uid, Mode: game.mode, Genre: quizGenreStorage_(game.genre), Course: quizCourseStorage_(game.course), Difficulty: quizDifficultyStorage_(game.difficulty), Score: score, PlayedAt: now });
-  appendByHeaders_(getLogSheet_(UNIVERSE_CONFIG.SHEETS.RECENT_ACTIVITIES), { ActivityID: Utilities.getUuid(), UserID: uid, ActivityType: 'PLAY_QUIZ', TargetID: game.gameId, OccurredAt: now });
-}
-
 function buildQuizScoreboard_(game) {
   const users = getQuizUsers_().reduce(function(map, user) { map[user.userId] = user.displayName; return map; }, {});
   const rows = getQuizResultRows_(game.gameId).map(function(row) { return { userId: asId_(row.UserID), displayName: users[asId_(row.UserID)] || asId_(row.UserID), score: Number(row.Score || 0), answerTimeMs: Number(row.TotalAnswerTimeMs || 0), answeredAt: quizIso_(row.AnsweredAt) }; });
@@ -308,13 +301,6 @@ function quizShuffle_(items) {
   return copy;
 }
 
-function createQuizRoomId_() {
-  const used = {};
-  readSheetObjects_(getLogSheet_(UNIVERSE_CONFIG.SHEETS.QUIZ_ROOMS)).forEach(function(row) { if (row.RoomID !== '') used[String(row.RoomID || '').padStart(4, '0')] = true; });
-  for (let i = 0; i < 100; i++) { const id = String(Math.floor(1000 + Math.random() * 9000)); if (!used[id]) return id; }
-  throw new Error('ROOM IDを発行できませんでした。');
-}
-
 function validateQuizPlayers_(mode, genre, uid, values) {
   if (!(mode === 'OFFLINE' && genre === 'LYRICS')) return [uid];
   const players = Array.isArray(values) ? values.map(validateQuizUser_).filter(function(id, index, all) { return all.indexOf(id) === index; }) : [];
@@ -335,16 +321,3 @@ function getQuizCourses_() { return [{ value: 'BE:FIRST', label: 'BE:FIRST' }, {
 function quizParseJson_(value, fallback) { try { const parsed = JSON.parse(String(value || '')); return parsed === null ? fallback : parsed; } catch (error) { return fallback; } }
 function quizIso_(value) { const date = new Date(value); return Number.isFinite(date.getTime()) ? date.toISOString() : ''; }
 function withQuizLock_(callback) { const lock = LockService.getScriptLock(); lock.waitLock(20000); try { return callback(); } finally { lock.releaseLock(); } }
-
-function cleanupExpiredQuizGames_() { return withQuizLock_(cleanupExpiredQuizGamesUnsafe_); }
-function cleanupExpiredQuizGamesUnsafe_() {
-  const games = readSheetObjectsWithRows_(getLogSheet_(UNIVERSE_CONFIG.SHEETS.QUIZ_ROOMS)).filter(function(row) { const date = new Date(row.ExpiresAt); return !Number.isFinite(date.getTime()) || date.getTime() <= Date.now(); });
-  games.forEach(function(row) { deleteQuizGameRows_(asId_(row.QuizGameID)); });
-}
-
-function deleteQuizGameRows_(gameId) {
-  [UNIVERSE_CONFIG.SHEETS.QUIZ_RESULTS, UNIVERSE_CONFIG.SHEETS.QUIZ_QUESTIONS, UNIVERSE_CONFIG.SHEETS.QUIZ_ROOMS].forEach(function(name) {
-    const sheet = getLogSheet_(name);
-    readSheetObjectsWithRows_(sheet).filter(function(row) { return asId_(row.QuizGameID) === gameId; }).sort(function(a, b) { return b.__rowNumber - a.__rowNumber; }).forEach(function(row) { sheet.deleteRow(row.__rowNumber); });
-  });
-}
