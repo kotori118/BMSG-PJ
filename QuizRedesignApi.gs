@@ -131,13 +131,13 @@ function buildProfileQuizQuestionsV2_(course, difficulty) {
   });
 
   const pools = { PROFILE_FIELD: [], PROFILE_IDENTIFY: [], PROFILE_COMMONALITY: [], PROFILE_ODD_ONE_OUT: [], PROFILE_PAIR: [], PROFILE_MULTI_IDENTIFY: [] };
-  buildProfileFieldPoolV2_(rows, memberById, activeSettings, facts, pools.PROFILE_FIELD);
-  buildProfileIdentifyPoolV2_(rows, memberById, activeSettings, facts, pools.PROFILE_IDENTIFY);
+  buildProfileFieldPool_(rows, memberById, activeSettings, facts, pools.PROFILE_FIELD);
+  buildProfileIdentifyPool_(rows, memberById, activeSettings, facts, pools.PROFILE_IDENTIFY);
   if (difficulty === 'ADVANCED') {
-    buildProfileCommonalityPoolV2_(rows, memberById, activeSettings, facts, pools.PROFILE_COMMONALITY);
-    buildProfileOddPoolV2_(rows, memberById, activeSettings, facts, pools.PROFILE_ODD_ONE_OUT);
-    buildProfilePairPoolV2_(rows, memberById, activeSettings, facts, pools.PROFILE_PAIR);
-    buildProfileMultiIdentifyPoolV2_(rows, memberById, activeSettings, facts, pools.PROFILE_MULTI_IDENTIFY);
+    buildProfileCommonalityPool_(rows, memberById, activeSettings, facts, pools.PROFILE_COMMONALITY);
+    buildProfileOddPool_(rows, memberById, activeSettings, facts, pools.PROFILE_ODD_ONE_OUT);
+    buildProfilePairPool_(rows, memberById, activeSettings, facts, pools.PROFILE_PAIR);
+    buildProfileMultiIdentifyPool_(rows, memberById, activeSettings, facts, pools.PROFILE_MULTI_IDENTIFY);
   }
 
   Object.keys(pools).forEach(function(key) { pools[key] = quizShuffle_(pools[key]); });
@@ -154,7 +154,7 @@ function buildProfileQuizQuestionsV2_(course, difficulty) {
   };
 }
 
-function buildProfileFieldPoolV2_(rows, memberById, settings, facts, out) {
+function buildProfileFieldPool_(rows, memberById, settings, facts, out) {
   settings.forEach(function(setting) {
     const pid = asId_(setting.ProfileID);
     const options = uniqueQuizOptions_(Object.keys(facts[pid] || {}).map(function(id) { return { value: facts[pid][id], label: facts[pid][id] }; }));
@@ -173,7 +173,7 @@ function buildProfileFieldPoolV2_(rows, memberById, settings, facts, out) {
   });
 }
 
-function buildProfileIdentifyPoolV2_(rows, memberById, settings, facts, out) {
+function buildProfileIdentifyPool_(rows, memberById, settings, facts, out) {
   const memberOptions = rows.map(function(row) { const id = asId_(row.MemberID); return { value: id, label: memberById[id].name }; });
   if (memberOptions.length < 4) return;
   settings.forEach(function(setting) {
@@ -197,7 +197,7 @@ function buildProfileIdentifyPoolV2_(rows, memberById, settings, facts, out) {
   });
 }
 
-function buildProfileCommonalityPoolV2_(rows, memberById, settings, facts, out) {
+function buildProfileCommonalityPool_(rows, memberById, settings, facts, out) {
   settings.forEach(function(setting) {
     const pid = asId_(setting.ProfileID), byValue = {};
     Object.keys(facts[pid] || {}).forEach(function(id) {
@@ -223,7 +223,7 @@ function buildProfileCommonalityPoolV2_(rows, memberById, settings, facts, out) 
   });
 }
 
-function buildProfileOddPoolV2_(rows, memberById, settings, facts, out) {
+function buildProfileOddPool_(rows, memberById, settings, facts, out) {
   settings.forEach(function(setting) {
     const pid = asId_(setting.ProfileID), byValue = {};
     Object.keys(facts[pid] || {}).forEach(function(id) {
@@ -248,7 +248,7 @@ function buildProfileOddPoolV2_(rows, memberById, settings, facts, out) {
   });
 }
 
-function buildProfilePairPoolV2_(rows, memberById, settings, facts, out) {
+function buildProfilePairPool_(rows, memberById, settings, facts, out) {
   settings.forEach(function(setting) {
     const pid = asId_(setting.ProfileID), byValue = {};
     Object.keys(facts[pid] || {}).forEach(function(id) {
@@ -283,7 +283,7 @@ function buildProfilePairPoolV2_(rows, memberById, settings, facts, out) {
   });
 }
 
-function buildProfileMultiIdentifyPoolV2_(rows, memberById, settings, facts, out) {
+function buildProfileMultiIdentifyPool_(rows, memberById, settings, facts, out) {
   const memberOptions = rows.map(function(row) { const id = asId_(row.MemberID); return { value: id, label: memberById[id].name }; });
   if (memberOptions.length < 4) return;
   for (let a = 0; a < settings.length; a++) {
