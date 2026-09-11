@@ -1,7 +1,7 @@
 <script>
 (function(){
   function clearTimer(){if(quizState.v3Timer){clearInterval(quizState.v3Timer);quizState.v3Timer=0;}}
-  function resetRuntime(){clearTimer();quizState.totalAnswerTimeMs=0;quizState.questionStartedAt=0;quizState.timeRecorded=false;quizState.songAttempts=0;quizState.v3Feedback='';}
+  function resetRuntime(){clearTimer();quizState.totalAnswerTimeMs=0;quizState.questionStartedAt=0;quizState.timeRecorded=false;}
 
   window.openQuizRoomJoinV3_=function(){
     clearTimer();quizState.screen='join';const host=quizHost_();if(!host)return;
@@ -23,7 +23,7 @@
   };
 
   startQuizClientGame_=function(game){
-    clearTimer();quizState.game=game;quizState.index=0;quizState.stage='ready';quizState.answers=[];quizState.awards=[];quizState.selected=null;quizState.completed=!!game.hasAnswered;resetRuntime();
+    clearTimer();quizState.game=game;quizState.index=0;quizState.stage='ready';quizState.answers=[];quizState.awards=[];quizState.completed=!!game.hasAnswered;resetRuntime();
     if(game.hasAnswered){quizState.screen='result';renderQuizResult_(game.scoreboard||[]);return;}
     quizState.screen='ready';renderQuizReadyV3_();
   };
@@ -78,7 +78,6 @@
     try{
       google.script.run
         .withSuccessHandler(function(data){
-          quizState.ready=true;
           quizState.users=data&&data.users?data.users:quizState.users;
           quizState.courses=data&&data.courses?data.courses:quizState.courses;
         })
@@ -105,7 +104,6 @@
       quizState.busy=false;
 
       if(!requestedRoom){
-        quizState.ready=true;
         renderQuizSetup_();
         loadQuizBootstrapInBackground_(uid);
         return;
@@ -124,7 +122,6 @@
           if(settled)return;
           settled=true;
           clearTimeout(timer);
-          quizState.ready=true;
           quizState.users=data&&data.users?data.users:[];
           quizState.courses=data&&data.courses?data.courses:[];
           if(data&&data.room)startQuizClientGame_(data.room);
