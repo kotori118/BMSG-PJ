@@ -37,13 +37,34 @@
     display:grid!important;
   }
 
+  /* TRADING CARD top is a two-column service header: back + title. */
   .card-header{
     display:grid!important;
-    grid-template-columns:46px minmax(0,1fr) 46px!important;
+    grid-template-columns:46px minmax(0,1fr)!important;
     align-items:center!important;
     gap:14px!important;
   }
   .card-header>div{min-width:0}
+  .card-header .card-title{
+    min-width:0!important;
+    max-width:100%!important;
+    font-size:clamp(27px,7.5vw,42px)!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:clip!important;
+  }
+  .card-collection-entry{
+    margin-top:14px!important;
+  }
+  .card-collection-entry-btn{
+    width:100%!important;
+    min-height:54px!important;
+    justify-content:center!important;
+    text-align:center!important;
+  }
+  .card-page.is-gacha-mode .card-collection-entry{
+    display:none!important;
+  }
 
   .song-gacha-reveal-back,
   .lyrics-list-back.audit-local-back{
