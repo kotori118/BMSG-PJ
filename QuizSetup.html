@@ -3,37 +3,6 @@
   function clearTimer(){if(quizState.v3Timer){clearInterval(quizState.v3Timer);quizState.v3Timer=0;}}
   function resetRuntime(){clearTimer();quizState.totalAnswerTimeMs=0;quizState.questionStartedAt=0;quizState.timeRecorded=false;quizState.songAttempts=0;quizState.v3Feedback='';}
 
-  initQuizPage=function(params){
-    clearTimer();quizResetState_();resetRuntime();
-    const uid=typeof getUniverseUserId==='function'?getUniverseUserId():'';
-    if(!uid){renderQuizNeedsUser_();if(typeof openUserChooser==='function')openUserChooser(true);return;}
-    quizState.userId=uid;quizState.selectedPlayers=[uid];renderQuizLoading_();
-    google.script.run.withSuccessHandler(function(data){
-      quizState.ready=true;quizState.users=data.users||[];quizState.courses=data.courses||[];
-      if(data.room)startQuizClientGame_(data.room);else renderQuizSetup_();
-    }).withFailureHandler(quizFailure_).getQuizBootstrapV2(uid,params&&params.room?params.room:'');
-  };
-
-  renderQuizSetup_=function(){
-    clearTimer();quizState.screen='setup';quizState.completed=false;
-    const s=quizState.settings,offlineLyrics=s.mode==='OFFLINE'&&s.genre==='LYRICS',host=quizHost_();if(!host)return;
-    host.innerHTML='<section class="quiz-panel"><p class="quiz-kicker"></p><h2 class="quiz-panel-title">クイズ設定</h2><div class="quiz-settings">'+
-      quizSetting_('モード',[['OFFLINE','オフライン'],['ONLINE','オンライン']],s.mode,'mode')+
-      quizSetting_('ジャンル',[['LYRICS','歌詞'],['PROFILE','プロフィール']],s.genre,'genre')+
-      quizSetting_('コース',(quizState.courses.length?quizState.courses:[{value:'BE:FIRST',label:'BE:FIRST'},{value:'MAZZEL',label:'MAZZEL'},{value:'STARGLOW',label:'STARGLOW'},{value:'HANA',label:'HANA'},{value:'UNIT',label:'ユニット'},{value:'ALL',label:'全部'}]).map(function(x){return[x.value,x.label];}),s.course,'course','is-course')+
-      quizSetting_('難易度',[['NORMAL','普通'],['ADVANCED','上級']],s.difficulty,'difficulty')+
-      (offlineLyrics?renderQuizPlayerSelect_():'')+'</div><div class="quiz-actions">'+
-      (s.mode==='ONLINE'?'<button class="quiz-action is-primary" onclick="createQuizFromSetup_()">ルームを作る</button><button class="quiz-action" onclick="openQuizRoomJoinV3_()">ルームに参加する</button>':'<button class="quiz-action is-primary" onclick="createQuizFromSetup_()">開始</button>')+
-      '<button class="quiz-action" onclick="navigateTo(\'lab\')">戻る</button></div></section>';
-  };
-
-  createQuizFromSetup_=function(){
-    if(quizState.busy)return;const s=quizState.settings;
-    if(s.mode==='OFFLINE'&&s.genre==='LYRICS'&&(quizState.selectedPlayers.length<2||quizState.selectedPlayers.length>3)){quizNotify_('2〜3人を選択してください。');return;}
-    quizState.busy=true;renderQuizLoading_();
-    google.script.run.withSuccessHandler(function(game){quizState.busy=false;if(game.roomId)setQuizRoomUrl_(game.roomId);startQuizClientGame_(game);}).withFailureHandler(quizFailure_).createQuizGameV2({userId:quizState.userId,mode:s.mode,genre:s.genre,course:s.course,difficulty:s.difficulty,playerUserIds:quizState.selectedPlayers});
-  };
-
   window.openQuizRoomJoinV3_=function(){
     clearTimer();quizState.screen='join';const host=quizHost_();if(!host)return;
     host.innerHTML='<section class="quiz-panel quiz-v3-room-join"><p class="quiz-kicker">JOIN ROOM</p><h2 class="quiz-panel-title">ルームに参加する</h2><div class="quiz-v3-room-input-row"><input id="quizRoomInputV3" class="quiz-room-input" inputmode="numeric" maxlength="4" placeholder="0000" aria-label="4桁のルームID"><button class="quiz-action is-primary" onclick="joinQuizRoomV3_()">参加</button></div><div><p class="quiz-setting-title">最新のルーム</p><div id="quizRecentRoomsV3" class="quiz-v3-recent">'+(typeof renderUniverseLoading==='function'?renderUniverseLoading(false,'#9cecff'):'LOADING...')+'</div></div><div class="quiz-actions"><button class="quiz-action" onclick="renderQuizSetup_()">戻る</button></div></section>';
@@ -42,7 +11,7 @@
 
   window.joinQuizRoomV3_=function(roomId){
     const input=document.getElementById('quizRoomInputV3');const id=String(roomId||input&&input.value||'').replace(/\D/g,'');
-    if(!/^\d{4}$/.test(id)){quizNotify_('4桁のルームIDを入力してください。');return;}if(quizState.busy)return;
+    if(!/^\d{4}$/.test(id)){quizNotify_('4桁のROOM IDを入力してください。');return;}if(quizState.busy)return;
     quizState.busy=true;renderQuizLoading_();
     google.script.run.withSuccessHandler(function(game){quizState.busy=false;setQuizRoomUrl_(game.roomId);startQuizClientGame_(game);}).withFailureHandler(quizFailure_).joinQuizRoom(quizState.userId,id);
   };
@@ -57,12 +26,6 @@
     clearTimer();quizState.game=game;quizState.index=0;quizState.stage='ready';quizState.answers=[];quizState.awards=[];quizState.selected=null;quizState.completed=!!game.hasAnswered;resetRuntime();
     if(game.hasAnswered){quizState.screen='result';renderQuizResult_(game.scoreboard||[]);return;}
     quizState.screen='ready';renderQuizReadyV3_();
-  };
-
-  window.renderQuizReadyV3_=function(){
-    const game=quizState.game,host=quizHost_();if(!host||!game)return;
-    const limit=game.genre==='LYRICS'?'曲名 30秒':'1問 20秒';
-    host.innerHTML=(game.roomId?renderQuizRoomBanner_(game.roomId):'')+'<section class="quiz-panel quiz-v3-ready"><p class="quiz-kicker">READY</p><h2 class="quiz-panel-title">問題の準備ができました</h2><p class="quiz-muted">開始を押した瞬間からクイズ開始。問題生成や読み込み時間は回答時間に入りません。</p><div class="quiz-v3-ready-meta"><span class="quiz-v3-chip">'+quizEscape_(quizGenreLabel_(game.genre))+'</span><span class="quiz-v3-chip">'+quizEscape_(game.course)+'</span><span class="quiz-v3-chip">'+quizEscape_(quizDifficultyLabel_(game.difficulty))+'</span><span class="quiz-v3-chip">'+limit+'</span></div><div class="quiz-actions"><button class="quiz-action is-primary" onclick="beginQuizV3_()">開始</button><button class="quiz-action quiz-danger" onclick="abandonQuiz_()">終了する</button></div></section>';
   };
 
   window.beginQuizV3_=function(){quizState.screen='game';quizState.index=0;quizState.stage='question';quizState.totalAnswerTimeMs=0;renderQuizQuestion_();};
@@ -196,8 +159,7 @@
       '<div class="quiz-player-grid">'+users.map(function(user){
         var id=String(user.userId||'');
         var active=selected.indexOf(id)>=0;
-        return '<button type="button" class="quiz-player'+(active?' is-selected':'')+'" data-quiz-offline-player="'+quizEscape_(id)+'" aria-pressed="'+(active?'true':'false')+'" onclick="toggleQuizPlayer_(\''+quizEscape_(id)+'\');return false;">'+quizEscape_(user.displayName||id)+'</button>';
-      }).join('')+'</div></div>';
+        return '<button type="button" class="quiz-player'+(active?' is-selected':'')+'" data-quiz-offline-player="'+quizEscape_(id)+'" aria-pressed="'+(active?'true':'false')+'" onclick="toggleQuizPlayer_(\''+quizEscape_(id)+'\');return false;">'+quizEscape_(user.displayName||id)+'</button>';}).join('')+'</div></div>';
   };
 
   window.toggleQuizPlayer_=function(userId){
