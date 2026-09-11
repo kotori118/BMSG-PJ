@@ -13,7 +13,7 @@
 
   function setQuizRoomUrl_(roomId){const params={page:'quiz',room:String(roomId)};google.script.history.replace(params,params,'');}
 
-  function renderQuizRoomBanner_(roomId){return '<div class="quiz-room-banner"><span><small class="quiz-room-label">ROOM ID</small><br><span class="quiz-muted">同じ問題でプレイ</span></span><strong>'+quizEscape_(roomId)+'</strong></div>';}
+  function renderQuizRoomBanner_(roomId){return '<div class="quiz-room-banner"><span><small class="quiz-room-label">ROOM ID</small></span><strong>'+quizEscape_(roomId)+'</strong></div>';}
   function renderQuizLyricsLink_(question){return '<button type="button" class="quiz-lyrics-link" onclick="openQuizLyrics_(\''+quizArg_(question.source.songId)+'\',\''+quizArg_(question.source.artist)+'\')">全文歌詞を見る ›</button>';}
   function openQuizLyrics_(songId,artist){const url=new URL(window.location.href);url.search='';url.searchParams.set('page','lyrics');url.searchParams.set('song',decodeURIComponent(songId));url.searchParams.set('group',decodeURIComponent(artist));window.open(url.toString(),'_blank','noopener');}
 
