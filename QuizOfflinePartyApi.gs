@@ -1,4 +1,4 @@
-function validateQuizPartyPlayersFinal_(values) {
+function validateQuizPartyPlayers_(values) {
   const players = Array.isArray(values)
     ? values.map(validateQuizUser_).filter(function(id, index, all) { return all.indexOf(id) === index; })
     : [];
@@ -6,13 +6,13 @@ function validateQuizPartyPlayersFinal_(values) {
   return players;
 }
 
-function createQuizOfflinePartyFinal(payload) {
+function createQuizOfflineParty(payload) {
   payload = payload || {};
   const uid = validateQuizUser_(payload.userId);
   const genre = validateQuizEnum_(payload.genre, QUIZ_GENRES_, 'GENRE');
   const difficulty = validateQuizEnum_(payload.difficulty, QUIZ_DIFFICULTIES_, 'DIFFICULTY');
   const course = genre === 'PROFILE' ? 'ALL' : validateQuizEnum_(payload.course, QUIZ_COURSES_, 'COURSE');
-  const players = validateQuizPartyPlayersFinal_(payload.playerUserIds);
+  const players = validateQuizPartyPlayers_(payload.playerUserIds);
 
   return withQuizLock_(function() {
     cleanupExpiredQuizGamesUnsafe_();
@@ -54,7 +54,7 @@ function createQuizOfflinePartyFinal(payload) {
   });
 }
 
-function submitQuizOfflinePartyFinal(payload) {
+function submitQuizOfflineParty(payload) {
   payload = payload || {};
   validateQuizUser_(payload.userId);
   return withQuizLock_(function() {
@@ -67,11 +67,11 @@ function submitQuizOfflinePartyFinal(payload) {
 
     payload.totalAnswerTimeMs = 0;
     if (game.genre === 'LYRICS') return saveOfflineLyricsQuizResults_(game, questions, payload);
-    return saveOfflineProfileQuizResultsFinal_(game, questions, payload);
+    return saveOfflineProfileQuizResults_(game, questions, payload);
   });
 }
 
-function saveOfflineProfileQuizResultsFinal_(game, questions, payload) {
+function saveOfflineProfileQuizResults_(game, questions, payload) {
   const players = Array.isArray(game.players) ? game.players.map(String) : [];
   if (players.length < 2 || players.length > 3) throw new Error('プレイヤー情報が正しくありません。');
   const awards = Array.isArray(payload.awards) ? payload.awards : [];
@@ -109,4 +109,13 @@ function saveOfflineProfileQuizResultsFinal_(game, questions, payload) {
     maxScore: QUIZ_QUESTION_COUNT_,
     scoreboard: buildQuizScoreboard_(game)
   };
+}
+
+// Temporary compatibility aliases. The client will move to the canonical names before these are removed.
+function createQuizOfflinePartyFinal(payload) {
+  return createQuizOfflineParty(payload);
+}
+
+function submitQuizOfflinePartyFinal(payload) {
+  return submitQuizOfflineParty(payload);
 }
