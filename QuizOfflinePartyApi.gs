@@ -18,7 +18,7 @@ function createQuizOfflineParty(payload) {
     cleanupExpiredQuizGamesUnsafe_();
     const generated = genre === 'LYRICS'
       ? buildLyricsQuizQuestions_(course, difficulty)
-      : buildProfileQuizQuestionsFinal_(difficulty);
+      : buildProfileQuizQuestions_(difficulty);
     if (!generated || generated.questions.length < QUIZ_QUESTION_COUNT_) {
       throw new Error('この条件では10問作れません。難易度を変えてください。');
     }
