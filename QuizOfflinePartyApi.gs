@@ -50,7 +50,7 @@ function createQuizOfflineParty(payload) {
         CorrectAnswerJSON: JSON.stringify(question.correct || {})
       });
     });
-    return buildQuizGameStateV2_(findQuizGameById_(gameId), uid);
+    return buildQuizGameState_(findQuizGameById_(gameId), uid);
   });
 }
 
