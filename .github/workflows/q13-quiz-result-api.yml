@@ -1,0 +1,101 @@
+name: Q13 QUIZ result API canonicalization
+on:
+  push:
+    branches: [refactor-quiz-result-api-q13-20260911]
+permissions:
+  contents: write
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refactor-quiz-result-api-q13-20260911
+          fetch-depth: 0
+      - name: Canonicalize result API
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          api = Path('QuizApi.gs')
+          redesign = Path('QuizRedesignApi.gs')
+          result = Path('QuizResult.html')
+          a = api.read_text()
+          r = redesign.read_text()
+          c = result.read_text()
+
+          def extract_function(src, name):
+              marker = 'function ' + name + '('
+              start = src.find(marker)
+              if start < 0:
+                  raise SystemExit('missing function: ' + name)
+              brace = src.find('{', start)
+              depth = 0
+              i = brace
+              while i < len(src):
+                  ch = src[i]
+                  if ch == '{': depth += 1
+                  elif ch == '}':
+                      depth -= 1
+                      if depth == 0:
+                          return start, i + 1, src[start:i+1]
+                  i += 1
+              raise SystemExit('unclosed function: ' + name)
+
+          def replace_function(src, old_name, new_text):
+              s,e,_ = extract_function(src, old_name)
+              return src[:s] + new_text + src[e:]
+
+          def remove_function(src, name):
+              s,e,_ = extract_function(src, name)
+              while e < len(src) and src[e] in '\r\n': e += 1
+              return src[:s] + src[e:]
+
+          _,_,submit_v2 = extract_function(r, 'submitQuizResultV2')
+          _,_,score_v2 = extract_function(r, 'scoreQuizAnswersV2_')
+          submit_canonical = submit_v2.replace('function submitQuizResultV2(', 'function submitQuizResult(', 1).replace('scoreQuizAnswersV2_(', 'scoreQuizAnswers_(')
+          score_canonical = score_v2.replace('function scoreQuizAnswersV2_(', 'function scoreQuizAnswers_(', 1)
+
+          a = replace_function(a, 'submitQuizResult', submit_canonical)
+          a = replace_function(a, 'scoreQuizAnswers_', score_canonical)
+          r = remove_function(r, 'submitQuizResultV2')
+          r = remove_function(r, 'scoreQuizAnswersV2_')
+          if '.submitQuizResultV2(payload)' not in c:
+              raise SystemExit('expected client call missing')
+          c = c.replace('.submitQuizResultV2(payload)', '.submitQuizResult(payload)', 1)
+
+          api.write_text(a)
+          redesign.write_text(r)
+          result.write_text(c)
+
+          joined = a + '\n' + r
+          checks = {
+              'submit canonical definitions': joined.count('function submitQuizResult('),
+              'submit V2 definitions': joined.count('function submitQuizResultV2('),
+              'score canonical definitions': joined.count('function scoreQuizAnswers_('),
+              'score V2 definitions': joined.count('function scoreQuizAnswersV2_('),
+              'client old calls': c.count('.submitQuizResultV2('),
+              'client canonical calls': c.count('.submitQuizResult('),
+          }
+          expected = {
+              'submit canonical definitions': 1,
+              'submit V2 definitions': 0,
+              'score canonical definitions': 1,
+              'score V2 definitions': 0,
+              'client old calls': 0,
+          }
+          for k,v in checks.items(): print(k, v)
+          for k,v in expected.items():
+              if checks[k] != v: raise SystemExit(f'{k}: expected {v}, got {checks[k]}')
+          if checks['client canonical calls'] < 1: raise SystemExit('canonical client call missing')
+      - name: Show diff
+        run: git diff --check && git diff --stat && git diff -- QuizApi.gs QuizRedesignApi.gs QuizResult.html
+      - name: Remove temporary workflow and commit
+        run: |
+          rm .github/workflows/q13-quiz-result-api.yml
+          git config user.name kotori118
+          git config user.email pinoso615@gmail.com
+          git add QuizApi.gs QuizRedesignApi.gs QuizResult.html .github/workflows/q13-quiz-result-api.yml
+          git commit -m "Canonicalize QUIZ result submission API"
+          git push origin HEAD:refactor-quiz-result-api-q13-20260911
