@@ -1,0 +1,91 @@
+name: Q5 QUIZ V3 Owner Split
+on:
+  push:
+    branches: [refactor-quiz-v3-owners-20260911]
+    paths: ['.github/workflows/q5-quiz-v3-owner-split.yml']
+permissions:
+  contents: write
+jobs:
+  refactor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refactor-quiz-v3-owners-20260911
+      - name: Split V3 runtime by responsibility
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          p=Path('QuizRedesignV3.html')
+          src=p.read_text(encoding='utf-8')
+          style_end=src.index('</style>')+len('</style>')
+          style=src[:style_end].rstrip()+"\n"
+          script=src[style_end:].strip()
+          prefix='<script>\n(function(){\n'
+          suffix='})();\n</script>'
+          if not script.startswith(prefix) or not script.endswith(suffix):
+              raise SystemExit('Unexpected QuizRedesignV3 wrapper')
+          body=script[len(prefix):-len(suffix)]
+
+          init_marker='  initQuizPage=function(params){'
+          play_marker='  renderQuizQuestion_=function(){'
+          result_marker='  finishQuiz_=function(){'
+          i_init=body.index(init_marker)
+          i_play=body.index(play_marker)
+          i_result=body.index(result_marker)
+          setup_block=body[i_init:i_play].rstrip()
+          play_block=body[i_play:i_result].rstrip()
+          result_block=body[i_result:].rstrip()
+
+          setup="""<script>\n(function(){\n  function clearTimer(){if(quizState.v3Timer){clearInterval(quizState.v3Timer);quizState.v3Timer=0;}}\n  function resetRuntime(){clearTimer();quizState.totalAnswerTimeMs=0;quizState.questionStartedAt=0;quizState.timeRecorded=false;quizState.songAttempts=0;quizState.v3Feedback='';}\n\n"""+setup_block+"\n})();\n</script>\n"
+
+          play="""<script>\n(function(){\n  function clearTimer(){if(quizState.v3Timer){clearInterval(quizState.v3Timer);quizState.v3Timer=0;}}\n\n"""+play_block+"\n})();\n</script>\n"
+
+          result="""<script>\n(function(){\n  const legacyAbandon=typeof abandonQuiz_==='function'?abandonQuiz_:null;\n  const legacyReturnTop=typeof returnQuizTop_==='function'?returnQuizTop_:null;\n  function clearTimer(){if(quizState.v3Timer){clearInterval(quizState.v3Timer);quizState.v3Timer=0;}}\n\n"""+result_block+"\n})();\n</script>\n"
+
+          # V3 remains style-only for this stage so CSS cascade position stays identical.
+          p.write_text(style,encoding='utf-8')
+          Path('QuizSetup.html').write_text(setup,encoding='utf-8')
+          Path('QuizPlay.html').write_text(play,encoding='utf-8')
+          Path('QuizResult.html').write_text(result,encoding='utf-8')
+
+          idx=Path('Index.html')
+          text=idx.read_text(encoding='utf-8')
+          old="<?!= include('QuizScripts'); ?><?!= include('QuizRedesignV3'); ?><?!= include('QuizRedesignV3Fixes'); ?><?!= include('QuizOfflineParty'); ?>"
+          new="<?!= include('QuizScripts'); ?><?!= include('QuizRedesignV3'); ?><?!= include('QuizSetup'); ?><?!= include('QuizPlay'); ?><?!= include('QuizResult'); ?><?!= include('QuizRedesignV3Fixes'); ?><?!= include('QuizOfflineParty'); ?>"
+          if old not in text:
+              raise SystemExit('Expected QUIZ include chain not found')
+          idx.write_text(text.replace(old,new,1),encoding='utf-8')
+          PY
+      - name: Verify ownership split
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          v3=Path('QuizRedesignV3.html').read_text(encoding='utf-8')
+          setup=Path('QuizSetup.html').read_text(encoding='utf-8')
+          play=Path('QuizPlay.html').read_text(encoding='utf-8')
+          result=Path('QuizResult.html').read_text(encoding='utf-8')
+          idx=Path('Index.html').read_text(encoding='utf-8')
+          assert '<style>' in v3 and '<script>' not in v3
+          for token in ['initQuizPage=function','renderQuizSetup_=function','createQuizFromSetup_=function','startQuizClientGame_=function']:
+              assert token in setup, token
+          for token in ['renderQuizQuestion_=function','answerProfileV3_','answerSongV3_','startTimerV3_','advanceQuiz_=function']:
+              assert token in play, token
+          for token in ['finishQuiz_=function','renderQuizResult_=function','refreshQuizRankingV3_','returnQuizTopV3_','abandonQuiz_=function']:
+              assert token in result, token
+          order=[idx.index("include('QuizScripts')"),idx.index("include('QuizRedesignV3')"),idx.index("include('QuizSetup')"),idx.index("include('QuizPlay')"),idx.index("include('QuizResult')"),idx.index("include('QuizRedesignV3Fixes')"),idx.index("include('QuizOfflineParty')")]
+          assert order==sorted(order)
+          print('Q5 owner split verified')
+          PY
+      - name: Commit refactor
+        shell: bash
+        run: |
+          rm -f .github/workflows/q5-quiz-v3-owner-split.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add Index.html QuizRedesignV3.html QuizSetup.html QuizPlay.html QuizResult.html .github/workflows/q5-quiz-v3-owner-split.yml
+          git commit -m 'Split QUIZ V3 runtime into setup play result owners'
+          git push origin HEAD:refactor-quiz-v3-owners-20260911
