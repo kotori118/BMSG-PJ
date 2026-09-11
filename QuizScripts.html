@@ -10,7 +10,7 @@
   function renderQuizNeedsUser_(){const host=quizHost_();if(host)host.innerHTML='<section class="quiz-panel"><p class="quiz-kicker">PLAYER</p><h2 class="quiz-panel-title">USERを選択</h2><p class="quiz-muted">QUIZを始めるUserを選んでください。</p><div class="quiz-actions"><button class="quiz-action is-primary" onclick="openUserChooser(true)">USER SELECT</button></div></section>';}
 
   function quizSetting_(title,options,current,key,extra){return '<section class="quiz-setting"><p class="quiz-setting-title">'+quizEscape_(title)+'</p><div class="quiz-options '+(extra||'')+'">'+options.map(function(option){return '<button type="button" class="quiz-choice '+(current===option[0]?'is-selected':'')+'" onclick="setQuizSetting_(\''+key+'\',\''+quizArg_(option[0])+'\')">'+quizEscape_(option[1])+'</button>';}).join('')+'</div></section>';}
-  function setQuizSetting_(key,value){quizState.settings[key]=decodeURIComponent(value);if(key==='mode'||key==='genre'){if(!(quizState.settings.mode==='OFFLINE'&&quizState.settings.genre==='LYRICS'))quizState.selectedPlayers=[quizState.userId];}renderQuizSetup_();}
+  function setQuizSetting_(key,value){quizState.settings[key]=decodeURIComponent(value);if(key==='mode'||key==='genre'){if(quizState.settings.mode!=='OFFLINE')quizState.selectedPlayers=[quizState.userId];}renderQuizSetup_();}
 
   function setQuizRoomUrl_(roomId){const params={page:'quiz',room:String(roomId)};google.script.history.replace(params,params,'');}
 
@@ -57,7 +57,7 @@
 
   function quizFailure_(error){quizState.busy=false;const message=String(error&&error.message||error||'クイズの処理に失敗しました。');const host=quizHost_();if(host)host.innerHTML='<section class="quiz-panel"><p class="quiz-kicker">ERROR</p><h2 class="quiz-panel-title">読み込みに失敗しました</h2><p class="quiz-muted">'+quizEscape_(message)+'</p><div class="quiz-actions"><button class="quiz-action is-primary" onclick="initQuizPage({})">RETRY</button><button class="quiz-action" onclick="navigateTo(\'lab\')">BACK</button></div></section>';quizNotify_(message);}
   function quizNotify_(message){if(typeof showToast==='function')showToast(message);}
-  function quizUserName_(id){const user=quizState.users.find(function(item){return item.userId===id;});return user?user.displayName:'';}
+  function quizUserName_(id){const user=quizState.users.find(function(item){return item.userId===id;});if(user)return user.displayName;const fallback=typeof UNIVERSE_USERS!=='undefined'?UNIVERSE_USERS.find(function(item){return item.id===id;}):null;return fallback?fallback.name:'';}
   function quizGenreLabel_(value){return value==='LYRICS'?'歌詞':'プロフィール';}
   function quizDifficultyLabel_(value){return value==='NORMAL'?'普通':'上級';}
   function quizArg_(value){return encodeURIComponent(String(value==null?'':value));}
