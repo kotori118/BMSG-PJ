@@ -1,24 +1,7 @@
-const QUIZ_V2_LYRICS_LIMIT_MS_ = 30000;
-const QUIZ_V2_PROFILE_LIMIT_MS_ = 20000;
+const QUIZ_LYRICS_LIMIT_MS_ = 30000;
+const QUIZ_PROFILE_LIMIT_MS_ = 20000;
 
-function getQuizGameByRoomV2_(uid, roomId) {
-  const id = String(roomId || '').replace(/\D/g, '');
-  if (!/^\d{4}$/.test(id)) throw new Error('4桁のROOM IDを入力してください。');
-  const game = findQuizGameByRoomId_(id);
-  if (!game) throw new Error('有効なQUIZ ROOMが見つかりません。');
-  return buildQuizGameStateV2_(game, uid);
-}
-
-function buildQuizGameStateV2_(game, uid) {
-  const state = buildQuizGameState_(game, uid);
-  state.ready = !state.hasAnswered;
-  state.timeLimitMs = state.genre === 'LYRICS' ? QUIZ_V2_LYRICS_LIMIT_MS_ : QUIZ_V2_PROFILE_LIMIT_MS_;
-  state.songCatalog = state.genre === 'LYRICS' ? getQuizSongCatalogV2_(game.course) : [];
-  state.memberCatalog = state.genre === 'LYRICS' ? getQuizMemberCatalogV2_(game.course) : [];
-  return state;
-}
-
-function getQuizSongCatalogV2_(course) {
+function getQuizSongCatalog_(course) {
   return readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.SONGS)
     .filter(function(row) { return quizCourseMatchesSong_(row, course); })
     .map(function(row) {
@@ -28,7 +11,7 @@ function getQuizSongCatalogV2_(course) {
     .sort(function(a, b) { return a.label.localeCompare(b.label, 'ja'); });
 }
 
-function getQuizMemberCatalogV2_(course) {
+function getQuizMemberCatalog_(course) {
   const members = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.MEMBERS);
   const groups = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.GROUPS);
   const memberships = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.GROUP_MEMBERS);
