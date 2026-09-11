@@ -25,3 +25,64 @@
   abandonQuiz_=function(){clearTimer();if(legacyAbandon)return legacyAbandon();};
 })();
 </script>
+<script>
+(function(){
+  function formatTimeV3Final_(ms){return ms>0?(ms/1000).toFixed(2)+'s':'—';}
+  function rankingSignatureV3Final_(rows){return JSON.stringify((rows||[]).map(function(row){return [row.userId||'',Number(row.score||0),Number(row.answerTimeMs||row.totalAnswerTimeMs||0),row.displayName||''];}));}
+  function rankingRowsV3Final_(scoreboard,scoreOnly){
+    scoreboard=Array.isArray(scoreboard)?scoreboard:[];
+    let previous=null,previousRank=0;
+    const rows=scoreboard.map(function(row,index){
+      const time=Number(row.answerTimeMs||row.totalAnswerTimeMs||0);
+      const tieKey=scoreOnly?String(Number(row.score||0)):String(Number(row.score||0))+'|'+String(time);
+      const rank=previous===tieKey?previousRank:index+1;
+      previous=tieKey;previousRank=rank;
+      const name=row.displayName||quizUserName_(row.userId)||row.userId||'';
+      return '<div class="quiz-ranking-row"><strong>'+rank+'</strong><span>'+quizEscape_(name)+'</span><b>'+Number(row.score||0)+' pt</b>'+(!scoreOnly?'<small class="quiz-v3-score-time">'+formatTimeV3Final_(time)+'</small>':'')+'</div>';
+    }).join('');
+    return rows||'<p class="quiz-muted">まだ結果がありません。</p>';
+  }
+  function stopRankingAutoRefreshV3Final_(){
+    if(quizState.v3RankingTimer){clearInterval(quizState.v3RankingTimer);quizState.v3RankingTimer=0;}
+  }
+  function startRankingAutoRefreshV3Final_(){
+    stopRankingAutoRefreshV3Final_();
+    const game=quizState.game;
+    if(!game||game.mode!=='ONLINE'||quizState.screen!=='result')return;
+    quizState.v3RankingTimer=setInterval(function(){
+      if(!quizState.game||quizState.screen!=='result'||quizState.game.gameId!==game.gameId){stopRankingAutoRefreshV3Final_();return;}
+      const host=document.getElementById('quizRankingV3');
+      if(!host){stopRankingAutoRefreshV3Final_();return;}
+      google.script.run.withSuccessHandler(function(rows){
+        if(!quizState.game||quizState.screen!=='result'||quizState.game.gameId!==game.gameId)return;
+        rows=Array.isArray(rows)?rows:[];
+        const signature=rankingSignatureV3Final_(rows);
+        if(signature===quizState.v3RankingSignature)return;
+        quizState.v3RankingSignature=signature;
+        host.innerHTML=rankingRowsV3Final_(rows,false);
+      }).withFailureHandler(function(){}).getQuizScoreboard(quizState.userId,game.gameId);
+    },4000);
+  }
+  renderQuizResult_=function(scoreboard){
+    stopRankingAutoRefreshV3Final_();
+    const host=quizHost_(),game=quizState.game;if(!host)return;scoreboard=Array.isArray(scoreboard)?scoreboard:[];
+    const scoreOnly=!!(game&&game.mode==='OFFLINE'&&game.genre==='LYRICS');
+    quizState.v3RankingSignature=rankingSignatureV3Final_(scoreboard);
+    host.innerHTML=(game&&game.roomId?renderQuizRoomBanner_(game.roomId):'')+'<section class="quiz-panel"><h2 class="quiz-panel-title">ランキング</h2><div id="quizRankingV3" class="quiz-ranking">'+rankingRowsV3Final_(scoreboard,scoreOnly)+'</div><div class="quiz-actions"><button class="quiz-action is-primary" onclick="returnQuizTopV3_()">トップに戻る</button><button class="quiz-action" onclick="navigateTo(\'home\')">HOMEへ</button></div></section>';
+    startRankingAutoRefreshV3Final_();
+  };
+  window.refreshQuizRankingV3_=function(){
+    if(!quizState.game||quizState.game.mode!=='ONLINE'||quizState.screen!=='result')return;
+    google.script.run.withSuccessHandler(function(rows){
+      const host=document.getElementById('quizRankingV3');if(!host)return;
+      rows=Array.isArray(rows)?rows:[];
+      const signature=rankingSignatureV3Final_(rows);
+      if(signature===quizState.v3RankingSignature)return;
+      quizState.v3RankingSignature=signature;
+      host.innerHTML=rankingRowsV3Final_(rows,false);
+    }).withFailureHandler(function(){}).getQuizScoreboard(quizState.userId,quizState.game.gameId);
+  };
+  const baseReturnTopFinal_=window.returnQuizTopV3_;
+  window.returnQuizTopV3_=function(){stopRankingAutoRefreshV3Final_();return baseReturnTopFinal_.apply(this,arguments);};
+})();
+</script>
