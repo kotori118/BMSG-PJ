@@ -325,7 +325,7 @@ function findPokerRoomByRoomId_(roomId) {
 function savePokerHighlightRecord_(data, uid) {
   const sheet = getLogSheet_(UNIVERSE_CONFIG.SHEETS.POKER_HIGHLIGHTS);
   if (isPokerHighlightSaved_(data.gameId)) return {ok:true,alreadySaved:true};
-  appendByHeaders_(sheet, {PokerHighlightID:Utilities.getUuid(),FinalHandsJSON:JSON.stringify(data),SavedByUserID:uid,SavedAt:new Date()});
+  appendByHeaders_(sheet, {PokerHighlightID:Utilities.getUuid(),FinalHandsJSON:JSON.stringify(data),SavedByUserID:uid,SavedAt:new Date().toISOString()});
   return {ok:true,alreadySaved:false};
 }
 function isPokerHighlightSaved_(gameId){return readSheetObjects_(getLogSheet_(UNIVERSE_CONFIG.SHEETS.POKER_HIGHLIGHTS)).some(function(row){return asId_(parseJson_(row.FinalHandsJSON,{}).gameId)===gameId;});}
