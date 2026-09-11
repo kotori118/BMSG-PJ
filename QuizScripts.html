@@ -13,10 +13,6 @@
 
   function setQuizRoomUrl_(roomId){const params={page:'quiz',room:String(roomId)};google.script.history.replace(params,params,'');}
 
-  function renderQuizAwardButtons_(kind){const buttons=quizState.game.players.map(function(id){return '<button class="quiz-award" onclick="awardOfflineLyrics_(\''+kind+'\',\''+quizArg_(id)+'\')">'+quizEscape_(quizUserName_(id))+'</button>';});buttons.push('<button class="quiz-award is-none" onclick="awardOfflineLyrics_(\''+kind+'\',\'\')">なし</button>');return '<div class="quiz-award-grid">'+buttons.join('')+'</div>';}
-  function enableQuizNext_(){const button=document.getElementById('quizNextButton');if(button){button.disabled=false;button.textContent=quizState.index>=9?'結果を見る':'次へ';}}
-  function advanceQuiz_(){if(quizState.stage!=='answered')return;if(quizState.index>=quizState.game.questions.length-1){finishQuiz_();return;}quizState.index+=1;quizState.stage='question';quizState.selected=null;renderQuizQuestion_();scrollAppToTop('smooth');}
-
   function renderQuizRoomBanner_(roomId){return '<div class="quiz-room-banner"><span><small class="quiz-room-label">ROOM ID</small><br><span class="quiz-muted">同じ問題でプレイ</span></span><strong>'+quizEscape_(roomId)+'</strong></div>';}
   function renderQuizLyricsLink_(question){return '<button type="button" class="quiz-lyrics-link" onclick="openQuizLyrics_(\''+quizArg_(question.source.songId)+'\',\''+quizArg_(question.source.artist)+'\')">全文歌詞を見る ›</button>';}
   function openQuizLyrics_(songId,artist){const url=new URL(window.location.href);url.search='';url.searchParams.set('page','lyrics');url.searchParams.set('song',decodeURIComponent(songId));url.searchParams.set('group',decodeURIComponent(artist));window.open(url.toString(),'_blank','noopener');}
