@@ -8,7 +8,7 @@
     clearTimer();if(quizState.busy||quizState.completed)return;quizState.busy=true;renderQuizLoading_();
     const payload={userId:quizState.userId,quizGameId:quizState.game.gameId,totalAnswerTimeMs:quizState.game.mode==='OFFLINE'&&quizState.game.genre==='LYRICS'?0:Math.round(quizState.totalAnswerTimeMs||0)};
     if(quizState.game.mode==='OFFLINE'&&quizState.game.genre==='LYRICS')payload.awards=quizState.awards;else payload.answers=quizState.answers;
-    google.script.run.withSuccessHandler(function(result){quizState.busy=false;quizState.completed=true;quizState.screen='result';renderQuizResult_(result.scoreboard||[]);}).withFailureHandler(quizFailure_).submitQuizResultV2(payload);
+    google.script.run.withSuccessHandler(function(result){quizState.busy=false;quizState.completed=true;quizState.screen='result';renderQuizResult_(result.scoreboard||[]);}).withFailureHandler(quizFailure_).submitQuizResult(payload);
   };
 
   renderQuizResult_=function(scoreboard){
