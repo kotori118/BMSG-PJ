@@ -101,14 +101,22 @@ function submitQuizResult(payload) {
     if (questions.length !== QUIZ_QUESTION_COUNT_) throw new Error('問題データが揃っていません。');
 
     if (game.mode === 'OFFLINE' && game.genre === 'LYRICS') {
+      payload.totalAnswerTimeMs = 0;
       return saveOfflineLyricsQuizResults_(game, questions, payload);
     }
 
     const existing = findQuizResult_(game.gameId, uid);
     if (existing) return { ok: true, alreadySaved: true, scoreboard: buildQuizScoreboard_(game) };
     const checked = scoreQuizAnswers_(game, questions, payload.answers);
-    saveQuizUserResult_(game, uid, checked.score, Number(payload.totalAnswerTimeMs || 0), checked.details);
-    return { ok: true, alreadySaved: false, score: checked.score, maxScore: game.genre === 'LYRICS' ? 20 : 10, scoreboard: buildQuizScoreboard_(game) };
+    const totalMs = Math.max(0, Number(payload.totalAnswerTimeMs || 0));
+    saveQuizUserResult_(game, uid, checked.score, totalMs, checked.details);
+    return {
+      ok: true,
+      alreadySaved: false,
+      score: checked.score,
+      maxScore: game.genre === 'LYRICS' ? 20 : 10,
+      scoreboard: buildQuizScoreboard_(game)
+    };
   });
 }
 
@@ -293,18 +301,37 @@ function scoreQuizAnswers_(game, questions, answers) {
   const submitted = Array.isArray(answers) ? answers : [];
   if (submitted.length !== questions.length) throw new Error('10問すべて回答してください。');
   let score = 0;
-  const details = questions.map(function(question, index) {
+  const details = [];
+
+  questions.forEach(function(question, index) {
     const answer = submitted[index] || {};
     if (game.genre === 'PROFILE') {
-      const correct = String(answer.value || '') === String(question.correct.value || '');
+      const expected = String(question.correct && question.correct.value != null ? question.correct.value : '');
+      const actual = String(answer.value != null ? answer.value : '');
+      const correct = !!expected && actual === expected;
       if (correct) score += 1;
-      return { questionNo: question.number, value: String(answer.value || ''), correct: correct };
+      details.push({ questionNo: question.number, type: question.type, value: actual, correct: correct, timedOut: !!answer.timedOut });
+      return;
     }
-    const songCorrect = asId_(answer.songId) === asId_(question.correct.songId);
-    const singerCorrect = String(answer.singerValue || '') === String(question.correct.singerValue || '');
+
+    const expectedSongId = String(question.correct && question.correct.songId || question.source && question.source.songId || '');
+    const actualSongId = String(answer.songId || '');
+    const songCorrect = !answer.timedOut && !!expectedSongId && actualSongId === expectedSongId;
+    const singerIds = Array.isArray(question.source && question.source.singerIds) ? question.source.singerIds.map(String) : [];
+    const actualSingerId = String(answer.singerId || '');
+    const singerCorrect = songCorrect && !!actualSingerId && singerIds.indexOf(actualSingerId) >= 0;
     if (songCorrect) score += 1;
     if (singerCorrect) score += 1;
-    return { questionNo: question.number, songId: asId_(answer.songId), singerValue: String(answer.singerValue || ''), songCorrect: songCorrect, singerCorrect: singerCorrect };
+    details.push({
+      questionNo: question.number,
+      type: question.type,
+      songId: actualSongId,
+      singerId: actualSingerId,
+      songCorrect: songCorrect,
+      singerCorrect: singerCorrect,
+      timedOut: !!answer.timedOut,
+      answerTimeMs: Number(answer.answerTimeMs || 0)
+    });
   });
   return { score: score, details: details };
 }
