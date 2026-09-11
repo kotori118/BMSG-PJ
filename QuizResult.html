@@ -60,17 +60,6 @@
     host.innerHTML=(game&&game.roomId?renderQuizRoomBanner_(game.roomId):'')+'<section class="quiz-panel"><h2 class="quiz-panel-title">ランキング</h2><div id="quizRankingV3" class="quiz-ranking">'+renderQuizRankingRows_(scoreboard,scoreOnly)+'</div><div class="quiz-actions"><button class="quiz-action is-primary" onclick="returnQuizTopV3_()">トップに戻る</button><button class="quiz-action" onclick="navigateTo(\'home\')">HOMEへ</button></div></section>';
     startQuizRankingAutoRefresh_();
   };
-  window.refreshQuizRankingV3_=function(){
-    if(!quizState.game||quizState.game.mode!=='ONLINE'||quizState.screen!=='result')return;
-    google.script.run.withSuccessHandler(function(rows){
-      const host=document.getElementById('quizRankingV3');if(!host)return;
-      rows=Array.isArray(rows)?rows:[];
-      const signature=quizRankingSignature_(rows);
-      if(signature===quizState.v3RankingSignature)return;
-      quizState.v3RankingSignature=signature;
-      host.innerHTML=renderQuizRankingRows_(rows,false);
-    }).withFailureHandler(function(){}).getQuizScoreboard(quizState.userId,quizState.game.gameId);
-  };
   const baseReturnQuizTop_=window.returnQuizTopV3_;
   window.returnQuizTopV3_=function(){stopQuizRankingAutoRefresh_();return baseReturnQuizTop_.apply(this,arguments);};
 })();
