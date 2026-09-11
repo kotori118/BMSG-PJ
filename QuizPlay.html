@@ -2,6 +2,10 @@
 (function(){
   function clearTimer(){if(quizState.v3Timer){clearInterval(quizState.v3Timer);quizState.v3Timer=0;}}
 
+  function renderQuizAwardButtons_(kind){const buttons=quizState.game.players.map(function(id){return '<button class="quiz-award" onclick="awardOfflineLyrics_(\''+kind+'\',\''+quizArg_(id)+'\')">'+quizEscape_(quizUserName_(id))+'</button>';});buttons.push('<button class="quiz-award is-none" onclick="awardOfflineLyrics_(\''+kind+'\',\'\')">なし</button>');return '<div class="quiz-award-grid">'+buttons.join('')+'</div>';}
+  function enableQuizNext_(){const button=document.getElementById('quizNextButton');if(button){button.disabled=false;button.textContent=quizState.index>=9?'結果を見る':'次へ';}}
+  function advanceQuizBase_(){if(quizState.stage!=='answered')return;if(quizState.index>=quizState.game.questions.length-1){finishQuiz_();return;}quizState.index+=1;quizState.stage='question';quizState.selected=null;renderQuizQuestion_();scrollAppToTop('smooth');}
+
   renderQuizQuestion_=function(){
     clearTimer();const game=quizState.game,question=game&&game.questions&&game.questions[quizState.index];if(!question)return finishQuiz_();
     quizState.timeRecorded=false;quizState.songAttempts=0;quizState.v3Feedback='';quizState.questionStartedAt=Date.now();
@@ -142,7 +146,6 @@
 
   function flashV3_(text,isWrong){if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;const el=document.createElement('div');el.className='quiz-v3-stage-flash'+(isWrong?' is-wrong':'');el.innerHTML='<span>'+quizEscape_(text)+'</span>';document.body.appendChild(el);setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el);},560);}
 
-  const legacyAdvance=advanceQuiz_;
-  advanceQuiz_=function(){clearTimer();legacyAdvance();};
+  window.advanceQuiz_=function(){clearTimer();advanceQuizBase_();};
 })();
 </script>
