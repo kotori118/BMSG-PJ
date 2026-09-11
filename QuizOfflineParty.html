@@ -114,7 +114,7 @@
       quizState.busy=false;if(game.roomId)setQuizRoomUrl_(game.roomId);startQuizClientGame_(game);
     }).withFailureHandler(quizFailure_);
     var payload={userId:quizState.userId,mode:s.mode,genre:s.genre,course:s.course,difficulty:s.difficulty,playerUserIds:quizState.selectedPlayers};
-    if(s.mode==='OFFLINE')runner.createQuizOfflinePartyFinal(payload);
+    if(s.mode==='OFFLINE')runner.createQuizOfflineParty(payload);
     else runner.createQuizGame(payload);
   };
 
@@ -208,7 +208,7 @@
     quizState.busy=true;renderQuizLoading_();
     google.script.run.withSuccessHandler(function(result){
       quizState.busy=false;quizState.completed=true;quizState.screen='result';renderQuizResult_(result.scoreboard||[]);
-    }).withFailureHandler(quizFailure_).submitQuizOfflinePartyFinal({
+    }).withFailureHandler(quizFailure_).submitQuizOfflineParty({
       userId:quizState.userId,quizGameId:quizState.game.gameId,totalAnswerTimeMs:0,awards:quizState.awards
     });
   };
