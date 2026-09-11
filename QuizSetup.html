@@ -11,7 +11,7 @@
 
   window.joinQuizRoomV3_=function(roomId){
     const input=document.getElementById('quizRoomInputV3');const id=String(roomId||input&&input.value||'').replace(/\D/g,'');
-    if(!/^\d{4}$/.test(id)){quizNotify_('4桁のROOM IDを入力してください。');return;}if(quizState.busy)return;
+    if(!/^\d{4}$/.test(id)){quizNotify_('4桁のルームIDを入力してください。');return;}if(quizState.busy)return;
     quizState.busy=true;renderQuizLoading_();
     google.script.run.withSuccessHandler(function(game){quizState.busy=false;setQuizRoomUrl_(game.roomId);startQuizClientGame_(game);}).withFailureHandler(quizFailure_).joinQuizRoom(quizState.userId,id);
   };
@@ -158,8 +158,9 @@
       '<div class="quiz-setting-title">プレイヤー（2〜3人） <span id="quizOfflinePlayerCount" class="quiz-offline-player-count">'+selected.length+'人選択中</span></div>'+
       '<div class="quiz-player-grid">'+users.map(function(user){
         var id=String(user.userId||'');
-        var active=selected.indexOf(id)>=0;
-        return '<button type="button" class="quiz-player'+(active?' is-selected':'')+'" data-quiz-offline-player="'+quizEscape_(id)+'" aria-pressed="'+(active?'true':'false')+'" onclick="toggleQuizPlayer_(\''+quizEscape_(id)+'\');return false;">'+quizEscape_(user.displayName||id)+'</button>';}).join('')+'</div></div>';
+        var active=selected.indexOf(id);
+        return '<button type="button" class="quiz-player'+(active>=0?' is-selected':'')+'" data-quiz-offline-player="'+quizEscape_(id)+'" aria-pressed="'+(active>=0?'true':'false')+'" onclick="toggleQuizPlayer_(\''+quizEscape_(id)+'\');return false;">'+quizEscape_(user.displayName||id)+'</button>';
+      }).join('')+'</div></div>';
   };
 
   window.toggleQuizPlayer_=function(userId){
