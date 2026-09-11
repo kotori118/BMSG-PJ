@@ -1,0 +1,131 @@
+name: Q12 QUIZ canonical start API
+on:
+  push:
+    branches:
+      - refactor-quiz-canonical-start-api-q12-20260911
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refactor-quiz-canonical-start-api-q12-20260911
+      - name: Canonicalize QUIZ start APIs
+        shell: python
+        run: |
+          from pathlib import Path
+
+          def extract_function(text, name):
+              marker = f"function {name}("
+              start = text.find(marker)
+              if start < 0:
+                  raise SystemExit(f"missing function: {name}")
+              brace = text.find('{', start)
+              if brace < 0:
+                  raise SystemExit(f"missing brace: {name}")
+              depth = 0
+              i = brace
+              quote = None
+              escape = False
+              while i < len(text):
+                  ch = text[i]
+                  if quote:
+                      if escape:
+                          escape = False
+                      elif ch == '\\':
+                          escape = True
+                      elif ch == quote:
+                          quote = None
+                  else:
+                      if ch in ("'", '"', '`'):
+                          quote = ch
+                      elif ch == '{':
+                          depth += 1
+                      elif ch == '}':
+                          depth -= 1
+                          if depth == 0:
+                              end = i + 1
+                              while end < len(text) and text[end] in '\r\n':
+                                  end += 1
+                              return start, end, text[start:i+1]
+                  i += 1
+              raise SystemExit(f"unterminated function: {name}")
+
+          def replace_function(target, target_name, source_func, source_name):
+              s, e, _ = extract_function(target, target_name)
+              canonical = source_func.replace(f"function {source_name}(", f"function {target_name}(", 1)
+              return target[:s] + canonical + "\n\n" + target[e:]
+
+          def remove_function(text, name):
+              s, e, _ = extract_function(text, name)
+              return text[:s] + text[e:]
+
+          api_path = Path('QuizApi.gs')
+          redesign_path = Path('QuizRedesignApi.gs')
+          final_path = Path('QuizFinalFixes.gs')
+          setup_path = Path('QuizSetup.html')
+          party_path = Path('QuizOfflineParty.html')
+
+          api = api_path.read_text()
+          redesign = redesign_path.read_text()
+          final = final_path.read_text()
+          setup = setup_path.read_text()
+          party = party_path.read_text()
+
+          _, _, bootstrap_final = extract_function(final, 'getQuizBootstrapFinal')
+          _, _, create_final = extract_function(final, 'createQuizGameFinal')
+          _, _, join_v2 = extract_function(redesign, 'joinQuizRoomV2')
+
+          api = replace_function(api, 'getQuizBootstrap', bootstrap_final, 'getQuizBootstrapFinal')
+          api = replace_function(api, 'createQuizGame', create_final, 'createQuizGameFinal')
+          api = replace_function(api, 'joinQuizRoom', join_v2, 'joinQuizRoomV2')
+
+          final = remove_function(final, 'getQuizBootstrapFinal')
+          final = remove_function(final, 'createQuizGameFinal')
+          redesign = remove_function(redesign, 'joinQuizRoomV2')
+
+          setup = setup.replace('.getQuizBootstrapFinal(', '.getQuizBootstrap(')
+          setup = setup.replace('.createQuizGameFinal(', '.createQuizGame(')
+          setup = setup.replace('.joinQuizRoomV2(', '.joinQuizRoom(')
+          party = party.replace('runner.createQuizGameFinal(', 'runner.createQuizGame(')
+
+          api_path.write_text(api)
+          redesign_path.write_text(redesign)
+          final_path.write_text(final)
+          setup_path.write_text(setup)
+          party_path.write_text(party)
+
+          # Active runtime/server definitions must no longer depend on migrated legacy entrypoint names.
+          active = '\n'.join([
+              api_path.read_text(), redesign_path.read_text(), final_path.read_text(),
+              setup_path.read_text(), party_path.read_text(), Path('QuizPlay.html').read_text(),
+              Path('QuizResult.html').read_text()
+          ])
+          for legacy in ('getQuizBootstrapFinal', 'createQuizGameFinal', 'joinQuizRoomV2'):
+              if legacy in active:
+                  raise SystemExit(f"legacy entrypoint remains active: {legacy}")
+
+          # Canonical server entrypoints must exist exactly once.
+          server = '\n'.join(Path(p).read_text() for p in ['QuizApi.gs','QuizRedesignApi.gs','QuizFinalFixes.gs','QuizOfflinePartyApi.gs','QuizRoomApi.gs'])
+          for name in ('getQuizBootstrap','createQuizGame','joinQuizRoom'):
+              count = server.count(f"function {name}(")
+              if count != 1:
+                  raise SystemExit(f"{name} definition count={count}")
+
+          # Preserve the modern helpers used by the canonical implementations.
+          for required in ('buildQuizGameStateV2_', 'buildProfileQuizQuestionsFinal_', 'getQuizGameByRoomV2_'):
+              if f"function {required}(" not in server:
+                  raise SystemExit(f"missing required helper: {required}")
+
+      - name: Show diff
+        run: git diff --check && git diff --stat && git diff
+      - name: Remove temporary workflow and commit
+        run: |
+          rm .github/workflows/q12-quiz-canonical-start-api.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add QuizApi.gs QuizRedesignApi.gs QuizFinalFixes.gs QuizSetup.html QuizOfflineParty.html .github/workflows/q12-quiz-canonical-start-api.yml
+          git commit -m "Canonicalize QUIZ start API entrypoints"
+          git push origin HEAD:refactor-quiz-canonical-start-api-q12-20260911
