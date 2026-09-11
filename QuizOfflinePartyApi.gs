@@ -25,31 +25,17 @@ function createQuizOfflineParty(payload) {
 
     const gameId = Utilities.getUuid();
     const createdAt = new Date();
-    appendByHeaders_(getLogSheet_(UNIVERSE_CONFIG.SHEETS.QUIZ_ROOMS), {
-      QuizGameID: gameId,
-      RoomID: '',
-      Mode: 'OFFLINE',
-      Genre: quizGenreStorage_(genre),
-      Course: quizCourseStorage_(course),
-      Difficulty: quizDifficultyStorage_(difficulty),
-      CreatorUserID: uid,
-      CreatedAt: createdAt,
-      ExpiresAt: new Date(createdAt.getTime() + QUIZ_RETENTION_MS_),
-      CandidatePoolJSON: JSON.stringify({ candidates: generated.candidatePool, players: players })
-    });
-
-    const questionSheet = getLogSheet_(UNIVERSE_CONFIG.SHEETS.QUIZ_QUESTIONS);
-    generated.questions.slice(0, QUIZ_QUESTION_COUNT_).forEach(function(question, index) {
-      appendByHeaders_(questionSheet, {
-        QuizGameID: gameId,
-        QuestionNo: index + 1,
-        QuestionType: question.type,
-        QuestionText: question.text,
-        SourceRefJSON: JSON.stringify(question.source || {}),
-        ChoicesJSON: JSON.stringify(question.choices || []),
-        CorrectAnswerJSON: JSON.stringify(question.correct || {})
-      });
-    });
+    saveQuizGameRows_({
+      gameId: gameId,
+      roomId: '',
+      mode: 'OFFLINE',
+      genre: genre,
+      course: course,
+      difficulty: difficulty,
+      creatorUserId: uid,
+      createdAt: createdAt,
+      players: players
+    }, generated);
     return buildQuizGameState_(findQuizGameById_(gameId), uid);
   });
 }

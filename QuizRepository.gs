@@ -84,6 +84,34 @@ function saveQuizUserResult_(game, uid, score, totalMs, details) {
   appendByHeaders_(getLogSheet_(UNIVERSE_CONFIG.SHEETS.RECENT_ACTIVITIES), { ActivityID: Utilities.getUuid(), UserID: uid, ActivityType: 'PLAY_QUIZ', TargetID: game.gameId, OccurredAt: now });
 }
 
+function saveQuizGameRows_(params, generated) {
+  appendByHeaders_(getLogSheet_(UNIVERSE_CONFIG.SHEETS.QUIZ_ROOMS), {
+    QuizGameID: params.gameId,
+    RoomID: params.roomId,
+    Mode: params.mode,
+    Genre: quizGenreStorage_(params.genre),
+    Course: quizCourseStorage_(params.course),
+    Difficulty: quizDifficultyStorage_(params.difficulty),
+    CreatorUserID: params.creatorUserId,
+    CreatedAt: params.createdAt,
+    ExpiresAt: new Date(params.createdAt.getTime() + QUIZ_RETENTION_MS_),
+    CandidatePoolJSON: JSON.stringify({ candidates: generated.candidatePool, players: params.players })
+  });
+
+  const questionSheet = getLogSheet_(UNIVERSE_CONFIG.SHEETS.QUIZ_QUESTIONS);
+  generated.questions.slice(0, QUIZ_QUESTION_COUNT_).forEach(function(question, index) {
+    appendByHeaders_(questionSheet, {
+      QuizGameID: params.gameId,
+      QuestionNo: index + 1,
+      QuestionType: question.type,
+      QuestionText: question.text,
+      SourceRefJSON: JSON.stringify(question.source || {}),
+      ChoicesJSON: JSON.stringify(question.choices || []),
+      CorrectAnswerJSON: JSON.stringify(question.correct || {})
+    });
+  });
+}
+
 function createQuizRoomId_() {
   const used = {};
   readSheetObjects_(getLogSheet_(UNIVERSE_CONFIG.SHEETS.QUIZ_ROOMS)).forEach(function(row) { if (row.RoomID !== '') used[String(row.RoomID || '').padStart(4, '0')] = true; });
