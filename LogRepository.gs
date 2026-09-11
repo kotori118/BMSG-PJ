@@ -1,3 +1,4 @@
+// Shared repository for BMSG Universe Log sheet access helpers.
 function getLogSheet_(name) {
   const sheet = SpreadsheetApp.openById(UNIVERSE_CONFIG.LOG_DB_ID).getSheetByName(name);
   if (!sheet) throw new Error('Log sheet not found: ' + name);
