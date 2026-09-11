@@ -19,6 +19,23 @@ function readSheetObjects_(sheet) {
   });
 }
 
+function readSheetObjectsWithRows_(sheet) {
+  const values = sheet.getDataRange().getValues();
+  if (values.length < 2) return [];
+  const headers = values[0].map(function(value) { return String(value).trim(); });
+  return values.slice(1).map(function(row, index) {
+    const object = {__rowNumber:index + 2};
+    headers.forEach(function(header, columnIndex) {
+      if (header) object[header] = row[columnIndex];
+    });
+    return object;
+  }).filter(function(row) {
+    return Object.keys(row).some(function(key) {
+      return key !== '__rowNumber' && row[key] !== '';
+    });
+  });
+}
+
 function appendByHeaders_(sheet, record) {
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
   sheet.appendRow(headers.map(function(header) {
