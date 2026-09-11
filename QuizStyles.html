@@ -203,4 +203,24 @@
   .quiz-ranking-name{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;color:var(--white);font:700 14px/1.3 'Zen Kaku Gothic New',sans-serif}
   .quiz-ranking-points{flex:0 0 auto;color:var(--white);font:700 14px/1.3 'Zen Kaku Gothic New',sans-serif}
   .quiz-ranking-time{flex:0 0 auto;margin-left:0!important;color:rgba(247,251,255,.58);font:500 12px/1.3 'Exo 2',sans-serif}
+
+  /* QUIZ in-page full lyrics modal. */
+  .quiz-lyrics-overlay{position:fixed;inset:0;z-index:1300;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(1,6,12,.82);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+  .quiz-lyrics-modal{width:min(680px,100%);max-height:min(86dvh,860px);display:flex;flex-direction:column;overflow:hidden;border:1px solid rgba(156,236,255,.28);border-radius:24px;background:linear-gradient(155deg,#071019,#03080e);box-shadow:0 24px 80px rgba(0,0,0,.54),inset 0 1px 0 rgba(255,255,255,.04);color:var(--white)}
+  .quiz-lyrics-modal-head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 18px 14px;border-bottom:1px solid rgba(156,236,255,.12)}
+  .quiz-lyrics-modal-head small{display:block;margin-bottom:4px;color:rgba(156,236,255,.64);font:700 9px/1 'Orbitron',sans-serif;letter-spacing:.16em}
+  .quiz-lyrics-modal-head h2{margin:0;font:700 22px/1.2 'Orbitron',sans-serif;letter-spacing:.04em}
+  .quiz-lyrics-modal-close{flex:0 0 44px;width:44px;height:44px;border:1px solid rgba(156,236,255,.18);border-radius:14px;background:rgba(255,255,255,.035);color:var(--white);font:300 30px/1 sans-serif}
+  .quiz-lyrics-modal-body{min-height:180px;overflow-y:auto;overscroll-behavior:contain;padding:18px 18px calc(22px + env(safe-area-inset-bottom))}
+  .quiz-lyrics-modal-title{margin-bottom:18px;text-align:center}
+  .quiz-lyrics-modal-title h3{margin:0;color:var(--white);font:700 24px/1.35 'Zen Kaku Gothic New',sans-serif}
+  .quiz-lyrics-modal-title p{margin:5px 0 0;color:rgba(247,251,255,.52);font:600 11px/1.4 'Exo 2',sans-serif;letter-spacing:.06em}
+  .quiz-lyrics-modal-parts{display:grid;gap:10px}
+  .quiz-lyrics-modal-part{padding:14px 15px;border:1px solid rgba(255,255,255,.075);border-radius:16px;background:rgba(255,255,255,.025);transition:border-color .18s ease,background .18s ease}
+  .quiz-lyrics-modal-part.is-source{border-color:rgba(156,236,255,.52);background:linear-gradient(145deg,rgba(156,236,255,.12),rgba(156,236,255,.035));box-shadow:0 0 24px rgba(156,236,255,.055)}
+  .quiz-lyrics-modal-singer{margin-bottom:7px;color:rgba(156,236,255,.72);font:700 10px/1.4 'Zen Kaku Gothic New',sans-serif}
+  .quiz-lyrics-modal-part p{margin:0;white-space:pre-wrap;color:rgba(247,251,255,.9);font:500 15px/1.8 'Noto Serif JP',serif;overflow-wrap:anywhere}
+  .quiz-lyrics-snippet-mark{padding:1px 2px;border-radius:4px;background:rgba(156,236,255,.20);color:#c9f7ff;box-shadow:0 0 0 1px rgba(156,236,255,.18)}
+  .quiz-lyrics-modal-error{margin:40px 0;text-align:center;color:rgba(247,251,255,.68);font:600 13px/1.7 'Zen Kaku Gothic New',sans-serif}
+  @media(max-width:600px){.quiz-lyrics-overlay{align-items:flex-end;padding:12px 10px max(10px,env(safe-area-inset-bottom))}.quiz-lyrics-modal{max-height:84dvh;border-radius:22px 22px 18px 18px}.quiz-lyrics-modal-body{padding:16px 14px calc(18px + env(safe-area-inset-bottom))}.quiz-lyrics-modal-part{padding:13px 12px}}
 </style>
