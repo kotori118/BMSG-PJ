@@ -1,0 +1,27 @@
+<script>
+(function(){
+  const legacyAbandon=typeof abandonQuiz_==='function'?abandonQuiz_:null;
+  const legacyReturnTop=typeof returnQuizTop_==='function'?returnQuizTop_:null;
+  function clearTimer(){if(quizState.v3Timer){clearInterval(quizState.v3Timer);quizState.v3Timer=0;}}
+
+  finishQuiz_=function(){
+    clearTimer();if(quizState.busy||quizState.completed)return;quizState.busy=true;renderQuizLoading_();
+    const payload={userId:quizState.userId,quizGameId:quizState.game.gameId,totalAnswerTimeMs:quizState.game.mode==='OFFLINE'&&quizState.game.genre==='LYRICS'?0:Math.round(quizState.totalAnswerTimeMs||0)};
+    if(quizState.game.mode==='OFFLINE'&&quizState.game.genre==='LYRICS')payload.awards=quizState.awards;else payload.answers=quizState.answers;
+    google.script.run.withSuccessHandler(function(result){quizState.busy=false;quizState.completed=true;quizState.screen='result';renderQuizResult_(result.scoreboard||[]);}).withFailureHandler(quizFailure_).submitQuizResultV2(payload);
+  };
+
+  renderQuizResult_=function(scoreboard){
+    clearTimer();const host=quizHost_(),game=quizState.game;if(!host)return;scoreboard=Array.isArray(scoreboard)?scoreboard:[];
+    const showTime=!(game&&game.mode==='OFFLINE'&&game.genre==='LYRICS');
+    const rows=scoreboard.length?scoreboard.map(function(row,index){const rank=row.rank||index+1,name=row.displayName||quizUserName_(row.userId)||row.userId||'',time=Number(row.totalAnswerTimeMs||0);return '<div class="quiz-ranking-row"><strong>'+rank+'</strong><span>'+quizEscape_(name)+'</span><b>'+Number(row.score||0)+' pt</b>'+(showTime?'<small class="quiz-v3-score-time">'+formatQuizTimeV3_(time)+'</small>':'')+'</div>';}).join(''):'<p class="quiz-muted">まだ結果がありません。</p>';
+    host.innerHTML=(game&&game.roomId?renderQuizRoomBanner_(game.roomId):'')+'<section class="quiz-panel"><p class="quiz-kicker">RESULT</p><h2 class="quiz-panel-title">SCOREBOARD</h2><div class="quiz-ranking">'+rows+'</div><div class="quiz-actions">'+(game&&game.mode==='ONLINE'?'<button class="quiz-action" onclick="refreshQuizRankingV3_()">ランキングを更新</button>':'')+'<button class="quiz-action is-primary" onclick="returnQuizTopV3_()">QUIZ TOP</button><button class="quiz-action" onclick="navigateTo(\'lab\')">LAB</button></div></section>';
+  };
+
+  window.refreshQuizRankingV3_=function(){if(!quizState.game||quizState.busy)return;quizState.busy=true;google.script.run.withSuccessHandler(function(rows){quizState.busy=false;renderQuizResult_(rows||[]);}).withFailureHandler(quizFailure_).getQuizScoreboard(quizState.userId,quizState.game.gameId);};
+  window.returnQuizTopV3_=function(){clearTimer();if(legacyReturnTop){legacyReturnTop();}else{quizResetState_();renderQuizSetup_();}};
+  function formatQuizTimeV3_(ms){if(!ms)return '—';return (ms/1000).toFixed(2)+'s';}
+
+  abandonQuiz_=function(){clearTimer();if(legacyAbandon)return legacyAbandon();};
+})();
+</script>
