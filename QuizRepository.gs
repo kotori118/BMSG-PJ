@@ -1,3 +1,5 @@
+const QUIZ_RETENTION_MS_ = 30 * 24 * 60 * 60 * 1000;
+
 function getRecentQuizRooms_(uid) {
   cleanupExpiredQuizGames_();
 
