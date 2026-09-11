@@ -20,7 +20,7 @@ function getQuizBootstrap(userId, requestedRoomId) {
     if (game) {
       const expiresAt = new Date(game.ExpiresAt);
       if (!Number.isFinite(expiresAt.getTime()) || expiresAt.getTime() > Date.now()) {
-        response.room = buildQuizGameStateV2_(game, uid);
+        response.room = buildQuizGameState_(game, uid);
       }
     }
   }
@@ -73,14 +73,14 @@ function createQuizGame(payload) {
         CorrectAnswerJSON: JSON.stringify(question.correct || {})
       });
     });
-    return buildQuizGameStateV2_(findQuizGameById_(gameId), uid);
+    return buildQuizGameState_(findQuizGameById_(gameId), uid);
   });
 }
 
 function joinQuizRoom(userId, roomId) {
   const uid = validateQuizUser_(userId);
   cleanupExpiredQuizGames_();
-  return getQuizGameByRoomV2_(uid, roomId);
+  return getQuizGameByRoom_(uid, roomId);
 }
 
 function getQuizScoreboard(userId, quizGameId) {
@@ -188,7 +188,7 @@ function buildLyricsQuizQuestions_(course, difficulty) {
 function buildQuizGameState_(game, uid) {
   if (!game) throw new Error('クイズが見つかりません。');
   const result = findQuizResult_(game.gameId, uid);
-  return {
+  const state = {
     gameId: game.gameId,
     roomId: game.roomId,
     mode: game.mode,
@@ -204,6 +204,11 @@ function buildQuizGameState_(game, uid) {
     }),
     scoreboard: buildQuizScoreboard_(game)
   };
+  state.ready = !state.hasAnswered;
+  state.timeLimitMs = state.genre === 'LYRICS' ? QUIZ_LYRICS_LIMIT_MS_ : QUIZ_PROFILE_LIMIT_MS_;
+  state.songCatalog = state.genre === 'LYRICS' ? getQuizSongCatalog_(game.course) : [];
+  state.memberCatalog = state.genre === 'LYRICS' ? getQuizMemberCatalog_(game.course) : [];
+  return state;
 }
 
 function getQuizGameByRoom_(uid, roomId) {
