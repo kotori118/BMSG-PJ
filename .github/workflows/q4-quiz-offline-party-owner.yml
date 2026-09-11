@@ -1,0 +1,67 @@
+name: Q4 QUIZ Offline Party Owner
+on:
+  push:
+    branches: [refactor-quiz-offline-party-owner-20260911]
+    paths: ['.github/workflows/q4-quiz-offline-party-owner.yml']
+permissions:
+  contents: write
+jobs:
+  refactor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refactor-quiz-offline-party-owner-20260911
+      - name: Move absorbed offline-party block to canonical owner
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          legacy = Path('QuizOfflinePartyFix.html').read_text(encoding='utf-8')
+          fixes_path = Path('QuizRedesignV3Fixes.html')
+          fixes = fixes_path.read_text(encoding='utf-8')
+
+          marker = legacy.strip()
+          trimmed = fixes.rstrip()
+          if not trimmed.endswith(marker):
+              raise SystemExit('QuizRedesignV3Fixes.html does not end with exact QuizOfflinePartyFix runtime')
+
+          prefix = trimmed[:-len(marker)].rstrip() + '\n'
+          fixes_path.write_text(prefix, encoding='utf-8')
+          Path('QuizOfflineParty.html').write_text(legacy, encoding='utf-8')
+
+          index_path = Path('Index.html')
+          index = index_path.read_text(encoding='utf-8')
+          old = "<?!= include('QuizRedesignV3Fixes'); ?><?!= include('CoverScripts'); ?>"
+          new = "<?!= include('QuizRedesignV3Fixes'); ?><?!= include('QuizOfflineParty'); ?><?!= include('CoverScripts'); ?>"
+          if old not in index:
+              raise SystemExit('Expected QUIZ include sequence not found in Index.html')
+          index = index.replace(old, new, 1)
+          index_path.write_text(index, encoding='utf-8')
+          PY
+      - name: Verify structural equivalence
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          legacy = Path('QuizOfflinePartyFix.html').read_text(encoding='utf-8')
+          canonical = Path('QuizOfflineParty.html').read_text(encoding='utf-8')
+          fixes = Path('QuizRedesignV3Fixes.html').read_text(encoding='utf-8')
+          index = Path('Index.html').read_text(encoding='utf-8')
+          assert canonical == legacy, 'Canonical OfflineParty differs from rollback source'
+          assert legacy.strip() not in fixes, 'OfflineParty block still duplicated in Fixes'
+          assert "include('QuizRedesignV3Fixes')" in index
+          assert "include('QuizOfflineParty')" in index
+          assert "include('QuizOfflinePartyFix')" not in index
+          print('Q4 structural equivalence verified')
+          PY
+      - name: Commit refactor
+        shell: bash
+        run: |
+          rm -f .github/workflows/q4-quiz-offline-party-owner.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add Index.html QuizRedesignV3Fixes.html QuizOfflineParty.html .github/workflows/q4-quiz-offline-party-owner.yml
+          git commit -m 'Split QUIZ offline party into canonical owner'
+          git push origin HEAD:refactor-quiz-offline-party-owner-20260911
