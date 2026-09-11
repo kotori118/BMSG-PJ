@@ -54,7 +54,11 @@
     text-overflow:clip!important;
   }
   .card-collection-entry{
+    display:none!important;
     margin-top:14px!important;
+  }
+  .card-page:has(.card-group-grid):not(.is-gacha-mode) .card-collection-entry{
+    display:block!important;
   }
   .card-collection-entry-btn{
     width:100%!important;
