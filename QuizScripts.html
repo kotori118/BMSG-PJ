@@ -1,13 +1,12 @@
 <script>
-  const quizState={ready:false,busy:false,userId:'',users:[],courses:[],screen:'setup',settings:{mode:'OFFLINE',genre:'LYRICS',course:'BE:FIRST',difficulty:'NORMAL'},selectedPlayers:[],game:null,index:0,stage:'question',answers:[],awards:[],selected:null,startedAt:0,completed:false};
+  const quizState={busy:false,userId:'',users:[],courses:[],screen:'setup',settings:{mode:'OFFLINE',genre:'LYRICS',course:'BE:FIRST',difficulty:'NORMAL'},selectedPlayers:[],game:null,index:0,stage:'question',answers:[],awards:[],completed:false};
   let quizLyricsEscapeHandler_=null;
 
   function renderQuiz(){const template=document.getElementById('quizPageTemplate');return template?template.innerHTML:'';}
 
-  function quizResetState_(){quizState.ready=false;quizState.busy=false;quizState.screen='setup';quizState.game=null;quizState.index=0;quizState.stage='question';quizState.answers=[];quizState.awards=[];quizState.selected=null;quizState.startedAt=0;quizState.completed=false;closeQuizLyrics_();}
+  function quizResetState_(){quizState.busy=false;quizState.screen='setup';quizState.game=null;quizState.index=0;quizState.stage='question';quizState.answers=[];quizState.awards=[];quizState.completed=false;closeQuizLyrics_();}
   function quizHost_(){return document.getElementById('quizApp');}
   function renderQuizLoading_(){const host=quizHost_();if(host)host.innerHTML='<div class="quiz-panel">'+(typeof renderUniverseLoading==='function'?renderUniverseLoading('LOADING QUIZ...','#9cecff'):'LOADING...')+'</div>';}
-  function renderQuizNeedsUser_(){const host=quizHost_();if(host)host.innerHTML='<section class="quiz-panel"><p class="quiz-kicker">PLAYER</p><h2 class="quiz-panel-title">USERを選択</h2><p class="quiz-muted">QUIZを始めるUserを選んでください。</p><div class="quiz-actions"><button class="quiz-action is-primary" onclick="openUserChooser(true)">USER SELECT</button></div></section>';}
 
   function quizSetting_(title,options,current,key,extra){return '<section class="quiz-setting"><p class="quiz-setting-title">'+quizEscape_(title)+'</p><div class="quiz-options '+(extra||'')+'">'+options.map(function(option){return '<button type="button" class="quiz-choice '+(current===option[0]?'is-selected':'')+'" onclick="setQuizSetting_(\''+key+'\',\''+quizArg_(option[0])+'\')">'+quizEscape_(option[1])+'</button>';}).join('')+'</div></section>';}
   function setQuizSetting_(key,value){quizState.settings[key]=decodeURIComponent(value);if(key==='mode'||key==='genre'){if(quizState.settings.mode!=='OFFLINE')quizState.selectedPlayers=[quizState.userId];}renderQuizSetup_();}
