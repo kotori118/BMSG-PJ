@@ -6,9 +6,11 @@
     clearTimer();const game=quizState.game,question=game&&game.questions&&game.questions[quizState.index];if(!question)return finishQuiz_();
     quizState.timeRecorded=false;quizState.songAttempts=0;quizState.v3Feedback='';quizState.questionStartedAt=Date.now();
     const host=quizHost_();if(!host)return;const progress=Math.round((quizState.index/game.questions.length)*100);
-    host.innerHTML=(game.roomId?renderQuizRoomBanner_(game.roomId):'')+'<div class="quiz-progress" aria-label="進行度"><span style="width:'+progress+'%"></span></div><section class="quiz-panel"><div class="quiz-question-head"><p class="quiz-step-label">'+quizEscape_(quizGenreLabel_(game.genre))+' / '+quizEscape_(quizDifficultyLabel_(game.difficulty))+'</p><span class="quiz-question-count">'+String(quizState.index+1).padStart(2,'0')+' / 10</span></div><div id="quizTimerV3"></div><div id="quizQuestionBody">'+renderQuizQuestionBodyV3_(question)+'</div><div class="quiz-actions"><button id="quizNextButton" class="quiz-action is-primary" onclick="advanceQuiz_()" disabled>次へ</button><button class="quiz-action quiz-danger" onclick="abandonQuiz_()">諦める</button></div></section>';
+    host.innerHTML=(game.roomId?renderQuizRoomBanner_(game.roomId):'')+'<div class="quiz-progress" aria-label="進行度"><span style="width:'+progress+'%"></span></div><section class="quiz-panel"><div class="quiz-question-head"><p class="quiz-step-label">'+quizEscape_(quizGenreLabel_(game.genre))+' / '+quizEscape_(quizDifficultyLabel_(game.difficulty))+'</p><span class="quiz-question-count">'+String(quizState.index+1).padStart(2,'0')+' / 10</span></div><div id="quizTimerV3"></div><div id="quizQuestionBody">'+renderQuizQuestionBodyV3_(question)+'</div><div class="quiz-actions"><button id="quizNextButton" class="quiz-action is-primary" onclick="advanceQuiz_()" disabled>次へ</button><button class="quiz-action quiz-danger" onclick="abandonQuiz_()">終了する</button></div></section>';
     if(game.genre==='PROFILE')startTimerV3_(20000,'profile');else if(game.genre==='LYRICS')startTimerV3_(30000,game.mode==='OFFLINE'?'offlineSong':'onlineSong');
   };
+
+  function hideTimerV3_(){const host=document.getElementById('quizTimerV3');if(host)host.innerHTML='';}
 
   function renderQuizQuestionBodyV3_(question){
     const game=quizState.game;
@@ -25,7 +27,7 @@
   window.answerProfileV3_=function(encoded){
     if(quizState.stage==='answered')return;const value=decodeURIComponent(encoded),q=quizState.game.questions[quizState.index];
     const elapsed=recordQuestionTimeV3_(20000);const correct=String(value)===String(q.correct.value);
-    quizState.answers[quizState.index]={value:value,timedOut:false,answerTimeMs:elapsed,correct:correct};quizState.stage='answered';clearTimer();flashV3_(correct?'CORRECT':'MISS',!correct);replaceBodyV3_();enableQuizNext_();
+    quizState.answers[quizState.index]={value:value,timedOut:false,answerTimeMs:elapsed,correct:correct};quizState.stage='answered';clearTimer();hideTimerV3_();flashV3_(correct?'正解':'不正解',!correct);replaceBodyV3_();enableQuizNext_();
   };
 
   function renderOnlineLyricsBodyV3_(question){
@@ -34,7 +36,7 @@
     }
     if(quizState.stage==='singer'){
       const options=(quizState.game.memberCatalog||[]).map(function(x){return '<option value="'+quizEscape_(x.value)+'">'+quizEscape_(x.label)+'</option>';}).join('');
-      return '<p class="quiz-question-text is-lyrics">'+quizEscape_(question.text)+'</p><div class="quiz-v3-feedback"><div class="quiz-v3-feedback-mark">SONG CORRECT</div><div class="quiz-v3-feedback-answer">'+quizEscape_(question.source.title)+'</div></div><div class="quiz-v3-singer-box"><label class="quiz-setting-title" for="quizSingerV3">歌唱Member</label><select id="quizSingerV3" class="quiz-v3-singer-select"><option value="">選択してください</option>'+options+'</select><button class="quiz-action is-primary" onclick="answerSingerV3_()">決定</button></div>';
+      return '<p class="quiz-question-text is-lyrics">'+quizEscape_(question.text)+'</p><div class="quiz-v3-feedback"><div class="quiz-v3-feedback-mark">曲名正解</div><div class="quiz-v3-feedback-answer">'+quizEscape_(question.source.title)+'</div></div><div class="quiz-v3-singer-box"><label class="quiz-setting-title" for="quizSingerV3">歌唱Member</label><select id="quizSingerV3" class="quiz-v3-singer-select"><option value="">選択してください</option>'+options+'</select><button class="quiz-action is-primary" onclick="answerSingerV3_()">決定</button></div>';
     }
     return renderFinalFeedbackV3_(question,quizState.answers[quizState.index])+renderQuizLyricsLink_(question);
   }
@@ -55,29 +57,49 @@
   window.answerSongV3_=function(encoded){
     if(quizState.stage!=='song')return;const value=decodeURIComponent(encoded),q=quizState.game.questions[quizState.index];
     if(String(value)!==String(q.correct.songId)){
-      quizState.songAttempts+=1;const status=document.getElementById('quizSongStatusV3');if(status){status.className='quiz-v3-inline-status is-wrong';status.textContent='MISS — まだ回答できます';setTimeout(function(){if(status)status.className='quiz-v3-inline-status';},350);}return;
+      quizState.songAttempts+=1;const status=document.getElementById('quizSongStatusV3');if(status){status.className='quiz-v3-inline-status is-wrong';status.textContent='不正解 — まだ回答できます';setTimeout(function(){if(status)status.className='quiz-v3-inline-status';},350);}return;
     }
-    const elapsed=recordQuestionTimeV3_(30000);quizState.answers[quizState.index]={songId:value,singerId:'',songCorrect:true,timedOut:false,answerTimeMs:elapsed};clearTimer();quizState.stage='singer';flashV3_('CORRECT',false);setTimeout(replaceBodyV3_,220);
+    const elapsed=recordQuestionTimeV3_(30000);quizState.answers[quizState.index]={songId:value,singerId:'',songCorrect:true,timedOut:false,answerTimeMs:elapsed};clearTimer();hideTimerV3_();quizState.stage='singer';flashV3_('正解',false);setTimeout(replaceBodyV3_,220);
   };
 
   window.answerSingerV3_=function(){
     if(quizState.stage!=='singer')return;const select=document.getElementById('quizSingerV3'),id=String(select&&select.value||'');if(!id){quizNotify_('歌唱Memberを選択してください。');return;}
     const q=quizState.game.questions[quizState.index],answer=quizState.answers[quizState.index]||{};const correct=(q.source.singerIds||[]).map(String).indexOf(id)>=0;
-    answer.singerId=id;answer.singerCorrect=correct;quizState.answers[quizState.index]=answer;quizState.stage='answered';flashV3_(correct?'CORRECT':'MISS',!correct);replaceBodyV3_();enableQuizNext_();
+    answer.singerId=id;answer.singerCorrect=correct;quizState.answers[quizState.index]=answer;quizState.stage='answered';flashV3_(correct?'正解':'不正解',!correct);replaceBodyV3_();enableQuizNext_();
   };
 
   function renderOfflineLyricsBodyV3_(question){
     if(quizState.stage==='question')return '<p class="quiz-question-text is-lyrics">'+quizEscape_(question.text)+'</p><button class="quiz-action is-primary" style="width:100%" onclick="revealOfflineLyricsV3_()">答えを見る</button>';
-    if(quizState.stage==='songAward')return '<p class="quiz-question-text is-lyrics">'+quizEscape_(question.text)+'</p><div class="quiz-v3-feedback"><div class="quiz-v3-feedback-mark">ANSWER</div><div class="quiz-v3-feedback-answer">'+quizEscape_(question.source.title)+'</div></div><div class="quiz-award-step"><p class="quiz-setting-title">曲名の正解者</p>'+renderQuizAwardButtons_('song')+'</div>';
-    if(quizState.stage==='singerAward')return '<p class="quiz-question-text is-lyrics">'+quizEscape_(question.text)+'</p><div class="quiz-v3-feedback"><div class="quiz-v3-feedback-mark">SINGER</div><div class="quiz-v3-feedback-answer">'+quizEscape_((question.source.singerNames||[]).join(' / '))+'</div></div><div class="quiz-award-step"><p class="quiz-setting-title">歌唱Memberの正解者</p>'+renderQuizAwardButtons_('singer')+'</div>';
-    const award=quizState.awards[quizState.index]||{};return '<p class="quiz-question-text is-lyrics">'+quizEscape_(question.text)+'</p><div class="quiz-v3-feedback"><div class="quiz-v3-feedback-mark">RESULT</div><div class="quiz-v3-feedback-answer">曲名：'+quizEscape_(question.source.title)+'<br>歌唱：'+quizEscape_((question.source.singerNames||[]).join(' / '))+'<br><small>'+quizEscape_(quizUserName_(award.songWinner)||'正解者なし')+' / '+quizEscape_(quizUserName_(award.singerWinner)||'正解者なし')+'</small></div></div>'+renderQuizLyricsLink_(question);
+    if(quizState.stage==='songAward')return '<p class="quiz-question-text is-lyrics">'+quizEscape_(question.text)+'</p><div class="quiz-v3-feedback"><div class="quiz-v3-feedback-mark">答え</div><div class="quiz-v3-feedback-answer">'+quizEscape_(question.source.title)+'</div></div><div class="quiz-award-step"><p class="quiz-setting-title">曲名の正解者</p>'+renderQuizAwardButtons_('song')+'</div>';
+    if(quizState.stage==='singerAward')return '<p class="quiz-question-text is-lyrics">'+quizEscape_(question.text)+'</p><div class="quiz-v3-feedback"><div class="quiz-v3-feedback-mark">歌唱</div><div class="quiz-v3-feedback-answer">'+quizEscape_((question.source.singerNames||[]).join(' / '))+'</div></div><div class="quiz-award-step"><p class="quiz-setting-title">歌唱Memberの正解者</p>'+renderQuizAwardButtons_('singer')+'</div>';
+    const award=quizState.awards[quizState.index]||{};return '<p class="quiz-question-text is-lyrics">'+quizEscape_(question.text)+'</p><div class="quiz-v3-feedback"><div class="quiz-v3-feedback-mark">結果</div><div class="quiz-v3-feedback-answer">曲名：'+quizEscape_(question.source.title)+'<br>歌唱：'+quizEscape_((question.source.singerNames||[]).join(' / '))+'<br><small>'+quizEscape_(quizUserName_(award.songWinner)||'正解者なし')+' / '+quizEscape_(quizUserName_(award.singerWinner)||'正解者なし')+'</small></div></div>'+renderQuizLyricsLink_(question);
   }
 
-  window.revealOfflineLyricsV3_=function(){if(quizState.stage!=='question')return;clearTimer();quizState.stage='songAward';replaceBodyV3_();};
+  window.revealOfflineLyricsV3_=function(){if(quizState.stage!=='question')return;clearTimer();hideTimerV3_();quizState.stage='songAward';replaceBodyV3_();};
   revealOfflineLyrics_=window.revealOfflineLyricsV3_;
 
-  const legacyAward=awardOfflineLyrics_;
-  awardOfflineLyrics_=function(kind,encoded){legacyAward(kind,encoded);};
+  awardOfflineLyrics_=function(kind,encoded){
+    const id=encoded?decodeURIComponent(encoded):'';
+    if(!quizState.awards[quizState.index])quizState.awards[quizState.index]={songWinner:'',singerWinner:''};
+    if(kind==='song'){
+      quizState.awards[quizState.index].songWinner=id;
+      quizState.stage='singerAward';
+    }else{
+      quizState.awards[quizState.index].singerWinner=id;
+      quizState.stage='answered';
+    }
+    const body=document.getElementById('quizQuestionBody');
+    const q=quizState.game&&quizState.game.questions&&quizState.game.questions[quizState.index];
+    if(body&&q){
+      if(quizState.stage==='singerAward'){
+        body.innerHTML='<p class="quiz-question-text is-lyrics">'+quizEscape_(q.text)+'</p><div class="quiz-v3-feedback"><div class="quiz-v3-feedback-mark">歌唱</div><div class="quiz-v3-feedback-answer">'+quizEscape_((q.source.singerNames||[]).join(' / '))+'</div></div><div class="quiz-award-step"><p class="quiz-setting-title">歌唱メンバーの正解者</p>'+renderQuizAwardButtons_('singer')+'</div>';
+      }else{
+        const award=quizState.awards[quizState.index]||{};
+        body.innerHTML='<p class="quiz-question-text is-lyrics">'+quizEscape_(q.text)+'</p><div class="quiz-v3-feedback"><div class="quiz-v3-feedback-mark">結果</div><div class="quiz-v3-feedback-answer">曲名：'+quizEscape_(q.source.title)+'<br>歌唱：'+quizEscape_((q.source.singerNames||[]).join(' / '))+'<br><small>'+quizEscape_(quizUserName_(award.songWinner)||'正解者なし')+' / '+quizEscape_(quizUserName_(award.singerWinner)||'正解者なし')+'</small></div></div>'+renderQuizLyricsLink_(q);
+      }
+    }
+    if(quizState.stage==='answered')enableQuizNext_();
+  };
 
   function startTimerV3_(limit,kind){
     clearTimer();const host=document.getElementById('quizTimerV3');if(!host)return;
@@ -108,11 +130,11 @@
   function replaceBodyV3_(){const body=document.getElementById('quizQuestionBody'),q=quizState.game.questions[quizState.index];if(body)body.innerHTML=renderQuizQuestionBodyV3_(q);}
 
   function renderFinalFeedbackV3_(question,answer){
-    answer=answer||{};let ok=false,mark='MISS',detail='';
+    answer=answer||{};let ok=false,mark='不正解',detail='';
     if(quizState.game.genre==='PROFILE'){
-      ok=!!answer.correct;mark=answer.timedOut?'TIME UP':(ok?'CORRECT':'MISS');detail='正解：'+quizEscape_(question.correct.label||question.correct.value||'');
+      ok=!!answer.correct;mark=answer.timedOut?'TIME UP':(ok?'正解':'不正解');detail='正解：'+quizEscape_(question.correct.label||question.correct.value||'');
     }else{
-      ok=!!answer.songCorrect&&!!answer.singerCorrect;mark=answer.timedOut?'TIME UP':(ok?'CORRECT':(answer.songCorrect?'SONG +1':'MISS'));
+      ok=!!answer.songCorrect&&!!answer.singerCorrect;mark=answer.timedOut?'TIME UP':(ok?'正解':(answer.songCorrect?'曲名正解 +1':'不正解'));
       detail='曲名：'+quizEscape_(question.source.title)+'<br>歌唱：'+quizEscape_((question.source.singerNames||[]).join(' / '));
     }
     return '<div class="quiz-v3-feedback '+((!ok||answer.timedOut)?'is-wrong ':'')+(answer.timedOut?'is-timeout':'')+'"><div class="quiz-v3-feedback-mark">'+mark+'</div><div class="quiz-v3-feedback-answer">'+detail+'</div></div>';
