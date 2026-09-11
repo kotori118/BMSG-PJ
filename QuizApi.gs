@@ -4,7 +4,8 @@ const QUIZ_GENRES_ = Object.freeze(['LYRICS', 'PROFILE']);
 const QUIZ_COURSES_ = Object.freeze(['BE:FIRST', 'MAZZEL', 'STARGLOW', 'HANA', 'UNIT', 'ALL']);
 const QUIZ_DIFFICULTIES_ = Object.freeze(['NORMAL', 'ADVANCED']);
 const QUIZ_QUESTION_COUNT_ = 10;
-const QUIZ_RETENTION_MS_ = 30 * 24 * 60 * 60 * 1000;
+const QUIZ_LYRICS_LIMIT_MS_ = 30000;
+const QUIZ_PROFILE_LIMIT_MS_ = 20000;
 const QUIZ_MAJOR_ARTISTS_ = Object.freeze(['BE:FIRST', 'MAZZEL', 'STARGLOW', 'HANA']);
 
 function getQuizBootstrap(userId, requestedRoomId) {
