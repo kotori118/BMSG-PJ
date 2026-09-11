@@ -1,5 +1,7 @@
 <script>
   const cardState={ready:false,userId:'',groups:[],cards:[],currentGroup:'ALL',totalCount:0,collectedCount:0,drawing:false};
+  let cardNewBadgeTimer=0;
+
   function renderCards(){const template=document.getElementById('cardPageTemplate');return template?template.innerHTML:'<section class="view"><h1 class="title">TRADING CARD</h1></section>';}
   function portalizeCardOverlays(){['cardReveal','cardCollectionOverlay'].forEach(function(id){const local=document.getElementById('pageContent')?document.getElementById('pageContent').querySelector('#'+id):null;if(!local)return;document.querySelectorAll('body > #'+id).forEach(function(old){old.remove();});document.body.appendChild(local);});}
   function setCardPageMode(mode){const root=document.getElementById('cardPageRoot');if(!root)return;root.classList.toggle('is-gacha-mode',mode==='gacha');}
@@ -13,12 +15,65 @@
   function seedCardRevealStars(){const host=document.querySelector('#cardReveal .card-reveal-stars');if(!host)return;host.innerHTML=buildCardSkyMarkup(58);}
   function drawTradingCard(){if(cardState.drawing)return;cardState.drawing=true;openCardRevealPending();google.script.run.withSuccessHandler(function(result){cardState.drawing=false;if(result&&result.card){const found=cardState.cards.find(function(card){return String(card.imageId)===String(result.card.imageId);});if(found)found.isDrawn=true;cardState.totalCount=Number(result.totalCount||cardState.totalCount);cardState.collectedCount=Number(result.collectedCount||cardState.collectedCount);runCardReveal(result.card,!!result.isNew);}else{closeCardReveal();cardNotify('カードを取得できませんでした。');}}).withFailureHandler(function(error){cardState.drawing=false;closeCardReveal();cardFailure(error);}).drawTradingCard(cardState.userId,cardState.currentGroup);}
   function drawTradingCardFromReveal(){if(cardState.drawing)return;const overlay=document.getElementById('cardReveal');if(overlay)overlay.className='card-reveal is-open';drawTradingCard();}
-  function openCardRevealPending(){const overlay=document.getElementById('cardReveal');if(!overlay)return;overlay.className='card-reveal is-open';overlay.setAttribute('aria-hidden','false');seedCardRevealStars();const kicker=document.getElementById('cardRevealKicker');if(kicker)kicker.textContent='';const image=document.getElementById('cardRevealImage');if(image){image.removeAttribute('src');image.style.visibility='hidden';}document.getElementById('cardResultRarity').textContent='';document.getElementById('cardResultName').textContent='';document.getElementById('cardResultNew').textContent='';}
-  function runCardReveal(card,isNew){const overlay=document.getElementById('cardReveal');if(!overlay)return;const rarity=String(card.rarity||'N').toLowerCase();const image=document.getElementById('cardRevealImage');image.onload=function(){image.style.visibility='visible';image.onload=null;};image.src='https://lh3.googleusercontent.com/d/'+encodeURIComponent(card.driveFileId);document.getElementById('cardResultRarity').textContent=String(card.rarity||'');document.getElementById('cardResultName').textContent=String(card.memberName||'');document.getElementById('cardResultNew').textContent=isNew?'NEW COLLECTION':'';const kicker=document.getElementById('cardRevealKicker');const reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;window.setTimeout(function(){overlay.classList.add('is-revealed');window.setTimeout(function(){overlay.classList.add('rarity-'+rarity,'is-rarity-burst');const labels={n:'NORMAL SIGNAL',r:'BRONZE METEOR',sr:'SILVER NEBULA',ssr:'GOLD SUPERNOVA'};if(kicker)kicker.textContent=labels[rarity]||'';},reduced?0:520);},reduced?0:60);}
+
+  function clearCardNewBadgeState(){if(cardNewBadgeTimer){window.clearTimeout(cardNewBadgeTimer);cardNewBadgeTimer=0;}const overlay=document.getElementById('cardReveal');if(overlay)overlay.classList.remove('is-new-card');}
+
+  function openCardRevealPending(){clearCardNewBadgeState();const overlay=document.getElementById('cardReveal');if(!overlay)return;overlay.className='card-reveal is-open';overlay.setAttribute('aria-hidden','false');seedCardRevealStars();const kicker=document.getElementById('cardRevealKicker');if(kicker)kicker.textContent='';const image=document.getElementById('cardRevealImage');if(image){image.removeAttribute('src');image.style.visibility='hidden';}document.getElementById('cardResultRarity').textContent='';document.getElementById('cardResultName').textContent='';document.getElementById('cardResultNew').textContent='';}
+
+  function runCardReveal(card,isNew){
+    clearCardNewBadgeState();
+    const overlay=document.getElementById('cardReveal');
+    if(!overlay)return;
+    const rarity=String(card.rarity||'N').toLowerCase();
+    const image=document.getElementById('cardRevealImage');
+    const legacy=document.getElementById('cardResultNew');
+    if(legacy)legacy.textContent='';
+    const startedAt=(window.performance&&performance.now)?performance.now():Date.now();
+    const reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const revealDelay=reduced?0:940;
+
+    function showBadgeAfterFace(){
+      if(!isNew||!overlay)return;
+      const now=(window.performance&&performance.now)?performance.now():Date.now();
+      const wait=Math.max(0,revealDelay-(now-startedAt));
+      cardNewBadgeTimer=window.setTimeout(function(){
+        cardNewBadgeTimer=0;
+        if(overlay.classList.contains('is-open')&&overlay.classList.contains('is-revealed')) overlay.classList.add('is-new-card');
+      },wait);
+    }
+
+    image.onload=function(){image.style.visibility='visible';image.onload=null;};
+    image.src='https://lh3.googleusercontent.com/d/'+encodeURIComponent(card.driveFileId);
+    document.getElementById('cardResultRarity').textContent=String(card.rarity||'');
+    document.getElementById('cardResultName').textContent=String(card.memberName||'');
+    if(legacy)legacy.textContent='';
+    const kicker=document.getElementById('cardRevealKicker');
+
+    window.setTimeout(function(){
+      overlay.classList.add('is-revealed');
+      window.setTimeout(function(){
+        overlay.classList.add('rarity-'+rarity,'is-rarity-burst');
+        const labels={n:'NORMAL SIGNAL',r:'BRONZE METEOR',sr:'SILVER NEBULA',ssr:'GOLD SUPERNOVA'};
+        if(kicker)kicker.textContent=labels[rarity]||'';
+      },reduced?0:520);
+    },reduced?0:60);
+
+    if(isNew&&image){
+      if(image.complete&&image.naturalWidth>0) showBadgeAfterFace();
+      else image.addEventListener('load',showBadgeAfterFace,{once:true});
+    }
+  }
+
   function closeCardReveal(){const overlay=document.getElementById('cardReveal');if(!overlay)return;overlay.className='card-reveal';overlay.setAttribute('aria-hidden','true');if(currentRoute==='cards')renderCardGacha();}
   function openCardCollection(){if(!cardState.ready)return;const overlay=document.getElementById('cardCollectionOverlay');if(!overlay)return;renderCardCollection();overlay.classList.add('is-open');overlay.setAttribute('aria-hidden','false');overlay.scrollTop=0;}
   function closeCardCollection(){const overlay=document.getElementById('cardCollectionOverlay');if(!overlay)return;overlay.classList.remove('is-open');overlay.setAttribute('aria-hidden','true');}
   function renderCardCollection(){const body=document.getElementById('cardCollectionBody');const progress=document.getElementById('cardCollectionProgress');const meter=document.getElementById('cardCollectionMeterFill');if(!body||!progress)return;const cards=getCardGroupCards(cardState.currentGroup||'ALL');const collected=cards.filter(function(card){return card.isDrawn;}).length;const percent=cards.length?Math.round(collected/cards.length*100):0;progress.textContent=(cardState.currentGroup||'ALL')+'  '+collected+' / '+cards.length+'  ('+percent+'%)';if(meter)meter.style.width=percent+'%';const byMember={};cards.forEach(function(card){if(!byMember[card.memberId])byMember[card.memberId]=[];byMember[card.memberId].push(card);});body.innerHTML=Object.keys(byMember).map(function(memberId){const memberCards=byMember[memberId];const first=memberCards[0];const order={N:0,R:1,SR:2,SSR:3};memberCards.sort(function(a,b){return order[a.rarity]-order[b.rarity];});const owned=memberCards.filter(function(card){return card.isDrawn;}).length;return '<section class="card-collection-member" style="--member-color:'+escapeHtml(first.memberColor||'#9cecff')+'"><div class="card-collection-member-title-row"><div class="card-collection-member-title">'+escapeHtml(first.memberName)+'</div><div class="card-collection-member-count">'+owned+' / '+memberCards.length+'</div></div><div class="card-collection-grid">'+memberCards.map(function(card){const rarity=String(card.rarity||'N').toLowerCase();return '<div class="card-collection-item rarity-'+rarity+(card.isDrawn?' is-owned':'')+'">'+(card.isDrawn?'<img src="https://lh3.googleusercontent.com/d/'+encodeURIComponent(card.driveFileId)+'" alt="'+escapeHtml(card.memberName)+' '+escapeHtml(card.rarity)+'">':'<div class="card-collection-locked">?</div>')+'<span class="card-collection-rarity">'+escapeHtml(card.rarity)+'</span></div>';}).join('')+'</div></section>';}).join('')||'<div class="placeholder"><p>カードがありません。</p></div>';const reset=document.getElementById('cardResetCollectionBtn');if(reset)reset.hidden=!(cardState.totalCount>0&&cardState.collectedCount>=cardState.totalCount);}
   function resetCardCollection(){if(!(cardState.totalCount>0&&cardState.collectedCount>=cardState.totalCount))return;if(!window.confirm('コレクションを0%へリセットしますか？'))return;google.script.run.withSuccessHandler(function(){cardState.cards.forEach(function(card){card.isDrawn=false;});cardState.collectedCount=0;renderCardCollection();cardNotify('コレクションをリセットしました。');}).withFailureHandler(cardFailure).resetTradingCardCollection(cardState.userId);}
   function cardFailure(error){const message=error&&error.message?error.message:String(error||'エラーが発生しました。');cardNotify(message);}function cardNotify(message){if(typeof showToast==='function'){showToast(message);return;}window.alert(message);}
+
+  /* Prevent iPhone rubber-band only while the full-screen reveal is open. The pre-draw page remains scrollable. */
+  document.addEventListener('touchmove',function(event){
+    const reveal=event.target&&event.target.closest?event.target.closest('.card-reveal.is-open'):null;
+    if(reveal&&event.cancelable)event.preventDefault();
+  },{passive:false});
 </script>
