@@ -158,8 +158,8 @@
       '<div class="quiz-setting-title">プレイヤー（2〜3人） <span id="quizOfflinePlayerCount" class="quiz-offline-player-count">'+selected.length+'人選択中</span></div>'+
       '<div class="quiz-player-grid">'+users.map(function(user){
         var id=String(user.userId||'');
-        var active=selected.indexOf(id);
-        return '<button type="button" class="quiz-player'+(active>=0?' is-selected':'')+'" data-quiz-offline-player="'+quizEscape_(id)+'" aria-pressed="'+(active>=0?'true':'false')+'" onclick="toggleQuizPlayer_(\''+quizEscape_(id)+'\');return false;">'+quizEscape_(user.displayName||id)+'</button>';
+        var active=selected.indexOf(id)>=0;
+        return '<button type="button" class="quiz-player'+(active?' is-selected':'')+'" data-quiz-offline-player="'+quizEscape_(id)+'" aria-pressed="'+(active?'true':'false')+'" onclick="toggleQuizPlayer_(\''+quizEscape_(id)+'\');return false;">'+quizEscape_(user.displayName||id)+'</button>';
       }).join('')+'</div></div>';
   };
 
