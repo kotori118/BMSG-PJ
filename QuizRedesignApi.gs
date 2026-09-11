@@ -1,65 +1,6 @@
 const QUIZ_V2_LYRICS_LIMIT_MS_ = 30000;
 const QUIZ_V2_PROFILE_LIMIT_MS_ = 20000;
 
-function getQuizBootstrapV2(userId, requestedRoomId) {
-  const uid = validateQuizUser_(userId);
-  cleanupExpiredQuizGames_();
-  const response = { users: getQuizUsers_(), courses: getQuizCourses_(), room: null };
-  const roomId = String(requestedRoomId || '').replace(/\D/g, '');
-  if (roomId) response.room = getQuizGameByRoomV2_(uid, roomId);
-  return response;
-}
-
-function createQuizGameV2(payload) {
-  payload = payload || {};
-  const uid = validateQuizUser_(payload.userId);
-  const mode = validateQuizEnum_(payload.mode, QUIZ_MODES_, 'MODE');
-  const genre = validateQuizEnum_(payload.genre, QUIZ_GENRES_, 'GENRE');
-  const course = validateQuizEnum_(payload.course, QUIZ_COURSES_, 'COURSE');
-  const difficulty = validateQuizEnum_(payload.difficulty, QUIZ_DIFFICULTIES_, 'DIFFICULTY');
-  const players = validateQuizPlayers_(mode, genre, uid, payload.playerUserIds);
-
-  return withQuizLock_(function() {
-    cleanupExpiredQuizGamesUnsafe_();
-    const generated = genre === 'LYRICS'
-      ? buildLyricsQuizQuestions_(course, difficulty)
-      : buildProfileQuizQuestionsV2_(course, difficulty);
-    if (!generated || generated.questions.length < QUIZ_QUESTION_COUNT_) {
-      throw new Error('この条件では10問作れません。コースか難易度を変えてください。');
-    }
-
-    const gameId = Utilities.getUuid();
-    const roomId = mode === 'ONLINE' ? createQuizRoomId_() : '';
-    const createdAt = new Date();
-    appendByHeaders_(getLogSheet_(UNIVERSE_CONFIG.SHEETS.QUIZ_ROOMS), {
-      QuizGameID: gameId,
-      RoomID: roomId,
-      Mode: mode,
-      Genre: quizGenreStorage_(genre),
-      Course: quizCourseStorage_(course),
-      Difficulty: quizDifficultyStorage_(difficulty),
-      CreatorUserID: uid,
-      CreatedAt: createdAt,
-      ExpiresAt: new Date(createdAt.getTime() + QUIZ_RETENTION_MS_),
-      CandidatePoolJSON: JSON.stringify({ candidates: generated.candidatePool, players: players })
-    });
-
-    const questionSheet = getLogSheet_(UNIVERSE_CONFIG.SHEETS.QUIZ_QUESTIONS);
-    generated.questions.slice(0, QUIZ_QUESTION_COUNT_).forEach(function(question, index) {
-      appendByHeaders_(questionSheet, {
-        QuizGameID: gameId,
-        QuestionNo: index + 1,
-        QuestionType: question.type,
-        QuestionText: question.text,
-        SourceRefJSON: JSON.stringify(question.source || {}),
-        ChoicesJSON: JSON.stringify(question.choices || []),
-        CorrectAnswerJSON: JSON.stringify(question.correct || {})
-      });
-    });
-    return buildQuizGameStateV2_(findQuizGameById_(gameId), uid);
-  });
-}
-
 function getQuizGameByRoomV2_(uid, roomId) {
   const id = String(roomId || '').replace(/\D/g, '');
   if (!/^\d{4}$/.test(id)) throw new Error('4桁のROOM IDを入力してください。');
@@ -95,63 +36,6 @@ function getQuizMemberCatalogV2_(course) {
   return members.filter(function(row) { return !!eligible[asId_(row.MemberID)]; }).map(function(row) {
     return { value: asId_(row.MemberID), label: String(row.DisplayName || row.MemberID), order: Number(row.DisplayOrder || 9999) };
   }).sort(function(a, b) { return a.order - b.order || a.label.localeCompare(b.label, 'ja'); });
-}
-
-function buildProfileQuizQuestionsV2_(course, difficulty) {
-  const members = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.MEMBERS);
-  const groups = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.GROUPS);
-  const memberships = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.GROUP_MEMBERS);
-  const profiles = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.PROFILES);
-  const settings = readSheetObjects_(getLogSheet_(UNIVERSE_CONFIG.SHEETS.PROFILE_SETTINGS));
-  const eligibleIds = quizCourseMemberIds_(course, members, groups, memberships);
-  const memberById = {};
-  members.forEach(function(row) {
-    const id = asId_(row.MemberID);
-    memberById[id] = { id: id, name: String(row.DisplayName || id), order: Number(row.DisplayOrder || 9999) };
-  });
-  const wantedDifficulty = difficulty === 'NORMAL' ? '普通' : '上級';
-  const activeSettings = settings.filter(function(row) {
-    return asBoolean_(row.IsActive) && String(row.QuizDifficulty || '').trim() === wantedDifficulty;
-  });
-  const rows = profiles.filter(function(row) {
-    const id = asId_(row.MemberID);
-    return !!eligibleIds[id] && !!memberById[id];
-  });
-  const facts = {};
-  const settingById = {};
-  activeSettings.forEach(function(setting) {
-    const pid = asId_(setting.ProfileID);
-    settingById[pid] = setting;
-    facts[pid] = {};
-    rows.forEach(function(row) {
-      const memberId = asId_(row.MemberID);
-      const value = formatQuizProfileValue_(row[pid], setting);
-      if (value) facts[pid][memberId] = value;
-    });
-  });
-
-  const pools = { PROFILE_FIELD: [], PROFILE_IDENTIFY: [], PROFILE_COMMONALITY: [], PROFILE_ODD_ONE_OUT: [], PROFILE_PAIR: [], PROFILE_MULTI_IDENTIFY: [] };
-  buildProfileFieldPool_(rows, memberById, activeSettings, facts, pools.PROFILE_FIELD);
-  buildProfileIdentifyPool_(rows, memberById, activeSettings, facts, pools.PROFILE_IDENTIFY);
-  if (difficulty === 'ADVANCED') {
-    buildProfileCommonalityPool_(rows, memberById, activeSettings, facts, pools.PROFILE_COMMONALITY);
-    buildProfileOddPool_(rows, memberById, activeSettings, facts, pools.PROFILE_ODD_ONE_OUT);
-    buildProfilePairPool_(rows, memberById, activeSettings, facts, pools.PROFILE_PAIR);
-    buildProfileMultiIdentifyPool_(rows, memberById, activeSettings, facts, pools.PROFILE_MULTI_IDENTIFY);
-  }
-
-  Object.keys(pools).forEach(function(key) { pools[key] = quizShuffle_(pools[key]); });
-  const selected = pickDiverseProfileQuestionsV2_(pools, QUIZ_QUESTION_COUNT_);
-  if (selected.length < QUIZ_QUESTION_COUNT_) {
-    const fallback = quizShuffle_(pools.PROFILE_FIELD.concat(pools.PROFILE_IDENTIFY));
-    fallback.forEach(function(q) {
-      if (selected.length < QUIZ_QUESTION_COUNT_ && !profileQuestionDuplicateV2_(selected, q)) selected.push(q);
-    });
-  }
-  return {
-    candidatePool: selected.map(function(q) { return q.type + ':' + String(q.source && q.source.key || q.text); }),
-    questions: selected.slice(0, QUIZ_QUESTION_COUNT_)
-  };
 }
 
 function buildProfileFieldPool_(rows, memberById, settings, facts, out) {
@@ -307,27 +191,4 @@ function buildProfileMultiIdentifyPool_(rows, memberById, settings, facts, out) 
       });
     }
   }
-}
-
-function pickDiverseProfileQuestionsV2_(pools, count) {
-  const result = [], types = Object.keys(pools).filter(function(type) { return pools[type].length; });
-  const cursors = {};
-  types.forEach(function(t) { cursors[t] = 0; });
-  let lastType = '', sameRun = 0, guard = 0;
-  while (result.length < count && guard++ < 200) {
-    const available = types.filter(function(t) { return cursors[t] < pools[t].length && !(t === lastType && sameRun >= 2); });
-    if (!available.length) break;
-    const type = quizShuffle_(available)[0], q = pools[type][cursors[type]++];
-    if (profileQuestionDuplicateV2_(result, q)) continue;
-    result.push(q);
-    if (type === lastType) sameRun += 1; else { lastType = type; sameRun = 1; }
-  }
-  return result;
-}
-
-function profileQuestionDuplicateV2_(list, question) {
-  const key = question.type + ':' + String(question.source && question.source.key || question.text);
-  return list.some(function(item) {
-    return item.type + ':' + String(item.source && item.source.key || item.text) === key;
-  });
 }
