@@ -34,7 +34,7 @@ function createQuizGame(payload) {
   const genre = validateQuizEnum_(payload.genre, QUIZ_GENRES_, 'GENRE');
   const difficulty = validateQuizEnum_(payload.difficulty, QUIZ_DIFFICULTIES_, 'DIFFICULTY');
   const course = genre === 'PROFILE' ? 'ALL' : validateQuizEnum_(payload.course, QUIZ_COURSES_, 'COURSE');
-  const players = validateQuizPlayers_(mode, genre, uid, payload.playerUserIds);
+  const players = validateQuizPlayers_(mode, uid, payload.playerUserIds);
 
   return withQuizLock_(function() {
     cleanupExpiredQuizGamesUnsafe_();
@@ -69,6 +69,10 @@ function joinQuizRoom(userId, roomId) {
   return getQuizGameByRoom_(uid, roomId);
 }
 
+function getRecentQuizRooms(userId) {
+  return getRecentQuizRooms_(validateQuizUser_(userId));
+}
+
 function getQuizScoreboard(userId, quizGameId) {
   validateQuizUser_(userId);
   const game = findQuizGameById_(asId_(quizGameId));
@@ -86,9 +90,11 @@ function submitQuizResult(payload) {
     const questions = getQuizQuestionRows_(game.gameId);
     if (questions.length !== QUIZ_QUESTION_COUNT_) throw new Error('問題データが揃っていません。');
 
-    if (game.mode === 'OFFLINE' && game.genre === 'LYRICS') {
+    if (game.mode === 'OFFLINE') {
       payload.totalAnswerTimeMs = 0;
-      return saveOfflineLyricsQuizResults_(game, questions, payload);
+      return game.genre === 'LYRICS'
+        ? saveOfflineLyricsQuizResults_(game, questions, payload)
+        : saveOfflineProfileQuizResults_(game, questions, payload);
     }
 
     const existing = findQuizResult_(game.gameId, uid);
@@ -206,16 +212,50 @@ function saveOfflineLyricsQuizResults_(game, questions, payload) {
     if (singerWinner) playerMap[singerWinner] += 1;
     players.forEach(function(id) { detailsByUser[id].push({ questionNo: index + 1, songPoint: id === songWinner ? 1 : 0, singerPoint: id === singerWinner ? 1 : 0 }); });
   });
-  players.forEach(function(id) { saveQuizUserResult_(game, id, playerMap[id], Number(payload.totalAnswerTimeMs || 0), detailsByUser[id]); });
+  players.forEach(function(id) { saveQuizUserResult_(game, id, playerMap[id], 0, detailsByUser[id]); });
   return { ok: true, alreadySaved: false, scoreboard: buildQuizScoreboard_(game) };
+}
+
+function saveOfflineProfileQuizResults_(game, questions, payload) {
+  const players = Array.isArray(game.players) ? game.players.map(String) : [];
+  if (players.length < 2 || players.length > 3) throw new Error('プレイヤー情報が正しくありません。');
+  if (getQuizResultRows_(game.gameId).length) return { ok: true, alreadySaved: true, scoreboard: buildQuizScoreboard_(game) };
+  const awards = Array.isArray(payload.awards) ? payload.awards : [];
+  if (awards.length !== questions.length) throw new Error('10問すべて採点してください。');
+
+  const scores = {};
+  const detailsByPlayer = {};
+  players.forEach(function(id) { scores[id] = 0; detailsByPlayer[id] = []; });
+  questions.forEach(function(question, index) {
+    const award = awards[index] || {};
+    const winner = asId_(award.profileWinner);
+    if (winner && players.indexOf(winner) < 0) throw new Error('正解者が参加プレイヤーに含まれていません。');
+    if (winner) scores[winner] += 1;
+    players.forEach(function(id) {
+      detailsByPlayer[id].push({
+        questionNo: question.number,
+        type: question.type,
+        winnerUserId: winner,
+        awarded: winner === id,
+        correctValue: question.correct && question.correct.value != null ? String(question.correct.value) : '',
+        correctLabel: question.correct && question.correct.label != null ? String(question.correct.label) : ''
+      });
+    });
+  });
+  players.forEach(function(id) { saveQuizUserResult_(game, id, scores[id], 0, detailsByPlayer[id]); });
+  return { ok: true, alreadySaved: false, maxScore: QUIZ_QUESTION_COUNT_, scoreboard: buildQuizScoreboard_(game) };
 }
 
 function buildQuizScoreboard_(game) {
   const users = getQuizUsers_().reduce(function(map, user) { map[user.userId] = user.displayName; return map; }, {});
   const rows = getQuizResultRows_(game.gameId).map(function(row) { return { userId: asId_(row.UserID), displayName: users[asId_(row.UserID)] || asId_(row.UserID), score: Number(row.Score || 0), answerTimeMs: Number(row.TotalAnswerTimeMs || 0), answeredAt: quizIso_(row.AnsweredAt) }; });
   rows.sort(function(a, b) { return b.score - a.score || a.answerTimeMs - b.answerTimeMs || a.userId.localeCompare(b.userId); });
-  let lastScore = null;
-  rows.forEach(function(row, index) { row.rank = lastScore === row.score ? rows[index - 1].rank : index + 1; lastScore = row.score; });
+  let lastKey = null;
+  rows.forEach(function(row, index) {
+    const key = String(row.score) + '|' + String(row.answerTimeMs);
+    row.rank = lastKey === key ? rows[index - 1].rank : index + 1;
+    lastKey = key;
+  });
   return rows;
 }
 
@@ -287,10 +327,10 @@ function quizShuffle_(items) {
   return copy;
 }
 
-function validateQuizPlayers_(mode, genre, uid, values) {
-  if (!(mode === 'OFFLINE' && genre === 'LYRICS')) return [uid];
+function validateQuizPlayers_(mode, uid, values) {
+  if (mode !== 'OFFLINE') return [uid];
   const players = Array.isArray(values) ? values.map(validateQuizUser_).filter(function(id, index, all) { return all.indexOf(id) === index; }) : [];
-  if (players.length < 2 || players.length > 3) throw new Error('歌詞OFFLINEは2〜3人を選択してください。');
+  if (players.length < 2 || players.length > 3) throw new Error('オフラインは2〜3人を選択してください。');
   return players;
 }
 
