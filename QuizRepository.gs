@@ -76,3 +76,30 @@ function getQuizQuestionRows_(gameId) {
 
 function getQuizResultRows_(gameId) { return readSheetObjects_(getLogSheet_(UNIVERSE_CONFIG.SHEETS.QUIZ_RESULTS)).filter(function(row) { return asId_(row.QuizGameID) === gameId; }); }
 function findQuizResult_(gameId, uid) { return getQuizResultRows_(gameId).find(function(row) { return asId_(row.UserID) === uid; }); }
+
+function saveQuizUserResult_(game, uid, score, totalMs, details) {
+  const now = new Date();
+  appendByHeaders_(getLogSheet_(UNIVERSE_CONFIG.SHEETS.QUIZ_RESULTS), { QuizGameID: game.gameId, UserID: uid, Score: score, TotalAnswerTimeMs: Math.max(0, Math.round(totalMs || 0)), AnswerDetailsJSON: JSON.stringify(details || []), AnsweredAt: now });
+  appendByHeaders_(getLogSheet_(UNIVERSE_CONFIG.SHEETS.QUIZ_SCORES), { QuizScoreID: Utilities.getUuid(), SourceGameID: game.gameId, UserID: uid, Mode: game.mode, Genre: quizGenreStorage_(game.genre), Course: quizCourseStorage_(game.course), Difficulty: quizDifficultyStorage_(game.difficulty), Score: score, PlayedAt: now });
+  appendByHeaders_(getLogSheet_(UNIVERSE_CONFIG.SHEETS.RECENT_ACTIVITIES), { ActivityID: Utilities.getUuid(), UserID: uid, ActivityType: 'PLAY_QUIZ', TargetID: game.gameId, OccurredAt: now });
+}
+
+function createQuizRoomId_() {
+  const used = {};
+  readSheetObjects_(getLogSheet_(UNIVERSE_CONFIG.SHEETS.QUIZ_ROOMS)).forEach(function(row) { if (row.RoomID !== '') used[String(row.RoomID || '').padStart(4, '0')] = true; });
+  for (let i = 0; i < 100; i++) { const id = String(Math.floor(1000 + Math.random() * 9000)); if (!used[id]) return id; }
+  throw new Error('ROOM IDを発行できませんでした。');
+}
+
+function cleanupExpiredQuizGames_() { return withQuizLock_(cleanupExpiredQuizGamesUnsafe_); }
+function cleanupExpiredQuizGamesUnsafe_() {
+  const games = readSheetObjectsWithRows_(getLogSheet_(UNIVERSE_CONFIG.SHEETS.QUIZ_ROOMS)).filter(function(row) { const date = new Date(row.ExpiresAt); return !Number.isFinite(date.getTime()) || date.getTime() <= Date.now(); });
+  games.forEach(function(row) { deleteQuizGameRows_(asId_(row.QuizGameID)); });
+}
+
+function deleteQuizGameRows_(gameId) {
+  [UNIVERSE_CONFIG.SHEETS.QUIZ_RESULTS, UNIVERSE_CONFIG.SHEETS.QUIZ_QUESTIONS, UNIVERSE_CONFIG.SHEETS.QUIZ_ROOMS].forEach(function(name) {
+    const sheet = getLogSheet_(name);
+    readSheetObjectsWithRows_(sheet).filter(function(row) { return asId_(row.QuizGameID) === gameId; }).sort(function(a, b) { return b.__rowNumber - a.__rowNumber; }).forEach(function(row) { sheet.deleteRow(row.__rowNumber); });
+  });
+}
