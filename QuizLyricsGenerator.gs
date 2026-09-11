@@ -1,6 +1,3 @@
-const QUIZ_LYRICS_LIMIT_MS_ = 30000;
-const QUIZ_PROFILE_LIMIT_MS_ = 20000;
-
 function getQuizSongCatalog_(course) {
   return readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.SONGS)
     .filter(function(row) { return quizCourseMatchesSong_(row, course); })
