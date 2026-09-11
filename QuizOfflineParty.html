@@ -1,11 +1,11 @@
 <script>
 (function(){
   function isOfflineProfileParty_(){
-    return !!(window.quizState && quizState.game && quizState.game.mode==='OFFLINE' && quizState.game.genre==='PROFILE');
+    return !!(quizState.game && quizState.game.mode==='OFFLINE' && quizState.game.genre==='PROFILE');
   }
 
   function partyUsers_(){
-    var users=Array.isArray(window.quizState&&quizState.users)?quizState.users:[];
+    var users=Array.isArray(quizState.users)?quizState.users:[];
     if(users.length)return users;
     return [
       {userId:'U001',displayName:'ももたん'},
@@ -21,14 +21,14 @@
   }
 
   function stopPartyTimer_(){
-    if(window.quizState&&quizState.v3Timer){
+    if(quizState.v3Timer){
       clearInterval(quizState.v3Timer);
       quizState.v3Timer=0;
     }
   }
 
   function selectedPartyPlayers_(){
-    if(!Array.isArray(window.quizState&&quizState.selectedPlayers))quizState.selectedPlayers=[];
+    if(!Array.isArray(quizState.selectedPlayers))quizState.selectedPlayers=[];
     return quizState.selectedPlayers.map(String).filter(function(id,index,all){return id&&all.indexOf(id)===index;});
   }
 

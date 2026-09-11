@@ -29,7 +29,7 @@
       const rank=previous===tieKey?previousRank:index+1;
       previous=tieKey;previousRank=rank;
       const name=row.displayName||quizUserName_(row.userId)||row.userId||'';
-      return '<div class="quiz-ranking-row"><strong>'+rank+'</strong><span>'+quizEscape_(name)+'</span><b>'+Number(row.score||0)+' pt</b>'+(!scoreOnly?'<small class="quiz-v3-score-time">'+formatQuizResultTime_(time)+'</small>':'')+'</div>';
+      return '<div class="quiz-ranking-row"><strong class="quiz-ranking-rank">'+rank+'位</strong><span class="quiz-ranking-name">'+quizEscape_(name)+'</span><b class="quiz-ranking-points">'+Number(row.score||0)+'pt</b>'+(!scoreOnly?'<small class="quiz-v3-score-time quiz-ranking-time">'+formatQuizResultTime_(time)+'</small>':'')+'</div>';
     }).join('');
     return rows||'<p class="quiz-muted">まだ結果がありません。</p>';
   }
