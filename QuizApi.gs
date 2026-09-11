@@ -18,7 +18,7 @@ function getQuizBootstrap(userId, requestedRoomId) {
   if (roomId) {
     const game = findQuizGameByRoomId_(roomId);
     if (game) {
-      const expiresAt = new Date(game.ExpiresAt);
+      const expiresAt = new Date(game.expiresAt);
       if (!Number.isFinite(expiresAt.getTime()) || expiresAt.getTime() > Date.now()) {
         response.room = buildQuizGameState_(game, uid);
       }
