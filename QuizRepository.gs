@@ -1,5 +1,4 @@
-function getRecentQuizRooms(userId) {
-  const uid = validateQuizUser_(userId);
+function getRecentQuizRooms_(uid) {
   cleanupExpiredQuizGames_();
 
   const resultRows = readSheetObjects_(getLogSheet_(UNIVERSE_CONFIG.SHEETS.QUIZ_RESULTS));
@@ -33,7 +32,7 @@ function getRecentQuizRooms(userId) {
         creatorUserId: game.creatorUserId,
         createdAt: game.createdAt.toISOString(),
         expiresAt: game.expiresAt.toISOString(),
-        participantCount: Object.keys(gameResults).length,
+        answeredCount: Object.keys(gameResults).length,
         hasAnswered: !!gameResults[uid]
       };
     });
