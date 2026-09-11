@@ -6,7 +6,7 @@
   window.openQuizRoomJoinV3_=function(){
     clearTimer();quizState.screen='join';const host=quizHost_();if(!host)return;
     host.innerHTML='<section class="quiz-panel quiz-v3-room-join"><p class="quiz-kicker">JOIN ROOM</p><h2 class="quiz-panel-title">ルームに参加する</h2><div class="quiz-v3-room-input-row"><input id="quizRoomInputV3" class="quiz-room-input" inputmode="numeric" maxlength="4" placeholder="0000" aria-label="4桁のルームID"><button class="quiz-action is-primary" onclick="joinQuizRoomV3_()">参加</button></div><div><p class="quiz-setting-title">最新のルーム</p><div id="quizRecentRoomsV3" class="quiz-v3-recent">'+(typeof renderUniverseLoading==='function'?renderUniverseLoading(false,'#9cecff'):'LOADING...')+'</div></div><div class="quiz-actions"><button class="quiz-action" onclick="renderQuizSetup_()">戻る</button></div></section>';
-    google.script.run.withSuccessHandler(renderQuizRecentRoomsV3_).withFailureHandler(function(){const el=document.getElementById('quizRecentRoomsV3');if(el)el.innerHTML='<p class="quiz-muted">ルームを読み込めませんでした。</p>';}).getRecentQuizRooms(quizState.userId,5);
+    google.script.run.withSuccessHandler(renderQuizRecentRoomsV3_).withFailureHandler(function(){const el=document.getElementById('quizRecentRoomsV3');if(el)el.innerHTML='<p class="quiz-muted">ルームを読み込めませんでした。</p>';}).getRecentQuizRooms(quizState.userId);
   };
 
   window.joinQuizRoomV3_=function(roomId){
@@ -34,24 +34,21 @@
 <script>
 (function(){
   function safeClearQuizTimer_(){
-    if(window.quizState&&quizState.v3Timer){
+    if(quizState.v3Timer){
       clearInterval(quizState.v3Timer);
       quizState.v3Timer=0;
     }
   }
 
   function quizOfflineUsers_(){
-    var users=Array.isArray(window.quizState&&quizState.users)?quizState.users:[];
+    var users=Array.isArray(quizState.users)?quizState.users:[];
     if(users.length)return users;
-    return [
-      {userId:'U001',displayName:'ももたん'},
-      {userId:'U002',displayName:'みおたん'},
-      {userId:'U003',displayName:'りおたん'}
-    ];
+    if(typeof UNIVERSE_USERS!=='undefined')return UNIVERSE_USERS.map(function(user){return {userId:user.id,displayName:user.name};});
+    return [];
   }
 
   function syncOfflinePlayerButtons_(){
-    var selected=Array.isArray(window.quizState&&quizState.selectedPlayers)?quizState.selectedPlayers:[];
+    var selected=Array.isArray(quizState.selectedPlayers)?quizState.selectedPlayers:[];
     document.querySelectorAll('[data-quiz-offline-player]').forEach(function(button){
       var id=button.getAttribute('data-quiz-offline-player');
       var active=selected.indexOf(id)>=0;
@@ -60,6 +57,8 @@
     });
     var count=document.getElementById('quizOfflinePlayerCount');
     if(count)count.textContent=selected.length+'人選択中';
+    var start=document.getElementById('quizOfflineStartButton');
+    if(start)start.disabled=selected.length<2||selected.length>3;
   }
 
   function renderQuizBootstrapTimeout_(){
@@ -83,13 +82,9 @@
           quizState.users=data&&data.users?data.users:quizState.users;
           quizState.courses=data&&data.courses?data.courses:quizState.courses;
         })
-        .withFailureHandler(function(){
-          /* Setup already has safe local fallbacks. Keep the page usable. */
-        })
+        .withFailureHandler(function(){})
         .getQuizBootstrap(uid,'');
-    }catch(error){
-      /* Setup already rendered. Bootstrap refresh is optional on normal entry. */
-    }
+    }catch(error){}
   }
 
   window.initQuizPage=function(params){
@@ -109,7 +104,6 @@
       quizState.selectedPlayers=[uid];
       quizState.busy=false;
 
-      /* Normal QUIZ entry must never wait for Spreadsheet/API bootstrap. */
       if(!requestedRoom){
         quizState.ready=true;
         renderQuizSetup_();
@@ -117,7 +111,6 @@
         return;
       }
 
-      /* Direct ROOM entry still needs the server, so protect the full path. */
       renderQuizLoading_();
       var settled=false;
       var timer=setTimeout(function(){
@@ -186,26 +179,28 @@
     safeClearQuizTimer_();quizState.screen='setup';quizState.completed=false;
     var s=quizState.settings;
     if(s.genre==='PROFILE')s.course='ALL';
-    var offlineLyrics=s.mode==='OFFLINE'&&s.genre==='LYRICS',host=quizHost_();if(!host)return;
+    var offline=s.mode==='OFFLINE',host=quizHost_();if(!host)return;
     var courseHtml=s.genre==='PROFILE'?'':quizSetting_('コース',(quizState.courses.length?quizState.courses:[
       {value:'BE:FIRST',label:'BE:FIRST'},{value:'MAZZEL',label:'MAZZEL'},{value:'STARGLOW',label:'STARGLOW'},
       {value:'HANA',label:'HANA'},{value:'UNIT',label:'ユニット'},{value:'ALL',label:'全部'}
     ]).map(function(x){return[x.value,x.label];}),s.course,'course','is-course');
+    var selectedCount=Array.isArray(quizState.selectedPlayers)?quizState.selectedPlayers.length:0;
     host.innerHTML='<section class="quiz-panel"><div class="quiz-settings">'+
       quizSetting_('モード',[['OFFLINE','オフライン'],['ONLINE','オンライン']],s.mode,'mode')+
       quizSetting_('ジャンル',[['LYRICS','歌詞'],['PROFILE','プロフィール']],s.genre,'genre')+
       courseHtml+
       quizSetting_('難易度',[['NORMAL','普通'],['ADVANCED','上級']],s.difficulty,'difficulty')+
-      (offlineLyrics?renderQuizPlayerSelect_():'')+'</div><div class="quiz-actions">'+
-      (s.mode==='ONLINE'?'<button class="quiz-action is-primary" onclick="createQuizFromSetup_()">ルームを作る</button><button class="quiz-action" onclick="openQuizRoomJoinV3_()">ルームに参加する</button>':'<button class="quiz-action is-primary" onclick="createQuizFromSetup_()">開始</button>')+
+      (offline?renderQuizPlayerSelect_():'')+'</div><div class="quiz-actions">'+
+      (s.mode==='ONLINE'?'<button class="quiz-action is-primary" onclick="createQuizFromSetup_()">ルームを作る</button><button class="quiz-action" onclick="openQuizRoomJoinV3_()">ルームに参加する</button>':'<button id="quizOfflineStartButton" class="quiz-action is-primary" onclick="createQuizFromSetup_()" '+(selectedCount>=2&&selectedCount<=3?'':'disabled')+'>開始</button>')+
       '<button class="quiz-action" onclick="navigateTo(\'lab\')">戻る</button></div></section>';
+    if(offline)syncOfflinePlayerButtons_();
   };
 
   createQuizFromSetup_=function(){
     if(quizState.busy)return;
     var s=quizState.settings;
     if(s.genre==='PROFILE')s.course='ALL';
-    if(s.mode==='OFFLINE'&&s.genre==='LYRICS'&&(!Array.isArray(quizState.selectedPlayers)||quizState.selectedPlayers.length<2||quizState.selectedPlayers.length>3)){
+    if(s.mode==='OFFLINE'&&(!Array.isArray(quizState.selectedPlayers)||quizState.selectedPlayers.length<2||quizState.selectedPlayers.length>3)){
       quizNotify_('2〜3人を選択してください。');return;
     }
     quizState.busy=true;renderQuizLoading_();
@@ -218,9 +213,14 @@
 
   window.renderQuizReadyV3_=function(){
     var game=quizState.game,host=quizHost_();if(!host||!game)return;
-    var items=game.genre==='LYRICS'
-      ? ['「開始」を押すと1問目が始まります','曲名の回答時間は30秒です','問題生成や読み込み時間は回答時間に含まれません']
-      : ['「開始」を押すと1問目が始まります','1問の回答時間は20秒です','問題生成や読み込み時間は回答時間に含まれません'];
+    var items;
+    if(game.mode==='OFFLINE'&&game.genre==='PROFILE'){
+      items=['「開始」を押すと1問目が表示されます','分かった人がその場で回答し、「回答を見る」を押します','正解者を選ぶと1pt。時間制限はありません'];
+    }else if(game.genre==='LYRICS'){
+      items=['「開始」を押すと1問目が始まります','曲名の回答時間は30秒です','問題生成や読み込み時間は回答時間に含まれません'];
+    }else{
+      items=['「開始」を押すと1問目が始まります','1問の回答時間は20秒です','問題生成や読み込み時間は回答時間に含まれません'];
+    }
     var chips='<span class="quiz-v3-chip">'+quizEscape_(quizGenreLabel_(game.genre))+'</span>'+
       (game.genre==='PROFILE'?'':'<span class="quiz-v3-chip">'+quizEscape_(game.course)+'</span>')+
       '<span class="quiz-v3-chip">'+quizEscape_(quizDifficultyLabel_(game.difficulty))+'</span>';
@@ -229,6 +229,5 @@
       '<div class="quiz-v3-ready-meta">'+chips+'</div><div class="quiz-actions">'+
       '<button class="quiz-action is-primary" onclick="beginQuizV3_()">開始</button><button class="quiz-action quiz-danger" onclick="abandonQuiz_()">終了する</button></div></section>';
   };
-
 })();
 </script>
