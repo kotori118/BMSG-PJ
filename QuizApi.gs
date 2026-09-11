@@ -40,7 +40,7 @@ function createQuizGame(payload) {
     cleanupExpiredQuizGamesUnsafe_();
     const generated = genre === 'LYRICS'
       ? buildLyricsQuizQuestions_(course, difficulty)
-      : buildProfileQuizQuestionsFinal_(difficulty);
+      : buildProfileQuizQuestions_(difficulty);
     if (!generated || generated.questions.length < QUIZ_QUESTION_COUNT_) {
       throw new Error('この条件では10問作れません。難易度を変えてください。');
     }
@@ -180,54 +180,6 @@ function buildLyricsQuizQuestions_(course, difficulty) {
         source: { songId: item.songId, title: item.title, artist: item.artist, partOrder: part.order, singerIds: part.singerIds, singerNames: part.singerIds.map(function(id) { return memberById[id]; }) },
         choices: { songs: buildQuizChoices_(titlePool, item.songId), singers: buildQuizChoices_(singerPool, singerValue) },
         correct: { songId: item.songId, singerValue: singerValue }
-      };
-    })
-  };
-}
-
-function buildProfileQuizQuestions_(course, difficulty) {
-  const members = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.MEMBERS);
-  const groups = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.GROUPS);
-  const memberships = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.GROUP_MEMBERS);
-  const profiles = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.PROFILES);
-  const settings = readSheetObjects_(getLogSheet_(UNIVERSE_CONFIG.SHEETS.PROFILE_SETTINGS));
-  const eligibleIds = quizCourseMemberIds_(course, members, groups, memberships);
-  const memberById = {};
-  members.forEach(function(row) { memberById[asId_(row.MemberID)] = { id: asId_(row.MemberID), name: String(row.DisplayName || row.MemberID), order: Number(row.DisplayOrder || 9999) }; });
-  const wantedDifficulty = difficulty === 'NORMAL' ? '普通' : '上級';
-  const activeSettings = settings.filter(function(row) { return asBoolean_(row.IsActive) && String(row.QuizDifficulty || '').trim() === wantedDifficulty; });
-  const profileRows = profiles.filter(function(row) { return !!eligibleIds[asId_(row.MemberID)] && !!memberById[asId_(row.MemberID)]; });
-  const candidates = [];
-
-  activeSettings.forEach(function(setting) {
-    const profileId = asId_(setting.ProfileID);
-    const values = [];
-    profiles.forEach(function(profile) {
-      const value = formatQuizProfileValue_(profile[profileId], setting);
-      if (value) values.push({ value: value, label: value });
-    });
-    const uniqueValues = uniqueQuizOptions_(values);
-    if (uniqueValues.length < 4) return;
-    profileRows.forEach(function(profile) {
-      const memberId = asId_(profile.MemberID);
-      const value = formatQuizProfileValue_(profile[profileId], setting);
-      if (!value) return;
-      candidates.push({ memberId: memberId, memberName: memberById[memberId].name, profileId: profileId, fieldName: String(setting.FieldName || profileId), value: value, options: uniqueValues });
-    });
-  });
-  if (!candidates.length) return { candidatePool: [], questions: [] };
-  const shuffled = quizShuffle_(candidates);
-  const selected = [];
-  for (let i = 0; i < QUIZ_QUESTION_COUNT_; i++) selected.push(Object.assign({}, shuffled[i % shuffled.length], { wordingVariant: Math.floor(i / shuffled.length) % 2 }));
-  return {
-    candidatePool: candidates.map(function(item) { return item.memberId + ':' + item.profileId; }),
-    questions: selected.map(function(item) {
-      return {
-        type: 'PROFILE',
-        text: item.wordingVariant ? item.memberName + 'に当てはまる「' + item.fieldName + '」は？' : item.memberName + 'の「' + item.fieldName + '」は？',
-        source: { memberId: item.memberId, memberName: item.memberName, profileId: item.profileId, fieldName: item.fieldName },
-        choices: buildQuizChoices_(item.options, item.value),
-        correct: { value: item.value }
       };
     })
   };
