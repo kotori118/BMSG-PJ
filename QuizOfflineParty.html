@@ -115,7 +115,7 @@
     }).withFailureHandler(quizFailure_);
     var payload={userId:quizState.userId,mode:s.mode,genre:s.genre,course:s.course,difficulty:s.difficulty,playerUserIds:quizState.selectedPlayers};
     if(s.mode==='OFFLINE')runner.createQuizOfflinePartyFinal(payload);
-    else runner.createQuizGameFinal(payload);
+    else runner.createQuizGame(payload);
   };
 
   window.renderQuizReadyV3_=function(){

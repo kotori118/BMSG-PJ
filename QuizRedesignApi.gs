@@ -60,12 +60,6 @@ function createQuizGameV2(payload) {
   });
 }
 
-function joinQuizRoomV2(userId, roomId) {
-  const uid = validateQuizUser_(userId);
-  cleanupExpiredQuizGames_();
-  return getQuizGameByRoomV2_(uid, roomId);
-}
-
 function getQuizGameByRoomV2_(uid, roomId) {
   const id = String(roomId || '').replace(/\D/g, '');
   if (!/^\d{4}$/.test(id)) throw new Error('4桁のROOM IDを入力してください。');
