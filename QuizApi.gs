@@ -9,10 +9,21 @@ const QUIZ_MAJOR_ARTISTS_ = Object.freeze(['BE:FIRST', 'MAZZEL', 'STARGLOW', 'HA
 
 function getQuizBootstrap(userId, requestedRoomId) {
   const uid = validateQuizUser_(userId);
-  cleanupExpiredQuizGames_();
-  const response = { users: getQuizUsers_(), courses: getQuizCourses_(), room: null };
+  const response = {
+    users: getQuizUsers_(),
+    courses: getQuizCourses_(),
+    room: null
+  };
   const roomId = String(requestedRoomId || '').replace(/\D/g, '');
-  if (roomId) response.room = getQuizGameByRoom_(uid, roomId);
+  if (roomId) {
+    const game = findQuizGameByRoomId_(roomId);
+    if (game) {
+      const expiresAt = new Date(game.ExpiresAt);
+      if (!Number.isFinite(expiresAt.getTime()) || expiresAt.getTime() > Date.now()) {
+        response.room = buildQuizGameStateV2_(game, uid);
+      }
+    }
+  }
   return response;
 }
 
@@ -21,17 +32,17 @@ function createQuizGame(payload) {
   const uid = validateQuizUser_(payload.userId);
   const mode = validateQuizEnum_(payload.mode, QUIZ_MODES_, 'MODE');
   const genre = validateQuizEnum_(payload.genre, QUIZ_GENRES_, 'GENRE');
-  const course = validateQuizEnum_(payload.course, QUIZ_COURSES_, 'COURSE');
   const difficulty = validateQuizEnum_(payload.difficulty, QUIZ_DIFFICULTIES_, 'DIFFICULTY');
+  const course = genre === 'PROFILE' ? 'ALL' : validateQuizEnum_(payload.course, QUIZ_COURSES_, 'COURSE');
   const players = validateQuizPlayers_(mode, genre, uid, payload.playerUserIds);
 
   return withQuizLock_(function() {
     cleanupExpiredQuizGamesUnsafe_();
     const generated = genre === 'LYRICS'
       ? buildLyricsQuizQuestions_(course, difficulty)
-      : buildProfileQuizQuestions_(course, difficulty);
-    if (generated.questions.length < QUIZ_QUESTION_COUNT_) {
-      throw new Error('この条件では10問作れません。コースか難易度を変えてください。');
+      : buildProfileQuizQuestionsFinal_(difficulty);
+    if (!generated || generated.questions.length < QUIZ_QUESTION_COUNT_) {
+      throw new Error('この条件では10問作れません。難易度を変えてください。');
     }
 
     const gameId = Utilities.getUuid();
@@ -49,6 +60,7 @@ function createQuizGame(payload) {
       ExpiresAt: new Date(createdAt.getTime() + QUIZ_RETENTION_MS_),
       CandidatePoolJSON: JSON.stringify({ candidates: generated.candidatePool, players: players })
     });
+
     const questionSheet = getLogSheet_(UNIVERSE_CONFIG.SHEETS.QUIZ_QUESTIONS);
     generated.questions.slice(0, QUIZ_QUESTION_COUNT_).forEach(function(question, index) {
       appendByHeaders_(questionSheet, {
@@ -56,19 +68,19 @@ function createQuizGame(payload) {
         QuestionNo: index + 1,
         QuestionType: question.type,
         QuestionText: question.text,
-        SourceRefJSON: JSON.stringify(question.source),
-        ChoicesJSON: JSON.stringify(question.choices),
-        CorrectAnswerJSON: JSON.stringify(question.correct)
+        SourceRefJSON: JSON.stringify(question.source || {}),
+        ChoicesJSON: JSON.stringify(question.choices || []),
+        CorrectAnswerJSON: JSON.stringify(question.correct || {})
       });
     });
-    return buildQuizGameState_(findQuizGameById_(gameId), uid);
+    return buildQuizGameStateV2_(findQuizGameById_(gameId), uid);
   });
 }
 
 function joinQuizRoom(userId, roomId) {
   const uid = validateQuizUser_(userId);
   cleanupExpiredQuizGames_();
-  return getQuizGameByRoom_(uid, roomId);
+  return getQuizGameByRoomV2_(uid, roomId);
 }
 
 function getQuizScoreboard(userId, quizGameId) {
