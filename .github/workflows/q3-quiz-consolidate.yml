@@ -1,0 +1,52 @@
+name: Q3 QUIZ Consolidation
+
+on:
+  push:
+    branches:
+      - refactor-quiz-client-stage3-20260911
+
+permissions:
+  contents: write
+
+jobs:
+  consolidate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Absorb final offline party runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '\n' >> QuizRedesignV3Fixes.html
+          cat QuizOfflinePartyFix.html >> QuizRedesignV3Fixes.html
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('Index.html')
+          s = p.read_text()
+          old = "<?!= include('QuizRedesignV3Fixes'); ?><?!= include('QuizOfflinePartyFix'); ?>"
+          new = "<?!= include('QuizRedesignV3Fixes'); ?>"
+          if old not in s:
+              raise SystemExit('Expected QUIZ include sequence not found')
+          p.write_text(s.replace(old, new, 1))
+          PY
+          rm .github/workflows/q3-quiz-consolidate.yml
+      - name: Verify structural equivalence
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q "function isOfflineProfileParty_" QuizRedesignV3Fixes.html
+          grep -q "submitQuizOfflinePartyFinal" QuizRedesignV3Fixes.html
+          ! grep -q "include('QuizOfflinePartyFix')" Index.html
+          test -f QuizOfflinePartyFix.html
+      - name: Commit consolidation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add QuizRedesignV3Fixes.html Index.html .github/workflows/q3-quiz-consolidate.yml
+          git commit -m "Absorb QUIZ offline party runtime into canonical fixes"
+          git push origin HEAD:refactor-quiz-client-stage3-20260911
