@@ -1,4 +1,4 @@
-function buildProfileQuizQuestionsFinal_(difficulty) {
+function buildProfileQuizQuestions_(difficulty) {
   const members = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.MEMBERS);
   const groups = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.GROUPS);
   const memberships = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.GROUP_MEMBERS);
