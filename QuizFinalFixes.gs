@@ -45,7 +45,7 @@ function buildProfileQuizQuestionsFinal_(difficulty) {
 
   buildProfileFieldPoolV2_(rows, memberById, activeSettings, facts, pools.PROFILE_FIELD);
   buildProfileIdentifyPoolV2_(rows, memberById, scalarSettings, facts, pools.PROFILE_IDENTIFY);
-  buildProfileTokenIdentifyPoolFinal_(rows, memberById, multiSettings, facts, pools.PROFILE_TOKEN_IDENTIFY);
+  buildProfileTokenIdentifyPool_(rows, memberById, multiSettings, facts, pools.PROFILE_TOKEN_IDENTIFY);
 
   if (difficulty === 'ADVANCED') {
     buildProfileCommonalityPoolV2_(rows, memberById, scalarSettings, facts, pools.PROFILE_COMMONALITY);
@@ -55,14 +55,14 @@ function buildProfileQuizQuestionsFinal_(difficulty) {
   }
 
   Object.keys(pools).forEach(function(type) { pools[type] = quizShuffle_(pools[type]); });
-  const selected = pickProfileQuestionsFinal_(pools, QUIZ_QUESTION_COUNT_);
+  const selected = pickProfileQuestions_(pools, QUIZ_QUESTION_COUNT_);
   return {
-    candidatePool: selected.map(function(q) { return profileSemanticKeyFinal_(q); }),
+    candidatePool: selected.map(function(q) { return profileSemanticKey_(q); }),
     questions: selected.slice(0, QUIZ_QUESTION_COUNT_)
   };
 }
 
-function splitProfileTokensFinal_(value) {
+function splitProfileTokens_(value) {
   const text = String(value == null ? '' : value).trim();
   if (!text) return [];
   const seen = {};
@@ -73,7 +73,7 @@ function splitProfileTokensFinal_(value) {
   });
 }
 
-function buildProfileTokenIdentifyPoolFinal_(rows, memberById, settings, facts, out) {
+function buildProfileTokenIdentifyPool_(rows, memberById, settings, facts, out) {
   const memberOptions = rows.map(function(row) {
     const id = asId_(row.MemberID);
     return { value: id, label: memberById[id].name };
@@ -84,7 +84,7 @@ function buildProfileTokenIdentifyPoolFinal_(rows, memberById, settings, facts, 
     const pid = asId_(setting.ProfileID);
     const byToken = {};
     Object.keys(facts[pid] || {}).forEach(function(id) {
-      splitProfileTokensFinal_(facts[pid][id]).forEach(function(token) {
+      splitProfileTokens_(facts[pid][id]).forEach(function(token) {
         if (!byToken[token]) byToken[token] = [];
         if (byToken[token].indexOf(id) < 0) byToken[token].push(id);
       });
@@ -110,7 +110,7 @@ function buildProfileTokenIdentifyPoolFinal_(rows, memberById, settings, facts, 
   });
 }
 
-function profileSemanticKeyFinal_(question) {
+function profileSemanticKey_(question) {
   const q = question || {};
   const source = q.source || {};
   const memberId = String(source.memberId || '');
@@ -124,7 +124,7 @@ function profileSemanticKeyFinal_(question) {
   return q.type + ':' + String(source.key || q.text || '');
 }
 
-function pickProfileQuestionsFinal_(pools, count) {
+function pickProfileQuestions_(pools, count) {
   const result = [];
   const used = {};
   const types = Object.keys(pools).filter(function(type) { return pools[type] && pools[type].length; });
@@ -141,7 +141,7 @@ function pickProfileQuestionsFinal_(pools, count) {
     if (!available.length) break;
     const type = quizShuffle_(available)[0];
     const q = pools[type][cursors[type]++];
-    const key = profileSemanticKeyFinal_(q);
+    const key = profileSemanticKey_(q);
     if (used[key]) continue;
     used[key] = true;
     result.push(q);
@@ -153,7 +153,7 @@ function pickProfileQuestionsFinal_(pools, count) {
     const fallback = quizShuffle_([].concat.apply([], types.map(function(type) { return pools[type]; })));
     fallback.forEach(function(q) {
       if (result.length >= count) return;
-      const key = profileSemanticKeyFinal_(q);
+      const key = profileSemanticKey_(q);
       if (used[key]) return;
       used[key] = true;
       result.push(q);
