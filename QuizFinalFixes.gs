@@ -43,15 +43,15 @@ function buildProfileQuizQuestions_(difficulty) {
     PROFILE_MULTI_IDENTIFY: []
   };
 
-  buildProfileFieldPoolV2_(rows, memberById, activeSettings, facts, pools.PROFILE_FIELD);
-  buildProfileIdentifyPoolV2_(rows, memberById, scalarSettings, facts, pools.PROFILE_IDENTIFY);
+  buildProfileFieldPool_(rows, memberById, activeSettings, facts, pools.PROFILE_FIELD);
+  buildProfileIdentifyPool_(rows, memberById, scalarSettings, facts, pools.PROFILE_IDENTIFY);
   buildProfileTokenIdentifyPool_(rows, memberById, multiSettings, facts, pools.PROFILE_TOKEN_IDENTIFY);
 
   if (difficulty === 'ADVANCED') {
-    buildProfileCommonalityPoolV2_(rows, memberById, scalarSettings, facts, pools.PROFILE_COMMONALITY);
-    buildProfileOddPoolV2_(rows, memberById, scalarSettings, facts, pools.PROFILE_ODD_ONE_OUT);
-    buildProfilePairPoolV2_(rows, memberById, scalarSettings, facts, pools.PROFILE_PAIR);
-    buildProfileMultiIdentifyPoolV2_(rows, memberById, scalarSettings, facts, pools.PROFILE_MULTI_IDENTIFY);
+    buildProfileCommonalityPool_(rows, memberById, scalarSettings, facts, pools.PROFILE_COMMONALITY);
+    buildProfileOddPool_(rows, memberById, scalarSettings, facts, pools.PROFILE_ODD_ONE_OUT);
+    buildProfilePairPool_(rows, memberById, scalarSettings, facts, pools.PROFILE_PAIR);
+    buildProfileMultiIdentifyPool_(rows, memberById, scalarSettings, facts, pools.PROFILE_MULTI_IDENTIFY);
   }
 
   Object.keys(pools).forEach(function(type) { pools[type] = quizShuffle_(pools[type]); });
