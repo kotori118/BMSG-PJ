@@ -6,8 +6,9 @@
 
   finishQuiz_=function(){
     clearTimer();if(quizState.busy||quizState.completed)return;quizState.busy=true;renderQuizLoading_();
-    const payload={userId:quizState.userId,quizGameId:quizState.game.gameId,totalAnswerTimeMs:quizState.game.mode==='OFFLINE'&&quizState.game.genre==='LYRICS'?0:Math.round(quizState.totalAnswerTimeMs||0)};
-    if(quizState.game.mode==='OFFLINE'&&quizState.game.genre==='LYRICS')payload.awards=quizState.awards;else payload.answers=quizState.answers;
+    const offline=quizState.game.mode==='OFFLINE';
+    const payload={userId:quizState.userId,quizGameId:quizState.game.gameId,totalAnswerTimeMs:offline?0:Math.round(quizState.totalAnswerTimeMs||0)};
+    if(offline)payload.awards=quizState.awards;else payload.answers=quizState.answers;
     google.script.run.withSuccessHandler(function(result){quizState.busy=false;quizState.completed=true;quizState.screen='result';renderQuizResult_(result.scoreboard||[]);}).withFailureHandler(quizFailure_).submitQuizResult(payload);
   };
 
@@ -19,15 +20,12 @@
 <script>
 (function(){
   function formatQuizResultTime_(ms){return ms>0?(ms/1000).toFixed(2)+'s':'—';}
-  function quizRankingSignature_(rows){return JSON.stringify((rows||[]).map(function(row){return [row.userId||'',Number(row.score||0),Number(row.answerTimeMs||row.totalAnswerTimeMs||0),row.displayName||''];}));}
+  function quizRankingSignature_(rows){return JSON.stringify((rows||[]).map(function(row){return [row.userId||'',Number(row.score||0),Number(row.answerTimeMs||row.totalAnswerTimeMs||0),Number(row.rank||0),row.displayName||''];}));}
   function renderQuizRankingRows_(scoreboard,scoreOnly){
     scoreboard=Array.isArray(scoreboard)?scoreboard:[];
-    let previous=null,previousRank=0;
     const rows=scoreboard.map(function(row,index){
       const time=Number(row.answerTimeMs||row.totalAnswerTimeMs||0);
-      const tieKey=scoreOnly?String(Number(row.score||0)):String(Number(row.score||0))+'|'+String(time);
-      const rank=previous===tieKey?previousRank:index+1;
-      previous=tieKey;previousRank=rank;
+      const rank=Number(row.rank||index+1);
       const name=row.displayName||quizUserName_(row.userId)||row.userId||'';
       return '<div class="quiz-ranking-row"><strong class="quiz-ranking-rank">'+rank+'位</strong><span class="quiz-ranking-name">'+quizEscape_(name)+'</span><b class="quiz-ranking-points">'+Number(row.score||0)+'pt</b>'+(!scoreOnly?'<small class="quiz-v3-score-time quiz-ranking-time">'+formatQuizResultTime_(time)+'</small>':'')+'</div>';
     }).join('');
@@ -57,7 +55,7 @@
   renderQuizResult_=function(scoreboard){
     stopQuizRankingAutoRefresh_();
     const host=quizHost_(),game=quizState.game;if(!host)return;scoreboard=Array.isArray(scoreboard)?scoreboard:[];
-    const scoreOnly=!!(game&&game.mode==='OFFLINE'&&game.genre==='LYRICS');
+    const scoreOnly=!!(game&&game.mode==='OFFLINE');
     quizState.v3RankingSignature=quizRankingSignature_(scoreboard);
     host.innerHTML=(game&&game.roomId?renderQuizRoomBanner_(game.roomId):'')+'<section class="quiz-panel"><h2 class="quiz-panel-title">ランキング</h2><div id="quizRankingV3" class="quiz-ranking">'+renderQuizRankingRows_(scoreboard,scoreOnly)+'</div><div class="quiz-actions"><button class="quiz-action is-primary" onclick="returnQuizTopV3_()">トップに戻る</button><button class="quiz-action" onclick="navigateTo(\'home\')">HOMEへ</button></div></section>';
     startQuizRankingAutoRefresh_();
