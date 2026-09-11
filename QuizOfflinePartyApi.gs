@@ -110,12 +110,3 @@ function saveOfflineProfileQuizResults_(game, questions, payload) {
     scoreboard: buildQuizScoreboard_(game)
   };
 }
-
-// Temporary compatibility aliases. The client will move to the canonical names before these are removed.
-function createQuizOfflinePartyFinal(payload) {
-  return createQuizOfflineParty(payload);
-}
-
-function submitQuizOfflinePartyFinal(payload) {
-  return submitQuizOfflineParty(payload);
-}
