@@ -164,41 +164,6 @@ function getQuizGameByRoom_(uid, roomId) {
   return buildQuizGameState_(game, uid);
 }
 
-function findQuizGameById_(gameId) {
-  const row = readSheetObjectsWithRows_(getLogSheet_(UNIVERSE_CONFIG.SHEETS.QUIZ_ROOMS)).find(function(item) { return asId_(item.QuizGameID) === gameId; });
-  return row ? normalizeQuizGame_(row) : null;
-}
-
-function findQuizGameByRoomId_(roomId) {
-  const row = readSheetObjectsWithRows_(getLogSheet_(UNIVERSE_CONFIG.SHEETS.QUIZ_ROOMS)).find(function(item) { return String(item.RoomID || '').padStart(4, '0') === roomId; });
-  if (!row) return null;
-  const game = normalizeQuizGame_(row);
-  return game.expiresAt.getTime() > Date.now() && game.mode === 'ONLINE' ? game : null;
-}
-
-function normalizeQuizGame_(row) {
-  const pool = quizParseJson_(row.CandidatePoolJSON, {});
-  return {
-    rowNumber: row.__rowNumber,
-    gameId: asId_(row.QuizGameID),
-    roomId: row.RoomID === '' ? '' : String(row.RoomID || '').padStart(4, '0'),
-    mode: String(row.Mode || '').toUpperCase(),
-    genre: normalizeQuizGenre_(row.Genre),
-    course: normalizeQuizCourse_(row.Course),
-    difficulty: normalizeQuizDifficulty_(row.Difficulty),
-    creatorUserId: asId_(row.CreatorUserID),
-    createdAt: new Date(row.CreatedAt),
-    expiresAt: new Date(row.ExpiresAt),
-    players: Array.isArray(pool.players) ? pool.players.map(asId_).filter(Boolean) : []
-  };
-}
-
-function getQuizQuestionRows_(gameId) {
-  return readSheetObjects_(getLogSheet_(UNIVERSE_CONFIG.SHEETS.QUIZ_QUESTIONS)).filter(function(row) { return asId_(row.QuizGameID) === gameId; }).map(function(row) {
-    return { number: Number(row.QuestionNo || 0), type: String(row.QuestionType || ''), text: String(row.QuestionText || ''), source: quizParseJson_(row.SourceRefJSON, {}), choices: quizParseJson_(row.ChoicesJSON, []), correct: quizParseJson_(row.CorrectAnswerJSON, {}) };
-  }).sort(function(a, b) { return a.number - b.number; });
-}
-
 function scoreQuizAnswers_(game, questions, answers) {
   const submitted = Array.isArray(answers) ? answers : [];
   if (submitted.length !== questions.length) throw new Error('10問すべて回答してください。');
@@ -274,9 +239,6 @@ function buildQuizScoreboard_(game) {
   rows.forEach(function(row, index) { row.rank = lastScore === row.score ? rows[index - 1].rank : index + 1; lastScore = row.score; });
   return rows;
 }
-
-function getQuizResultRows_(gameId) { return readSheetObjects_(getLogSheet_(UNIVERSE_CONFIG.SHEETS.QUIZ_RESULTS)).filter(function(row) { return asId_(row.QuizGameID) === gameId; }); }
-function findQuizResult_(gameId, uid) { return getQuizResultRows_(gameId).find(function(row) { return asId_(row.UserID) === uid; }); }
 
 function quizCourseMatchesSong_(row, course) {
   const artist = String(row.Artist || '').trim();
