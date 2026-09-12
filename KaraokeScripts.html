@@ -147,6 +147,7 @@
   function karaokeFailure(error){karaokeState.busy=false;showKaraokeError(error);}
 
   function openKaraokeSetup(songId,pushUrl){
+    if(typeof clearKaraokeFavoriteApplied==='function')clearKaraokeFavoriteApplied();
     const id=decodeURIComponent(String(songId));
     const meta=karaokeState.songs.find(function(item){return String(item.songId)===id;});
     if(!meta){showKaraokeError('曲が見つかりません。');return;}
@@ -187,9 +188,11 @@
         }).join('')+'</div></article>';
       }).join('')+'</section>'+
       '<div class="karaoke-actions"><button class="karaoke-random" type="button" onclick="randomizeKaraoke()">ランダム振り分け</button><button class="karaoke-reset" type="button" onclick="resetKaraoke()">リセット</button><button class="karaoke-start" type="button" onclick="startKaraoke()">カラオケ開始</button><button class="karaoke-top-link" type="button" onclick="navigateTo(\'lyrics\')">トップページへ戻る</button></div>';
+    if(typeof injectKaraokeFavoriteStar==='function')injectKaraokeFavoriteStar();
   }
 
   function toggleKaraokeSinger(encoded,userId,input){
+    if(typeof clearKaraokeFavoriteApplied==='function')clearKaraokeFavoriteApplied();
     const key=decodeURIComponent(encoded);
     const singer=karaokeSingers().find(function(item){return item.key===key;});
     const current=karaokeState.assignments[key];
@@ -222,11 +225,12 @@
   }
 
   function randomizeKaraoke(){
+    if(typeof clearKaraokeFavoriteApplied==='function')clearKaraokeFavoriteApplied();
     if(karaokeState.busy)return;
     randomizeKaraokeLocal();
   }
 
-  function resetKaraoke(){karaokeState.assignments={};renderKaraokeSetup();}
+  function resetKaraoke(){if(typeof clearKaraokeFavoriteApplied==='function')clearKaraokeFavoriteApplied();karaokeState.assignments={};renderKaraokeSetup();}
 
   function buildKaraokeResultAssignments(){
     const result={};

@@ -49,8 +49,9 @@
   function closeQuizLyricsOnBackdrop_(event){if(event&&event.target&&event.target.id==='quizLyricsOverlay')closeQuizLyrics_();}
   function closeQuizLyrics_(){const overlay=document.getElementById('quizLyricsOverlay');if(overlay)overlay.remove();if(quizLyricsEscapeHandler_){document.removeEventListener('keydown',quizLyricsEscapeHandler_);quizLyricsEscapeHandler_=null;}}
 
-  function abandonQuiz_(){if(!quizState.game||quizState.completed)return returnQuizTop_();if(!window.confirm('このクイズを諦めますか？\n途中の成績は保存されません。'))return;const id=quizState.game.gameId;quizState.completed=true;google.script.run.withFailureHandler(function(){}).abandonQuizGame(quizState.userId,id);returnQuizTop_();}
-  function returnQuizTop_(){closeQuizLyrics_();quizState.game=null;quizState.completed=true;google.script.history.replace({page:'quiz'},{page:'quiz'},'');renderQuizSetup_();scrollAppToTop('smooth');}
+  function stopQuizTimers_(){if(quizState.v3Timer){clearInterval(quizState.v3Timer);quizState.v3Timer=0;}if(quizState.v3RankingTimer){clearInterval(quizState.v3RankingTimer);quizState.v3RankingTimer=0;}}
+  function abandonQuiz_(){stopQuizTimers_();if(!quizState.game||quizState.completed)return returnQuizTop_();if(!window.confirm('このクイズを諦めますか？\n途中の成績は保存されません。'))return;const id=quizState.game.gameId;quizState.completed=true;google.script.run.withFailureHandler(function(){}).abandonQuizGame(quizState.userId,id);returnQuizTop_();}
+  function returnQuizTop_(){stopQuizTimers_();closeQuizLyrics_();quizState.game=null;quizState.completed=true;google.script.history.replace({page:'quiz'},{page:'quiz'},'');renderQuizSetup_();scrollAppToTop('smooth');}
   function quizBackToLab(){if(!quizCanLeave_())return;navigateTo('lab');}
   function quizCanLeave_(){if(currentRoute!=='quiz'||!quizState.game||quizState.completed||quizState.screen==='result')return true;if(!window.confirm('このクイズを諦めますか？\n途中の成績は保存されません。'))return false;const id=quizState.game.gameId;quizState.completed=true;google.script.run.withFailureHandler(function(){}).abandonQuizGame(quizState.userId,id);return true;}
 

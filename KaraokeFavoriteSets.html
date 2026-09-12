@@ -114,29 +114,6 @@
     karaokeFavoriteState.setupAssignments=null;
   }
 
-  (function bindKaraokeFavoriteSetup(){
-    if(typeof renderKaraokeSetup==='function'){
-      const baseRender=renderKaraokeSetup;
-      renderKaraokeSetup=function(){baseRender();injectKaraokeFavoriteStar();};
-    }
-    if(typeof openKaraokeSetup==='function'){
-      const baseOpen=openKaraokeSetup;
-      openKaraokeSetup=function(songId,pushUrl){clearKaraokeFavoriteApplied();return baseOpen(songId,pushUrl);};
-    }
-    if(typeof toggleKaraokeSinger==='function'){
-      const baseToggle=toggleKaraokeSinger;
-      toggleKaraokeSinger=function(encoded,userId,input){clearKaraokeFavoriteApplied();return baseToggle(encoded,userId,input);};
-    }
-    if(typeof randomizeKaraoke==='function'){
-      const baseRandom=randomizeKaraoke;
-      randomizeKaraoke=function(){clearKaraokeFavoriteApplied();return baseRandom();};
-    }
-    if(typeof resetKaraoke==='function'){
-      const baseReset=resetKaraoke;
-      resetKaraoke=function(){clearKaraokeFavoriteApplied();return baseReset();};
-    }
-  })();
-
   function ensureKaraokeFavoriteSettingsEntry(){
     const settings=document.getElementById('settingsOverlay');
     if(!settings||settings.querySelector('#karaokeFavoriteSettingsSection'))return;
@@ -254,16 +231,4 @@
     }).saveKaraokeFavoriteSet({groupId:karaokeFavoriteState.editGroupId,assignments:karaokeFavoriteState.editAssignments});
   }
 
-  (function bindKaraokeFavoriteSettings(){
-    ensureKaraokeFavoriteSettingsEntry();
-    ensureKaraokeFavoriteSettingsModal();
-    if(typeof openSettings==='function'){
-      const baseOpenSettings=openSettings;
-      openSettings=function(){
-        ensureKaraokeFavoriteSettingsEntry();
-        preloadKaraokeFavoriteSettings();
-        return baseOpenSettings();
-      };
-    }
-  })();
 </script>
