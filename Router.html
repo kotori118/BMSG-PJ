@@ -26,7 +26,7 @@
     if(currentRoute==='cover'&&typeof coverConfirmExternalNavigation==='function'&&coverConfirmExternalNavigation(route))return false;
     if(currentRoute==='quiz'&&typeof quizCanLeave_==='function'&&!quizCanLeave_())return false;
     if(currentRoute==='metrics'&&route!=='metrics'&&typeof performanceTimerCanLeave_==='function'&&!performanceTimerCanLeave_())return false;
-    if(route==='home'&&(currentRoute==='lyrics'||currentRoute==='karaoke')&&!window.confirm('この画面を離れてHOMEへ戻りますか？'))return false;
+    if(route==='home'&&currentRoute==='lyrics'&&!window.confirm('この画面を離れてHOMEへ戻りますか？'))return false;
     return true;
   }
 
