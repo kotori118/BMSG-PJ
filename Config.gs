@@ -11,7 +11,7 @@ const UNIVERSE_CONFIG = Object.freeze({
     LYRICS_PARTS: '08_LyricsParts', IMAGES: '09_Images', PERFORMANCE_METRICS: '10_PerformanceMetrics',
     PROFILE_SETTINGS: 'ProfileSettings', USERS: 'Users',
     KARAOKE_ROOMS: 'KARAOKE_Rooms', KARAOKE_RESULTS: 'KARAOKE_ShuffleResults', KARAOKE_FAVORITES: 'KARAOKE_FavoriteSets',
-    CARD_COLLECTIONS: 'CardCollections', RECENT_ACTIVITIES: 'RecentActivities',
+    CARD_COLLECTIONS: 'CardCollections', USER_FAVORITES: 'UserFavorites', RECENT_ACTIVITIES: 'RecentActivities',
     POKER_ROOMS: 'PokerRooms', POKER_PLAYERS: 'PokerPlayers',
     POKER_VOTES: 'PokerVotes', POKER_HIGHLIGHTS: 'PokerHighlights',
     QUIZ_ROOMS: 'QuizRooms', QUIZ_QUESTIONS: 'QuizQuestions',
