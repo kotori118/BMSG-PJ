@@ -2,10 +2,10 @@
  * READ ONLY cross-content search for BMSG Universe.
  * Sources remain the existing Core DB / Log DB masters; no search index sheet is persisted.
  */
-const UNIVERSE_SEARCH_CACHE_KEY_ = 'UNIVERSE_SEARCH_INDEX_V1';
+const UNIVERSE_SEARCH_CACHE_KEY_ = 'UNIVERSE_SEARCH_INDEX_V2';
 const UNIVERSE_SEARCH_CACHE_SECONDS_ = 300;
 const UNIVERSE_SEARCH_CARD_RARITIES_ = Object.freeze({N:true,R:true,SR:true,SSR:true});
-const UNIVERSE_SEARCH_TYPE_ORDER_ = Object.freeze({MEMBER:0,SONG:1,CARD:2,LYRICS:3});
+const UNIVERSE_SEARCH_TYPE_ORDER_ = Object.freeze({MEMBER:0,ANALYSIS:1,SONG:2,CARD:3,LYRICS:4});
 
 function getUniverseSearchResults(query) {
   const q = String(query == null ? '' : query).trim();
@@ -14,6 +14,10 @@ function getUniverseSearchResults(query) {
   try {
     const index = getUniverseSearchIndex_();
     const results = [];
+    const matchedMembers = index.members.filter(function(member) {
+      return searchNameRank_(member.displayName, q) !== null;
+    });
+    const matchedMemberNames = matchedMembers.map(function(member) { return member.displayName; });
 
     index.members.forEach(function(member) {
       const nameRank = searchNameRank_(member.displayName, q);
@@ -38,14 +42,32 @@ function getUniverseSearchResults(query) {
       }
     });
 
+    matchedMembers.forEach(function(member) {
+      results.push({
+        type:'ANALYSIS', id:'member-' + member.memberId, memberId:member.memberId,
+        memberName:member.displayName,
+        title:member.displayName + ' メンバー別分析',
+        subtitle:'ANALYSIS · メンバー別分析',
+        rank:searchNameRank_(member.displayName, q)
+      });
+    });
+
     index.songs.forEach(function(song) {
       const titleRank = searchNameRank_(song.title, q);
       const artistMatch = searchContains_(song.artist, q);
-      if (titleRank !== null || artistMatch) {
+      const creditRoles = [];
+      if (matchedMemberNames.length) {
+        matchedMemberNames.forEach(function(memberName) {
+          if (song.lyricists.indexOf(memberName) >= 0 && creditRoles.indexOf('作詞') < 0) creditRoles.push('作詞');
+          if (song.composers.indexOf(memberName) >= 0 && creditRoles.indexOf('作曲') < 0) creditRoles.push('作曲');
+          if (song.choreographers.indexOf(memberName) >= 0 && creditRoles.indexOf('コレオ') < 0) creditRoles.push('コレオ');
+        });
+      }
+      if (titleRank !== null || artistMatch || creditRoles.length) {
         results.push({
           type:'SONG', id:song.songId, songId:song.songId,
           title:song.title,
-          subtitle:'SONG · ' + song.artist,
+          subtitle:creditRoles.length ? 'SONG · ' + creditRoles.join(' / ') : 'SONG · ' + song.artist,
           rank:titleRank !== null ? titleRank : 2
         });
       }
@@ -67,15 +89,18 @@ function getUniverseSearchResults(query) {
       }
     });
 
-    index.lyrics.forEach(function(song) {
-      if (!searchContains_(song.lyricsText, q)) return;
-      results.push({
-        type:'LYRICS', id:song.songId, songId:song.songId,
-        title:song.title,
-        subtitle:'LYRICS · ' + song.artist,
-        rank:3
+    // When the query identifies a member, member-related credits replace incidental lyric-body hits.
+    if (!matchedMembers.length) {
+      index.lyrics.forEach(function(song) {
+        if (!searchContains_(song.lyricsText, q)) return;
+        results.push({
+          type:'LYRICS', id:song.songId, songId:song.songId,
+          title:song.title,
+          subtitle:'LYRICS · ' + song.artist,
+          rank:3
+        });
       });
-    });
+    }
 
     results.sort(function(a, b) {
       return a.rank - b.rank ||
@@ -103,6 +128,7 @@ function getUniverseSearchIndex_() {
   const memberships = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.GROUP_MEMBERS);
   const profiles = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.PROFILES);
   const songs = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.SONGS);
+  const credits = readCoreSheetObjects_('07_SongCredits');
   const lyricParts = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.LYRICS_PARTS);
   const images = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.IMAGES);
   const profileSettings = readSheetObjects_(getLogSheet_(UNIVERSE_CONFIG.SHEETS.PROFILE_SETTINGS))
@@ -132,6 +158,11 @@ function getUniverseSearchIndex_() {
     if (id) map[id] = row;
     return map;
   }, {});
+  const creditBySongId = credits.reduce(function(map, row) {
+    const id = asId_(row.SongID);
+    if (id) map[id] = row;
+    return map;
+  }, {});
 
   const memberIndex = members.map(function(row) {
     const memberId = asId_(row.MemberID);
@@ -150,10 +181,15 @@ function getUniverseSearchIndex_() {
   }).filter(function(item) { return item.memberId && item.displayName; });
 
   const songIndex = songs.map(function(row) {
+    const songId = asId_(row.SongID);
+    const credit = creditBySongId[songId] || {};
     return {
-      songId:asId_(row.SongID),
+      songId:songId,
       title:String(row.Title || '').trim(),
-      artist:String(row.Artist || '').trim()
+      artist:String(row.Artist || '').trim(),
+      lyricists:splitUniverseSearchCredit_(credit.Lyricists),
+      composers:splitUniverseSearchCredit_(credit.Composers),
+      choreographers:splitUniverseSearchCredit_(credit.Choreographers)
     };
   }).filter(function(item) { return item.songId && item.title; });
   const songById = songIndex.reduce(function(map, song) { map[song.songId] = song; return map; }, {});
@@ -197,6 +233,10 @@ function getUniverseSearchIndex_() {
   const serialized = JSON.stringify(index);
   if (serialized.length < 95000) cache.put(UNIVERSE_SEARCH_CACHE_KEY_, serialized, UNIVERSE_SEARCH_CACHE_SECONDS_);
   return index;
+}
+
+function splitUniverseSearchCredit_(value) {
+  return String(value || '').split(',').map(function(item) { return item.trim(); }).filter(Boolean);
 }
 
 function searchNameRank_(value, query) {
