@@ -1,5 +1,5 @@
 <style>
-  /* Shared state and loading authority. */
+  /* Shared state and loading authority. Page-specific frame layout belongs to each page. */
   :root{
     --u-state-radius:18px;
     --u-state-line-light:rgba(75,165,184,.18);
@@ -22,17 +22,18 @@
     --u-skeleton-line:rgba(63,139,156,.055);
     --u-skeleton-shine:rgba(112,213,236,.17);
   }
+
   :is(.state-card,.profile-members-state,.karaoke-history-empty,.lyrics-empty){border-radius:var(--u-state-radius)}
   body.theme-light :is(.state-card,.profile-members-state,.karaoke-history-empty,.lyrics-empty){border-color:var(--u-state-line-light);color:rgba(21,24,32,.50);background:var(--u-state-light-bg);box-shadow:inset 0 1px 0 rgba(255,255,255,.84)}
 
-  /* Existing page skeletons share the same shimmer authority. */
+  /* Shared Skeleton primitive. Pages keep their real frames and use these only for unknown content. */
   :is(.skeleton-block,.profile-member-skeleton){position:relative;overflow:hidden;background:var(--u-skeleton-base)}
   :is(.skeleton-block,.profile-member-skeleton)::after{content:"";position:absolute;inset:0;transform:translateX(-110%);background:linear-gradient(90deg,transparent,var(--u-skeleton-shine),transparent);animation:universeSkeletonSweep 1.35s ease-in-out infinite}
 
   .universe-toast{border:1px solid rgba(156,236,255,.22);border-radius:16px;background:linear-gradient(145deg,rgba(10,16,26,.96),rgba(5,10,18,.98));box-shadow:0 18px 46px rgba(0,0,0,.20),inset 0 1px 0 rgba(255,255,255,.04)}
   body.theme-light .universe-toast{border-color:rgba(75,165,184,.24);color:var(--ink);background:linear-gradient(145deg,#fff,rgba(156,236,255,.13));box-shadow:0 16px 36px rgba(21,24,32,.12),inset 0 1px 0 rgba(255,255,255,.86)}
 
-  /* Spinner loading remains the authority for true processing / transition states. */
+  /* Spinner remains for true processing / transitions or screens not yet structurally predictable. */
   .universe-loading,.profile-detail-loading,.profile-map-loading,.profile-search-loading,.karaoke-loading,.lyrics-loading{--loading-accent:var(--u-loading-accent);display:flex;align-items:center;justify-content:center;gap:var(--u-loading-gap);color:var(--u-loading-label-dark);font:600 10px "Exo 2","Zen Kaku Gothic New",Roboto,sans-serif;letter-spacing:.12em}
   body.theme-light :is(.universe-loading,.profile-detail-loading,.profile-map-loading,.profile-search-loading,.karaoke-loading,.lyrics-loading){color:var(--u-loading-label-light)}
   .universe-spinner,.profile-detail-spinner,.profile-map-spinner,.profile-search-spinner,.karaoke-loading::before,.lyrics-loading::before{box-sizing:border-box;width:var(--u-loading-size);height:var(--u-loading-size);flex:0 0 auto;border:var(--u-loading-ring) solid var(--u-loading-track-dark)!important;border-top-color:var(--loading-accent,var(--u-loading-accent))!important;border-right-color:var(--loading-accent,var(--u-loading-accent))!important;border-radius:50%;animation:universeSpinner var(--u-loading-speed) linear infinite!important;box-shadow:0 0 12px rgba(156,236,255,.12)}
@@ -45,225 +46,26 @@
   .lyrics-room-card.is-loading::before{display:none!important;content:none!important}
   .lyrics-room-card.is-loading .universe-loading{gap:0}
 
-  /* Layout-aware skeleton hosts. Shape is based on the screen that will replace the loading state. */
-  :is(.profile-detail-loading,.profile-map-loading,.profile-search-loading,.profile-chemistry-loading,.profile-chemistry-detail-loading,.analysis-loading,.universe-search-loading,.karaoke-loading.is-shared){
-    position:relative!important;
-    display:block!important;
-    overflow:hidden!important;
-    color:transparent!important;
-    background-color:transparent!important;
-  }
-  :is(.profile-detail-loading,.profile-map-loading,.profile-search-loading,.profile-chemistry-loading,.profile-chemistry-detail-loading,.analysis-loading,.universe-search-loading,.karaoke-loading.is-shared)>*{visibility:hidden!important}
-  :is(.profile-detail-loading,.profile-map-loading,.profile-search-loading,.profile-chemistry-loading,.profile-chemistry-detail-loading,.analysis-loading,.universe-search-loading,.karaoke-loading.is-shared)::after,
-  :is(#cardApp,#coverApp):has(> .universe-loading)::after,
+  /* Remaining legacy predictable states are kept isolated until their page renderer supplies real frames. */
+  :is(.profile-detail-loading,.profile-chemistry-loading,.profile-chemistry-detail-loading,.karaoke-loading.is-shared){position:relative!important;display:block!important;overflow:hidden!important;color:transparent!important;background-color:transparent!important}
+  :is(.profile-detail-loading,.profile-chemistry-loading,.profile-chemistry-detail-loading,.karaoke-loading.is-shared)>*{visibility:hidden!important}
+  :is(.profile-detail-loading,.profile-chemistry-loading,.profile-chemistry-detail-loading,.karaoke-loading.is-shared)::after,
   #performanceTimerApp:has(.pt-loading .universe-loading)::after,
   #quizRecentRoomsV3:has(> .universe-loading)::after,
-  .quiz-lyrics-modal-body:has(> .universe-loading)::after{
-    content:"";position:absolute;inset:0;transform:translateX(-115%);pointer-events:none;
-    background:linear-gradient(90deg,transparent 12%,var(--u-skeleton-shine) 50%,transparent 88%);
-    animation:universeSkeletonSweep 1.45s ease-in-out infinite;
-  }
+  .quiz-lyrics-modal-body:has(> .universe-loading)::after{content:"";position:absolute;inset:0;transform:translateX(-115%);pointer-events:none;background:linear-gradient(90deg,transparent 12%,var(--u-skeleton-shine) 50%,transparent 88%);animation:universeSkeletonSweep 1.45s ease-in-out infinite}
 
-  /* PROFILE detail: section label + real profile row rhythm. */
-  .profile-detail-loading{
-    min-height:356px;margin-top:24px!important;border-radius:18px;
-    background:
-      linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 0 0/28% 12px no-repeat,
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 32px/100% 54px no-repeat,
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 98px/100% 54px no-repeat,
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 164px/100% 54px no-repeat,
-      linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 0 244px/22% 12px no-repeat,
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 276px/100% 54px no-repeat;
-  }
+  .profile-detail-loading{min-height:356px;margin-top:24px!important;border-radius:18px;background:linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 0 0/28% 12px no-repeat,linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 32px/100% 54px no-repeat,linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 98px/100% 54px no-repeat,linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 164px/100% 54px no-repeat,linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 0 244px/22% 12px no-repeat,linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 276px/100% 54px no-repeat}
+  .profile-chemistry-loading{min-height:442px;border-radius:20px;background:linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 0/calc(50% - 13px) 132px no-repeat,linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 100% 0/calc(50% - 13px) 132px no-repeat,linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 0 162px/18% 11px no-repeat,linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 190px/49% 60px no-repeat,linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 100% 190px/49% 60px no-repeat,linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 262px/49% 60px no-repeat,linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 100% 262px/49% 60px no-repeat}
+  .profile-chemistry-detail-loading{min-height:252px;border-radius:16px;background:linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 0 0/28% 12px no-repeat,linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 100% 0/28% 12px no-repeat,linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 34px/100% 46px no-repeat,linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 92px/100% 46px no-repeat,linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 150px/100% 46px no-repeat,linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 208px/100% 44px no-repeat}
+  .karaoke-loading.is-shared{min-height:330px;border-radius:20px;background:linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 0 0/18% 10px no-repeat,linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 28px/62% 28px no-repeat,linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 86px/100% 66px no-repeat,linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 164px/100% 66px no-repeat,linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 242px/100% 66px no-repeat}
 
-  /* PROFILE MAP: category control then relation-group cards. */
-  .profile-map-loading{
-    min-height:430px;border-radius:20px;
-    background:
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 100% 0/34% 54px no-repeat,
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 76px/100% 154px no-repeat,
-      linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 24px 100px/28% 14px no-repeat,
-      linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 24px 136px/18% 54px no-repeat,
-      linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 46% 136px/22% 54px no-repeat,
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 248px/100% 154px no-repeat,
-      linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 24px 272px/24% 14px no-repeat,
-      linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 24px 308px/22% 54px no-repeat;
-  }
+  #performanceTimerApp:has(.pt-loading .universe-loading){position:relative;min-height:650px;overflow:hidden;border-radius:20px;background:linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 0/100% 126px no-repeat,linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 142px/100% 116px no-repeat,linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 274px/100% 110px no-repeat,linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 400px/100% 224px no-repeat}
+  #performanceTimerApp:has(.pt-loading .universe-loading) .pt-loading{visibility:hidden!important}
 
-  /* PROFILE SEARCH: search field, 2-column tag fields, then 2-column member results. */
-  .profile-search-loading{
-    min-height:455px;border-radius:18px;
-    background:
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 0/100% 56px no-repeat,
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 76px/49% 56px no-repeat,
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 100% 76px/49% 56px no-repeat,
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 144px/49% 56px no-repeat,
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 100% 144px/49% 56px no-repeat,
-      linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 0 232px/100% 1px no-repeat,
-      linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 0 254px/18% 11px no-repeat,
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 284px/49% 72px no-repeat,
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 100% 284px/49% 72px no-repeat,
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 368px/49% 72px no-repeat,
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 100% 368px/49% 72px no-repeat;
-  }
-
-  /* PROFILE CHEMISTRY: the two selection slots + member picker. */
-  .profile-page:has(.profile-local-tab[data-profile-view="chemistry"].active) .profile-chemistry-loading{
-    min-height:442px;border-radius:20px;
-    background:
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 0/calc(50% - 13px) 132px no-repeat,
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 100% 0/calc(50% - 13px) 132px no-repeat,
-      linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 0 162px/18% 11px no-repeat,
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 190px/49% 60px no-repeat,
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 100% 190px/49% 60px no-repeat,
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 262px/49% 60px no-repeat,
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 100% 262px/49% 60px no-repeat,
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 334px/49% 60px no-repeat,
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 100% 334px/49% 60px no-repeat;
-  }
-
-  /* PROFILE DISCOVER: the initial member-card picker, not CHEMISTRY slots. */
-  .profile-page:has(.profile-local-tab[data-profile-view="discover"].active) .profile-chemistry-loading{
-    min-height:520px;border-radius:20px;
-    background:
-      linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 0 0/24% 11px no-repeat,
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 34px/49% 218px no-repeat,
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 100% 34px/49% 218px no-repeat,
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 266px/49% 218px no-repeat,
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 100% 266px/49% 218px no-repeat;
-  }
-
-  /* CHEMISTRY detail compare: comparison heading and repeated rows. */
-  .profile-chemistry-detail-loading{
-    min-height:252px;border-radius:16px;
-    background:
-      linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 0 0/28% 12px no-repeat,
-      linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 100% 0/28% 12px no-repeat,
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 34px/100% 46px no-repeat,
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 92px/100% 46px no-repeat,
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 150px/100% 46px no-repeat,
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 208px/100% 44px no-repeat;
-  }
-
-  /* ANALYSIS bootstrap resolves directly to the 2 x 2 top menu. */
-  .analysis-loading{
-    min-height:250px;padding:0!important;border-radius:18px;
-    background:
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 0/49% 116px no-repeat,
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 100% 0/49% 116px no-repeat,
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 128px/49% 116px no-repeat,
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 100% 128px/49% 116px no-repeat;
-  }
-
-  /* Global SEARCH results: three real result-row silhouettes. */
-  .universe-search-loading{
-    min-height:246px;margin-top:14px;border-radius:18px;
-    background:
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 0/100% 70px no-repeat,
-      linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 18px 14px/18% 8px no-repeat,
-      linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 18px 32px/44% 12px no-repeat,
-      linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 18px 51px/32% 8px no-repeat,
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 82px/100% 70px no-repeat,
-      linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 18px 96px/16% 8px no-repeat,
-      linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 18px 114px/52% 12px no-repeat,
-      linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 18px 133px/28% 8px no-repeat,
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 164px/100% 70px no-repeat,
-      linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 18px 178px/20% 8px no-repeat,
-      linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 18px 196px/39% 12px no-repeat,
-      linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 18px 215px/35% 8px no-repeat;
-  }
-
-  /* KARAOKE latest-result load: title area + three assignee rows. */
-  .karaoke-loading.is-shared{
-    min-height:330px;border-radius:20px;
-    background:
-      linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 0 0/18% 10px no-repeat,
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 28px/62% 28px no-repeat,
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 86px/100% 66px no-repeat,
-      linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 18px 105px/20% 10px no-repeat,
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 164px/100% 66px no-repeat,
-      linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 18px 183px/24% 10px no-repeat,
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 242px/100% 66px no-repeat,
-      linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 18px 261px/18% 10px no-repeat;
-  }
-
-  /* Initial/bootstrap hosts: each mirrors its own post-load first screen. */
-  :is(#cardApp,#coverApp):has(> .universe-loading),#performanceTimerApp:has(.pt-loading .universe-loading){position:relative;overflow:hidden;border-radius:20px;background-color:transparent}
-  :is(#cardApp,#coverApp):has(> .universe-loading)> .universe-loading,#performanceTimerApp:has(.pt-loading .universe-loading) .pt-loading{visibility:hidden!important}
-
-  /* TRADING CARD bootstrap -> group selection grid. */
-  #cardApp:has(> .universe-loading){
-    min-height:314px;
-    background:
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 0/49% 94px no-repeat,
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 100% 0/49% 94px no-repeat,
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 106px/49% 94px no-repeat,
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 100% 106px/49% 94px no-repeat,
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 212px/49% 94px no-repeat,
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 100% 212px/49% 94px no-repeat;
-  }
-
-  /* COVER bootstrap -> two home actions, RECENT label, three project rows. */
-  #coverApp:has(> .universe-loading){
-    min-height:380px;
-    background:
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 0/49% 58px no-repeat,
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 100% 0/49% 58px no-repeat,
-      linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 0 88px/22% 12px no-repeat,
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 118px/100% 68px no-repeat,
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 198px/100% 68px no-repeat,
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 278px/100% 68px no-repeat;
-  }
-
-  /* Performance Timer bootstrap -> setup, timer, actions, member area. */
-  #performanceTimerApp:has(.pt-loading .universe-loading){
-    min-height:650px;
-    background:
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 0/100% 126px no-repeat,
-      linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 18px 18px/calc(100% - 36px) 54px no-repeat,
-      linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 18px 86px/calc(50% - 23px) 24px no-repeat,
-      linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) calc(50% + 5px) 86px/calc(50% - 23px) 24px no-repeat,
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 142px/100% 116px no-repeat,
-      linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 18px 168px/28% 12px no-repeat,
-      linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 100% 166px/34% 44px no-repeat,
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 274px/100% 110px no-repeat,
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 400px/100% 224px no-repeat,
-      linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 18px 420px/48% 58px no-repeat,
-      linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) calc(50% + 6px) 420px/calc(50% - 24px) 58px no-repeat,
-      linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 18px 490px/48% 58px no-repeat,
-      linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) calc(50% + 6px) 490px/calc(50% - 24px) 58px no-repeat,
-      linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 18px 560px/48% 44px no-repeat,
-      linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) calc(50% + 6px) 560px/calc(50% - 24px) 44px no-repeat;
-  }
-
-  /* QUIZ partial loads: room cards and lyric-text lines, not generic bars. */
   #quizRecentRoomsV3:has(> .universe-loading),.quiz-lyrics-modal-body:has(> .universe-loading){position:relative;overflow:hidden}
   #quizRecentRoomsV3:has(> .universe-loading)> .universe-loading,.quiz-lyrics-modal-body:has(> .universe-loading)> .universe-loading{visibility:hidden!important}
-  #quizRecentRoomsV3:has(> .universe-loading){
-    min-height:174px;
-    background:
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 8px/100% 72px no-repeat,
-      linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 16px 24px/28% 10px no-repeat,
-      linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 16px 46px/48% 12px no-repeat,
-      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 92px/100% 72px no-repeat,
-      linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 16px 108px/24% 10px no-repeat,
-      linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 16px 130px/42% 12px no-repeat;
-  }
-  .quiz-lyrics-modal-body:has(> .universe-loading){
-    min-height:220px;
-    background:
-      linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 0 8px/84% 12px no-repeat,
-      linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 0 38px/96% 12px no-repeat,
-      linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 0 68px/72% 12px no-repeat,
-      linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 0 98px/90% 12px no-repeat,
-      linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 0 128px/66% 12px no-repeat,
-      linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 0 158px/92% 12px no-repeat,
-      linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 0 188px/48% 12px no-repeat;
-  }
-
-  /* LYRICS owns its page-shaped skeleton in LyricsStyles; do not duplicate it here. */
-  body.theme-light :is(.profile-detail-loading,.profile-map-loading,.profile-search-loading,.profile-chemistry-loading,.profile-chemistry-detail-loading,.analysis-loading,.universe-search-loading,.karaoke-loading.is-shared),
-  body.theme-light :is(#cardApp,#coverApp):has(> .universe-loading),body.theme-light #performanceTimerApp:has(.pt-loading .universe-loading){box-shadow:inset 0 1px 0 rgba(255,255,255,.92)}
+  #quizRecentRoomsV3:has(> .universe-loading){min-height:174px;background:linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 8px/100% 72px no-repeat,linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 92px/100% 72px no-repeat}
+  .quiz-lyrics-modal-body:has(> .universe-loading){min-height:220px;background:linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 0 8px/84% 12px no-repeat,linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 0 38px/96% 12px no-repeat,linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 0 68px/72% 12px no-repeat,linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 0 98px/90% 12px no-repeat,linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 0 128px/66% 12px no-repeat}
 
   .loading-space{--loading-accent:#9cecff;display:grid;place-items:center;gap:14px;min-height:220px;color:var(--u-loading-label-dark)}
   body.theme-light .loading-space{color:var(--u-loading-label-light)}
@@ -279,8 +81,8 @@
   @keyframes universeSkeletonSweep{to{transform:translateX(115%)}}
   @media(prefers-reduced-motion:reduce){
     :is(.skeleton-block,.profile-member-skeleton)::after,
-    :is(.profile-detail-loading,.profile-map-loading,.profile-search-loading,.profile-chemistry-loading,.profile-chemistry-detail-loading,.analysis-loading,.universe-search-loading,.karaoke-loading.is-shared)::after,
-    :is(#cardApp,#coverApp):has(> .universe-loading)::after,#performanceTimerApp:has(.pt-loading .universe-loading)::after,
+    :is(.profile-detail-loading,.profile-chemistry-loading,.profile-chemistry-detail-loading,.karaoke-loading.is-shared)::after,
+    #performanceTimerApp:has(.pt-loading .universe-loading)::after,
     #quizRecentRoomsV3:has(> .universe-loading)::after,.quiz-lyrics-modal-body:has(> .universe-loading)::after{animation:none!important;display:none}
     .universe-spinner,.profile-detail-spinner,.profile-map-spinner,.profile-search-spinner,.karaoke-loading::before,.lyrics-loading::before,.loading-space::before{animation:none!important}
   }
