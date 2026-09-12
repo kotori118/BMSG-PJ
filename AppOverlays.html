@@ -5,22 +5,24 @@
           <button class="overlay-close" onclick="closeSearch()" aria-label="検索を閉じる">×</button>
         </header>
 
-        <label class="search-field">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <circle cx="10.8" cy="10.8" r="6.2"></circle>
-            <path d="M15.4 15.4L20 20"></path>
-          </svg>
-          <input
-            id="globalSearchInput"
-            class="search-input"
-            type="search"
-            placeholder="BMSG Universeを検索"
-            autocomplete="off"
-            oninput="runPageSearch(this.value)"
-          >
-        </label>
+        <form class="universe-search-form" onsubmit="return runUniverseSearch(event)">
+          <label class="search-field">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="10.8" cy="10.8" r="6.2"></circle>
+              <path d="M15.4 15.4L20 20"></path>
+            </svg>
+            <input
+              id="globalSearchInput"
+              class="search-input"
+              type="search"
+              placeholder="BMSG Universeを検索"
+              autocomplete="off"
+            >
+          </label>
+          <button class="universe-search-submit" type="submit">SEARCH</button>
+        </form>
 
-        <div id="searchStatus" class="search-status">ページ</div>
+        <div id="searchStatus" class="search-status"></div>
         <div id="searchResults" class="search-results"></div>
       </div>
     </section>

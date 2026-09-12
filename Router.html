@@ -10,11 +10,11 @@
     } else if(route==='data'){pageContent.innerHTML=renderData();}
     else if(route==='lab'){pageContent.innerHTML=renderLab();}
     else if(route==='metrics'){pageContent.innerHTML=renderPerformanceTimer();initPerformanceTimerPage(routeParams||{});}
-    else if(route==='profile'){pageContent.innerHTML=renderProfile();initProfilePage();}
+    else if(route==='profile'){pageContent.innerHTML=renderProfile();initProfilePage();if(routeParams&&routeParams.member&&typeof openProfileSearchTarget==='function')openProfileSearchTarget(routeParams.member,0);}
     else if(route==='lyrics'){pageContent.innerHTML=renderLyrics();initLyricsPage(routeParams||{});}
     else if(route==='karaoke'){pageContent.innerHTML=renderKaraoke();initKaraokePage(routeParams||{});}
     else if(route==='analysis'){pageContent.innerHTML=renderAnalysis();initAnalysisPage(routeParams||{});}
-    else if(route==='cards'){pageContent.innerHTML=renderCards();initCardPage(routeParams||{});}
+    else if(route==='cards'){pageContent.innerHTML=renderCards();initCardPage(routeParams||{});if(routeParams&&(routeParams.member||routeParams.image)&&typeof openCardSearchTarget==='function')openCardSearchTarget(routeParams,0);}
     else if(route==='poker'){pageContent.innerHTML=renderPoker();initPokerPage(routeParams||{});}
     else if(route==='quiz'){pageContent.innerHTML=renderQuiz();initQuizPage(routeParams||{});}
     else if(route==='cover'){pageContent.innerHTML=renderCover();initCoverPage(routeParams||{});}
