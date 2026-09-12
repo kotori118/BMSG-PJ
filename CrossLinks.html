@@ -99,14 +99,13 @@
     const meta=(lyricsState.catalog||[]).find(function(item){return String(item.songId)===songId;});
     const isBeFirst=!!(meta&&(meta.category==='BE:FIRST'||meta.artist==='BE:FIRST'));
     document.querySelectorAll('.universe-lyrics-crosslinks').forEach(function(node){node.remove();});
-    document.querySelectorAll('.lyrics-song-actions').forEach(function(row){
-      const existing=row.querySelector('.universe-lyrics-analysis-link');
-      if(!isBeFirst){if(existing)existing.remove();return;}
-      if(existing)return;
-      const karaoke=row.querySelector('.lyrics-karaoke-icon');
-      const button=createUniverseCrossLinkButton_('ANALYSIS',function(){navigateToWithParams('analysis',{view:'song',song:songId});},'is-light universe-lyrics-analysis-link');
-      if(karaoke)row.insertBefore(button,karaoke);else row.appendChild(button);
-    });
+    const rows=[].slice.call(document.querySelectorAll('.lyrics-song-actions'));
+    rows.forEach(function(row){const existing=row.querySelector('.universe-lyrics-analysis-link');if(existing)existing.remove();});
+    if(!isBeFirst||!rows.length)return;
+    const row=rows[rows.length-1];
+    const karaoke=row.querySelector('.lyrics-karaoke-icon');
+    const button=createUniverseCrossLinkButton_('ANALYSIS',function(){navigateToWithParams('analysis',{view:'song',song:songId});},'is-light universe-lyrics-analysis-link');
+    if(karaoke)row.insertBefore(button,karaoke);else row.appendChild(button);
   }
 
   function syncUniverseAnalysisCrossLinks_(){
