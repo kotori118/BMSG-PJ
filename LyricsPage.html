@@ -4,7 +4,29 @@
       <button class="u-btn lyrics-service-back" type="button" onclick="navigateTo('data')" aria-label="DATAへ戻る">‹</button>
       <h1>LYRICS</h1>
     </header>
-    <main id="lyricsView" class="lyrics-view"><div class="lyrics-loading is-shared">__LYRICS_LOADING__</div></main>
+    <main id="lyricsView" class="lyrics-view">
+      <div class="lyrics-loading is-shared is-page-layout" role="status" aria-live="polite" aria-label="LYRICSを読み込み中">
+        <section class="lyrics-page-skeleton-room" aria-hidden="true">
+          <span class="skeleton-block lyrics-page-skeleton-kicker"></span>
+          <span class="skeleton-block lyrics-page-skeleton-primary"></span>
+          <div class="lyrics-page-skeleton-join">
+            <span class="skeleton-block lyrics-page-skeleton-input"></span>
+            <span class="skeleton-block lyrics-page-skeleton-join-button"></span>
+          </div>
+        </section>
+        <section class="lyrics-page-skeleton-groups" aria-hidden="true">
+          <article class="lyrics-page-skeleton-group"><span class="skeleton-block lyrics-page-skeleton-name"></span><span class="skeleton-block lyrics-page-skeleton-count"></span></article>
+          <article class="lyrics-page-skeleton-group"><span class="skeleton-block lyrics-page-skeleton-name"></span><span class="skeleton-block lyrics-page-skeleton-count"></span></article>
+          <article class="lyrics-page-skeleton-group"><span class="skeleton-block lyrics-page-skeleton-name"></span><span class="skeleton-block lyrics-page-skeleton-count"></span></article>
+          <article class="lyrics-page-skeleton-group"><span class="skeleton-block lyrics-page-skeleton-name"></span><span class="skeleton-block lyrics-page-skeleton-count"></span></article>
+          <article class="lyrics-page-skeleton-group"><span class="skeleton-block lyrics-page-skeleton-name"></span><span class="skeleton-block lyrics-page-skeleton-count"></span></article>
+        </section>
+        <section class="lyrics-page-skeleton-gacha" aria-hidden="true">
+          <span class="skeleton-block lyrics-page-skeleton-gacha-title"></span>
+          <span class="skeleton-block lyrics-page-skeleton-gacha-copy"></span>
+        </section>
+      </div>
+    </main>
   </section>
   <div id="lyricsEditor" class="lyrics-editor" hidden>
     <section class="lyrics-editor-card" role="dialog" aria-modal="true">
