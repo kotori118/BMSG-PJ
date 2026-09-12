@@ -8,10 +8,12 @@ const UNIVERSE_HOME_PREVIEW_LIMIT_ = 5;
 const UNIVERSE_STATE_LOOKUP_CACHE_KEY_ = 'universe-state-lookup-v1';
 const UNIVERSE_PAGE_FAVORITES_ = Object.freeze({
   analysis: 'ANALYSIS',
+  karaoke: 'KARAOKE',
   quiz: 'QUIZ',
   cards: 'TRADING CARD',
   poker: 'POKER',
-  cover: 'COVER MAKER'
+  cover: 'COVER MAKER',
+  metrics: 'PERFORMANCE TIMER'
 });
 const UNIVERSE_ACTIVITY_ROUTES_ = Object.freeze({
   PLAY_QUIZ: 'quiz',
