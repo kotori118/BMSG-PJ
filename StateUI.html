@@ -1,5 +1,5 @@
 <style>
-  /* Shared state and loading authority. Page-specific frame layout belongs to each page. */
+  /* Shared state/loading primitives only. Page-specific loading layout belongs to each page. */
   :root{
     --u-state-radius:18px;
     --u-state-line-light:rgba(75,165,184,.18);
@@ -26,14 +26,14 @@
   :is(.state-card,.profile-members-state,.karaoke-history-empty,.lyrics-empty){border-radius:var(--u-state-radius)}
   body.theme-light :is(.state-card,.profile-members-state,.karaoke-history-empty,.lyrics-empty){border-color:var(--u-state-line-light);color:rgba(21,24,32,.50);background:var(--u-state-light-bg);box-shadow:inset 0 1px 0 rgba(255,255,255,.84)}
 
-  /* Shared Skeleton primitive. Pages keep their real frames and use these only for unknown content. */
+  /* Common Skeleton primitive: real page frames stay visible; only unknown content uses this. */
   :is(.skeleton-block,.profile-member-skeleton){position:relative;overflow:hidden;background:var(--u-skeleton-base)}
   :is(.skeleton-block,.profile-member-skeleton)::after{content:"";position:absolute;inset:0;transform:translateX(-110%);background:linear-gradient(90deg,transparent,var(--u-skeleton-shine),transparent);animation:universeSkeletonSweep 1.35s ease-in-out infinite}
 
   .universe-toast{border:1px solid rgba(156,236,255,.22);border-radius:16px;background:linear-gradient(145deg,rgba(10,16,26,.96),rgba(5,10,18,.98));box-shadow:0 18px 46px rgba(0,0,0,.20),inset 0 1px 0 rgba(255,255,255,.04)}
   body.theme-light .universe-toast{border-color:rgba(75,165,184,.24);color:var(--ink);background:linear-gradient(145deg,#fff,rgba(156,236,255,.13));box-shadow:0 16px 36px rgba(21,24,32,.12),inset 0 1px 0 rgba(255,255,255,.86)}
 
-  /* Spinner remains for true processing / transitions or screens not yet structurally predictable. */
+  /* Spinner authority for genuine processing / transitions. */
   .universe-loading,.profile-detail-loading,.profile-map-loading,.profile-search-loading,.karaoke-loading,.lyrics-loading{--loading-accent:var(--u-loading-accent);display:flex;align-items:center;justify-content:center;gap:var(--u-loading-gap);color:var(--u-loading-label-dark);font:600 10px "Exo 2","Zen Kaku Gothic New",Roboto,sans-serif;letter-spacing:.12em}
   body.theme-light :is(.universe-loading,.profile-detail-loading,.profile-map-loading,.profile-search-loading,.karaoke-loading,.lyrics-loading){color:var(--u-loading-label-light)}
   .universe-spinner,.profile-detail-spinner,.profile-map-spinner,.profile-search-spinner,.karaoke-loading::before,.lyrics-loading::before{box-sizing:border-box;width:var(--u-loading-size);height:var(--u-loading-size);flex:0 0 auto;border:var(--u-loading-ring) solid var(--u-loading-track-dark)!important;border-top-color:var(--loading-accent,var(--u-loading-accent))!important;border-right-color:var(--loading-accent,var(--u-loading-accent))!important;border-radius:50%;animation:universeSpinner var(--u-loading-speed) linear infinite!important;box-shadow:0 0 12px rgba(156,236,255,.12)}
@@ -45,27 +45,6 @@
   .lyrics-room-card.is-loading{min-height:118px;display:grid;place-items:center}
   .lyrics-room-card.is-loading::before{display:none!important;content:none!important}
   .lyrics-room-card.is-loading .universe-loading{gap:0}
-
-  /* Remaining legacy predictable states are kept isolated until their page renderer supplies real frames. */
-  :is(.profile-detail-loading,.profile-chemistry-loading,.profile-chemistry-detail-loading,.karaoke-loading.is-shared){position:relative!important;display:block!important;overflow:hidden!important;color:transparent!important;background-color:transparent!important}
-  :is(.profile-detail-loading,.profile-chemistry-loading,.profile-chemistry-detail-loading,.karaoke-loading.is-shared)>*{visibility:hidden!important}
-  :is(.profile-detail-loading,.profile-chemistry-loading,.profile-chemistry-detail-loading,.karaoke-loading.is-shared)::after,
-  #performanceTimerApp:has(.pt-loading .universe-loading)::after,
-  #quizRecentRoomsV3:has(> .universe-loading)::after,
-  .quiz-lyrics-modal-body:has(> .universe-loading)::after{content:"";position:absolute;inset:0;transform:translateX(-115%);pointer-events:none;background:linear-gradient(90deg,transparent 12%,var(--u-skeleton-shine) 50%,transparent 88%);animation:universeSkeletonSweep 1.45s ease-in-out infinite}
-
-  .profile-detail-loading{min-height:356px;margin-top:24px!important;border-radius:18px;background:linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 0 0/28% 12px no-repeat,linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 32px/100% 54px no-repeat,linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 98px/100% 54px no-repeat,linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 164px/100% 54px no-repeat,linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 0 244px/22% 12px no-repeat,linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 276px/100% 54px no-repeat}
-  .profile-chemistry-loading{min-height:442px;border-radius:20px;background:linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 0/calc(50% - 13px) 132px no-repeat,linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 100% 0/calc(50% - 13px) 132px no-repeat,linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 0 162px/18% 11px no-repeat,linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 190px/49% 60px no-repeat,linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 100% 190px/49% 60px no-repeat,linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 262px/49% 60px no-repeat,linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 100% 262px/49% 60px no-repeat}
-  .profile-chemistry-detail-loading{min-height:252px;border-radius:16px;background:linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 0 0/28% 12px no-repeat,linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 100% 0/28% 12px no-repeat,linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 34px/100% 46px no-repeat,linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 92px/100% 46px no-repeat,linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 150px/100% 46px no-repeat,linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 208px/100% 44px no-repeat}
-  .karaoke-loading.is-shared{min-height:330px;border-radius:20px;background:linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 0 0/18% 10px no-repeat,linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 28px/62% 28px no-repeat,linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 86px/100% 66px no-repeat,linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 164px/100% 66px no-repeat,linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 242px/100% 66px no-repeat}
-
-  #performanceTimerApp:has(.pt-loading .universe-loading){position:relative;min-height:650px;overflow:hidden;border-radius:20px;background:linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 0/100% 126px no-repeat,linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 142px/100% 116px no-repeat,linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 274px/100% 110px no-repeat,linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 400px/100% 224px no-repeat}
-  #performanceTimerApp:has(.pt-loading .universe-loading) .pt-loading{visibility:hidden!important}
-
-  #quizRecentRoomsV3:has(> .universe-loading),.quiz-lyrics-modal-body:has(> .universe-loading){position:relative;overflow:hidden}
-  #quizRecentRoomsV3:has(> .universe-loading)> .universe-loading,.quiz-lyrics-modal-body:has(> .universe-loading)> .universe-loading{visibility:hidden!important}
-  #quizRecentRoomsV3:has(> .universe-loading){min-height:174px;background:linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 8px/100% 72px no-repeat,linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 92px/100% 72px no-repeat}
-  .quiz-lyrics-modal-body:has(> .universe-loading){min-height:220px;background:linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 0 8px/84% 12px no-repeat,linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 0 38px/96% 12px no-repeat,linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 0 68px/72% 12px no-repeat,linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 0 98px/90% 12px no-repeat,linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 0 128px/66% 12px no-repeat}
 
   .loading-space{--loading-accent:#9cecff;display:grid;place-items:center;gap:14px;min-height:220px;color:var(--u-loading-label-dark)}
   body.theme-light .loading-space{color:var(--u-loading-label-light)}
@@ -80,10 +59,7 @@
   @keyframes universeSpinner{to{transform:rotate(360deg)}}
   @keyframes universeSkeletonSweep{to{transform:translateX(115%)}}
   @media(prefers-reduced-motion:reduce){
-    :is(.skeleton-block,.profile-member-skeleton)::after,
-    :is(.profile-detail-loading,.profile-chemistry-loading,.profile-chemistry-detail-loading,.karaoke-loading.is-shared)::after,
-    #performanceTimerApp:has(.pt-loading .universe-loading)::after,
-    #quizRecentRoomsV3:has(> .universe-loading)::after,.quiz-lyrics-modal-body:has(> .universe-loading)::after{animation:none!important;display:none}
+    :is(.skeleton-block,.profile-member-skeleton)::after{animation:none!important;display:none}
     .universe-spinner,.profile-detail-spinner,.profile-map-spinner,.profile-search-spinner,.karaoke-loading::before,.lyrics-loading::before,.loading-space::before{animation:none!important}
   }
 </style>
