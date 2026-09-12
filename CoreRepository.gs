@@ -44,3 +44,9 @@ function asNumber_(value, fallback) {
 function asBoolean_(value) {
   return value === true || String(value).trim().toUpperCase() === 'TRUE';
 }
+
+function splitUniverseCreditNames_(value) {
+  return String(value || '').split(',').map(function(item) {
+    return item.trim();
+  }).filter(Boolean);
+}
