@@ -1,0 +1,110 @@
+<style>
+  /* Shared recovery authority for async states that would otherwise remain stuck on loading. */
+  .universe-recovery-state{
+    min-height:220px;
+    padding:28px 22px;
+    border:1px solid rgba(156,236,255,.16);
+    border-radius:20px;
+    display:grid;
+    place-items:center;
+    text-align:center;
+    background:linear-gradient(145deg,rgba(255,255,255,.035),rgba(156,236,255,.025));
+  }
+  .universe-recovery-state-inner{max-width:520px;display:grid;justify-items:center;gap:12px}
+  .universe-recovery-state h2{margin:0;color:var(--cyan);font:700 18px Orbitron,"Zen Kaku Gothic New",sans-serif;letter-spacing:.12em}
+  .universe-recovery-state p{margin:0;color:rgba(238,248,252,.62);font:500 13px/1.8 "Zen Kaku Gothic New",sans-serif}
+  .universe-recovery-retry{min-height:46px;margin-top:6px;padding:0 18px;border:1px solid rgba(156,236,255,.32);border-radius:14px;color:var(--cyan);background:rgba(156,236,255,.09);font:700 12px "Zen Kaku Gothic New",sans-serif;cursor:pointer}
+  body.theme-light .universe-recovery-state{border-color:rgba(75,165,184,.18);background:linear-gradient(145deg,#fff,rgba(156,236,255,.055));box-shadow:inset 0 1px 0 rgba(255,255,255,.92)}
+  body.theme-light .universe-recovery-state p{color:rgba(21,24,32,.56)}
+</style>
+<script>
+(function(){
+  function recoveryMessage_(error,fallback){
+    if(error&&error.message)return String(error.message);
+    const text=String(error==null?'':error).trim();
+    return text||fallback;
+  }
+
+  function recoveryEscape_(value){
+    return typeof escapeHtml==='function'?escapeHtml(value):String(value==null?'':value).replace(/[&<>"']/g,function(ch){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];});
+  }
+
+  window.renderUniverseRecoveryState=function(message,retryCode){
+    const text=recoveryEscape_(message||'読み込みに失敗しました。');
+    const action=String(retryCode||'').replace(/"/g,'&quot;');
+    return '<section class="universe-recovery-state" role="alert"><div class="universe-recovery-state-inner"><h2>ERROR</h2><p>'+text+'</p>'+(action?'<button type="button" class="universe-recovery-retry" onclick="'+action+'">再試行</button>':'')+'</div></section>';
+  };
+
+  let karaokeRetryParams_={};
+  if(typeof window.initKaraokePage==='function'){
+    const originalInitKaraokePage=window.initKaraokePage;
+    window.initKaraokePage=function(params){
+      karaokeRetryParams_=params&&typeof params==='object'?Object.assign({},params):{};
+      return originalInitKaraokePage.apply(this,arguments);
+    };
+    window.retryUniverseKaraokeLoad_=function(){return window.initKaraokePage(Object.assign({},karaokeRetryParams_));};
+  }
+
+  if(typeof window.showLyricsError==='function'){
+    const originalShowLyricsError=window.showLyricsError;
+    window.showLyricsError=function(error){
+      const view=document.getElementById('lyricsView');
+      if(currentRoute==='lyrics'&&view&&view.querySelector('.lyrics-loading')){
+        view.innerHTML=renderUniverseRecoveryState(recoveryMessage_(error,'歌詞の読み込みに失敗しました。'),'initLyricsPage(lyricsState.initialParams||{})');
+        return;
+      }
+      return originalShowLyricsError.apply(this,arguments);
+    };
+  }
+
+  if(typeof window.showKaraokeError==='function'){
+    const originalShowKaraokeError=window.showKaraokeError;
+    window.showKaraokeError=function(error){
+      const view=document.getElementById('karaokeView');
+      if(currentRoute==='karaoke'&&view&&view.querySelector('.karaoke-loading,.universe-loading')){
+        view.innerHTML=renderUniverseRecoveryState(recoveryMessage_(error,'カラオケの読み込みに失敗しました。'),'retryUniverseKaraokeLoad_()');
+        return;
+      }
+      return originalShowKaraokeError.apply(this,arguments);
+    };
+  }
+
+  if(typeof window.cardFailure==='function'){
+    const originalCardFailure=window.cardFailure;
+    window.cardFailure=function(error){
+      const host=document.getElementById('cardApp');
+      if(currentRoute==='cards'&&host&&host.querySelector(':scope > .universe-loading')){
+        host.innerHTML=renderUniverseRecoveryState(recoveryMessage_(error,'カードの読み込みに失敗しました。'),'initCardPage()');
+        return;
+      }
+      return originalCardFailure.apply(this,arguments);
+    };
+  }
+
+  if(typeof window.showCoverError==='function'){
+    const originalShowCoverError=window.showCoverError;
+    window.showCoverError=function(error){
+      const host=document.getElementById('coverApp');
+      if(currentRoute==='cover'&&host&&host.querySelector('.universe-loading')){
+        if(typeof coverState!=='undefined')coverState.busy=false;
+        host.innerHTML=renderUniverseRecoveryState(recoveryMessage_(error,'COVER MAKERの読み込みに失敗しました。'),'initCoverPage()');
+        return;
+      }
+      return originalShowCoverError.apply(this,arguments);
+    };
+  }
+
+  if(typeof window.pokerFailure==='function'){
+    const originalPokerFailure=window.pokerFailure;
+    window.pokerFailure=function(error){
+      const host=document.getElementById('pokerApp');
+      if(currentRoute==='poker'&&host&&host.querySelector('.universe-loading')){
+        if(typeof pokerState!=='undefined')pokerState.busy=false;
+        host.innerHTML=renderUniverseRecoveryState(recoveryMessage_(error,'POKERの読み込みに失敗しました。'),'initPokerPage({})');
+        return;
+      }
+      return originalPokerFailure.apply(this,arguments);
+    };
+  }
+})();
+</script>
