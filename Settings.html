@@ -85,7 +85,14 @@
     syncSettingsUserName();
     syncUserChooser();
     closeUserChooser();
-    if (previousId !== user.id) refreshUniverseUserContext();
+    if (previousId !== user.id && typeof resetUniversePreferencesClient_ === 'function') resetUniversePreferencesClient_();
+    if (typeof loadUniverseUserPreferences_ === 'function') {
+      loadUniverseUserPreferences_(user.id, function() {
+        if (previousId !== user.id) refreshUniverseUserContext();
+      });
+    } else if (previousId !== user.id) {
+      refreshUniverseUserContext();
+    }
   }
 
   function ensureUniverseUserSelection() {
@@ -101,15 +108,23 @@
     if (isLyricsRoute && typeof preloadKaraokeFavoriteSettings === 'function') preloadKaraokeFavoriteSettings();
     syncSettingsUserName();
     syncLyricsEditMode();
+    if (typeof syncUniversePreferenceSettingsUI_ === 'function') syncUniversePreferenceSettingsUI_();
     const lyricsSection = document.getElementById('lyricsSettingsSection');
     if (lyricsSection) lyricsSection.hidden = !isLyricsRoute;
     settingsOverlay.classList.add('open');
     document.body.style.overflow = 'hidden';
+    const userId = readUniverseUserId();
+    if (userId && typeof loadUniverseUserPreferences_ === 'function' && (!universePreferencesClient.loaded || universePreferencesClient.userId !== userId)) {
+      loadUniverseUserPreferences_(userId);
+    }
   }
   function openPerformanceTool() { closeSettings(); navigateTo('metrics'); }
   function closeSettings() { settingsOverlay.classList.remove('open'); document.body.style.overflow = ''; }
 
   syncSettingsUserName();
   syncLyricsEditMode();
-  setTimeout(ensureUniverseUserSelection, 0);
+  setTimeout(function() {
+    ensureUniverseUserSelection();
+    if (readUniverseUserId() && typeof initializeUniversePreferences === 'function') initializeUniversePreferences();
+  }, 0);
 </script>
