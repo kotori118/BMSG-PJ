@@ -184,9 +184,9 @@
 
   function renderProfileDetailContent() {
     if (profileMembersState.detailStatus === 'loading') {
-      const member = profileMembersState.members.find(item => item.memberId === profileSelectedMemberId);
-      const accent = member && /^#[0-9a-f]{6}$/i.test(member.colorHex || '') ? member.colorHex : '#9cecff';
-      return `<div class="profile-detail-loading">${renderUniverseLoading('LOADING PROFILE...', accent)}</div>`;
+      const row = () => `<div class="profile-detail-row" aria-hidden="true"><dt><span class="skeleton-block" style="display:block;width:72%;height:11px;border-radius:6px"></span></dt><dd><span class="skeleton-block" style="display:block;width:86%;height:13px;border-radius:6px"></span></dd></div>`;
+      const section = (rows) => `<section class="profile-detail-section" aria-hidden="true"><h3 class="profile-detail-section-title"><span class="skeleton-block" style="display:block;width:74px;height:10px;border-radius:5px"></span></h3><dl class="profile-detail-list">${Array.from({length:rows},row).join('')}</dl></section>`;
+      return `<div class="profile-detail-sections">${section(3)}${section(2)}</div>`;
     }
     if (profileMembersState.detailStatus === 'error') return `<div class="profile-detail-message"><p>${escapeHtml(profileMembersState.detailError)}</p><button class="profile-retry-button" type="button" onclick="openProfileMemberDetail(profileSelectedMemberId)">再試行</button></div>`;
     const fields = profileMembersState.detailFields || [];
