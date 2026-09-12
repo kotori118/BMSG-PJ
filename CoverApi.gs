@@ -66,11 +66,6 @@ function getCoverEditorData(payload) {
   };
 }
 
-function listCoverProjects(userId) {
-  const uid = validateCoverUser_(userId);
-  return listCoverProjects_(getCoverCoreSnapshot_(), uid);
-}
-
 function getCoverProject(payload) {
   payload = payload || {};
   const uid = validateCoverUser_(payload.userId);

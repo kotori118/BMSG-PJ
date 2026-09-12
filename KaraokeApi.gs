@@ -105,8 +105,6 @@ function saveKaraokeAssignment(payload) {
   });
 }
 
-function getKaraokeHistory(roomId) { return getKaraokeHistory_(String(roomId||'').trim()); }
-
 function getKaraokeUsers_() {
   const names = { U001: 'ももたん', U002: 'みおたん', U003: 'りおたん' };
   return KARAOKE_USERS_.map(function(id) {

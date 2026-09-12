@@ -24,16 +24,6 @@ function getAnalysisBootstrap() {
   return data;
 }
 
-// Public Apps Script entry point. Kept until external/manual callers are confirmed absent.
-function getAnalysisSong(songId) {
-  const id = asId_(songId);
-  if (!id) throw new Error('SongID is required.');
-  const data = buildAnalysisDataset_();
-  const song = data.songDetails[id];
-  if (!song) throw new Error('Analysis song not found: ' + id);
-  return song;
-}
-
 function buildAnalysisDataset_() {
   const spreadsheet = SpreadsheetApp.openById(UNIVERSE_CONFIG.CORE_DB_ID);
   const sheets = UNIVERSE_CONFIG.SHEETS;
