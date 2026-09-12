@@ -1,13 +1,14 @@
 <style>
   .home-dynamic{display:grid;gap:28px;margin-top:28px;padding-bottom:36px}
   .home-today-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
-  .home-feature-card{position:relative;min-height:220px;padding:24px;overflow:hidden;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;text-align:left;border:1px solid rgba(156,236,255,.2);border-radius:26px;background:linear-gradient(145deg,rgba(8,22,35,.94),rgba(11,16,29,.86));box-shadow:0 18px 48px rgba(0,0,0,.22);color:#fff}
+  .home-feature-card{position:relative;min-width:0;min-height:220px;padding:24px;overflow:hidden;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;text-align:left;border:1px solid rgba(156,236,255,.2);border-radius:26px;background:linear-gradient(145deg,rgba(8,22,35,.94),rgba(11,16,29,.86));box-shadow:0 18px 48px rgba(0,0,0,.22);color:#fff}
   button.home-feature-card{cursor:pointer}
   .home-feature-card:before{content:"";position:absolute;inset:auto -35% -45% auto;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(156,236,255,.2),transparent 68%);pointer-events:none}
   .home-member-card:before{background:radial-gradient(circle,var(--home-accent,#9cecff),transparent 70%);opacity:.22}
-  .home-feature-label{position:absolute;top:22px;left:24px;color:rgba(156,236,255,.72);font:600 10px "Exo 2","Zen Kaku Gothic New",sans-serif;letter-spacing:.18em}
-  .home-feature-card strong{position:relative;font:700 clamp(25px,5vw,42px)/1.04 Orbitron,"Zen Kaku Gothic New",sans-serif;letter-spacing:-.025em;overflow-wrap:anywhere}
-  .home-feature-card small{position:relative;margin-top:9px;color:rgba(255,255,255,.58);font:500 12px "Zen Kaku Gothic New",Roboto,sans-serif}
+  .home-feature-label{position:absolute;top:22px;left:24px;color:rgba(156,236,255,.84);font:700 12px "Exo 2","Zen Kaku Gothic New",sans-serif;letter-spacing:.16em}
+  .home-feature-card strong{position:relative;min-width:0;max-width:100%;font:700 clamp(25px,5vw,42px)/1.04 Orbitron,"Zen Kaku Gothic New",sans-serif;letter-spacing:-.025em;overflow-wrap:anywhere;word-break:break-word}
+  .home-song-title{font-size:clamp(21px,4.4vw,34px)!important;line-height:1.08!important;letter-spacing:-.035em!important}
+  .home-feature-card small{position:relative;max-width:100%;margin-top:9px;color:rgba(255,255,255,.58);font:500 12px "Zen Kaku Gothic New",Roboto,sans-serif;overflow-wrap:anywhere}
   .home-feature-card b{position:relative;margin-top:22px;color:rgba(156,236,255,.78);font:600 10px "Exo 2","Zen Kaku Gothic New",sans-serif;letter-spacing:.14em}
   .home-birthday-card{justify-content:flex-end;border-color:rgba(255,255,255,.34);background:radial-gradient(circle at 85% 15%,rgba(156,236,255,.22),transparent 30%),linear-gradient(145deg,rgba(9,27,42,.98),rgba(20,18,39,.94));box-shadow:0 18px 54px rgba(0,0,0,.28),0 0 34px rgba(156,236,255,.10)}
   .home-birthday-card:after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 18%,rgba(255,255,255,.06) 46%,transparent 72%);transform:translateX(-120%);animation:homeBirthdayShine 4.8s ease-in-out infinite;pointer-events:none}
@@ -38,9 +39,15 @@
   .home-empty{margin:0;padding:24px 18px;color:rgba(255,255,255,.44);font:500 12px "Zen Kaku Gothic New",sans-serif}
   .home-state{min-height:230px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:#fff;text-align:center}
   .home-state strong{font:700 18px Orbitron,sans-serif}.home-state p{margin:0;color:rgba(255,255,255,.58);font-size:13px}.home-state button{min-height:42px;padding:0 18px;border:1px solid rgba(156,236,255,.28);border-radius:14px;background:rgba(156,236,255,.08);color:#fff}
-  .utility-btn[hidden]{display:none!important}.utility-favorite{font:400 24px/1 Arial,sans-serif}.utility-favorite.is-favorite{color:var(--cyan,#9cecff)}
+  .home-skeleton-card{justify-content:flex-end;pointer-events:none}
+  .home-skeleton-line{position:relative;display:block;overflow:hidden;border-radius:999px;background:rgba(255,255,255,.07)}
+  .home-skeleton-line:after{content:"";position:absolute;inset:0;transform:translateX(-120%);background:linear-gradient(90deg,transparent,rgba(156,236,255,.17),transparent);animation:homeSkeletonShimmer 1.6s ease-in-out infinite}
+  .home-skeleton-title{width:72%;height:30px;margin-top:54px;border-radius:9px}.home-skeleton-title.short{width:46%}.home-skeleton-meta{width:36%;height:12px;margin-top:12px}.home-skeleton-action{width:18%;height:10px;margin-top:24px}
+  .home-skeleton-list{padding:2px 0}.home-skeleton-row{min-height:68px;padding:14px 18px;display:grid;align-content:center;gap:7px;border-top:1px solid rgba(255,255,255,.055)}.home-skeleton-row:first-child{border-top:0}.home-skeleton-row-meta{width:18%;height:8px}.home-skeleton-row-title{width:62%;height:13px}.home-skeleton-row-title.short{width:43%}
+  @keyframes homeSkeletonShimmer{0%{transform:translateX(-120%)}65%,100%{transform:translateX(120%)}}
+  .utility-btn[hidden]{display:none!important}.utility-favorite svg{width:25px;height:25px}.utility-favorite .favorite-heart-path{fill:transparent;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;transition:fill var(--fast) var(--ease),stroke var(--fast) var(--ease),transform var(--fast) var(--ease)}.utility-favorite.is-favorite{color:var(--cyan,#9cecff)}.utility-favorite.is-favorite .favorite-heart-path{fill:currentColor}.utility-favorite:active .favorite-heart-path{transform:scale(.9);transform-origin:center}
   .home-collection-overlay{z-index:1250}.home-collection-panel{max-width:560px;max-height:min(78vh,720px);display:flex;flex-direction:column}.home-collection-list{overflow:auto;display:grid;gap:8px;padding-top:8px}.home-collection-row{display:grid;grid-template-columns:minmax(0,1fr) 46px;align-items:stretch;overflow:hidden;border:1px solid rgba(156,236,255,.14);border-radius:16px;background:rgba(255,255,255,.025)}
   .home-collection-open{border-top:0}.home-collection-remove{border:0;border-left:1px solid rgba(255,255,255,.08);background:transparent;color:rgba(255,255,255,.55);font-size:22px;cursor:pointer}
-  @media(max-width:620px){.home-dynamic{gap:24px;margin-top:22px}.home-today-grid{grid-template-columns:1fr}.home-feature-card{min-height:190px;padding:22px}.home-feature-label{top:20px;left:22px}.sparkle-one{right:24px}.sparkle-two{right:66px}.sparkle-three{right:18px}}
-  @media(prefers-reduced-motion:reduce){.home-birthday-card:after,.home-birthday-sparkle{animation:none}}
+  @media(max-width:620px){.home-dynamic{gap:24px;margin-top:22px}.home-today-grid{grid-template-columns:1fr}.home-feature-card{min-height:190px;padding:22px}.home-feature-label{top:20px;left:22px;font-size:13px}.home-song-title{font-size:clamp(20px,6.4vw,30px)!important;line-height:1.1!important}.home-feature-card strong:not(.home-song-title){font-size:clamp(28px,8vw,38px)}.sparkle-one{right:24px}.sparkle-two{right:66px}.sparkle-three{right:18px}}
+  @media(prefers-reduced-motion:reduce){.home-birthday-card:after,.home-birthday-sparkle,.home-skeleton-line:after{animation:none}}
 </style>
