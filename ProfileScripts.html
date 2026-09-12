@@ -23,7 +23,8 @@
 
   function initProfilePage() {
     profileCurrentView = 'home';
-    profileCurrentGroup = 'all';
+    const preferredGroup = typeof getUniversePreferredProfileGroupKey === 'function' ? getUniversePreferredProfileGroupKey() : 'all';
+    profileCurrentGroup = PROFILE_GROUPS[preferredGroup] ? preferredGroup : 'all';
     profileSelectedMemberId = '';
     profileDetailReturnView = 'home';
     setProfileDetailMode(false);
