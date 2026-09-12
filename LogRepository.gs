@@ -62,8 +62,12 @@ function appendRecentActivity_(sheet, record) {
     .filter(function(row) { return String(row.UserID || '').trim() === userId; })
     .sort(function(a, b) { return a.__rowNumber - b.__rowNumber; });
   const latest = rows.length ? rows[rows.length - 1] : null;
+  const isViewActivity = activityType === 'VIEW_MEMBER' || activityType === 'VIEW_LYRICS';
+  const shouldMerge = latest &&
+    String(latest.ActivityType || '').trim() === activityType &&
+    (!isViewActivity || String(latest.TargetID || '').trim() === targetId);
 
-  if (latest && String(latest.ActivityType || '').trim() === activityType && String(latest.TargetID || '').trim() === targetId) {
+  if (shouldMerge) {
     updateByHeaders_(sheet, latest.__rowNumber, {OccurredAt: record.OccurredAt || new Date()});
   } else {
     appendRawByHeaders_(sheet, record);
