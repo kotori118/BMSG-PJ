@@ -58,10 +58,10 @@
       return '<div class="home-collection-row">'+open+remove+'</div>';
     }).join(''):'<p class="home-empty">まだありません。</p>';
     const existing=document.getElementById('homeCollectionOverlay');if(existing)existing.remove();
-    const overlay=document.createElement('div');overlay.id='homeCollectionOverlay';overlay.className='modal-overlay home-collection-overlay is-open';overlay.innerHTML='<section class="settings-panel home-collection-panel" role="dialog" aria-modal="true"><header class="modal-head"><h2 class="modal-title">'+title+'</h2><button class="overlay-close" type="button" onclick="closeHomeCollection()">×</button></header><div class="home-collection-list">'+body+'</div></section>';overlay.addEventListener('click',function(event){if(event.target===overlay)closeHomeCollection();});document.body.appendChild(overlay);
+    const overlay=document.createElement('div');overlay.id='homeCollectionOverlay';overlay.className='modal-overlay home-collection-overlay open';overlay.innerHTML='<section class="settings-panel home-collection-panel" role="dialog" aria-modal="true"><header class="modal-head"><h2 class="modal-title">'+title+'</h2><button class="overlay-close" type="button" onclick="closeHomeCollection()">×</button></header><div class="home-collection-list">'+body+'</div></section>';overlay.addEventListener('click',function(event){if(event.target===overlay)closeHomeCollection();});document.body.appendChild(overlay);document.body.style.overflow='hidden';
   }
 
-  function closeHomeCollection(){const overlay=document.getElementById('homeCollectionOverlay');if(overlay)overlay.remove();}
+  function closeHomeCollection(){const overlay=document.getElementById('homeCollectionOverlay');if(overlay)overlay.remove();document.body.style.overflow='';}
   function openHomeCollectionItem(kind,index){const source=kind==='favorites'?(homeState.data.favorites||[]):(homeState.data.recent||[]);const item=source[index];closeHomeCollection();openUniverseTarget(item);}
   function removeHomeFavorite(index){
     const item=homeState.data&&homeState.data.favorites?homeState.data.favorites[index]:null;if(!item||!window.confirm('お気に入りから削除しますか？'))return;
