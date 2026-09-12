@@ -5,7 +5,7 @@
 const UNIVERSE_STATE_USERS_ = Object.freeze(['U001', 'U002', 'U003']);
 const UNIVERSE_RECENT_LIMIT_ = 10;
 const UNIVERSE_HOME_PREVIEW_LIMIT_ = 5;
-const UNIVERSE_STATE_LOOKUP_CACHE_KEY_ = 'universe-state-lookup-v1';
+const UNIVERSE_STATE_LOOKUP_CACHE_KEY_ = 'universe-state-lookup-v2';
 const UNIVERSE_PAGE_FAVORITES_ = Object.freeze({
   analysis: 'ANALYSIS',
   karaoke: 'KARAOKE',
@@ -27,11 +27,13 @@ function getUniverseHomeBootstrap(userId) {
   const lookup = buildUniverseStateLookup_();
   const recent = readUniverseRecent_(uid, lookup);
   const favorites = readUniverseFavorites_(uid, lookup);
+  const birthdayMembers = getUniverseBirthdayMembers_(lookup);
   return {
     ok: true,
     data: {
       todaySong: getUniverseDailySong_(uid, lookup),
-      luckyMember: getUniverseDailyMember_(uid, lookup),
+      luckyMember: birthdayMembers.length ? birthdayMembers[0] : getUniverseDailyMember_(uid, lookup),
+      birthdayMembers: birthdayMembers,
       recent: recent,
       recentPreview: recent.slice(0, UNIVERSE_HOME_PREVIEW_LIMIT_),
       favorites: favorites,
@@ -158,6 +160,14 @@ function buildUniverseStateLookup_() {
     const id=String(row.MemberID||'').trim();
     if(id)members[id]={memberId:id,displayName:String(row.DisplayName||id),colorHex:normalizeUniverseColor_(row.ColorHex)};
   });
+  readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.PROFILES).forEach(function(row){
+    const id=String(row.MemberID||'').trim();
+    if(!id || !members[id]) return;
+    const birthday=parseProfileBirthday_(row.P002);
+    if(!birthday) return;
+    members[id].birthdayMonth=birthday.month;
+    members[id].birthdayDay=birthday.day;
+  });
   const songs = {};
   readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.SONGS).forEach(function(row){
     const id=String(row.SongID||'').trim();
@@ -175,8 +185,20 @@ function getUniverseDailySong_(userId, lookup) {
   return rows[deterministicUniverseIndex_(userId, 'song', rows.length)];
 }
 
+function getUniverseBirthdayMembers_(lookup) {
+  lookup = lookup || buildUniverseStateLookup_();
+  const today = Utilities.formatDate(new Date(), 'Asia/Tokyo', 'M-d').split('-');
+  const month = Number(today[0]);
+  const day = Number(today[1]);
+  return Object.keys(lookup.members).map(function(id){return lookup.members[id];}).filter(function(row){
+    return row.memberId && row.displayName && Number(row.birthdayMonth) === month && Number(row.birthdayDay) === day;
+  });
+}
+
 function getUniverseDailyMember_(userId, lookup) {
   lookup = lookup || buildUniverseStateLookup_();
+  const birthdayMembers = getUniverseBirthdayMembers_(lookup);
+  if (birthdayMembers.length) return birthdayMembers[0];
   const rows = Object.keys(lookup.members).map(function(id){return lookup.members[id];}).filter(function(row){return row.memberId && row.displayName;});
   if (!rows.length) return null;
   return rows[deterministicUniverseIndex_(userId, 'member', rows.length)];
