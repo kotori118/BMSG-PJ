@@ -1,0 +1,146 @@
+<script>
+  const universeCrossLinksState={route:'',params:{},observer:null,targetApplied:false,coverPrompted:false,credits:{},creditsOpen:{},captureBound:false};
+
+  function resetUniverseCrossLinks(){
+    if(universeCrossLinksState.observer){universeCrossLinksState.observer.disconnect();universeCrossLinksState.observer=null;}
+    universeCrossLinksState.route='';universeCrossLinksState.params={};universeCrossLinksState.targetApplied=false;universeCrossLinksState.coverPrompted=false;
+  }
+
+  function initUniverseCrossLinks(route,params){
+    resetUniverseCrossLinks();
+    universeCrossLinksState.route=String(route||'');
+    universeCrossLinksState.params=params||{};
+    if(!universeCrossLinksState.captureBound&&pageContent){pageContent.addEventListener('click',handleUniverseCoverTargetCapture_,true);universeCrossLinksState.captureBound=true;}
+    if(pageContent){universeCrossLinksState.observer=new MutationObserver(syncUniverseCrossLinks);universeCrossLinksState.observer.observe(pageContent,{childList:true,subtree:true});}
+    syncUniverseCrossLinks();
+  }
+
+  function syncUniverseCrossLinks(){
+    applyUniverseCrossLinkRouteTarget_();
+    if(universeCrossLinksState.route==='profile')syncUniverseProfileCrossLinks_();
+    else if(universeCrossLinksState.route==='lyrics')syncUniverseLyricsCrossLinks_();
+    else if(universeCrossLinksState.route==='analysis')syncUniverseAnalysisCrossLinks_();
+    else if(universeCrossLinksState.route==='cards')syncUniverseCardCrossLinks_();
+    else if(universeCrossLinksState.route==='cover')syncUniverseCoverCrossLinks_();
+  }
+
+  function applyUniverseCrossLinkRouteTarget_(){
+    if(universeCrossLinksState.targetApplied)return;
+    const route=universeCrossLinksState.route,params=universeCrossLinksState.params||{};
+    if(route==='profile'&&params.member&&typeof profileMembersState!=='undefined'&&profileMembersState.status==='ready'){
+      const id=String(params.member);if(!profileMembersState.members.some(function(m){return String(m.memberId)===id;}))return;
+      universeCrossLinksState.targetApplied=true;if(typeof openProfileMemberDetail==='function')openProfileMemberDetail(id);return;
+    }
+    if(route==='analysis'&&params.view&&typeof analysisData!=='undefined'&&analysisData&&typeof renderAnalysisView==='function'){
+      if(params.view==='member'&&params.member){
+        const member=String(params.member);if(!(analysisData.members||[]).some(function(m){return m.name===member;}))return;
+        universeCrossLinksState.targetApplied=true;analysisView='member';analysisMember=member;analysisYear='all';renderAnalysisView();return;
+      }
+      if(params.view==='song'&&params.song){
+        const songId=String(params.song);if(!analysisData.songDetails||!analysisData.songDetails[songId])return;
+        universeCrossLinksState.targetApplied=true;analysisView='song';analysisSongId=songId;renderAnalysisView();return;
+      }
+    }
+    if(route==='cards'&&params.member&&typeof cardState!=='undefined'&&cardState.ready){
+      const memberId=String(params.member);const group=(cardState.groups||[]).find(function(item){return item.name!=='ALL'&&(item.memberIds||[]).map(String).indexOf(memberId)>=0;});
+      universeCrossLinksState.targetApplied=true;cardState.currentGroup=group?group.name:'ALL';if(typeof renderCardGacha==='function')renderCardGacha();if(typeof openCardCollection==='function')openCardCollection();return;
+    }
+    if(route==='cover'&&params.song&&typeof coverState!=='undefined'&&coverState.ready&&!universeCrossLinksState.coverPrompted){
+      universeCrossLinksState.coverPrompted=true;if(typeof openCoverGroupSelect==='function')openCoverGroupSelect();
+    }
+  }
+
+  function createUniverseCrossLinkButton_(label,onClick,className){
+    const button=document.createElement('button');button.type='button';button.className='u-btn universe-crosslink-button'+(className?' '+className:'');button.textContent=label;button.addEventListener('click',onClick);return button;
+  }
+
+  function syncUniverseProfileCrossLinks_(){
+    const detail=document.querySelector('.profile-member-detail');
+    if(!detail||typeof profileSelectedMemberId==='undefined'||!profileSelectedMemberId||typeof profileMembersState==='undefined')return;
+    const member=profileMembersState.members.find(function(item){return String(item.memberId)===String(profileSelectedMemberId);});if(!member)return;
+    let actions=detail.querySelector('.universe-profile-crosslinks');
+    if(!actions){
+      actions=document.createElement('div');actions.className='universe-crosslink-row universe-profile-crosslinks';
+      actions.appendChild(createUniverseCrossLinkButton_('ANALYSIS',function(){navigateToWithParams('analysis',{view:'member',member:member.displayName});}));
+      actions.appendChild(createUniverseCrossLinkButton_('CARD',function(){navigateToWithParams('cards',{member:member.memberId});}));
+      actions.appendChild(createUniverseCrossLinkButton_('CREDITS',function(){toggleUniverseProfileCredits_(member.memberId);}));
+      const hero=detail.querySelector('.profile-detail-hero');if(hero)hero.insertAdjacentElement('afterend',actions);else detail.prepend(actions);
+    }
+    if(universeCrossLinksState.creditsOpen[String(member.memberId)])renderUniverseProfileCredits_(detail,member.memberId);
+  }
+
+  function toggleUniverseProfileCredits_(memberId){
+    const id=String(memberId||'');if(!id)return;
+    universeCrossLinksState.creditsOpen[id]=!universeCrossLinksState.creditsOpen[id];
+    const detail=document.querySelector('.profile-member-detail');if(!detail)return;
+    if(!universeCrossLinksState.creditsOpen[id]){const old=detail.querySelector('.universe-profile-credits');if(old)old.remove();return;}
+    if(universeCrossLinksState.credits[id]){renderUniverseProfileCredits_(detail,id);return;}
+    let host=detail.querySelector('.universe-profile-credits');if(!host){host=document.createElement('section');host.className='universe-profile-credits';const actions=detail.querySelector('.universe-profile-crosslinks');if(actions)actions.insertAdjacentElement('afterend',host);}
+    host.innerHTML='<p class="universe-crosslink-status">LOADING...</p>';
+    google.script.run.withSuccessHandler(function(response){
+      if(!response||!response.ok){universeCrossLinksState.credits[id]={error:response&&response.error?response.error.message:'クレジット参加曲の読み込みに失敗しました。',songs:[]};}
+      else universeCrossLinksState.credits[id]=response.data||{songs:[]};
+      const current=document.querySelector('.profile-member-detail');if(current&&universeCrossLinksState.creditsOpen[id])renderUniverseProfileCredits_(current,id);
+    }).withFailureHandler(function(error){universeCrossLinksState.credits[id]={error:error&&error.message?error.message:String(error||'クレジット参加曲の読み込みに失敗しました。'),songs:[]};const current=document.querySelector('.profile-member-detail');if(current&&universeCrossLinksState.creditsOpen[id])renderUniverseProfileCredits_(current,id);}).getUniverseMemberCreativeCredits(id);
+  }
+
+  function renderUniverseProfileCredits_(detail,memberId){
+    if(!detail)return;const id=String(memberId||''),data=universeCrossLinksState.credits[id];
+    let host=detail.querySelector('.universe-profile-credits');if(!host){host=document.createElement('section');host.className='universe-profile-credits';const actions=detail.querySelector('.universe-profile-crosslinks');if(actions)actions.insertAdjacentElement('afterend',host);}
+    if(!data){host.innerHTML='<p class="universe-crosslink-status">LOADING...</p>';return;}
+    host.innerHTML='';const heading=document.createElement('h3');heading.textContent='CREATIVE CREDITS';host.appendChild(heading);
+    if(data.error){const p=document.createElement('p');p.className='universe-crosslink-status';p.textContent=data.error;host.appendChild(p);return;}
+    const songs=Array.isArray(data.songs)?data.songs:[];if(!songs.length){const p=document.createElement('p');p.className='universe-crosslink-status';p.textContent='該当するクレジット参加曲はありません。';host.appendChild(p);return;}
+    const list=document.createElement('div');list.className='universe-credit-list';songs.forEach(function(song){const row=document.createElement('button');row.type='button';row.className='universe-credit-song';row.addEventListener('click',function(){navigateToWithParams('lyrics',{song:song.songId});});const title=document.createElement('strong');title.textContent=song.title||song.songId;row.appendChild(title);const tags=document.createElement('span');tags.className='universe-credit-tags';(song.roles||[]).forEach(function(role){const tag=document.createElement('i');tag.textContent=role;tags.appendChild(tag);});row.appendChild(tags);list.appendChild(row);});host.appendChild(list);
+  }
+
+  function syncUniverseLyricsCrossLinks_(){
+    if(typeof lyricsState==='undefined'||!lyricsState.song)return;const parts=document.querySelector('.lyrics-parts');if(!parts||document.querySelector('.universe-lyrics-crosslinks'))return;
+    const songId=String(lyricsState.song.songId||'');if(!songId)return;const row=document.createElement('div');row.className='universe-crosslink-row universe-lyrics-crosslinks';
+    row.appendChild(createUniverseCrossLinkButton_('ANALYSIS',function(){navigateToWithParams('analysis',{view:'song',song:songId});},'is-light'));
+    row.appendChild(createUniverseCrossLinkButton_('COVER MAKER',function(){navigateToWithParams('cover',{song:songId});},'is-light'));
+    parts.insertAdjacentElement('afterend',row);
+  }
+
+  function syncUniverseAnalysisCrossLinks_(){
+    if(typeof analysisData==='undefined'||!analysisData)return;
+    if(typeof analysisView!=='undefined'&&analysisView==='member'&&analysisMember){
+      const member=(analysisData.members||[]).find(function(item){return item.name===analysisMember;});const card=document.querySelector('#analysisPanel .analysis-card');
+      if(member&&card&&!card.querySelector('.universe-analysis-profile-link')){const row=document.createElement('div');row.className='universe-crosslink-row universe-analysis-profile-link';row.appendChild(createUniverseCrossLinkButton_('PROFILE',function(){navigateToWithParams('profile',{member:member.id});}));card.appendChild(row);}
+    }
+    if(typeof analysisView!=='undefined'&&analysisView==='song'&&analysisSongId){
+      const body=document.getElementById('analysisSongBody');if(body&&body.innerHTML&&!body.querySelector('.universe-analysis-lyrics-link')){const row=document.createElement('div');row.className='universe-crosslink-row universe-analysis-lyrics-link';row.appendChild(createUniverseCrossLinkButton_('LYRICS',function(){navigateToWithParams('lyrics',{song:analysisSongId});}));body.appendChild(row);}
+    }
+  }
+
+  function syncUniverseCardCrossLinks_(){
+    if(typeof cardState==='undefined'||!cardState.ready||typeof getCardGroupCards!=='function')return;const sections=[].slice.call(document.querySelectorAll('#cardCollectionBody .card-collection-member'));if(!sections.length)return;
+    const byMember={};getCardGroupCards(cardState.currentGroup||'ALL').forEach(function(card){const id=String(card.memberId||'');if(id&&!byMember[id])byMember[id]=[];if(id)byMember[id].push(card);});
+    Object.keys(byMember).forEach(function(memberId,index){const section=sections[index];if(!section)return;const titleRow=section.querySelector('.card-collection-member-title-row');if(!titleRow||titleRow.querySelector('.universe-card-profile-link'))return;const button=createUniverseCrossLinkButton_('PROFILE',function(){if(typeof closeCardCollection==='function')closeCardCollection();navigateToWithParams('profile',{member:memberId});},'universe-card-profile-link');titleRow.appendChild(button);});
+  }
+
+  function syncUniverseCoverCrossLinks_(){
+    const params=universeCrossLinksState.params||{};if(!params.song||universeCrossLinksState.targetApplied||typeof coverState==='undefined'||!coverState.ready)return;
+    if(!universeCrossLinksState.coverPrompted){universeCrossLinksState.coverPrompted=true;if(typeof openCoverGroupSelect==='function')openCoverGroupSelect();return;}
+    if(coverState.screen!=='group')return;const groups=coverState.bootstrap&&coverState.bootstrap.groups||[];document.querySelectorAll('#coverApp .cover-content-card').forEach(function(button,index){if(button.dataset.crosslinkCoverReady)return;const group=groups[index];if(!group)return;button.dataset.crosslinkCoverReady='1';button.dataset.crosslinkGroupId=String(group.groupId);});
+  }
+
+  function handleUniverseCoverTargetCapture_(event){
+    if(universeCrossLinksState.route!=='cover'||universeCrossLinksState.targetApplied)return;const params=universeCrossLinksState.params||{};if(!params.song||typeof coverState==='undefined'||coverState.screen!=='group')return;
+    const button=event.target&&event.target.closest?event.target.closest('#coverApp .cover-content-card[data-crosslink-group-id]'):null;if(!button)return;
+    event.preventDefault();event.stopImmediatePropagation();const groupId=String(button.dataset.crosslinkGroupId||'');const groups=coverState.bootstrap&&coverState.bootstrap.groups||[];coverState.coverGroup=groups.find(function(group){return String(group.groupId)===groupId;})||null;if(!coverState.coverGroup)return;
+    universeCrossLinksState.targetApplied=true;if(typeof startCoverEditor==='function')startCoverEditor(String(params.song));
+  }
+</script>
+
+<style>
+  .universe-crosslink-row{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}
+  .universe-crosslink-button{min-height:44px;padding:0 16px;border:1px solid rgba(156,236,255,.28);border-radius:14px;color:var(--cyan);background:rgba(156,236,255,.08);font:700 10px "Exo 2","Zen Kaku Gothic New",sans-serif;letter-spacing:.11em}
+  .profile-member-detail>.universe-profile-crosslinks{margin:14px 0}
+  .universe-profile-credits{margin:0 0 14px;padding:18px;border:1px solid rgba(156,236,255,.16);border-radius:18px;background:rgba(255,255,255,.025)}
+  .universe-profile-credits h3{margin:0 0 12px;color:var(--cyan);font:600 12px Orbitron,"Zen Kaku Gothic New",sans-serif;letter-spacing:.14em}
+  .universe-credit-list{display:grid;gap:8px}.universe-credit-song{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;width:100%;padding:13px 14px;border:1px solid rgba(255,255,255,.09);border-radius:14px;color:#fff;background:rgba(255,255,255,.03);text-align:left}.universe-credit-song strong{font:600 14px "Zen Kaku Gothic New",sans-serif}.universe-credit-tags{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:5px}.universe-credit-tags i{padding:4px 7px;border-radius:999px;color:var(--cyan);background:rgba(156,236,255,.09);font:600 10px "Zen Kaku Gothic New",sans-serif;font-style:normal}.universe-crosslink-status{margin:0;color:rgba(255,255,255,.58);font-size:12px}
+  .universe-lyrics-crosslinks{margin:10px 0 16px}.universe-crosslink-button.is-light{border-color:rgba(21,24,32,.13);color:var(--ink);background:#fff}.universe-lyrics-crosslinks .universe-crosslink-button{flex:1 1 140px}
+  .universe-analysis-profile-link{margin:16px 0 0}.universe-analysis-lyrics-link{margin-top:16px}.universe-card-profile-link{min-height:36px;margin-left:auto;padding:0 11px;font-size:9px}
+  @media(max-width:520px){.universe-profile-crosslinks .universe-crosslink-button{flex:1 1 calc(50% - 5px)}.universe-credit-song{grid-template-columns:1fr}.universe-credit-tags{justify-content:flex-start}}
+</style>

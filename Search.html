@@ -110,52 +110,6 @@
       navigateToWithParams('cards', {member:item.memberId || '', image:item.imageId || item.id, rarity:item.rarity || ''});
     }
   }
-
-  function openProfileSearchTarget(memberId, attempt) {
-    const target = String(memberId || '');
-    const count = Number(attempt || 0);
-    if (!target || currentRoute !== 'profile') return;
-    if (typeof profileMembersState !== 'undefined' && profileMembersState.status === 'ready') {
-      if (profileMembersState.members.some(function(member){ return String(member.memberId) === target; }) && typeof openProfileMemberDetail === 'function') {
-        openProfileMemberDetail(target);
-      }
-      return;
-    }
-    if (count < 40) setTimeout(function(){ openProfileSearchTarget(target, count + 1); }, 100);
-  }
-
-  function openAnalysisSearchTarget(params, attempt) {
-    const target = params || {};
-    const count = Number(attempt || 0);
-    if (currentRoute !== 'analysis' || target.view !== 'member' || !target.member) return;
-    if (typeof analysisData !== 'undefined' && analysisData && typeof renderAnalysisView === 'function') {
-      const exists = (analysisData.members || []).some(function(member){ return member.name === target.member; });
-      if (!exists) return;
-      analysisView = 'member';
-      analysisMember = target.member;
-      analysisYear = 'all';
-      renderAnalysisView();
-      return;
-    }
-    if (count < 50) setTimeout(function(){ openAnalysisSearchTarget(target, count + 1); }, 100);
-  }
-
-  function openCardSearchTarget(params, attempt) {
-    const target = params || {};
-    const count = Number(attempt || 0);
-    if (currentRoute !== 'cards') return;
-    if (typeof cardState !== 'undefined' && cardState.ready) {
-      const memberId = String(target.member || '');
-      const group = (cardState.groups || []).find(function(item){
-        return item.name !== 'ALL' && (item.memberIds || []).map(String).indexOf(memberId) >= 0;
-      });
-      cardState.currentGroup = group ? group.name : 'ALL';
-      if (typeof renderCardGacha === 'function') renderCardGacha();
-      if (typeof openCardCollection === 'function') openCardCollection();
-      return;
-    }
-    if (count < 50) setTimeout(function(){ openCardSearchTarget(target, count + 1); }, 100);
-  }
 </script>
 
 <style>
