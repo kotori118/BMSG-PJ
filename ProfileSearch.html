@@ -32,7 +32,9 @@
   function renderProfileSearchLoading() {
     const panel = document.getElementById('profilePanel');
     if (!panel || profileCurrentView !== 'search') return;
-    panel.innerHTML = `<div class="profile-search-head"><div><p class="profile-panel-eyebrow">TAG SEARCH</p><h2 class="profile-search-title">SEARCH</h2></div></div><div class="profile-search-loading">${renderUniverseLoading('LOADING SEARCH...', '#9cecff')}</div>`;
+    const field = () => `<section class="profile-search-field" aria-hidden="true"><button class="profile-search-field-toggle" type="button" disabled><span class="skeleton-block" style="display:block;width:74px;height:13px;border-radius:6px"></span><span class="skeleton-block" style="display:block;width:18px;height:18px;border-radius:50%"></span></button></section>`;
+    const member = () => `<button class="profile-search-member" type="button" disabled aria-hidden="true"><span class="profile-search-avatar skeleton-block"></span><span class="profile-search-member-copy"><b class="skeleton-block" style="display:block;width:78%;height:13px;border-radius:6px"></b><small class="skeleton-block" style="display:block;width:52%;height:9px;border-radius:5px"></small></span><span class="skeleton-block" style="display:block;width:12px;height:12px;border-radius:4px"></span></button>`;
+    panel.innerHTML = `<div class="profile-search-head"><div><p class="profile-panel-eyebrow">TAG SEARCH</p><h2 class="profile-search-title">SEARCH</h2></div><span class="profile-search-result-count">—</span></div><label class="profile-search-box" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.2"></circle><path d="M15.4 15.4L20 20"></path></svg><span class="skeleton-block" style="display:block;width:48%;height:14px;border-radius:7px"></span></label><div class="profile-search-fields">${field()}${field()}${field()}${field()}</div><section class="profile-search-results"><div class="profile-search-results-head"><h3>RESULTS</h3><span>—</span></div><div class="profile-search-result-list">${member()}${member()}${member()}${member()}</div></section>`;
   }
 
   function normalizeProfileSearchText(value) {
