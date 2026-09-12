@@ -138,7 +138,7 @@ function savePerformanceTimer(payload) {
 }
 
 function performanceTimerMetricsSheet_(ss) {
-  const name = UNIVERSE_CONFIG.SHEETS.PERFORMANCE_METRICS || '10_PerformanceMetrics';
+  const name = UNIVERSE_CONFIG.SHEETS.PERFORMANCE_METRICS;
   const sheet = ss.getSheetByName(name);
   if (!sheet) throw new Error('Core DB sheet not found: ' + name);
   return sheet;

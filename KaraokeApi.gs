@@ -53,51 +53,6 @@ function leaveKaraokeRoom(userId) {
   return {ok:true};
 }
 
-function shuffleKaraokeSong(payload) {
-  payload=payload||{};
-  const uid=validateKaraokeUser_(payload.userId);
-  const roomId=String(payload.roomId||'').trim();
-  const songId=asId_(payload.songId);
-  return withKaraokeLock_(function() {
-    cleanupExpiredKaraokeUnsafe_();
-    if (!findActiveKaraokeRoom_(roomId)) throw new Error('ルームの有効期限が切れています。');
-    const song=readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.SONGS).find(function(row){return asId_(row.SongID)===songId;});
-    if (!song) throw new Error('曲が見つかりません。');
-    const parts=readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.LYRICS_PARTS).filter(function(row){return asId_(row.SongID)===songId;});
-    const slots=collectKaraokeSingerSlots_(parts);
-    if (!slots.length) throw new Error('分配できる歌唱者がありません。');
-
-    const users=getKaraokeUsers_();
-    const cumulative=getKaraokeCumulativeCounts_(roomId,users);
-    const ordered=orderKaraokeUsersByFairness_(users,cumulative);
-    const shuffled=shuffleArray_(slots.slice());
-    const base=Math.floor(shuffled.length/users.length);
-    const extra=shuffled.length%users.length;
-    const assignments={};
-    let cursor=0;
-    ordered.forEach(function(user,index){
-      const size=base+(index<extra?1:0);
-      assignments[user.userId]=shuffled.slice(cursor,cursor+size);
-      cursor+=size;
-    });
-    const singerMap=buildLyricsSingerMap_();
-    Object.keys(assignments).forEach(function(userId){
-      assignments[userId]=assignments[userId].map(function(id){
-        const singer=singerMap[id]||{name:id,color:'#777777'};
-        return {memberId:id,name:singer.name,color:singer.color};
-      });
-    });
-    return {
-      songId:songId,
-      title:String(song.Title||''),
-      artist:String(song.Artist||''),
-      assignments:assignments,
-      users:users,
-      cumulative:cumulative
-    };
-  });
-}
-
 function saveKaraokeAssignment(payload) {
   payload=payload||{};
   const uid=validateKaraokeUser_(payload.userId);
@@ -159,37 +114,6 @@ function getKaraokeUsers_() {
   });
 }
 
-function collectKaraokeSingerSlots_(parts) {
-  const seen={}; const out=[];
-  parts.forEach(function(part){
-    String(part.Singer||'').split(',').forEach(function(token){
-      const key=token.trim().replace(/_(up|down|sub)$/i,'');
-      if(key&&key!=='99'&&!seen[key]){seen[key]=true;out.push(key);}
-    });
-  });
-  return out;
-}
-
-function getKaraokeCumulativeCounts_(roomId,users) {
-  const counts={};users.forEach(function(user){counts[user.userId]=0;});
-  getKaraokeHistory_(roomId).forEach(function(result){
-    Object.keys(result.assignments||{}).forEach(function(uid){counts[uid]=(counts[uid]||0)+(result.assignments[uid]||[]).length;});
-  });
-  return counts;
-}
-
-function orderKaraokeUsersByFairness_(users,cumulative) {
-  const groups={};
-  users.forEach(function(user){
-    const count=Number(cumulative[user.userId]||0);
-    if(!groups[count])groups[count]=[];
-    groups[count].push(user);
-  });
-  return Object.keys(groups).map(Number).sort(function(a,b){return a-b;}).reduce(function(out,count){
-    return out.concat(shuffleArray_(groups[count].slice()));
-  },[]);
-}
-
 function getKaraokeHistory_(roomId) {
   const sheet=getLogSheet_(UNIVERSE_CONFIG.SHEETS.KARAOKE_RESULTS);
   return readSheetObjects_(sheet).filter(function(row){return String(row.RoomID).padStart(4,'0')===roomId;})
@@ -233,4 +157,3 @@ function karaokePropertyKey_(uid){return 'KARAOKE_ACTIVE_ROOM_'+uid;}
 function setKaraokeRoomProperty_(uid,roomId){PropertiesService.getScriptProperties().setProperty(karaokePropertyKey_(uid),roomId);}
 function getKaraokeRoomProperty_(uid){return PropertiesService.getScriptProperties().getProperty(karaokePropertyKey_(uid));}
 function clearKaraokeRoomProperty_(uid){PropertiesService.getScriptProperties().deleteProperty(karaokePropertyKey_(uid));}
-function shuffleArray_(items){for(let i=items.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));const t=items[i];items[i]=items[j];items[j]=t;}return items;}

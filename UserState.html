@@ -1,5 +1,5 @@
 <script>
-  const universeStateClient={favorites:[],recent:[],favoritesUserId:'',favoritesLoading:false,observedProfileId:'',observedLyricsId:'',observedQuizGameId:'',profileOpenTimer:0};
+  const universeStateClient={favorites:[],recent:[],favoritesUserId:'',favoritesLoading:false,observedProfileId:'',observedLyricsId:'',observedQuizGameId:''};
   const UNIVERSE_FAVORITE_PAGE_ROUTES=Object.freeze({analysis:true,karaoke:true,quiz:true,cards:true,poker:true,cover:true,metrics:true});
 
   function universeUserId_(){return typeof getUniverseUserId==='function'?getUniverseUserId():'';}
@@ -70,17 +70,7 @@
 
   function openUniverseProfileMember(memberId){
     const id=String(memberId||'');if(!id)return;
-    navigateTo('profile');
-    if(universeStateClient.profileOpenTimer)clearInterval(universeStateClient.profileOpenTimer);
-    let attempts=0;
-    universeStateClient.profileOpenTimer=setInterval(function(){
-      attempts++;
-      const ready=typeof profileMembersState!=='undefined'&&profileMembersState&&profileMembersState.status==='ready';
-      if(ready&&typeof openProfileMemberDetail==='function'){
-        clearInterval(universeStateClient.profileOpenTimer);universeStateClient.profileOpenTimer=0;openProfileMemberDetail(id);return;
-      }
-      if(attempts>=60){clearInterval(universeStateClient.profileOpenTimer);universeStateClient.profileOpenTimer=0;}
-    },100);
+    navigateToWithParams('profile',{member:id});
   }
 
   function observeUniverseInteractionState_(){

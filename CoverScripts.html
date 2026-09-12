@@ -28,8 +28,6 @@
   }
   function renderCoverMessage(message){const app=document.getElementById('coverApp');if(app)app.innerHTML='<div class="cover-empty">'+escapeHtml(message)+'</div>';}
   function showCoverError(error){coverState.busy=false;const msg=error&&error.message?error.message:String(error||'エラーが発生しました。');if(typeof showToast==='function')showToast(msg);else renderCoverMessage(msg);}
-  function coverUserName(id){const list=coverState.bootstrap&&coverState.bootstrap.users||[];const hit=list.find(function(x){return x.userId===id;});return hit?hit.displayName:id;}
-
   function selectCoverGroup(groupId){const groups=coverState.bootstrap.groups||[];coverState.coverGroup=groups.find(function(g){return String(g.groupId)===String(groupId);})||null;if(!coverState.coverGroup)return;openCoverArtistSelect();}
   function selectCoverArtist(artist){coverState.artist=artist;coverState.screen='songs';renderCoverLoading();google.script.run.withSuccessHandler(function(songs){coverState.songs=songs||[];renderCoverSongs();}).withFailureHandler(showCoverError).getCoverSourceSongs(artist);}
 

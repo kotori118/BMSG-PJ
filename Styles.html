@@ -336,29 +336,12 @@
       margin-bottom: clamp(26px, 5vw, 40px);
     }
 
-    .category-number {
-      color: rgba(247,251,255,.34);
-      font-family: "Exo 2","Zen Kaku Gothic New", Roboto,"Zen Kaku Gothic New", sans-serif;
-      font-size: 10px;
-      font-weight: 600;
-      letter-spacing: .18em;
-    }
-
     .category-title {
       margin: 0;
       font-family: Orbitron,"Zen Kaku Gothic New", sans-serif;
       font-size: clamp(48px, 13vw, 86px);
       font-weight: 600;
       line-height: .92;
-      letter-spacing: .025em;
-    }
-
-    .category-copy {
-      margin: 0;
-      color: var(--muted-dark);
-      font-family: "Exo 2","Zen Kaku Gothic New", Roboto,"Zen Kaku Gothic New", sans-serif;
-      font-size: clamp(14px, 3.7vw, 17px);
-      font-weight: 500;
       letter-spacing: .025em;
     }
 
@@ -427,14 +410,6 @@
       display: grid;
       gap: 10px;
       min-width: 0;
-    }
-
-    .category-card-index {
-      color: rgba(247,251,255,.3);
-      font-family: "Exo 2","Zen Kaku Gothic New", Roboto,"Zen Kaku Gothic New", sans-serif;
-      font-size: 9px;
-      font-weight: 600;
-      letter-spacing: .16em;
     }
 
     .category-card-name {
@@ -626,23 +601,6 @@
         linear-gradient(145deg, rgba(255,255,255,.046), rgba(255,255,255,.018));
     }
 
-    .card-symbol {
-      width: 34px;
-      height: 34px;
-      flex: 0 0 auto;
-      color: rgba(135,226,245,.72);
-    }
-
-    .card-symbol svg {
-      width: 100%;
-      height: 100%;
-      fill: none;
-      stroke: currentColor;
-      stroke-width: 1.45;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-
     .category-card-inner {
       align-items: center;
     }
@@ -801,14 +759,6 @@
       letter-spacing: .025em;
     }
 
-    .search-empty {
-      padding: 40px 4px;
-      color: rgba(247,251,255,.34);
-      font-family: "Exo 2","Zen Kaku Gothic New", Roboto,"Zen Kaku Gothic New", sans-serif;
-      font-size: 12px;
-      letter-spacing: .11em;
-    }
-
     /* Settings: upper modal, not bottom sheet */
     .modal-overlay {
       position: fixed;
@@ -831,8 +781,7 @@
       animation: overlay-in 180ms var(--ease);
     }
 
-    .settings-panel,
-    .state-panel {
+    .settings-panel {
       width: min(100%, 620px);
       max-height: 78dvh;
       overflow-y: auto;
@@ -859,223 +808,6 @@
       font-size: clamp(30px, 8vw, 48px);
       font-weight: 600;
       letter-spacing: .02em;
-    }
-
-    .settings-user-card {
-      padding: 20px;
-      border: 1px solid rgba(255,255,255,.08);
-      border-radius: 21px;
-      background: rgba(255,255,255,.025);
-    }
-
-    .settings-label {
-      margin: 0 0 7px;
-      color: rgba(247,251,255,.34);
-      font-family: "Zen Kaku Gothic New", sans-serif;
-      font-size: 13px;
-    }
-
-    .settings-user-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-    }
-
-    .settings-user {
-      color: rgba(247,251,255,.92);
-      font-family: "Zen Kaku Gothic New", sans-serif;
-      font-size: 22px;
-      font-weight: 700;
-    }
-
-    .settings-change {
-      min-height: 44px;
-      padding: 0 16px;
-      border: 1px solid rgba(156,236,255,.26);
-      border-radius: 999px;
-      color: var(--cyan);
-      background: rgba(156,236,255,.055);
-      font-family: "Zen Kaku Gothic New", sans-serif;
-      font-weight: 700;
-      cursor: pointer;
-    }
-
-    .settings-note {
-      margin: 18px 4px 0;
-      color: rgba(247,251,255,.30);
-      font-family: "Zen Kaku Gothic New", sans-serif;
-      font-size: 13px;
-      line-height: 1.7;
-    }
-
-    /* state check */
-    .state-check-trigger {
-      align-self: flex-start;
-      min-height: 44px;
-      margin: 24px 0 0;
-      padding: 0 17px;
-      border: 1px solid rgba(156,236,255,.19);
-      border-radius: 999px;
-      color: rgba(198,246,255,.62);
-      background: rgba(156,236,255,.028);
-      font-family: "Exo 2","Zen Kaku Gothic New", Roboto,"Zen Kaku Gothic New", sans-serif;
-      font-size: 10px;
-      font-weight: 600;
-      letter-spacing: .16em;
-      cursor: pointer;
-    }
-
-    .state-actions {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0,1fr));
-      gap: 10px;
-    }
-
-    .state-test-btn {
-      min-height: 50px;
-      border: 1px solid rgba(255,255,255,.08);
-      border-radius: 16px;
-      color: rgba(247,251,255,.78);
-      background: rgba(255,255,255,.03);
-      font-family: "Exo 2","Zen Kaku Gothic New", Roboto,"Zen Kaku Gothic New", sans-serif;
-      font-size: 12px;
-      font-weight: 600;
-      letter-spacing: .08em;
-      cursor: pointer;
-    }
-
-    /* common state overlay */
-    .state-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 110;
-      display: none;
-      place-items: center;
-      padding: 24px;
-      background: rgba(2,6,12,.88);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-    }
-
-    .state-overlay.open {
-      display: grid;
-    }
-
-    .loading-space {
-      width: min(78vw, 310px);
-      aspect-ratio: 1;
-      position: relative;
-      display: grid;
-      place-items: center;
-    }
-
-    .loading-orbit {
-      position: absolute;
-      inset: 14%;
-      border: 1px solid rgba(137,226,245,.22);
-      border-radius: 50%;
-      transform: rotate(-18deg);
-    }
-
-    .loading-orbit::before {
-      content: "";
-      position: absolute;
-      left: 50%;
-      top: -4px;
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--cyan);
-      box-shadow: 0 0 18px rgba(156,236,255,.55);
-      animation: orbit-dot 1.8s linear infinite;
-      transform-origin: 0 calc(50% + 4px);
-    }
-
-    .loading-orbit.second {
-      inset: 25%;
-      opacity: .65;
-      transform: rotate(48deg);
-    }
-
-    .loading-orbit.second::before {
-      width: 5px;
-      height: 5px;
-      top: -3px;
-      animation-duration: 2.6s;
-      animation-direction: reverse;
-    }
-
-    @keyframes orbit-dot {
-      from { transform: rotate(0deg) translateX(calc(43%)); }
-      to { transform: rotate(360deg) translateX(calc(43%)); }
-    }
-
-    .loading-core {
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(210,249,255,.95) 0 12%, rgba(106,219,239,.28) 34%, transparent 68%);
-      box-shadow: 0 0 40px rgba(111,224,243,.18);
-    }
-
-    .loading-label {
-      position: absolute;
-      left: 0;
-      right: 0;
-      bottom: 6%;
-      text-align: center;
-      color: rgba(234,247,251,.62);
-      font-family: "Exo 2","Zen Kaku Gothic New", Roboto,"Zen Kaku Gothic New", sans-serif;
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: .18em;
-    }
-
-    .state-card {
-      width: min(100%, 560px);
-      padding: 28px;
-      border: 1px solid rgba(255,255,255,.10);
-      border-radius: 26px;
-      background: rgba(7,12,21,.97);
-    }
-
-    .state-eyebrow {
-      margin: 0 0 12px;
-      color: var(--cyan);
-      font-family: "Exo 2","Zen Kaku Gothic New", Roboto,"Zen Kaku Gothic New", sans-serif;
-      font-size: 10px;
-      font-weight: 600;
-      letter-spacing: .17em;
-    }
-
-    .state-title {
-      margin: 0;
-      font-family: Orbitron,"Zen Kaku Gothic New", sans-serif;
-      font-size: clamp(31px, 8vw, 46px);
-      font-weight: 600;
-      letter-spacing: .025em;
-    }
-
-    .state-copy {
-      margin: 14px 0 0;
-      color: rgba(247,251,255,.44);
-      font-family: Roboto,"Zen Kaku Gothic New", sans-serif;
-      font-size: 14px;
-      line-height: 1.65;
-    }
-
-    .state-close {
-      min-height: 44px;
-      margin-top: 24px;
-      padding: 0 17px;
-      border: 1px solid rgba(255,255,255,.09);
-      border-radius: 999px;
-      color: rgba(247,251,255,.70);
-      background: rgba(255,255,255,.03);
-      font-family: "Exo 2","Zen Kaku Gothic New", Roboto,"Zen Kaku Gothic New", sans-serif;
-      font-weight: 600;
-      cursor: pointer;
     }
 
     /* bottom nav icon system */
@@ -1201,32 +933,6 @@
       padding-right: 28px;
     }
 
-    .search-no-results {
-      margin-top: 18px;
-      padding: 26px 4px;
-    }
-
-    .search-no-results-title {
-      margin: 0;
-      color: rgba(247,251,255,.78);
-      font-family: Orbitron,"Zen Kaku Gothic New", sans-serif;
-      font-size: 24px;
-      font-weight: 600;
-      letter-spacing: .02em;
-    }
-
-    .search-no-results-copy {
-      margin: 10px 0 0;
-      color: rgba(247,251,255,.36);
-      font-family: "Zen Kaku Gothic New", sans-serif;
-      font-size: 14px;
-      line-height: 1.65;
-    }
-
-    .settings-section {
-      margin-top: 18px;
-    }
-
     .settings-section-title {
       margin: 0 4px 10px;
       color: rgba(198,246,255,.56);
@@ -1234,145 +940,6 @@
       font-size: 10px;
       font-weight: 600;
       letter-spacing: .16em;
-    }
-
-    .tool-button {
-      width: 100%;
-      min-height: 72px;
-      padding: 16px 18px;
-      border: 1px solid rgba(255,255,255,.08);
-      border-radius: 19px;
-      color: rgba(247,251,255,.88);
-      background: rgba(255,255,255,.025);
-      text-align: left;
-      cursor: pointer;
-      display: grid;
-      gap: 5px;
-    }
-
-    .tool-name {
-      font-family: "Zen Kaku Gothic New", sans-serif;
-      font-size: 16px;
-      font-weight: 700;
-    }
-
-    .tool-status {
-      color: rgba(156,236,255,.46);
-      font-family: "Exo 2","Zen Kaku Gothic New", Roboto,"Zen Kaku Gothic New", sans-serif;
-      font-size: 9px;
-      font-weight: 600;
-      letter-spacing: .13em;
-    }
-
-    .state-copy {
-      font-family: "Zen Kaku Gothic New", sans-serif;
-      font-size: 15px;
-      line-height: 1.75;
-    }
-
-    .loading-space {
-      width: min(76vw, 300px);
-      aspect-ratio: 1;
-    }
-
-    .loading-orbit {
-      position: absolute;
-      inset: 18%;
-      border: 1px solid rgba(142, 225, 243, .24);
-      border-radius: 50%;
-      transform: none;
-    }
-
-    .loading-orbit.second {
-      display: none;
-    }
-
-    .loading-runner {
-      position: absolute;
-      inset: 18%;
-      border-radius: 50%;
-      animation: planet-orbit 2.25s linear infinite;
-    }
-
-    .loading-planet {
-      position: absolute;
-      left: 50%;
-      top: -7px;
-      width: 14px;
-      height: 14px;
-      transform: translateX(-50%);
-      border-radius: 50%;
-      background:
-        radial-gradient(
-          circle at 34% 30%,
-          rgba(234,253,255,.98) 0 14%,
-          rgba(137,228,246,.96) 15% 42%,
-          rgba(52,137,160,.95) 43% 100%
-        );
-      box-shadow:
-        0 0 10px rgba(156,236,255,.52),
-        0 0 25px rgba(100,214,237,.22);
-    }
-
-    .loading-planet::after {
-      content: "";
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      width: 20px;
-      height: 6px;
-      border: 1px solid rgba(198,246,255,.58);
-      border-radius: 50%;
-      transform: translate(-50%, -50%) rotate(-18deg);
-    }
-
-    @keyframes planet-orbit {
-      from { transform: rotate(0deg); }
-      to   { transform: rotate(360deg); }
-    }
-
-    .loading-core {
-      width: 6px;
-      height: 6px;
-      background: rgba(223,248,253,.82);
-      box-shadow:
-        0 0 16px rgba(156,236,255,.34),
-        0 0 42px rgba(86,193,218,.12);
-    }
-
-    .loading-label {
-      bottom: 7%;
-      color: rgba(230,247,251,.52);
-      letter-spacing: .20em;
-    }
-
-    .tool-placeholder {
-      min-height: calc(100dvh - 70px);
-      padding-top: clamp(78px, 13vh, 120px);
-    }
-
-    .tool-placeholder-copy {
-      max-width: 520px;
-      margin: 20px 0 0;
-      color: rgba(247,251,255,.48);
-      font-family: "Zen Kaku Gothic New", sans-serif;
-      font-size: 15px;
-      line-height: 1.8;
-    }
-
-    .tool-back {
-      min-height: 46px;
-      margin-top: 28px;
-      padding: 0 18px;
-      border: 1px solid rgba(156,236,255,.18);
-      border-radius: 999px;
-      color: rgba(198,246,255,.68);
-      background: rgba(156,236,255,.035);
-      font-family: "Exo 2","Zen Kaku Gothic New", Roboto,"Zen Kaku Gothic New", sans-serif;
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: .09em;
-      cursor: pointer;
     }
 
     /* =========================================================
@@ -1396,7 +963,6 @@
       text-align: left !important;
     }
 
-    .category-card-index,
     .category-card-name {
       width: 100%;
       text-align: left !important;
@@ -1404,208 +970,6 @@
 
     .category-header {
       margin-bottom: clamp(52px, 9vw, 72px);
-    }
-
-    .loading-space {
-      width: min(76vw, 300px);
-      aspect-ratio: 1;
-      position: relative;
-      display: grid;
-      place-items: center;
-    }
-
-    .loading-orbit,
-    .loading-orbit::before,
-    .loading-orbit.second,
-    .loading-runner,
-    .loading-core {
-      display: none !important;
-    }
-
-    .loading-svg {
-      width: 82%;
-      height: 82%;
-      overflow: visible;
-    }
-
-    .loading-circle {
-      fill: none;
-      stroke: rgba(142, 225, 243, .28);
-      stroke-width: 1.7;
-      vector-effect: non-scaling-stroke;
-    }
-
-    .loading-planet-runner {
-      transform-origin: 110px 110px;
-      animation: planet-orbit-svg 2.35s linear infinite;
-    }
-
-    .loading-planet-body {
-      fill: #78d9eb;
-      stroke: rgba(220, 249, 255, .92);
-      stroke-width: 1.1;
-      filter: drop-shadow(0 0 5px rgba(131, 224, 242, .50));
-    }
-
-    .loading-planet-highlight {
-      fill: rgba(237, 253, 255, .94);
-    }
-
-    .loading-planet-ring {
-      fill: none;
-      stroke: rgba(198, 246, 255, .80);
-      stroke-width: 2.2;
-      vector-effect: non-scaling-stroke;
-    }
-
-    @keyframes planet-orbit-svg {
-      from { transform: rotate(0deg); }
-      to   { transform: rotate(360deg); }
-    }
-
-    .loading-label {
-      bottom: 7%;
-    }
-
-    /* =========================================================
-       v0.9 — Star orbit loading (final correction)
-       ========================================================= */
-    .category-card {
-      width: 100%;
-      display: block;
-      text-align: left !important;
-    }
-
-    .category-card-inner {
-      width: 100%;
-      justify-items: stretch;
-      text-align: left !important;
-    }
-
-    .category-card-meta {
-      width: 100%;
-      justify-items: start;
-      text-align: left !important;
-    }
-
-    .category-card-index,
-    .category-card-name {
-      width: 100%;
-      text-align: left !important;
-    }
-
-    .category-header {
-      margin-bottom: clamp(52px, 9vw, 72px);
-    }
-
-    .loading-space {
-      width: min(76vw, 300px);
-      aspect-ratio: 1;
-      position: relative;
-      display: grid;
-      place-items: center;
-    }
-
-    .loading-orbit,
-    .loading-orbit::before,
-    .loading-orbit.second,
-    .loading-runner,
-    .loading-core {
-      display: none !important;
-    }
-
-    .loading-svg {
-      width: 82%;
-      height: 82%;
-      overflow: visible;
-    }
-
-    .loading-star-line {
-      fill: none;
-      stroke: rgba(142, 225, 243, .28);
-      stroke-width: 1.7;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-      vector-effect: non-scaling-stroke;
-    }
-
-    .loading-star-bottom {
-      fill: none;
-      stroke: rgba(156, 236, 255, .42);
-      stroke-width: 2.55;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-      vector-effect: non-scaling-stroke;
-    }
-
-    .loading-planet-body {
-      fill: #78d9eb;
-      stroke: rgba(220, 249, 255, .92);
-      stroke-width: 1.05;
-      filter: drop-shadow(0 0 5px rgba(131, 224, 242, .50));
-    }
-
-    .loading-planet-highlight {
-      fill: rgba(237, 253, 255, .94);
-    }
-
-    .loading-planet-ring {
-      fill: none;
-      stroke: rgba(198, 246, 255, .82);
-      stroke-width: 2.25;
-      vector-effect: non-scaling-stroke;
-    }
-
-    .loading-label {
-      bottom: 7%;
-      color: rgba(230,247,251,.52);
-      letter-spacing: .20em;
-    }
-
-    /* =========================================================
-       v1.0 — Loading refinement
-       ========================================================= */
-    .loading-space {
-      width: min(76vw, 300px);
-      aspect-ratio: 1;
-      position: relative;
-      display: grid;
-      place-items: center;
-    }
-
-    .loading-svg {
-      width: 82%;
-      height: 82%;
-      overflow: visible;
-    }
-
-    .loading-star-segment {
-      fill: none;
-      stroke: rgba(142, 225, 243, .30);
-      stroke-linecap: round;
-      stroke-linejoin: round;
-      stroke-width: 1.75;
-      vector-effect: non-scaling-stroke;
-    }
-
-    .loading-star-segment.thick {
-      stroke-width: 2.45;
-    }
-
-    .loading-light-bar {
-      fill: rgba(191, 246, 255, .98);
-      filter: drop-shadow(0 0 6px rgba(163, 238, 255, .95))
-              drop-shadow(0 0 15px rgba(126, 222, 243, .42));
-    }
-
-    .loading-light-core {
-      fill: rgba(255, 255, 255, .96);
-    }
-
-    .loading-label {
-      bottom: 7%;
-      color: rgba(230,247,251,.52);
-      letter-spacing: .20em;
     }
 
     /* =========================================================
@@ -1677,20 +1041,6 @@
     /* =========================================================
        Inline Skeleton
        ========================================================= */
-    .skeleton-page {
-      min-height: calc(100dvh - var(--nav-height) - 64px);
-      padding: clamp(28px, 5vh, 56px) 0 20px;
-      animation: view-in var(--normal) var(--ease);
-    }
-
-    .skeleton-home {
-      min-height: calc(100dvh - var(--nav-height) - 66px);
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      padding: clamp(78px, 12vh, 118px) 0 20px;
-    }
-
     .skeleton-block {
       position: relative;
       overflow: hidden;
@@ -1716,55 +1066,6 @@
 
     @keyframes universe-skeleton {
       to { transform: translateX(115%); }
-    }
-
-    .skeleton-heading-wrap {
-      display: grid;
-      gap: 14px;
-      margin-bottom: clamp(52px, 9vw, 72px);
-    }
-
-    .skeleton-title {
-      width: min(58%, 340px);
-      height: clamp(42px, 11vw, 72px);
-      border-radius: 12px;
-    }
-
-    .skeleton-copy {
-      width: min(38%, 200px);
-      height: 14px;
-      border-radius: 999px;
-    }
-
-    .skeleton-cards {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 12px;
-    }
-
-    .skeleton-card {
-      min-height: 116px;
-      border: 1px solid rgba(255,255,255,.065);
-      border-radius: 22px;
-    }
-
-    .skeleton-home .skeleton-heading-wrap {
-      margin-bottom: clamp(58px, 10vw, 84px);
-    }
-
-    .skeleton-home .skeleton-title {
-      width: min(78%, 520px);
-      height: clamp(92px, 22vw, 150px);
-      border-radius: 16px;
-    }
-
-    .skeleton-home .skeleton-copy {
-      width: min(26%, 150px);
-    }
-
-    .skeleton-home .skeleton-card {
-      min-height: clamp(118px, 25vw, 154px);
-      border-radius: var(--radius-lg);
     }
 
     body.theme-light .skeleton-block {

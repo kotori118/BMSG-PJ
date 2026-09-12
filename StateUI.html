@@ -46,21 +46,11 @@
   .lyrics-room-card.is-loading::before{display:none!important;content:none!important}
   .lyrics-room-card.is-loading .universe-loading{gap:0}
 
-  .loading-space{--loading-accent:#9cecff;display:grid;place-items:center;gap:14px;min-height:220px;color:var(--u-loading-label-dark)}
-  body.theme-light .loading-space{color:var(--u-loading-label-light)}
-  .loading-space .loading-svg,.loading-space .loading-label{display:none!important}
-  .loading-space::before{content:"";box-sizing:border-box;width:22px;height:22px;border:2px solid var(--u-loading-track-dark)!important;border-top-color:var(--loading-accent)!important;border-right-color:var(--loading-accent)!important;border-radius:50%;animation:universeSpinner var(--u-loading-speed) linear infinite!important;box-shadow:0 0 14px rgba(156,236,255,.14)}
-  body.theme-light .loading-space::before{border-color:var(--u-loading-track-light)!important;border-top-color:var(--loading-accent)!important;border-right-color:var(--loading-accent)!important}
-  .loading-space::after{content:"LOADING UNIVERSE";font:600 10px "Exo 2","Zen Kaku Gothic New",Roboto,sans-serif;letter-spacing:.13em}
-  .loading-space.loading-space-shared::before,.loading-space.loading-space-shared::after{display:none}
-  .loading-space.loading-space-shared .universe-loading{flex-direction:column;gap:14px}
-  .loading-space.loading-space-shared .universe-spinner{width:22px;height:22px}
-
   @keyframes universeSpinner{to{transform:rotate(360deg)}}
   @keyframes universeSkeletonSweep{to{transform:translateX(115%)}}
   @media(prefers-reduced-motion:reduce){
     :is(.skeleton-block,.profile-member-skeleton)::after{animation:none!important;display:none}
-    .universe-spinner,.profile-detail-spinner,.profile-map-spinner,.profile-search-spinner,.karaoke-loading::before,.lyrics-loading::before,.loading-space::before{animation:none!important}
+    .universe-spinner,.profile-detail-spinner,.profile-map-spinner,.profile-search-spinner,.karaoke-loading::before,.lyrics-loading::before{animation:none!important}
   }
 </style>
 <script>
@@ -77,50 +67,10 @@
       return '<div class="universe-loading" role="status" aria-live="polite" style="--loading-accent:' + safeAccent + '"><span class="universe-spinner" aria-hidden="true"></span>' + (hasLabel ? '<span>' + safeLabel + '</span>' : '') + '</div>';
     }
 
-    function openStateCheck() {
-      stateCheckOverlay.classList.add('open');
-      document.body.style.overflow = 'hidden';
-    }
-
-    function closeStateCheck() {
-      stateCheckOverlay.classList.remove('open');
-      document.body.style.overflow = '';
-    }
-
     function closeOnBackdrop(event, id) {
       if (event.target && event.target.id === id) {
         if (id === 'settingsOverlay') closeSettings();
-        if (id === 'stateCheckOverlay') closeStateCheck();
       }
-    }
-
-    function showLoadingState() {
-      closeStateCheck();
-      stateContent.innerHTML = typeof renderUniverseLoading === 'function'
-        ? `<div class="loading-space loading-space-shared">${renderUniverseLoading('LOADING UNIVERSE', '#9cecff')}</div>`
-        : '<div class="loading-space"></div>';
-      stateOverlay.classList.add('open');
-      document.body.style.overflow = 'hidden';
-    }
-
-    function showInfoState(title, copy) {
-      closeStateCheck();
-      stateContent.innerHTML = `
-        <section class="state-card">
-          <p class="state-eyebrow">BMSG UNIVERSE</p>
-          <h2 class="state-title">${escapeHtml(title)}</h2>
-          <p class="state-copy">${escapeHtml(copy)}</p>
-          <button class="state-close" onclick="closeStateOverlay()">閉じる</button>
-        </section>
-      `;
-      stateOverlay.classList.add('open');
-      document.body.style.overflow = 'hidden';
-    }
-
-    function closeStateOverlay() {
-      stateOverlay.classList.remove('open');
-      document.body.style.overflow = '';
-      stateContent.innerHTML = '';
     }
 
     function showToast(message = '保存しました') {

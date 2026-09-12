@@ -24,6 +24,7 @@ function getAnalysisBootstrap() {
   return data;
 }
 
+// Public Apps Script entry point. Kept until external/manual callers are confirmed absent.
 function getAnalysisSong(songId) {
   const id = asId_(songId);
   if (!id) throw new Error('SongID is required.');
@@ -35,12 +36,13 @@ function getAnalysisSong(songId) {
 
 function buildAnalysisDataset_() {
   const spreadsheet = SpreadsheetApp.openById(UNIVERSE_CONFIG.CORE_DB_ID);
-  const songsRows = readAnalysisSheetObjects_(spreadsheet, '06_Songs');
-  const creditsRows = readAnalysisSheetObjects_(spreadsheet, '07_SongCredits');
-  const lyricsRows = readAnalysisSheetObjects_(spreadsheet, '08_LyricsParts');
-  const membersRows = readAnalysisSheetObjects_(spreadsheet, '02_Members');
-  const groupMembersRows = readAnalysisSheetObjects_(spreadsheet, '04_GroupMembers');
-  const transfersRows = readAnalysisSheetObjects_(spreadsheet, '11_PartTransfers');
+  const sheets = UNIVERSE_CONFIG.SHEETS;
+  const songsRows = readAnalysisSheetObjects_(spreadsheet, sheets.SONGS);
+  const creditsRows = readAnalysisSheetObjects_(spreadsheet, sheets.SONG_CREDITS);
+  const lyricsRows = readAnalysisSheetObjects_(spreadsheet, sheets.LYRICS_PARTS);
+  const membersRows = readAnalysisSheetObjects_(spreadsheet, sheets.MEMBERS);
+  const groupMembersRows = readAnalysisSheetObjects_(spreadsheet, sheets.GROUP_MEMBERS);
+  const transfersRows = readAnalysisSheetObjects_(spreadsheet, sheets.PART_TRANSFERS);
   const metrics = readAnalysisMetrics_(spreadsheet);
 
   const groupMemberIds = new Set(groupMembersRows
@@ -203,8 +205,9 @@ function readAnalysisSheetObjects_(spreadsheet, sheetName) {
 }
 
 function readAnalysisMetrics_(spreadsheet) {
-  const sheet = spreadsheet.getSheetByName('10_PerformanceMetrics');
-  if (!sheet) throw new Error('Core DB sheet not found: 10_PerformanceMetrics');
+  const sheetName = UNIVERSE_CONFIG.SHEETS.PERFORMANCE_METRICS;
+  const sheet = spreadsheet.getSheetByName(sheetName);
+  if (!sheet) throw new Error('Core DB sheet not found: ' + sheetName);
   const values = sheet.getDataRange().getValues();
   if (values.length < 3) return {};
   const groupHeaders = values[0];

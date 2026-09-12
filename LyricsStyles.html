@@ -19,7 +19,6 @@
   .lyrics-group-card{min-height:92px;padding:20px;text-align:left}
   .lyrics-group-card strong,.lyrics-gacha-card strong{display:block;font:600 21px Orbitron,"Zen Kaku Gothic New",sans-serif;letter-spacing:.01em}
   .lyrics-group-card span,.lyrics-gacha-card span{display:block;margin-top:6px;color:rgba(21,24,32,.42);font:600 9px "Exo 2","Zen Kaku Gothic New",sans-serif;letter-spacing:.13em}
-  .lyrics-unit-card{min-height:78px}
   .lyrics-gacha-card{min-height:86px;margin-top:28px;padding:20px;text-align:left;opacity:.55}
 
   .lyrics-subhead{display:flex;align-items:center;gap:14px;margin-bottom:22px}
@@ -66,8 +65,6 @@
   .lyrics-editor-card label{display:grid;gap:7px;margin:13px 0;font-size:13px;font-weight:700}
   .lyrics-editor-card input,.lyrics-editor-card textarea{box-sizing:border-box;width:100%;padding:12px;border:1px solid rgba(21,24,32,.15);border-radius:13px;font:400 16px "Zen Kaku Gothic New",Roboto,sans-serif}
   .lyrics-editor-close{position:absolute;right:14px;top:12px;width:40px;height:40px;border:1px solid rgba(21,24,32,.12);border-radius:50%;color:var(--ink);background:#fff;font-size:23px}
-  .lyrics-preview{min-height:60px;margin:16px 0;padding:13px;border-radius:14px;background:var(--star-off-white)}
-  .lyrics-preview p{white-space:pre-wrap}
   .lyrics-editor-actions{display:flex;justify-content:flex-end;gap:9px}
   .lyrics-editor-actions button{min-height:44px;padding:0 15px;border:0;border-radius:13px;background:#eceff1}
   .lyrics-editor-actions button:last-child{color:#fff;background:var(--ink)}
@@ -81,14 +78,10 @@
   body.theme-light .search-input::placeholder{color:rgba(21,24,32,.34)}
   body.theme-light .search-status{color:rgba(21,24,32,.42)}
   body.theme-light .search-result{border-color:rgba(21,24,32,.1);color:var(--ink);background:#fff}
-  body.theme-light .search-result-parent,body.theme-light .search-result-copy{color:rgba(21,24,32,.48)}
+  body.theme-light .search-result-parent{color:rgba(21,24,32,.48)}
   body.theme-light .modal-overlay{background:rgba(236,240,239,.82)}
-  body.theme-light .settings-panel,body.theme-light .state-panel{border-color:rgba(21,24,32,.12);color:var(--ink);background:#fff;box-shadow:0 28px 80px rgba(8,14,22,.16)}
-  body.theme-light .settings-user-card,body.theme-light .tool-button{border-color:rgba(21,24,32,.1);color:var(--ink);background:var(--star-off-white)}
-  body.theme-light .settings-label,body.theme-light .settings-note,body.theme-light .settings-section-title{color:rgba(21,24,32,.45)}
-  body.theme-light .settings-user{color:var(--ink)}
-  body.theme-light .settings-change{border-color:rgba(21,24,32,.12);color:var(--ink);background:#fff}
-  body.theme-light .tool-status{color:rgba(21,24,32,.46)}
+  body.theme-light .settings-panel{border-color:rgba(21,24,32,.12);color:var(--ink);background:#fff;box-shadow:0 28px 80px rgba(8,14,22,.16)}
+  body.theme-light .settings-section-title{color:rgba(21,24,32,.45)}
 
   @media(max-width:720px){
     .lyrics-page{padding:76px 0 68px}
@@ -110,8 +103,6 @@
   .lyrics-karaoke-entry{box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;width:100%;min-height:66px;margin-bottom:18px;padding:0 18px;border:1px solid rgba(21,24,32,.12);border-radius:18px;color:var(--ink);background:#f4f7f7;text-align:left;-webkit-tap-highlight-color:transparent}
   .lyrics-karaoke-entry strong{font:600 17px Orbitron,"Zen Kaku Gothic New",sans-serif}
   .lyrics-karaoke-entry span{color:rgba(21,24,32,.45);font:600 9px "Exo 2","Zen Kaku Gothic New",sans-serif;letter-spacing:.12em}
-  .lyrics-karaoke-mode{box-sizing:border-box;width:100%;min-height:54px;margin:8px 0 16px;border:1px solid rgba(21,24,32,.13);border-radius:16px;color:var(--ink);background:rgba(156,236,255,.09);font:600 12px "Exo 2","Zen Kaku Gothic New",sans-serif;letter-spacing:.08em}
-
   .lyrics-room-card{box-sizing:border-box;width:100%;margin:0 0 22px;padding:24px;border:1px solid rgba(21,24,32,.12);border-radius:22px;color:var(--ink);background:#fff}
   .lyrics-room-card>p{margin:0 0 8px;color:rgba(21,24,32,.46);font:600 10px "Exo 2","Zen Kaku Gothic New",sans-serif;letter-spacing:.17em}
   .lyrics-room-card>h2{margin:0 0 20px;font:600 21px Orbitron,"Zen Kaku Gothic New",sans-serif}
@@ -196,22 +187,6 @@
   .lyrics-view .lyrics-loading.is-page-layout::before,.lyrics-view .lyrics-loading.is-page-layout::after{display:none!important;content:none!important}
   body.theme-light .lyrics-view .lyrics-loading.is-page-layout{box-shadow:none!important}
 
-  .lyrics-page-skeleton-room{box-sizing:border-box;width:100%;margin:0 0 22px;padding:24px;border:1px solid rgba(75,165,184,.22);border-radius:22px;background:linear-gradient(155deg,#fff 58%,rgba(156,236,255,.10));box-shadow:inset 0 3px 0 rgba(156,236,255,.42)}
-  .lyrics-page-skeleton-kicker{display:block;width:31%;height:12px;margin-bottom:18px;border-radius:999px}
-  .lyrics-page-skeleton-primary{display:block;width:100%;height:58px;border-radius:16px}
-  .lyrics-page-skeleton-join{display:grid;grid-template-columns:minmax(0,1fr) 86px;gap:10px;margin-top:12px}
-  .lyrics-page-skeleton-input,.lyrics-page-skeleton-join-button{display:block;width:100%;height:50px;border-radius:15px}
-
-  .lyrics-page-skeleton-groups{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-  .lyrics-page-skeleton-group{box-sizing:border-box;min-width:0;min-height:94px;padding:16px;border:1px solid rgba(75,165,184,.18);border-radius:22px;display:flex;flex-direction:column;justify-content:center;background:#fff;box-shadow:0 6px 18px rgba(21,24,32,.035),inset 0 1px 0 rgba(255,255,255,1)}
-  .lyrics-page-skeleton-group:last-child:nth-child(odd){grid-column:1}
-  .lyrics-page-skeleton-name{display:block;width:67%;height:16px;border-radius:999px}
-  .lyrics-page-skeleton-count{display:block;width:34%;height:9px;margin-top:9px;border-radius:999px}
-
-  .lyrics-page-skeleton-gacha{box-sizing:border-box;min-height:86px;margin-top:28px;padding:20px;border:1px solid rgba(75,165,184,.22);border-radius:20px;background:linear-gradient(155deg,#fff 62%,rgba(156,236,255,.08))}
-  .lyrics-page-skeleton-gacha-title{display:block;width:42%;height:21px;border-radius:999px}
-  .lyrics-page-skeleton-gacha-copy{display:block;width:16%;height:9px;margin-top:10px;border-radius:999px}
-
   /* When the catalog is already available, only KARAOKE ROOM waits. Mirror that room instead of showing a spinner. */
   .lyrics-room-card.is-loading{
     position:relative!important;display:block!important;min-height:198px!important;overflow:hidden!important;place-items:initial!important
@@ -232,8 +207,5 @@
   }
 
   @media(max-width:720px){
-    .lyrics-page-skeleton-room{padding:22px}
-    .lyrics-page-skeleton-group{min-height:94px;padding:15px}
-    .lyrics-page-skeleton-name{width:72%}
   }
 </style>

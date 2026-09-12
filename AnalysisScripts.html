@@ -37,8 +37,6 @@
   function showAnalysisRanking(title,rows,key){showAnalysisModal(title,'<div class="analysis-table-wrap"><table class="analysis-table">'+rows.map((r,i)=>'<tr><td>'+(i+1)+'</td><td>'+escapeHtml(r.songName)+'</td><td class="num">'+Number(r[key]).toFixed(1)+'%</td></tr>').join('')+'</table></div>');}
   function showAnalysisSongList(title,rows){showAnalysisModal(title,'<p class="analysis-song-list">'+(rows.length?rows.map(r=>escapeHtml(r.songName)).join('<br>'):'データなし')+'</p>');}
   function closeAnalysisModal(){const m=document.getElementById('analysisModal');if(m)m.hidden=true;}
-  function htmlJson(value){return JSON.stringify(value).replace(/</g,'\\u003c').replace(/>/g,'\\u003e');}
-
   /* Canonical ANALYSIS runtime authority. */
   window.__analysisCanonicalRuntimeState=window.__analysisCanonicalRuntimeState||{
     memberModalRows:{first:[],last:[],sing:[],center:[]},

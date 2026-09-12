@@ -37,17 +37,10 @@
   .quiz-answer.is-selected{border-color:rgba(156,236,255,.62);background:rgba(156,236,255,.13)}
   .quiz-answer.is-correct{border-color:rgba(113,232,181,.62);background:rgba(113,232,181,.13)}
   .quiz-answer.is-wrong{border-color:rgba(255,135,151,.58);background:rgba(255,135,151,.11)}
-  .quiz-feedback{margin:18px 0 0;padding:14px 16px;border-left:2px solid var(--quiz-cyan);background:rgba(156,236,255,.055);color:rgba(247,251,255,.8);font:600 13px/1.7 "Zen Kaku Gothic New",sans-serif}
   .quiz-lyrics-link{display:inline-flex;align-items:center;min-height:44px;margin-top:10px;color:var(--quiz-cyan);font:700 12px "Zen Kaku Gothic New",sans-serif;text-decoration:none}
   .quiz-award-step{display:grid;gap:12px}
   .quiz-award-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
   .quiz-award.is-none{color:rgba(247,251,255,.56)}
-  .quiz-score-list{display:grid;gap:10px;margin-top:18px}
-  .quiz-score-row{display:grid;grid-template-columns:48px 1fr auto;align-items:center;gap:12px;min-height:66px;padding:10px 14px;border:1px solid var(--quiz-line);border-radius:18px;background:rgba(255,255,255,.025)}
-  .quiz-score-rank{color:var(--quiz-cyan);font:700 18px "Orbitron","Zen Kaku Gothic New",sans-serif}
-  .quiz-score-name{font:700 16px "Zen Kaku Gothic New",sans-serif}
-  .quiz-score-points{font:700 22px "Orbitron","Zen Kaku Gothic New",sans-serif}.quiz-score-points small{font-size:10px;color:var(--muted-dark)}
-  .quiz-empty-score{padding:24px 8px;text-align:center;color:var(--muted-dark);font:500 13px "Zen Kaku Gothic New",sans-serif}
   .quiz-danger{color:rgba(255,181,191,.85)}
   @media(min-width:680px){.quiz-options.is-course{grid-template-columns:repeat(3,minmax(0,1fr))}.quiz-answer-list{grid-template-columns:repeat(2,minmax(0,1fr))}.quiz-award-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
   @media(max-width:420px){.quiz-player-grid{grid-template-columns:1fr}.quiz-actions{grid-template-columns:1fr}.quiz-online-join{grid-template-columns:1fr 96px}.quiz-panel{border-radius:20px}}
@@ -100,7 +93,6 @@
     text-transform:none!important;
   }
   .quiz-muted,
-  .quiz-feedback,
   .quiz-v3-feedback-answer{
     font-family:"Zen Kaku Gothic New",sans-serif!important;
     line-height:1.75;
@@ -132,13 +124,10 @@
   .quiz-room-input,
   .quiz-v3-room-id,
   .quiz-question-count,
-  .quiz-score-rank,
-  .quiz-score-points,
   .quiz-v3-feedback-mark{
     font-family:'Orbitron',"Zen Kaku Gothic New",sans-serif;
   }
   .quiz-page .quiz-kicker{display:none!important;}
-  .quiz-page .quiz-audit-redundant{display:none!important;}
   @media(max-width:600px){
     .quiz-page{padding-top:74px;}
     .quiz-header{margin-bottom:20px!important;}

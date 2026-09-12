@@ -76,7 +76,7 @@ function getCoverProject(payload) {
   const uid = validateCoverUser_(payload.userId);
   const projectId = asId_(payload.projectId);
   const snapshot = getCoverCoreSnapshot_();
-  const projectSheet = getCoverLogSheet_('COVER_Projects');
+  const projectSheet = getCoverLogSheet_(UNIVERSE_CONFIG.SHEETS.COVER_PROJECTS);
   const project = readSheetObjects_(projectSheet).find(function(row){ return asId_(row.CoverProjectID) === projectId; });
   if (!project || asId_(project.CreatorUserID) !== uid) throw new Error('カバーが見つかりません。');
   const group = requireCoverGroup_(snapshot, asId_(project.CoverGroupID));
@@ -96,7 +96,7 @@ function getCoverProject(payload) {
         originalMemberId: getCoverPrimarySingerId_(singer)
       };
     });
-  const assignments = readSheetObjects_(getCoverLogSheet_('COVER_Assignments'))
+  const assignments = readSheetObjects_(getCoverLogSheet_(UNIVERSE_CONFIG.SHEETS.COVER_ASSIGNMENTS))
     .filter(function(row){ return asId_(row.CoverProjectID) === projectId; })
     .map(function(row){ return {order:Number(row.Order || 0),memberId:asId_(row.MemberID)}; })
     .sort(function(a,b){ return a.order-b.order; });
@@ -122,8 +122,8 @@ function saveCoverProject(payload) {
   const uid = validateCoverUser_(payload.userId);
   return withCoverLock_(function(){
     const snapshot = getCoverCoreSnapshot_();
-    const projectSheet = getCoverLogSheet_('COVER_Projects');
-    const assignmentSheet = getCoverLogSheet_('COVER_Assignments');
+    const projectSheet = getCoverLogSheet_(UNIVERSE_CONFIG.SHEETS.COVER_PROJECTS);
+    const assignmentSheet = getCoverLogSheet_(UNIVERSE_CONFIG.SHEETS.COVER_ASSIGNMENTS);
     const projectIdInput = asId_(payload.projectId);
     const existingRows = readSheetObjects_(projectSheet);
     const existing = projectIdInput ? existingRows.find(function(row){ return asId_(row.CoverProjectID) === projectIdInput; }) : null;
@@ -191,8 +191,8 @@ function deleteCoverProject(payload) {
   const uid = validateCoverUser_(payload.userId);
   const projectId = asId_(payload.projectId);
   return withCoverLock_(function(){
-    const projectSheet = getCoverLogSheet_('COVER_Projects');
-    const assignmentSheet = getCoverLogSheet_('COVER_Assignments');
+    const projectSheet = getCoverLogSheet_(UNIVERSE_CONFIG.SHEETS.COVER_PROJECTS);
+    const assignmentSheet = getCoverLogSheet_(UNIVERSE_CONFIG.SHEETS.COVER_ASSIGNMENTS);
     const values = projectSheet.getDataRange().getValues();
     if (values.length < 2) throw new Error('カバーが見つかりません。');
     const headers = values[0].map(String);
@@ -332,11 +332,11 @@ function listCoverProjects_(snapshot, userId) {
   const groupMap = {}; snapshot.groups.forEach(function(row){groupMap[asId_(row.GroupID)] = row;});
   const songMap = {}; snapshot.songs.forEach(function(row){songMap[asId_(row.SongID)] = row;});
   const assignmentsByProject = {};
-  readSheetObjects_(getCoverLogSheet_('COVER_Assignments')).forEach(function(row){
+  readSheetObjects_(getCoverLogSheet_(UNIVERSE_CONFIG.SHEETS.COVER_ASSIGNMENTS)).forEach(function(row){
     const id = asId_(row.CoverProjectID); if(!assignmentsByProject[id])assignmentsByProject[id]=[];
     assignmentsByProject[id].push({order:Number(row.Order||0),memberId:asId_(row.MemberID)});
   });
-  return readSheetObjects_(getCoverLogSheet_('COVER_Projects'))
+  return readSheetObjects_(getCoverLogSheet_(UNIVERSE_CONFIG.SHEETS.COVER_PROJECTS))
     .filter(function(row){ return asId_(row.CreatorUserID) === uid; })
     .map(function(row){
       const group = groupMap[asId_(row.CoverGroupID)] || {};

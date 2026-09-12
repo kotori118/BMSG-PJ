@@ -28,15 +28,6 @@
     syncUniversePreferenceSettingsUI_();
   }
 
-  function initializeUniversePreferences() {
-    const userId = typeof getUniverseUserId === 'function' ? getUniverseUserId() : '';
-    if (!userId) {
-      resetUniversePreferencesClient_();
-      return;
-    }
-    loadUniverseUserPreferences_(userId);
-  }
-
   function loadUniverseUserPreferences_(userId, callback) {
     const uid = String(userId || '').trim();
     if (!uid) {
