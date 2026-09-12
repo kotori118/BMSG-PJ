@@ -25,7 +25,7 @@ const UNIVERSE_ACTIVITY_ROUTES_ = Object.freeze({
 function getUniverseHomeBootstrap(userId) {
   const uid = normalizeUniverseStateUserId_(userId);
   const lookup = buildUniverseStateLookup_();
-  const recent = normalizeUniverseRecent_(uid, lookup);
+  const recent = readUniverseRecent_(uid, lookup);
   const favorites = readUniverseFavorites_(uid, lookup);
   return {
     ok: true,
@@ -101,31 +101,6 @@ function normalizeUniverseFavoriteTarget_(targetType, targetId) {
   if (!id || ['MEMBER','LYRICS','PAGE'].indexOf(type) < 0) throw new Error('Invalid favorite target.');
   if (type === 'PAGE' && !UNIVERSE_PAGE_FAVORITES_[id]) throw new Error('This page cannot be favorited.');
   return {targetType:type, targetId:id};
-}
-
-function normalizeUniverseRecent_(userId, lookup) {
-  const sheet = getLogSheet_(UNIVERSE_CONFIG.SHEETS.RECENT_ACTIVITIES);
-  const rows = readSheetObjectsWithRows_(sheet).filter(function(row){return String(row.UserID || '') === userId;}).sort(function(a,b){return a.__rowNumber-b.__rowNumber;});
-  const kept = [];
-  const deleteRows = [];
-  rows.forEach(function(row){
-    const key = String(row.ActivityType || '') + '|' + String(row.TargetID || '');
-    const previous = kept.length ? kept[kept.length-1] : null;
-    if (previous && previous.__key === key) {
-      deleteRows.push(previous.__rowNumber);
-      kept[kept.length-1] = Object.assign({}, row, {__key:key});
-    } else {
-      kept.push(Object.assign({}, row, {__key:key}));
-    }
-  });
-  if (kept.length > UNIVERSE_RECENT_LIMIT_) {
-    kept.slice(0, kept.length - UNIVERSE_RECENT_LIMIT_).forEach(function(row){deleteRows.push(row.__rowNumber);});
-  }
-  if (deleteRows.length) {
-    deleteRows.filter(function(rowNumber,index,array){return array.indexOf(rowNumber)===index;}).sort(function(a,b){return b-a;}).forEach(function(rowNumber){sheet.deleteRow(rowNumber);});
-    return readUniverseRecent_(userId, lookup);
-  }
-  return hydrateUniverseRecent_(kept.slice(-UNIVERSE_RECENT_LIMIT_).reverse(), lookup);
 }
 
 function readUniverseRecent_(userId, lookup) {
