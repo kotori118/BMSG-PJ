@@ -20,7 +20,12 @@
   }
 
   function loadProfileChemistryForDiscover() {
-    if (profileChemistryState.status === 'loading') return;
+    if (profileChemistryState.status === 'loading') {
+      setTimeout(() => {
+        if (profileCurrentView === 'discover') loadProfileDiscover();
+      }, 250);
+      return;
+    }
     profileChemistryState.status = 'loading';
     profileChemistryState.error = '';
     google.script.run
