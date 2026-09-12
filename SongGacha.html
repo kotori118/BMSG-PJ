@@ -11,32 +11,32 @@
     color:var(--ink)!important;
     box-shadow:0 5px 16px rgba(21,24,32,.035),inset 0 1px 0 rgba(255,255,255,.98)!important;
   }
-  .song-gacha-head h2{margin:0;font-family:'Orbitron',sans-serif;font-size:clamp(22px,6vw,32px);letter-spacing:.08em;}
+  .song-gacha-head h2{margin:0;font-family:'Orbitron',"Zen Kaku Gothic New",sans-serif;font-size:clamp(22px,6vw,32px);letter-spacing:.08em;}
   .song-gacha-groups{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;}
   .song-gacha-group{min-height:58px;padding:10px 12px!important;border-radius:15px!important;display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left;}
   .song-gacha-group strong{font-family:'Exo 2','Zen Kaku Gothic New',sans-serif;font-size:13px;letter-spacing:.02em;}
-  .song-gacha-group span{font-family:'Roboto',sans-serif;font-size:10px;letter-spacing:.12em;opacity:.66;}
+  .song-gacha-group span{font-family:'Roboto',"Zen Kaku Gothic New",sans-serif;font-size:10px;letter-spacing:.12em;opacity:.66;}
   .song-gacha-group.is-on{border-color:rgba(80,205,238,.72)!important;background:linear-gradient(145deg,#fff 0%,rgba(156,236,255,.22) 100%)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.94),0 5px 16px rgba(62,190,224,.09)!important;}
   .song-gacha-group.is-off{opacity:.46;filter:saturate(.45);}
-  .song-gacha-count{margin:0 0 13px;font-family:'Roboto',sans-serif;font-size:11px;letter-spacing:.14em;color:color-mix(in srgb,var(--ink) 58%,transparent);text-align:center;}
-  .song-gacha-draw{width:100%;min-height:56px;border-radius:16px!important;font-family:'Orbitron',sans-serif!important;font-weight:700!important;letter-spacing:.12em!important;}
+  .song-gacha-count{margin:0 0 13px;font-family:'Roboto',"Zen Kaku Gothic New",sans-serif;font-size:11px;letter-spacing:.14em;color:color-mix(in srgb,var(--ink) 58%,transparent);text-align:center;}
+  .song-gacha-draw{width:100%;min-height:56px;border-radius:16px!important;font-family:'Orbitron',"Zen Kaku Gothic New",sans-serif!important;font-weight:700!important;letter-spacing:.12em!important;}
   .song-gacha-overlay{position:fixed;inset:0;z-index:2400;display:flex;align-items:center;justify-content:center;overflow:hidden;background:radial-gradient(circle at 50% 48%,rgba(44,178,219,.14),transparent 30%),linear-gradient(180deg,#03080f 0%,#06101b 54%,#02060b 100%);color:#fff;opacity:0;animation:songGachaFadeIn .28s ease forwards;}
   .song-gacha-overlay.is-static{opacity:1;animation:none;}
   .song-gacha-overlay.is-leaving{animation:songGachaFadeOut .28s ease forwards;}
-  .song-gacha-reveal-back{position:absolute!important;top:max(18px,env(safe-area-inset-top))!important;left:18px!important;z-index:5!important;min-width:76px!important;height:44px!important;padding:0 16px!important;border:1px solid rgba(156,236,255,.36)!important;border-radius:14px!important;color:#fff!important;background:linear-gradient(145deg,rgba(255,255,255,.06),rgba(156,236,255,.10))!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.08)!important;font-family:'Exo 2',sans-serif!important;font-size:12px!important;font-weight:700!important;letter-spacing:.12em!important;}
+  .song-gacha-reveal-back{position:absolute!important;top:max(18px,env(safe-area-inset-top))!important;left:18px!important;z-index:5!important;min-width:76px!important;height:44px!important;padding:0 16px!important;border:1px solid rgba(156,236,255,.36)!important;border-radius:14px!important;color:#fff!important;background:linear-gradient(145deg,rgba(255,255,255,.06),rgba(156,236,255,.10))!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.08)!important;font-family:'Exo 2',"Zen Kaku Gothic New",sans-serif!important;font-size:12px!important;font-weight:700!important;letter-spacing:.12em!important;}
   .song-gacha-orbit{position:absolute;width:min(74vw,310px);aspect-ratio:1;border:1px solid rgba(156,236,255,.24);border-radius:50%;box-shadow:0 0 40px rgba(98,218,246,.08),inset 0 0 40px rgba(98,218,246,.05);animation:songGachaOrbit 2.2s linear infinite;}
   .song-gacha-orbit::before,.song-gacha-orbit::after{content:'';position:absolute;inset:16%;border:1px solid rgba(183,153,255,.13);border-radius:50%;transform:rotate(58deg) scaleY(.52);}
   .song-gacha-orbit::after{inset:30%;border-color:rgba(156,236,255,.2);transform:rotate(-38deg) scaleY(.64);}
   .song-gacha-star{position:absolute;width:2px;height:2px;border-radius:50%;background:#dff9ff;box-shadow:0 0 8px rgba(156,236,255,.8);animation:songGachaStar 1.25s ease-in-out infinite alternate;}
   .song-gacha-stage{position:relative;z-index:2;width:min(84vw,390px);padding:30px 18px;text-align:center;}
-  .song-gacha-stage-label{margin:0 0 13px;font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:.32em;color:#9cecff;}
+  .song-gacha-stage-label{margin:0 0 13px;font-family:'Orbitron',"Zen Kaku Gothic New",sans-serif;font-size:10px;letter-spacing:.32em;color:#9cecff;}
   .song-gacha-ticker{min-height:82px;display:flex;align-items:center;justify-content:center;font-family:'Zen Kaku Gothic New',sans-serif;font-size:clamp(22px,7vw,34px);font-weight:700;line-height:1.45;text-shadow:0 0 24px rgba(156,236,255,.22);}
   .song-gacha-stage.is-final .song-gacha-ticker{animation:songGachaFinal .52s cubic-bezier(.2,.85,.25,1) both;}
-  .song-gacha-final-group{display:block;min-height:16px;margin:7px 0 0;font-family:'Exo 2',sans-serif;font-size:11px;letter-spacing:.15em;color:rgba(223,249,255,.62);visibility:hidden;opacity:0;}
+  .song-gacha-final-group{display:block;min-height:16px;margin:7px 0 0;font-family:'Exo 2',"Zen Kaku Gothic New",sans-serif;font-size:11px;letter-spacing:.15em;color:rgba(223,249,255,.62);visibility:hidden;opacity:0;}
   .song-gacha-overlay-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;min-height:50px;margin-top:26px;visibility:hidden;opacity:0;pointer-events:none;}
   .song-gacha-stage.is-ready .song-gacha-final-group{visibility:visible;opacity:1;}
   .song-gacha-stage.is-ready .song-gacha-overlay-actions{visibility:visible;opacity:1;pointer-events:auto;animation:songGachaActionsIn .35s ease both;}
-  .song-gacha-overlay-actions button{min-height:50px;border:1px solid rgba(156,236,255,.34)!important;border-radius:15px!important;color:#fff!important;background:linear-gradient(145deg,rgba(255,255,255,.07),rgba(156,236,255,.12))!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.08)!important;font-family:'Exo 2',sans-serif!important;font-weight:700!important;letter-spacing:.08em!important;}
+  .song-gacha-overlay-actions button{min-height:50px;border:1px solid rgba(156,236,255,.34)!important;border-radius:15px!important;color:#fff!important;background:linear-gradient(145deg,rgba(255,255,255,.07),rgba(156,236,255,.12))!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.08)!important;font-family:'Exo 2',"Zen Kaku Gothic New",sans-serif!important;font-weight:700!important;letter-spacing:.08em!important;}
   .song-gacha-overlay-actions .song-gacha-again{border-color:rgba(156,236,255,.68)!important;background:linear-gradient(145deg,rgba(156,236,255,.12),rgba(156,236,255,.22))!important;}
   @keyframes songGachaFadeIn{to{opacity:1}}
   @keyframes songGachaFadeOut{to{opacity:0;transform:scale(1.015)}}
@@ -46,6 +46,8 @@
   @keyframes songGachaActionsIn{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
   @media(max-width:390px){.song-gacha-groups{grid-template-columns:1fr}.song-gacha-overlay-actions{grid-template-columns:1fr 1fr}}
   @media(prefers-reduced-motion:reduce){.song-gacha-overlay,.song-gacha-overlay.is-leaving,.song-gacha-orbit,.song-gacha-star,.song-gacha-stage.is-final .song-gacha-ticker,.song-gacha-overlay-actions{animation:none!important;}.song-gacha-overlay{opacity:1}}
+  .song-gacha-reveal-back{width:46px!important;min-width:46px!important;height:46px!important;min-height:46px!important;padding:0!important;border-radius:14px!important;font-size:32px!important;letter-spacing:0!important;display:grid!important;place-items:center!important}
+  .song-gacha-stage-label{display:none!important}
 </style>
 <script>
   const songGachaState={enabled:{},result:null,drawing:false};
@@ -56,7 +58,7 @@
     const button=document.querySelector('.lyrics-gacha-card');
     if(button){
       button.disabled=false;
-      button.innerHTML='<strong>SONG GACHA</strong><span>DRAW A SONG</span>';
+      button.innerHTML='<strong>SONG GACHA</strong><span>曲を引く</span>';
       button.onclick=openSongGacha;
     }
   };
@@ -92,13 +94,13 @@
     if(!view)return;
     const pool=songGachaPool();
     view.innerHTML='<section class="song-gacha-screen">'
-      +'<div class="song-gacha-head"><button class="u-btn song-gacha-back" type="button" aria-label="Back" onclick="showLyricsGroups()">‹</button><h2>SONG GACHA</h2></div>'
+      +'<div class="song-gacha-head"><button class="u-btn song-gacha-back" type="button" aria-label="戻る" onclick="showLyricsGroups()">‹</button><h2>SONG GACHA</h2></div>'
       +'<div class="song-gacha-groups">'+LYRICS_GROUPS.map(function(group){
         const on=!!songGachaState.enabled[group];
-        return '<button class="u-btn song-gacha-group '+(on?'is-on':'is-off')+'" type="button" aria-pressed="'+on+'" onclick="toggleSongGachaGroup(\''+lyricArg(group)+'\')"><strong>'+escapeLyrics(group)+'</strong><span>'+(on?'IN':'OUT')+'</span></button>';
+        return '<button class="u-btn song-gacha-group '+(on?'is-on':'is-off')+'" type="button" aria-pressed="'+on+'" onclick="toggleSongGachaGroup(\''+lyricArg(group)+'\')"><strong>'+escapeLyrics(group)+'</strong><span>'+(on?'ON':'OFF')+'</span></button>';
       }).join('')+'</div>'
-      +'<p class="song-gacha-count">'+pool.length+' SONGS IN GACHA</p>'
-      +'<button class="u-btn song-gacha-draw" type="button" onclick="drawSongGacha()"'+(!pool.length||songGachaState.drawing?' disabled':'')+'>DRAW</button>'
+      +'<p class="song-gacha-count">対象曲 '+pool.length+'曲</p>'
+      +'<button class="u-btn song-gacha-draw" type="button" onclick="drawSongGacha()"'+(!pool.length||songGachaState.drawing?' disabled':'')+'>引く</button>'
       +'</section>';
   }
 
@@ -121,11 +123,11 @@
   }
 
   function songGachaOverlayMarkup(){
-    return '<button class="u-btn song-gacha-reveal-back" type="button" onclick="backFromSongGachaReveal()">BACK</button>'
+    return '<button class="u-btn song-gacha-reveal-back audit-local-back" type="button" aria-label="戻る" onclick="backFromSongGachaReveal()">‹</button>'
       +'<div class="song-gacha-orbit"></div>'+Array.from({length:18},function(_,i){
       const left=(11+(i*37)%82),top=(7+(i*53)%86),delay=((i%7)*.12).toFixed(2);
       return '<i class="song-gacha-star" style="left:'+left+'%;top:'+top+'%;animation-delay:'+delay+'s"></i>';
-    }).join('')+'<div class="song-gacha-stage"><p class="song-gacha-stage-label">BMSG UNIVERSE</p><div class="song-gacha-ticker">...</div><p class="song-gacha-final-group"></p><div class="song-gacha-overlay-actions"><button class="u-btn song-gacha-again" type="button" onclick="drawSongGachaAgain()">DRAW AGAIN</button><button class="u-btn" type="button" onclick="openSongGachaKaraoke()">KARAOKE</button></div></div>';
+    }).join('')+'<div class="song-gacha-stage"><div class="song-gacha-ticker">...</div><p class="song-gacha-final-group"></p><div class="song-gacha-overlay-actions"><button class="u-btn song-gacha-again" type="button" onclick="drawSongGachaAgain()">もう一度引く</button><button class="u-btn" type="button" onclick="openSongGachaKaraoke()">歌う</button></div></div>';
   }
 
   function runSongGachaSequence(overlay,pool,result,reduced){

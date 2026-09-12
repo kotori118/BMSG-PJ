@@ -94,7 +94,7 @@
       return;
     }
     if (profileMapState.status === 'error') {
-      panel.innerHTML = `<article class="profile-members-state"><p class="profile-panel-eyebrow">CONNECTION ERROR</p><h2 class="profile-members-state-title">ERROR</h2><p class="profile-panel-copy">${escapeHtml(profileMapState.error)}</p><button class="profile-retry-button" type="button" onclick="loadProfileMap(true)">RETRY</button></article>`;
+      panel.innerHTML = `<article class="profile-members-state"><p class="profile-panel-eyebrow">CONNECTION ERROR</p><h2 class="profile-members-state-title">ERROR</h2><p class="profile-panel-copy">${escapeHtml(profileMapState.error)}</p><button class="profile-retry-button" type="button" onclick="loadProfileMap(true)">再試行</button></article>`;
       return;
     }
 
@@ -123,19 +123,19 @@
 
 <style>
   .profile-map-head { margin-bottom: 22px; display: flex; align-items: end; justify-content: space-between; gap: 18px; }
-  .profile-map-title { margin: 7px 0 0; color: var(--white); font-family: Orbitron, "Exo 2", sans-serif; font-size: clamp(25px, 7vw, 42px); font-weight: 600; line-height: 1; }
-  .profile-map-copy { margin: 12px 0 0; color: rgba(232,242,247,.48); font-family: "Zen Kaku Gothic New", Roboto, sans-serif; font-size: 12px; }
-  .profile-map-select-label { min-width: 118px; display: grid; gap: 6px; color: rgba(156,236,255,.62); font-family: "Exo 2", Roboto, sans-serif; font-size: 8px; font-weight: 700; letter-spacing: .14em; }
-  .profile-map-select-label select { min-height: 54px; padding: 0 42px 0 16px; border: 1px solid rgba(156,236,255,.20); border-radius: 15px; color: rgba(244,251,253,.90); background: #0a111a; font: 600 16px "Zen Kaku Gothic New", Roboto, sans-serif; }
+  .profile-map-title { margin: 7px 0 0; color: var(--white); font-family: Orbitron,"Zen Kaku Gothic New", "Exo 2","Zen Kaku Gothic New", sans-serif; font-size: clamp(25px, 7vw, 42px); font-weight: 600; line-height: 1; }
+  .profile-map-copy { margin: 12px 0 0; color: rgba(232,242,247,.48); font-family: "Zen Kaku Gothic New", Roboto,"Zen Kaku Gothic New", sans-serif; font-size: 12px; }
+  .profile-map-select-label { min-width: 118px; display: grid; gap: 6px; color: rgba(156,236,255,.62); font-family: "Exo 2","Zen Kaku Gothic New", Roboto,"Zen Kaku Gothic New", sans-serif; font-size: 8px; font-weight: 700; letter-spacing: .14em; }
+  .profile-map-select-label select { min-height: 54px; padding: 0 42px 0 16px; border: 1px solid rgba(156,236,255,.20); border-radius: 15px; color: rgba(244,251,253,.90); background: #0a111a; font: 600 16px "Zen Kaku Gothic New", Roboto,"Zen Kaku Gothic New", sans-serif; }
   .profile-map-groups { display: grid; gap: 18px; }
   .profile-map-group { padding: 24px; border: 1px solid rgba(194,232,244,.11); border-radius: 24px; background: linear-gradient(145deg, rgba(255,255,255,.038), rgba(255,255,255,.012)); }
-  .profile-map-group h3 { margin: 0 0 20px; padding-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,.07); display: flex; align-items: center; justify-content: space-between; gap: 12px; color: rgba(247,251,255,.88); font: 600 18px "Zen Kaku Gothic New", Roboto, sans-serif; }
-  .profile-map-group h3 b { color: var(--cyan); font: 700 12px "Exo 2", Roboto, sans-serif; letter-spacing: .10em; }
+  .profile-map-group h3 { margin: 0 0 20px; padding-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,.07); display: flex; align-items: center; justify-content: space-between; gap: 12px; color: rgba(247,251,255,.88); font: 600 18px "Zen Kaku Gothic New", Roboto,"Zen Kaku Gothic New", sans-serif; }
+  .profile-map-group h3 b { color: var(--cyan); font: 700 12px "Exo 2","Zen Kaku Gothic New", Roboto,"Zen Kaku Gothic New", sans-serif; letter-spacing: .10em; }
   .profile-map-member-list { display: flex; flex-wrap: wrap; gap: 12px; }
   .profile-map-member { min-height: 62px; padding: 6px 20px 6px 6px; border: 1px solid rgba(194,232,244,.09); border-radius: 999px; display: inline-flex; align-items: center; gap: 12px; color: rgba(244,251,253,.86); background: rgba(255,255,255,.035); cursor: pointer; }
-  .profile-map-avatar { width: 50px; height: 50px; overflow: hidden; border-radius: 50%; display: grid; place-items: center; color: var(--member-accent); background: color-mix(in srgb, var(--member-accent) 12%, #07101a); font: 600 11px Orbitron, sans-serif; }
+  .profile-map-avatar { width: 50px; height: 50px; overflow: hidden; border-radius: 50%; display: grid; place-items: center; color: var(--member-accent); background: color-mix(in srgb, var(--member-accent) 12%, #07101a); font: 600 11px Orbitron,"Zen Kaku Gothic New", sans-serif; }
   .profile-map-avatar img { width: 100%; height: 100%; object-fit: cover; object-position: center top; display: block; }
-  .profile-map-member-name { font: 600 15px "Exo 2", "Zen Kaku Gothic New", sans-serif; }
+  .profile-map-member-name { font: 600 15px "Exo 2","Zen Kaku Gothic New", "Zen Kaku Gothic New", sans-serif; }
   .profile-map-loading { min-height: 220px; display: flex; align-items: center; justify-content: center; }
   .profile-map-empty { min-height: 160px; display: grid; place-items: center; color: rgba(232,242,247,.45); font-size: 12px; }
   @media (max-width: 560px) { .profile-map-head { align-items: stretch; flex-direction: column; } .profile-map-select-label { width: 100%; } .profile-map-group { padding: 22px 20px; } }

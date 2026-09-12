@@ -20,7 +20,7 @@
     karaokeState.songs=data.songs||[];
     karaokeState.partsBySong=data.partsBySong||{};
     if(params&&params.mode==='latest'){
-      document.getElementById('karaokeView').innerHTML='<div class="karaoke-loading is-shared">'+renderUniverseLoading('読み込み中','#9cecff')+'</div>';
+      document.getElementById('karaokeView').innerHTML='<div class="karaoke-loading is-shared">'+renderUniverseLoading('LOADING...','#9cecff')+'</div>';
       loadKaraokeRoom(params.room,function(){
         if(karaokeState.history.length)openKaraokeResultSong(karaokeState.history[0]);
         else{renderKaraokeEntry();showKaraokeError('まだ振り分け結果がありません。');}
@@ -60,7 +60,7 @@
   function renderKaraokeEntry(){
     karaokeState.screen='entry';
     document.getElementById('karaokeView').innerHTML=
-      '<button class="karaoke-top-back" type="button" onclick="navigateTo(\'lyrics\')">‹ <span>BACK</span></button>'+
+      '<button class="karaoke-top-back audit-local-back" type="button" aria-label="戻る" onclick="navigateTo(\'lyrics\')">‹</button>'+
       '<section class="karaoke-room-card"><div id="karaokeRoomBody"></div></section>'+
       '<section id="karaokeHistoryArea" class="karaoke-history-area"></section>';
     updateKaraokeRoomCard();
@@ -95,7 +95,7 @@
     karaokeState.screen='ranking';
     const today=karaokeDayKey(new Date());
     const daily=karaokeState.history.filter(function(item){return karaokeDayKey(item.createdAt)===today;});
-    document.getElementById('karaokeView').innerHTML='<button class="karaoke-top-back" type="button" onclick="renderKaraokeEntry()">‹ <span>BACK</span></button><div class="karaoke-title"><p>本日の集計</p><h2>担当者ランキング</h2></div><section class="karaoke-member-ranking">'+karaokeState.users.map(function(user){
+    document.getElementById('karaokeView').innerHTML='<button class="karaoke-top-back audit-local-back" type="button" aria-label="戻る" onclick="renderKaraokeEntry()">‹</button><div class="karaoke-title"><p>本日の集計</p><h2>担当者ランキング</h2></div><section class="karaoke-member-ranking">'+karaokeState.users.map(function(user){
       const counts={};
       daily.forEach(function(item){((item.assignments&&item.assignments[user.userId])||[]).forEach(function(slot){const name=typeof slot==='string'?slot:(slot.name||slot.memberId||'');if(name)counts[name]=(counts[name]||0)+1;});});
       const rows=Object.keys(counts).sort(function(a,b){return counts[b]-counts[a]||a.localeCompare(b,'ja');});
@@ -114,7 +114,7 @@
   function openKaraokeHistory(index){
     const item=karaokeState.history[index];if(!item)return;
     karaokeState.screen='history';
-    document.getElementById('karaokeView').innerHTML='<button class="karaoke-top-back" type="button" onclick="renderKaraokeEntry()">‹ <span>BACK</span></button><div class="karaoke-title"><p>HISTORY</p><h2>'+escapeLyrics(item.title||'')+'</h2></div><section class="karaoke-history-result">'+karaokeState.users.map(function(user){const slots=(item.assignments&&item.assignments[user.userId])||[];return '<article><span>'+escapeLyrics(user.displayName)+'</span><strong>'+slots.map(function(slot){return '<i style="color:'+escapeLyrics(slot.color||'#777777')+'">'+escapeLyrics(typeof slot==='string'?slot:(slot.name||slot.memberId||''))+'</i>';}).join('<em>/</em>')+'</strong></article>';}).join('')+'</section>';
+    document.getElementById('karaokeView').innerHTML='<button class="karaoke-top-back audit-local-back" type="button" aria-label="戻る" onclick="renderKaraokeEntry()">‹</button><div class="karaoke-title"><p>HISTORY</p><h2>'+escapeLyrics(item.title||'')+'</h2></div><section class="karaoke-history-result">'+karaokeState.users.map(function(user){const slots=(item.assignments&&item.assignments[user.userId])||[];return '<article><span>'+escapeLyrics(user.displayName)+'</span><strong>'+slots.map(function(slot){return '<i style="color:'+escapeLyrics(slot.color||'#777777')+'">'+escapeLyrics(typeof slot==='string'?slot:(slot.name||slot.memberId||''))+'</i>';}).join('<em>/</em>')+'</strong></article>';}).join('')+'</section>';
     scrollKaraokeTop();
   }
 
@@ -179,7 +179,7 @@
   function renderKaraokeSetup(){
     const singers=karaokeSingers();
     document.getElementById('karaokeView').innerHTML=
-      '<button class="karaoke-top-back" type="button" onclick="backToLyricsSong()">‹ <span>BACK</span></button><div class="karaoke-title"><p>KARAOKE</p><h2>カラオケ設定</h2></div>'+
+      '<button class="karaoke-top-back audit-local-back" type="button" aria-label="戻る" onclick="backToLyricsSong()">‹</button><div class="karaoke-title"><h2>カラオケ設定</h2></div>'+
       '<section class="karaoke-user-settings">'+karaokeState.users.map(function(user){
         return '<article><h3>'+escapeLyrics(user.displayName)+'</h3><div>'+singers.map(function(singer){
           const checked=karaokeState.assignments[singer.key]===user.userId?' checked':'';
@@ -311,10 +311,10 @@
     const song=karaokeState.song;
     const backAction=karaokeState.resultView?'backFromKaraokeResult()':"renderKaraokeSetup();karaokeState.screen='setup';setKaraokeUrl('setup')";
     document.getElementById('karaokeView').innerHTML=
-      '<button class="karaoke-top-back" type="button" onclick="'+backAction+'">‹ <span>BACK</span></button><div class="karaoke-title"><p>KARAOKE</p><h2>'+escapeLyrics(song.title)+' <small>（カラオケ）</small></h2></div>'+
+      '<button class="karaoke-top-back audit-local-back" type="button" aria-label="戻る" onclick="'+backAction+'">‹</button><div class="karaoke-title"><h2>'+escapeLyrics(song.title)+' <small>（カラオケ）</small></h2></div>'+
       '<section class="karaoke-lyrics">'+song.parts.map(function(part){
         return '<article><div class="karaoke-owner">'+karaokePartOwners(part).map(function(owner){return '<span style="color:'+escapeLyrics(owner.color)+'">'+escapeLyrics(owner.label)+'</span>';}).join(' / ')+'</div><p>'+escapeLyrics(part.lyrics)+'</p></article>';
-      }).join('')+'</section><div class="karaoke-song-footer"><button type="button" onclick="'+backAction+'">BACK</button><button type="button" onclick="navigateTo(\'lyrics\')">トップページへ戻る</button></div>';
+      }).join('')+'</section><div class="karaoke-song-footer"><button type="button" aria-label="戻る" onclick="'+backAction+'">‹</button><button type="button" onclick="navigateTo(\'lyrics\')">トップページへ戻る</button></div>';
   }
 
   function setKaraokeUrl(mode){
