@@ -93,13 +93,16 @@
   }
 
   function openSettings() {
-    if (typeof ensureKaraokeFavoriteSettingsEntry === 'function') ensureKaraokeFavoriteSettingsEntry();
-    if (typeof ensureKaraokeFavoriteSettingsModal === 'function') ensureKaraokeFavoriteSettingsModal();
-    if (typeof preloadKaraokeFavoriteSettings === 'function') preloadKaraokeFavoriteSettings();
+    const isLyricsRoute = currentRoute === 'lyrics';
+    if (isLyricsRoute && typeof ensureKaraokeFavoriteSettingsEntry === 'function') ensureKaraokeFavoriteSettingsEntry();
+    const karaokeFavoriteSection = document.getElementById('karaokeFavoriteSettingsSection');
+    if (karaokeFavoriteSection) karaokeFavoriteSection.hidden = !isLyricsRoute;
+    if (isLyricsRoute && typeof ensureKaraokeFavoriteSettingsModal === 'function') ensureKaraokeFavoriteSettingsModal();
+    if (isLyricsRoute && typeof preloadKaraokeFavoriteSettings === 'function') preloadKaraokeFavoriteSettings();
     syncSettingsUserName();
     syncLyricsEditMode();
     const lyricsSection = document.getElementById('lyricsSettingsSection');
-    if (lyricsSection) lyricsSection.hidden = currentRoute !== 'lyrics';
+    if (lyricsSection) lyricsSection.hidden = !isLyricsRoute;
     settingsOverlay.classList.add('open');
     document.body.style.overflow = 'hidden';
   }
