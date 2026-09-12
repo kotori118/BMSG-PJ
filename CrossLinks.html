@@ -62,7 +62,6 @@
     if(!actions){
       actions=document.createElement('div');actions.className='universe-crosslink-row universe-profile-crosslinks';
       actions.appendChild(createUniverseCrossLinkButton_('ANALYSIS',function(){navigateToWithParams('analysis',{view:'member',member:member.displayName});}));
-      actions.appendChild(createUniverseCrossLinkButton_('CARD',function(){navigateToWithParams('cards',{member:member.memberId});}));
       actions.appendChild(createUniverseCrossLinkButton_('CREDITS',function(){toggleUniverseProfileCredits_(member.memberId);}));
       const hero=detail.querySelector('.profile-detail-hero');if(hero)hero.insertAdjacentElement('afterend',actions);else detail.prepend(actions);
     }
@@ -76,7 +75,7 @@
     if(!universeCrossLinksState.creditsOpen[id]){const old=detail.querySelector('.universe-profile-credits');if(old)old.remove();return;}
     if(universeCrossLinksState.credits[id]){renderUniverseProfileCredits_(detail,id);return;}
     let host=detail.querySelector('.universe-profile-credits');if(!host){host=document.createElement('section');host.className='universe-profile-credits';const actions=detail.querySelector('.universe-profile-crosslinks');if(actions)actions.insertAdjacentElement('afterend',host);}
-    host.innerHTML='<p class="universe-crosslink-status">LOADING...</p>';
+    host.innerHTML=typeof renderUniverseLoading==='function'?renderUniverseLoading('LOADING...','#9cecff'):'<p class="universe-crosslink-status">LOADING...</p>';
     google.script.run.withSuccessHandler(function(response){
       if(!response||!response.ok){universeCrossLinksState.credits[id]={error:response&&response.error?response.error.message:'クレジット参加曲の読み込みに失敗しました。',songs:[]};}
       else universeCrossLinksState.credits[id]=response.data||{songs:[]};
@@ -87,7 +86,7 @@
   function renderUniverseProfileCredits_(detail,memberId){
     if(!detail)return;const id=String(memberId||''),data=universeCrossLinksState.credits[id];
     let host=detail.querySelector('.universe-profile-credits');if(!host){host=document.createElement('section');host.className='universe-profile-credits';const actions=detail.querySelector('.universe-profile-crosslinks');if(actions)actions.insertAdjacentElement('afterend',host);}
-    if(!data){host.innerHTML='<p class="universe-crosslink-status">LOADING...</p>';return;}
+    if(!data){host.innerHTML=typeof renderUniverseLoading==='function'?renderUniverseLoading('LOADING...','#9cecff'):'<p class="universe-crosslink-status">LOADING...</p>';return;}
     host.innerHTML='';const heading=document.createElement('h3');heading.textContent='CREATIVE CREDITS';host.appendChild(heading);
     if(data.error){const p=document.createElement('p');p.className='universe-crosslink-status';p.textContent=data.error;host.appendChild(p);return;}
     const songs=Array.isArray(data.songs)?data.songs:[];if(!songs.length){const p=document.createElement('p');p.className='universe-crosslink-status';p.textContent='該当するクレジット参加曲はありません。';host.appendChild(p);return;}
@@ -139,8 +138,9 @@
   .profile-member-detail>.universe-profile-crosslinks{margin:14px 0}
   .universe-profile-credits{margin:0 0 14px;padding:18px;border:1px solid rgba(156,236,255,.16);border-radius:18px;background:rgba(255,255,255,.025)}
   .universe-profile-credits h3{margin:0 0 12px;color:var(--cyan);font:600 12px Orbitron,"Zen Kaku Gothic New",sans-serif;letter-spacing:.14em}
+  .universe-profile-credits .universe-loading{min-height:60px}
   .universe-credit-list{display:grid;gap:8px}.universe-credit-song{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;width:100%;padding:13px 14px;border:1px solid rgba(255,255,255,.09);border-radius:14px;color:#fff;background:rgba(255,255,255,.03);text-align:left}.universe-credit-song strong{font:600 14px "Zen Kaku Gothic New",sans-serif}.universe-credit-tags{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:5px}.universe-credit-tags i{padding:4px 7px;border-radius:999px;color:var(--cyan);background:rgba(156,236,255,.09);font:600 10px "Zen Kaku Gothic New",sans-serif;font-style:normal}.universe-crosslink-status{margin:0;color:rgba(255,255,255,.58);font-size:12px}
   .universe-lyrics-crosslinks{margin:10px 0 16px}.universe-crosslink-button.is-light{border-color:rgba(21,24,32,.13);color:var(--ink);background:#fff}.universe-lyrics-crosslinks .universe-crosslink-button{flex:1 1 140px}
   .universe-analysis-profile-link{margin:16px 0 0}.universe-analysis-lyrics-link{margin-top:16px}.universe-card-profile-link{min-height:36px;margin-left:auto;padding:0 11px;font-size:9px}
-  @media(max-width:520px){.universe-profile-crosslinks .universe-crosslink-button{flex:1 1 calc(50% - 5px)}.universe-credit-song{grid-template-columns:1fr}.universe-credit-tags{justify-content:flex-start}}
+  @media(max-width:520px){.universe-profile-crosslinks .universe-crosslink-button{flex:1 1 100%}.universe-credit-song{grid-template-columns:1fr}.universe-credit-tags{justify-content:flex-start}}
 </style>
