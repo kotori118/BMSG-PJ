@@ -2,10 +2,10 @@
   function renderRoute(route, routeParams) {
     if(currentRoute==='metrics'&&route!=='metrics'&&typeof cleanupPerformanceTimerPage==='function')cleanupPerformanceTimerPage();
     const meta = ROUTES[route]; currentRoute = route; setPageAtmosphere(route);
-    if (!meta) { setTheme('dark'); setActiveNav(null); pageContent.innerHTML=render404(route); document.title='404 | BMSG UNIVERSE'; scrollAppToTop('smooth'); return; }
+    if (!meta) { setTheme('dark'); setActiveNav(null); pageContent.innerHTML=render404(route); document.title='404 | BMSG UNIVERSE'; scrollAppToTop('smooth'); syncCurrentFavoriteButton(); return; }
     setTheme(meta.theme); setActiveNav(meta.parent);
     if (route === 'home') {
-      const playIntro=!homeIntroPlayed; pageContent.innerHTML=renderHome();
+      const playIntro=!homeIntroPlayed; pageContent.innerHTML=renderHome(); initHomePage();
       if(playIntro){document.body.classList.add('home-intro-running');homeIntroPlayed=true;setTimeout(function(){document.body.classList.remove('home-intro-running');},800);}
     } else if(route==='data'){pageContent.innerHTML=renderData();}
     else if(route==='lab'){pageContent.innerHTML=renderLab();}
@@ -19,16 +19,25 @@
     else if(route==='quiz'){pageContent.innerHTML=renderQuiz();initQuizPage(routeParams||{});}
     else if(route==='cover'){pageContent.innerHTML=renderCover();initCoverPage(routeParams||{});}
     else{pageContent.innerHTML=renderPlaceholder(route);}
-    document.title=meta.title+' | BMSG UNIVERSE'; scrollAppToTop('smooth');
+    document.title=meta.title+' | BMSG UNIVERSE'; scrollAppToTop('smooth'); syncCurrentFavoriteButton();
   }
-  function navigateTo(route){
-    if(currentRoute==='cover'&&typeof coverConfirmExternalNavigation==='function'&&coverConfirmExternalNavigation(route))return;
-    if(currentRoute==='quiz'&&typeof quizCanLeave_==='function'&&!quizCanLeave_())return;
-    if(currentRoute==='metrics'&&route!=='metrics'&&typeof performanceTimerCanLeave_==='function'&&!performanceTimerCanLeave_())return;
-    if(route==='home'&&(currentRoute==='lyrics'||currentRoute==='karaoke')&&!window.confirm('この画面を離れてHOMEへ戻りますか？'))return;
+
+  function canNavigateUniverse_(route){
+    if(currentRoute==='cover'&&typeof coverConfirmExternalNavigation==='function'&&coverConfirmExternalNavigation(route))return false;
+    if(currentRoute==='quiz'&&typeof quizCanLeave_==='function'&&!quizCanLeave_())return false;
+    if(currentRoute==='metrics'&&route!=='metrics'&&typeof performanceTimerCanLeave_==='function'&&!performanceTimerCanLeave_())return false;
+    if(route==='home'&&(currentRoute==='lyrics'||currentRoute==='karaoke')&&!window.confirm('この画面を離れてHOMEへ戻りますか？'))return false;
+    return true;
+  }
+
+  function navigateTo(route){navigateToWithParams(route,{});}
+  function navigateToWithParams(route,params){
+    if(!canNavigateUniverse_(route))return;
     if(!ROUTES[route]){renderRoute(route);return;}
-    google.script.history.push({page:route},{page:route},'');renderRoute(route);
+    const state=Object.assign({page:route},params||{});
+    google.script.history.push(state,state,'');renderRoute(route,state);
   }
+
   function initRouter(){google.script.history.setChangeHandler(function(event){const page=event&&event.location&&event.location.parameter&&event.location.parameter.page?event.location.parameter.page:'home';if(currentRoute==='cover'&&coverState&&coverState.dirty){google.script.history.replace({page:'cover'},{page:'cover'},'');if(typeof coverConfirmExternalNavigation==='function')coverConfirmExternalNavigation(page);return;}if(currentRoute==='quiz'&&typeof quizCanLeave_==='function'&&!quizCanLeave_()){const state={page:'quiz'};if(quizState&&quizState.game&&quizState.game.roomId)state.room=quizState.game.roomId;google.script.history.replace(state,state,'');return;}if(currentRoute==='metrics'&&page!=='metrics'&&typeof performanceTimerCanLeave_==='function'&&!performanceTimerCanLeave_()){google.script.history.replace({page:'metrics'},{page:'metrics'},'');return;}renderRoute(page,event.location.parameter||{});});google.script.url.getLocation(function(location){const page=location&&location.parameter&&location.parameter.page?location.parameter.page:'home';if(!location.parameter||!location.parameter.page){google.script.history.replace({page:'home'},{page:'home'},'');}renderRoute(page,location.parameter||{});});}
   initRouter();
 </script>
