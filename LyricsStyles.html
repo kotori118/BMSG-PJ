@@ -212,6 +212,25 @@
   .lyrics-page-skeleton-gacha-title{display:block;width:42%;height:21px;border-radius:999px}
   .lyrics-page-skeleton-gacha-copy{display:block;width:16%;height:9px;margin-top:10px;border-radius:999px}
 
+  /* When the catalog is already available, only KARAOKE ROOM waits. Mirror that room instead of showing a spinner. */
+  .lyrics-room-card.is-loading{
+    position:relative!important;display:block!important;min-height:198px!important;overflow:hidden!important;place-items:initial!important
+  }
+  .lyrics-room-card.is-loading .universe-loading{display:none!important}
+  .lyrics-room-card.is-loading::before{
+    content:"";position:absolute;inset:24px;
+    background:
+      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 0/31% 12px no-repeat,
+      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 30px/100% 58px no-repeat,
+      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 100px/calc(100% - 96px) 50px no-repeat,
+      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 100% 100px/86px 50px no-repeat;
+  }
+  .lyrics-room-card.is-loading::after{
+    content:"";position:absolute;inset:0;transform:translateX(-115%);pointer-events:none;
+    background:linear-gradient(90deg,transparent 12%,var(--u-skeleton-shine) 50%,transparent 88%);
+    animation:universeSkeletonSweep 1.45s ease-in-out infinite
+  }
+
   @media(max-width:720px){
     .lyrics-page-skeleton-room{padding:22px}
     .lyrics-page-skeleton-group{min-height:94px;padding:15px}
