@@ -112,6 +112,14 @@
     }
   }
 
+  /* Shared favorite utility icon authority. */
+  .utility-btn[hidden]{display:none!important}
+  .utility-favorite svg{width:25px;height:25px}
+  .utility-favorite .favorite-heart-path{fill:transparent;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;transition:fill var(--fast) var(--ease),stroke var(--fast) var(--ease),transform var(--fast) var(--ease)}
+  .utility-favorite.is-favorite{color:var(--cyan,#9cecff)}
+  .utility-favorite.is-favorite .favorite-heart-path{fill:currentColor}
+  .utility-favorite:active .favorite-heart-path{transform:scale(.9);transform-origin:center}
+
   /* Content-card family keeps its layout/content identity. */
   :is(.home-card,.category-card,.lyrics-group-card,.lyrics-song-card,.lyrics-gacha-card,.karaoke-groups button,.karaoke-song-list button,.karaoke-history-list button,
       .profile-member-card,.profile-map-member,.profile-search-member,.profile-chemistry-member,.profile-discover-member){
