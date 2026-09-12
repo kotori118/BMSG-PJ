@@ -10,11 +10,12 @@ const UNIVERSE_USER_PREFERENCE_COLUMNS_ = Object.freeze({
 
 function getUniverseSettingsBootstrap(userId) {
   const uid = normalizeUniverseStateUserId_(userId);
+  const members = buildUniversePreferenceMemberCatalog_();
   return {
     ok: true,
     data: {
-      preferences: readUniverseUserPreferences_(uid),
-      members: buildUniversePreferenceMemberCatalog_()
+      preferences: readUniverseUserPreferences_(uid, members),
+      members: members
     }
   };
 }
@@ -67,7 +68,7 @@ function saveUniverseUserPreferences(payload) {
   }
 }
 
-function readUniverseUserPreferences_(userId) {
+function readUniverseUserPreferences_(userId, members) {
   const sheet = getLogSheet_(UNIVERSE_CONFIG.SHEETS.USERS);
   const row = readSheetObjects_(sheet).find(function(item) {
     return String(item.UserID || '').trim().toUpperCase() === userId;
@@ -75,8 +76,8 @@ function readUniverseUserPreferences_(userId) {
   if (!row) throw new Error('Userが見つかりません。');
 
   const favoriteMemberId = String(row[UNIVERSE_USER_PREFERENCE_COLUMNS_.FAVORITE_MEMBER_ID] || '').trim();
-  const members = buildUniversePreferenceMemberCatalog_();
-  const favoriteMember = members.find(function(member) { return member.memberId === favoriteMemberId; }) || null;
+  const catalog = Array.isArray(members) ? members : buildUniversePreferenceMemberCatalog_();
+  const favoriteMember = catalog.find(function(member) { return member.memberId === favoriteMemberId; }) || null;
   return normalizeUniverseUserPreferenceRecord_(userId, {
     FavoriteMemberID: favoriteMemberId,
     MemberColorMode: row[UNIVERSE_USER_PREFERENCE_COLUMNS_.MEMBER_COLOR_MODE],
