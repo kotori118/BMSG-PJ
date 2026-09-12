@@ -44,7 +44,9 @@
   function renderProfileChemistryLoading() {
     const panel = document.getElementById('profilePanel');
     if (!panel || profileCurrentView !== 'chemistry') return;
-    panel.innerHTML = `<div class="profile-chemistry-head"><p class="profile-panel-eyebrow">TWO PEOPLE</p><h2 class="profile-chemistry-title">CHEMISTRY</h2></div><div class="profile-chemistry-loading" aria-live="polite"><span class="profile-detail-spinner"></span><span>LOADING CHEMISTRY...</span></div>`;
+    const slot = (number, active) => `<button class="profile-chemistry-slot${active ? ' active' : ''}" type="button" disabled aria-hidden="true"><span class="profile-chemistry-slot-number">${number}</span><span class="profile-chemistry-slot-empty">SELECT</span><span class="profile-chemistry-slot-plus">+</span></button>`;
+    const member = () => `<button class="profile-chemistry-member" type="button" disabled aria-hidden="true"><i class="skeleton-block"></i><span class="skeleton-block" style="display:block;width:72%;height:12px;border-radius:6px"></span></button>`;
+    panel.innerHTML = `<div class="profile-chemistry-head"><p class="profile-panel-eyebrow">TWO PEOPLE</p><h2 class="profile-chemistry-title">CHEMISTRY</h2></div><div class="profile-chemistry-slots">${slot('01',true)}<span class="profile-chemistry-cross" aria-hidden="true">×</span>${slot('02',false)}</div><section class="profile-chemistry-picker"><div class="profile-chemistry-section-head"><h3>MEMBERS</h3><span>—</span></div><div class="profile-chemistry-member-grid">${member()}${member()}${member()}${member()}${member()}${member()}</div></section>`;
   }
 
   function selectProfileChemistrySlot(slot) {
@@ -267,7 +269,8 @@
     if (errorA || errorB) {
       comparisonBody = `<div class="profile-chemistry-detail-error"><p>${escapeHtml(errorA || errorB)}</p><button type="button" onclick="loadProfileChemistryDetail('${escapeHtml(errorA ? memberA.memberId : memberB.memberId)}', true)">再試行</button></div>`;
     } else if (loading) {
-      comparisonBody = `<div class="profile-chemistry-detail-loading"><span class="profile-detail-spinner"></span><span>LOADING PROFILES...</span></div>`;
+      const row = `<div class="profile-chemistry-compare-row" aria-hidden="true"><dd><span class="skeleton-block" style="display:block;width:72%;height:12px;border-radius:6px;margin:auto"></span></dd><dt><span class="skeleton-block" style="display:block;width:82%;height:10px;border-radius:5px;margin:auto"></span></dt><dd><span class="skeleton-block" style="display:block;width:72%;height:12px;border-radius:6px;margin:auto"></span></dd></div>`;
+      comparisonBody = `<div class="profile-chemistry-compare-head" aria-hidden="true"><strong><span class="skeleton-block" style="display:block;width:72%;height:12px;border-radius:6px;margin:auto"></span></strong><span>PROFILE</span><strong><span class="skeleton-block" style="display:block;width:72%;height:12px;border-radius:6px;margin:auto"></span></strong></div><div class="profile-chemistry-compare-rows">${row}${row}${row}${row}</div>`;
     } else {
       const rows = getProfileChemistryDetailRows(memberA, memberB);
       comparisonBody = `<div class="profile-chemistry-compare-head"><strong>${escapeHtml(memberA.displayName)}</strong><span>PROFILE</span><strong>${escapeHtml(memberB.displayName)}</strong></div><div class="profile-chemistry-compare-rows">${rows.map(row => {
