@@ -39,7 +39,7 @@
     const value=parseInt(match[1],16),r=(value>>16)&255,g=(value>>8)&255,b=value&255;
     return (.299*r+.587*g+.114*b)>170?'var(--ink)':'#ffffff';
   }
-  function lyricsGroupButtonStyle(){return 'color:var(--ink);';}
+  function lyricsGroupButtonStyle(name){return '--lyrics-group-accent:'+lyricsGroupColor(name)+';color:var(--ink);';}
   function unitSongs(unit){return lyricsState.catalog.filter(function(song){if(unit==='ALL')return song.category==='UNIT';return song.category==='UNIT'&&song.unitCategory===unit;});}
   function groupSongs(group){if(group==='BMSG ALLSTARS')return unitSongs('ALL');return lyricsState.catalog.filter(function(song){return song.category===group;});}
   function showLyricsGroups(pushUrl){lyricsState.group='';lyricsState.unit='';lyricsState.song=null;if(pushUrl!==false)setLyricsUrl({});document.getElementById('lyricsView').innerHTML='<div id="lyricsKaraokeRoom">'+renderLyricsKaraokeRoom()+'</div><section class="lyrics-groups">'+LYRICS_GROUPS.map(function(group){return '<button class="lyrics-group-card is-colored" style="'+lyricsGroupButtonStyle(group)+'" type="button" onclick="showLyricsGroup(\''+lyricArg(group)+'\')"><strong>'+escapeLyrics(group)+'</strong><span>'+groupSongs(group).length+' SONGS</span></button>';}).join('')+'</section><button class="lyrics-gacha-card" type="button" disabled><strong>SONG GACHA</strong><span>COMING NEXT</span></button>';scrollLyricsTop();}
@@ -193,7 +193,7 @@
     return '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="3" width="8" height="12" rx="4"></rect><path d="M5 11a7 7 0 0 0 14 0M12 18v3M8.5 21h7"></path></svg>';
   }
   function lyricsSongActions(){
-    return '<div class="lyrics-song-actions"><button class="lyrics-list-back" type="button" onclick="backToLyricsSongs()">BACK</button><button class="lyrics-karaoke-icon" type="button" aria-label="カラオケ設定" onclick="openKaraokeFromLyrics(\''+lyricArg(lyricsState.song.songId)+'\')">'+lyricsMicrophoneIcon()+'<span>KARAOKE</span></button></div>';
+    return '<div class="lyrics-song-actions"><button class="lyrics-list-back audit-local-back" type="button" aria-label="戻る" onclick="backToLyricsSongs()">‹</button><button class="lyrics-karaoke-icon" type="button" aria-label="カラオケ設定" onclick="openKaraokeFromLyrics(\''+lyricArg(lyricsState.song.songId)+'\')">'+lyricsMicrophoneIcon()+'<span>KARAOKE</span></button></div>';
   }
   function renderLyricsSong(){
     const song=lyricsState.song;

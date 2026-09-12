@@ -100,7 +100,7 @@
       panel.innerHTML = renderProfileMemberSkeletons(); return;
     }
     if (profileMembersState.status === 'error') {
-      panel.innerHTML = `<article class="profile-members-state"><p class="profile-panel-eyebrow">CONNECTION ERROR</p><h2 class="profile-members-state-title">ERROR</h2><p class="profile-panel-copy">${escapeHtml(profileMembersState.error)}</p><button class="profile-retry-button" type="button" onclick="loadProfileMembers(true)">RETRY</button></article>`;
+      panel.innerHTML = `<article class="profile-members-state"><p class="profile-panel-eyebrow">CONNECTION ERROR</p><h2 class="profile-members-state-title">ERROR</h2><p class="profile-panel-copy">${escapeHtml(profileMembersState.error)}</p><button class="profile-retry-button" type="button" onclick="loadProfileMembers(true)">再試行</button></article>`;
       return;
     }
     const members = getVisibleProfileMembers();
@@ -188,7 +188,7 @@
       const accent = member && /^#[0-9a-f]{6}$/i.test(member.colorHex || '') ? member.colorHex : '#9cecff';
       return `<div class="profile-detail-loading">${renderUniverseLoading('LOADING PROFILE...', accent)}</div>`;
     }
-    if (profileMembersState.detailStatus === 'error') return `<div class="profile-detail-message"><p>${escapeHtml(profileMembersState.detailError)}</p><button class="profile-retry-button" type="button" onclick="openProfileMemberDetail(profileSelectedMemberId)">RETRY</button></div>`;
+    if (profileMembersState.detailStatus === 'error') return `<div class="profile-detail-message"><p>${escapeHtml(profileMembersState.detailError)}</p><button class="profile-retry-button" type="button" onclick="openProfileMemberDetail(profileSelectedMemberId)">再試行</button></div>`;
     const fields = profileMembersState.detailFields || [];
     if (!fields.length) return `<div class="profile-detail-message"><p>表示できるプロフィール項目がありません。</p></div>`;
     const groups = [];
@@ -223,14 +223,14 @@
   .profile-detail-name { font-size: clamp(27px, 8vw, 48px); }
   .profile-detail-sections { display: grid; gap: 14px; margin-top: 0; }
   .profile-detail-section { overflow: hidden; border: 1px solid rgba(156,236,255,.16); border-radius: 18px; background: rgba(255,255,255,.025); padding: 18px; }
-  .profile-detail-section-title { margin: 0 0 12px; color: var(--member-accent); font-family: Orbitron, sans-serif; font-size: 12px; letter-spacing: .14em; }
+  .profile-detail-section-title { margin: 0 0 12px; color: var(--member-accent); font-family: Orbitron,"Zen Kaku Gothic New", sans-serif; font-size: 12px; letter-spacing: .14em; }
   .profile-detail-list { margin: 0; }
   .profile-detail-row { display: grid; grid-template-columns: minmax(105px, 34%) 1fr; gap: 14px; padding: 11px 0; border-top: 1px solid rgba(255,255,255,.08); }
   .profile-detail-row:first-child { border-top: 0; }
   .profile-detail-row dt { color: rgba(255,255,255,.56); font-size: 12px; }
   .profile-detail-row dd { margin: 0; color: #fff; font-size: 14px; line-height: 1.65; overflow-wrap: anywhere; }
   .profile-detail-loading, .profile-detail-message { display: flex; align-items: center; justify-content: center; min-height: 140px; margin-top: 24px; }
-  .profile-detail-message { gap: 12px; color: rgba(255,255,255,.68); font-family: Orbitron, sans-serif; font-size: 11px; letter-spacing: .12em; }
+  .profile-detail-message { gap: 12px; color: rgba(255,255,255,.68); font-family: Orbitron,"Zen Kaku Gothic New", sans-serif; font-size: 11px; letter-spacing: .12em; }
   @media (max-width: 560px) { .profile-detail-section { padding: 15px; } .profile-detail-row { grid-template-columns: 96px 1fr; gap: 10px; } }
   @media (min-width: 720px) {
     .profile-detail-hero { grid-template-columns: 150px minmax(0, 1fr); min-height: 176px; }

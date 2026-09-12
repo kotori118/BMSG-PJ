@@ -1,5 +1,5 @@
 BMSG Universe
-2026-09-10
+2026-09-12
 
 このRepositoryは BMSG Universe サイト本体の現行実装を管理する。
 
@@ -16,6 +16,8 @@ BMSG Universe
 - 変更があった場合は新規文書を作らず、既存の最新正本へ追記し、変更履歴を残す。
 - 現行機能・UI・文言・Motion・保存挙動を壊さない非破壊変更を原則とする。
 - Runtimeには最終版だけを残し、Fixes / Polish / V2 / V3 / Final等の一時的Override層は、Source Ownerへ最終挙動を吸収・検証後に削除する。
+- Shared LoadingはStateUI、Typographyの基礎はStyles、共通Button／46px NavigationはButtonSystemを正式Ownerとする。
+- 動的DOMは生成元が最初から正しい文言・class・styleを出力し、完成形でMutationObserverによる表示後補正に依存しない。
 - 修正履歴はGitに残す。
 - GAS変更はGitHub main反映後、Deploy to GAS workflowの成功まで確認する。
 
