@@ -1,4 +1,6 @@
 // Shared repository for BMSG Universe Log sheet access helpers.
+const UNIVERSE_RECENT_LIMIT_ = 10;
+
 function getLogSheet_(name) {
   const sheet = SpreadsheetApp.openById(UNIVERSE_CONFIG.LOG_DB_ID).getSheetByName(name);
   if (!sheet) throw new Error('Log sheet not found: ' + name);
@@ -76,7 +78,7 @@ function appendRecentActivity_(sheet, record) {
   const currentRows = readSheetObjectsWithRows_(sheet)
     .filter(function(row) { return String(row.UserID || '').trim() === userId; })
     .sort(function(a, b) { return a.__rowNumber - b.__rowNumber; });
-  const excess = currentRows.length - 10;
+  const excess = currentRows.length - UNIVERSE_RECENT_LIMIT_;
   if (excess > 0) {
     currentRows.slice(0, excess)
       .map(function(row) { return row.__rowNumber; })
