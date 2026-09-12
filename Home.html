@@ -3,7 +3,7 @@
 
   function renderHome(){
     return '<section class="view home '+(homeIntroPlayed?'':'home-intro')+'">'
-      +'<div class="home-title-wrap"><p class="home-kicker">BMSG</p><h1 class="home-title" aria-label="BMSG UNIVERSE"><span class="line">BMSG</span><span class="line">UNIVERSE</span></h1><div class="home-divider" aria-hidden="true"></div></div>'
+      +'<div class="home-title-wrap"><h1 class="home-title" aria-label="BMSG UNIVERSE"><span class="line">BMSG</span><span class="line">UNIVERSE</span></h1><div class="home-divider" aria-hidden="true"></div></div>'
       +'<div id="homeDynamic" class="home-dynamic">'+renderHomeSkeleton_()+'</div>'
       +'</section>';
   }
@@ -23,29 +23,29 @@
     if(homeState.status==='loading'||homeState.status==='idle'){host.innerHTML=renderHomeSkeleton_();return;}
     if(homeState.status==='error'){host.innerHTML='<div class="home-state"><strong>ERROR</strong><p>'+escapeHtml(homeState.error)+'</p><button type="button" onclick="initHomePage()">RETRY</button></div>';return;}
     const data=homeState.data||{};
-    host.innerHTML=renderHomeToday_(data.todaySong,data.luckyMember,data.birthdayMembers||[])+renderHomeListSection_('FAVORITES','お気に入り',data.favoritePreview||[],'favorites')+renderHomeListSection_('RECENT','履歴',data.recentPreview||[],'recent');
+    host.innerHTML=renderHomeToday_(data.todaySong,data.luckyMember,data.birthdayMembers||[])+renderHomeListSection_('お気に入り',data.favoritePreview||[],'favorites')+renderHomeListSection_('履歴',data.recentPreview||[],'recent');
   }
 
   function renderHomeSkeleton_(){
     return '<section class="home-today-grid home-skeleton-group" aria-busy="true">'
-      +'<article class="home-feature-card home-skeleton-card"><span class="home-feature-label">TODAY\'S SONG</span><span class="home-skeleton-line home-skeleton-title"></span><span class="home-skeleton-line home-skeleton-meta"></span><span class="home-skeleton-line home-skeleton-action"></span></article>'
-      +'<article class="home-feature-card home-skeleton-card"><span class="home-feature-label">LUCKY MEMBER</span><span class="home-skeleton-line home-skeleton-title short"></span><span class="home-skeleton-line home-skeleton-meta"></span><span class="home-skeleton-line home-skeleton-action"></span></article>'
+      +'<article class="home-feature-card home-song-card home-skeleton-card"><span class="home-feature-label">TODAY\'S SONG</span><span class="home-skeleton-line home-skeleton-title"></span><span class="home-skeleton-line home-skeleton-meta"></span><span class="home-skeleton-line home-skeleton-action"></span></article>'
+      +'<article class="home-feature-card home-member-card home-skeleton-card"><span class="home-feature-label">LUCKY MEMBER</span><span class="home-skeleton-line home-skeleton-title short"></span><span class="home-skeleton-line home-skeleton-action"></span></article>'
       +'</section>'
-      +renderHomeSkeletonList_('FAVORITES','お気に入り')
-      +renderHomeSkeletonList_('RECENT','履歴');
+      +renderHomeSkeletonList_('お気に入り')
+      +renderHomeSkeletonList_('履歴');
   }
 
-  function renderHomeSkeletonList_(eyebrow,title){
-    return '<section class="home-list-section home-skeleton-group" aria-busy="true"><div class="home-section-head"><div><span>'+escapeHtml(eyebrow)+'</span><h2>'+escapeHtml(title)+'</h2></div></div><div class="home-list home-skeleton-list">'
+  function renderHomeSkeletonList_(title){
+    return '<section class="home-list-section home-skeleton-group" aria-busy="true"><div class="home-section-head"><div><h2>'+escapeHtml(title)+'</h2></div></div><div class="home-list home-skeleton-list">'
       +'<div class="home-skeleton-row"><span class="home-skeleton-line home-skeleton-row-meta"></span><span class="home-skeleton-line home-skeleton-row-title"></span></div>'
       +'<div class="home-skeleton-row"><span class="home-skeleton-line home-skeleton-row-meta"></span><span class="home-skeleton-line home-skeleton-row-title short"></span></div>'
       +'</div></section>';
   }
 
   function renderHomeToday_(song,member,birthdayMembers){
-    const songButton=song?'<button class="home-feature-card home-song-card" type="button" onclick="openUniverseTarget({route:\'lyrics\',params:{song:\''+escapeHtml(song.songId)+'\'}})"><span class="home-feature-label">TODAY\'S SONG</span><strong class="home-song-title">'+escapeHtml(song.title)+'</strong><small>'+escapeHtml(song.artist||'')+'</small><b>PLAY ›</b></button>':'<article class="home-feature-card"><span class="home-feature-label">TODAY\'S SONG</span><strong>NO DATA</strong></article>';
+    const songButton=song?'<button class="home-feature-card home-song-card" type="button" onclick="openUniverseTarget({route:\'lyrics\',params:{song:\''+escapeHtml(song.songId)+'\'}})"><span class="home-feature-label">TODAY\'S SONG</span><strong class="home-song-title">'+escapeHtml(song.title)+'</strong><small>'+escapeHtml(song.artist||'')+'</small><b>PLAY ›</b></button>':'<article class="home-feature-card home-song-card"><span class="home-feature-label">TODAY\'S SONG</span><strong>NO DATA</strong></article>';
     const members=Array.isArray(birthdayMembers)?birthdayMembers:[];
-    const memberCard=members.length?renderHomeBirthdayMembers_(members):(member?'<button class="home-feature-card home-member-card" style="--home-accent:'+escapeHtml(member.colorHex||'#9cecff')+'" type="button" onclick="openUniverseProfileMember(\''+escapeHtml(member.memberId)+'\')"><span class="home-feature-label">LUCKY MEMBER</span><strong>'+escapeHtml(member.displayName)+'</strong><b>PROFILE ›</b></button>':'<article class="home-feature-card"><span class="home-feature-label">LUCKY MEMBER</span><strong>NO DATA</strong></article>');
+    const memberCard=members.length?renderHomeBirthdayMembers_(members):(member?'<button class="home-feature-card home-member-card" style="--home-accent:'+escapeHtml(member.colorHex||'#9cecff')+'" type="button" onclick="openUniverseProfileMember(\''+escapeHtml(member.memberId)+'\')"><span class="home-feature-label">LUCKY MEMBER</span><strong>'+escapeHtml(member.displayName)+'</strong><b>PROFILE ›</b></button>':'<article class="home-feature-card home-member-card"><span class="home-feature-label">LUCKY MEMBER</span><strong>NO DATA</strong></article>');
     return '<section class="home-today-grid">'+songButton+memberCard+'</section>';
   }
 
@@ -57,11 +57,11 @@
     return '<article class="home-feature-card home-member-card home-birthday-card"><span class="home-feature-label">HAPPY BIRTHDAY! 🎂</span><div class="home-birthday-copy"><strong>'+label+'</strong><small>今日は特別なLUCKY MEMBER DAY</small></div><div class="home-birthday-members">'+buttons+'</div><i class="home-birthday-sparkle sparkle-one" aria-hidden="true">✦</i><i class="home-birthday-sparkle sparkle-two" aria-hidden="true">✧</i><i class="home-birthday-sparkle sparkle-three" aria-hidden="true">✦</i></article>';
   }
 
-  function renderHomeListSection_(eyebrow,title,items,kind){
+  function renderHomeListSection_(title,items,kind){
     items=Array.isArray(items)?items:[];
     const rows=items.length?items.map(function(item){return '<button class="home-list-row" type="button" onclick=\'openUniverseTarget('+JSON.stringify({route:item.route,params:item.params||{}}).replace(/'/g,"&#39;")+')\'><span><small>'+escapeHtml(homeListMeta_(item,kind))+'</small><strong>'+escapeHtml(item.label||'')+'</strong></span><b>›</b></button>';}).join(''):'<p class="home-empty">まだありません。</p>';
     const more='<button class="home-more" type="button" onclick="openHomeCollection(\''+kind+'\')">もっと見る</button>';
-    return '<section class="home-list-section"><div class="home-section-head"><div><span>'+escapeHtml(eyebrow)+'</span><h2>'+escapeHtml(title)+'</h2></div>'+more+'</div><div class="home-list">'+rows+'</div></section>';
+    return '<section class="home-list-section"><div class="home-section-head"><div><h2>'+escapeHtml(title)+'</h2></div>'+more+'</div><div class="home-list">'+rows+'</div></section>';
   }
 
   function homeListMeta_(item,kind){
