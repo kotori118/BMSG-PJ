@@ -93,6 +93,10 @@
       navigateToWithParams('profile', {member:item.memberId || item.id});
       return;
     }
+    if (item.type === 'ANALYSIS') {
+      navigateToWithParams('analysis', {view:'member', member:item.memberName || ''});
+      return;
+    }
     if (item.type === 'SONG' || item.type === 'LYRICS') {
       navigateToWithParams('lyrics', {song:item.songId || item.id});
       return;
@@ -113,6 +117,22 @@
       return;
     }
     if (count < 40) setTimeout(function(){ openProfileSearchTarget(target, count + 1); }, 100);
+  }
+
+  function openAnalysisSearchTarget(params, attempt) {
+    const target = params || {};
+    const count = Number(attempt || 0);
+    if (currentRoute !== 'analysis' || target.view !== 'member' || !target.member) return;
+    if (typeof analysisData !== 'undefined' && analysisData && typeof renderAnalysisView === 'function') {
+      const exists = (analysisData.members || []).some(function(member){ return member.name === target.member; });
+      if (!exists) return;
+      analysisView = 'member';
+      analysisMember = target.member;
+      analysisYear = 'all';
+      renderAnalysisView();
+      return;
+    }
+    if (count < 50) setTimeout(function(){ openAnalysisSearchTarget(target, count + 1); }, 100);
   }
 
   function openCardSearchTarget(params, attempt) {
