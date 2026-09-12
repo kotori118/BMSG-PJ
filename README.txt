@@ -16,6 +16,9 @@ BMSG Universe
 - 変更があった場合は新規文書を作らず、既存の最新正本へ追記し、変更履歴を残す。
 - 現行機能・UI・文言・Motion・保存挙動を壊さない非破壊変更を原則とする。
 - Runtimeには最終版だけを残し、Fixes / Polish / V2 / V3 / Final等の一時的Override層は、Source Ownerへ最終挙動を吸収・検証後に削除する。
+- 現行の責務分割を構成の基準とし、個別変更の都合だけでOwnerやService境界を混在・統合しない。
+- 各Runtime関数の正本は1つのSource Ownerに限定する。実装前にRepository全体を検索し、同名関数・同等責務・後勝ち再代入・Wrapper Overrideを残さず、Owner本体を直接変更する。
+- 新規ファイルは、独立した責務・規模・拡張性から分離が妥当な場合に追加してよい。その際はIndexのinclude順、READMEの責務、Drive正本と変更履歴を同時に更新する。
 - Shared LoadingはStateUI、Typographyの基礎はStyles、共通Button／46px NavigationはButtonSystemを正式Ownerとする。
 - 動的DOMは生成元が最初から正しい文言・class・styleを出力し、完成形でMutationObserverによる表示後補正に依存しない。
 - 修正履歴はGitに残す。

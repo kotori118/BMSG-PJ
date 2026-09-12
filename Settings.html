@@ -93,6 +93,9 @@
   }
 
   function openSettings() {
+    if (typeof ensureKaraokeFavoriteSettingsEntry === 'function') ensureKaraokeFavoriteSettingsEntry();
+    if (typeof ensureKaraokeFavoriteSettingsModal === 'function') ensureKaraokeFavoriteSettingsModal();
+    if (typeof preloadKaraokeFavoriteSettings === 'function') preloadKaraokeFavoriteSettings();
     syncSettingsUserName();
     syncLyricsEditMode();
     const lyricsSection = document.getElementById('lyricsSettingsSection');

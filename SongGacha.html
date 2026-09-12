@@ -51,17 +51,6 @@
 </style>
 <script>
   const songGachaState={enabled:{},result:null,drawing:false};
-  const songGachaBaseShowLyricsGroups=showLyricsGroups;
-
-  showLyricsGroups=function(pushUrl){
-    songGachaBaseShowLyricsGroups(pushUrl);
-    const button=document.querySelector('.lyrics-gacha-card');
-    if(button){
-      button.disabled=false;
-      button.innerHTML='<strong>SONG GACHA</strong><span>曲を引く</span>';
-      button.onclick=openSongGacha;
-    }
-  };
 
   function resetSongGachaSelection(){
     songGachaState.enabled={};
