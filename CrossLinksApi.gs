@@ -1,6 +1,6 @@
 /**
  * PHASE5 cross-feature read-only adapters.
- * Cross-feature data belongs here so PROFILE / LYRICS / ANALYSIS / CARD / COVER
+ * Cross-feature data belongs here so PROFILE / LYRICS / ANALYSIS / CARD
  * can stay focused on their own service responsibilities.
  */
 function getUniverseMemberCreativeCredits(memberId) {
@@ -24,19 +24,16 @@ function getUniverseMemberCreativeCredits(memberId) {
     const creditsBySong = {};
     credits.forEach(function(row) { creditsBySong[asId_(row.SongID)] = row; });
 
-    function hasExactCredit(value) {
-      return String(value || '').split(',').map(function(token) {
-        return token.trim();
-      }).filter(Boolean).indexOf(memberName) >= 0;
-    }
-
     const creditSongs = songs.map(function(song) {
       const songId = asId_(song.SongID);
       const credit = creditsBySong[songId] || {};
+      const lyricists = splitUniverseCreditNames_(credit.Lyricists);
+      const composers = splitUniverseCreditNames_(credit.Composers);
+      const choreographers = splitUniverseCreditNames_(credit.Choreographers);
       const roles = [];
-      if (hasExactCredit(credit.Lyricists)) roles.push('作詞');
-      if (hasExactCredit(credit.Composers)) roles.push('作曲');
-      if (hasExactCredit(credit.Choreographers)) roles.push('コレオ');
+      if (lyricists.indexOf(memberName) >= 0) roles.push('作詞');
+      if (composers.indexOf(memberName) >= 0) roles.push('作曲');
+      if (choreographers.indexOf(memberName) >= 0) roles.push('コレオ');
       if (!roles.length) return null;
       return {
         songId: songId,
