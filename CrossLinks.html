@@ -11,7 +11,7 @@
     universeCrossLinksState.route=String(route||'');
     universeCrossLinksState.params=params||{};
     if(!universeCrossLinksState.captureBound&&pageContent){pageContent.addEventListener('click',handleUniverseCoverTargetCapture_,true);universeCrossLinksState.captureBound=true;}
-    if(pageContent){universeCrossLinksState.observer=new MutationObserver(syncUniverseCrossLinks);universeCrossLinksState.observer.observe(pageContent,{childList:true,subtree:true});}
+    if(document.body){universeCrossLinksState.observer=new MutationObserver(syncUniverseCrossLinks);universeCrossLinksState.observer.observe(document.body,{childList:true,subtree:true});}
     syncUniverseCrossLinks();
   }
 
