@@ -10,7 +10,7 @@
 
   function initHomePage(){
     const userId=typeof getUniverseUserId==='function'?getUniverseUserId():'';
-    if(!userId){homeState.status='error';homeState.error='ユーザーを選択してください。';renderHomeDynamic_();return;}
+    if(!userId){homeState.status='idle';homeState.error='';renderHomeDynamic_();return;}
     homeState.status='loading';homeState.error='';renderHomeDynamic_();
     google.script.run.withSuccessHandler(function(response){
       if(!response||!response.ok||!response.data){homeState.status='error';homeState.error='HOMEの読み込みに失敗しました。';renderHomeDynamic_();return;}
