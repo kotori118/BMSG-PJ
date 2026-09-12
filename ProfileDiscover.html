@@ -50,7 +50,8 @@
   function renderProfileDiscoverLoading() {
     const panel = document.getElementById('profilePanel');
     if (!panel || profileCurrentView !== 'discover') return;
-    panel.innerHTML = `<div class="profile-chemistry-head"><p class="profile-panel-eyebrow">FIND SIMILAR</p><h2 class="profile-chemistry-title">DISCOVER</h2></div><div class="profile-chemistry-loading" aria-live="polite"><span class="profile-detail-spinner"></span><span>LOADING DISCOVER...</span></div>`;
+    const cards = Array.from({ length: 6 }, () => `<article class="profile-member-card profile-member-card-loading" aria-hidden="true"><div class="profile-member-visual"><span class="profile-member-skeleton profile-member-skeleton-image"></span></div><div class="profile-member-body"><span class="profile-member-skeleton profile-member-skeleton-copy"></span><span class="profile-member-skeleton profile-member-skeleton-name"></span></div></article>`).join('');
+    panel.innerHTML = `<div class="profile-discover-head"><p class="profile-panel-eyebrow">FIND SIMILAR</p><h2 class="profile-members-title">DISCOVER</h2><p class="profile-discover-sub">SELECT A MEMBER</p></div><div class="profile-member-grid">${cards}</div>`;
   }
 
   function renderProfileDiscover() {
