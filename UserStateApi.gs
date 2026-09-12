@@ -5,6 +5,7 @@
 const UNIVERSE_STATE_USERS_ = Object.freeze(['U001', 'U002', 'U003']);
 const UNIVERSE_RECENT_LIMIT_ = 10;
 const UNIVERSE_HOME_PREVIEW_LIMIT_ = 5;
+const UNIVERSE_STATE_LOOKUP_CACHE_KEY_ = 'universe-state-lookup-v1';
 const UNIVERSE_PAGE_FAVORITES_ = Object.freeze({
   analysis: 'ANALYSIS',
   quiz: 'QUIZ',
@@ -21,13 +22,14 @@ const UNIVERSE_ACTIVITY_ROUTES_ = Object.freeze({
 
 function getUniverseHomeBootstrap(userId) {
   const uid = normalizeUniverseStateUserId_(userId);
-  const recent = normalizeUniverseRecent_(uid);
-  const favorites = readUniverseFavorites_(uid);
+  const lookup = buildUniverseStateLookup_();
+  const recent = normalizeUniverseRecent_(uid, lookup);
+  const favorites = readUniverseFavorites_(uid, lookup);
   return {
     ok: true,
     data: {
-      todaySong: getUniverseDailySong_(uid),
-      luckyMember: getUniverseDailyMember_(uid),
+      todaySong: getUniverseDailySong_(uid, lookup),
+      luckyMember: getUniverseDailyMember_(uid, lookup),
       recent: recent,
       recentPreview: recent.slice(0, UNIVERSE_HOME_PREVIEW_LIMIT_),
       favorites: favorites,
@@ -103,7 +105,7 @@ function normalizeUniverseFavoriteTarget_(targetType, targetId) {
   return {targetType:type, targetId:id};
 }
 
-function normalizeUniverseRecent_(userId) {
+function normalizeUniverseRecent_(userId, lookup) {
   const sheet = getLogSheet_(UNIVERSE_CONFIG.SHEETS.RECENT_ACTIVITIES);
   const rows = readSheetObjectsWithRows_(sheet).filter(function(row){return String(row.UserID || '') === userId;}).sort(function(a,b){return a.__rowNumber-b.__rowNumber;});
   const kept = [];
@@ -123,29 +125,29 @@ function normalizeUniverseRecent_(userId) {
   }
   if (deleteRows.length) {
     deleteRows.filter(function(rowNumber,index,array){return array.indexOf(rowNumber)===index;}).sort(function(a,b){return b-a;}).forEach(function(rowNumber){sheet.deleteRow(rowNumber);});
-    return readUniverseRecent_(userId);
+    return readUniverseRecent_(userId, lookup);
   }
-  return hydrateUniverseRecent_(kept.slice(-UNIVERSE_RECENT_LIMIT_).reverse());
+  return hydrateUniverseRecent_(kept.slice(-UNIVERSE_RECENT_LIMIT_).reverse(), lookup);
 }
 
-function readUniverseRecent_(userId) {
+function readUniverseRecent_(userId, lookup) {
   const sheet = getLogSheet_(UNIVERSE_CONFIG.SHEETS.RECENT_ACTIVITIES);
   const rows = readSheetObjectsWithRows_(sheet).filter(function(row){return String(row.UserID || '') === userId;}).sort(function(a,b){return b.__rowNumber-a.__rowNumber;}).slice(0, UNIVERSE_RECENT_LIMIT_);
-  return hydrateUniverseRecent_(rows);
+  return hydrateUniverseRecent_(rows, lookup);
 }
 
-function readUniverseFavorites_(userId) {
+function readUniverseFavorites_(userId, lookup) {
   const sheet = getLogSheet_(UNIVERSE_CONFIG.SHEETS.USER_FAVORITES);
   const rows = readSheetObjectsWithRows_(sheet).filter(function(row){return String(row.UserID || '') === userId;}).sort(function(a,b){
     return universeDateValue_(b.CreatedAt) - universeDateValue_(a.CreatedAt) || b.__rowNumber-a.__rowNumber;
   });
   const seen = {};
   const unique = rows.filter(function(row){const key=String(row.TargetType||'')+'|'+String(row.TargetID||'');if(seen[key])return false;seen[key]=true;return true;});
-  return hydrateUniverseFavorites_(unique);
+  return hydrateUniverseFavorites_(unique, lookup);
 }
 
-function hydrateUniverseRecent_(rows) {
-  const lookup = buildUniverseStateLookup_();
+function hydrateUniverseRecent_(rows, lookup) {
+  lookup = lookup || buildUniverseStateLookup_();
   return rows.map(function(row){
     const type = String(row.ActivityType || '');
     const targetId = String(row.TargetID || '');
@@ -159,8 +161,8 @@ function hydrateUniverseRecent_(rows) {
   });
 }
 
-function hydrateUniverseFavorites_(rows) {
-  const lookup = buildUniverseStateLookup_();
+function hydrateUniverseFavorites_(rows, lookup) {
+  lookup = lookup || buildUniverseStateLookup_();
   return rows.map(function(row){
     const type=String(row.TargetType||'').toUpperCase();
     const targetId=String(row.TargetID||'');
@@ -173,29 +175,38 @@ function hydrateUniverseFavorites_(rows) {
 }
 
 function buildUniverseStateLookup_() {
+  const cache = CacheService.getScriptCache();
+  const cached = cache.get(UNIVERSE_STATE_LOOKUP_CACHE_KEY_);
+  if (cached) {
+    try { return JSON.parse(cached); } catch (error) {}
+  }
   const members = {};
   readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.MEMBERS).forEach(function(row){
-    const id=String(row.MemberID||'');if(id)members[id]={memberId:id,displayName:String(row.DisplayName||id),colorHex:String(row.ColorHex||'#9cecff')};
+    const id=String(row.MemberID||'').trim();
+    if(id)members[id]={memberId:id,displayName:String(row.DisplayName||id),colorHex:normalizeUniverseColor_(row.ColorHex)};
   });
   const songs = {};
   readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.SONGS).forEach(function(row){
-    const id=String(row.SongID||'');if(id)songs[id]={songId:id,title:String(row.Title||id),artist:String(row.Artist||'')};
+    const id=String(row.SongID||'').trim();
+    if(id)songs[id]={songId:id,title:String(row.Title||id),artist:String(row.Artist||'')};
   });
-  return {members:members,songs:songs};
+  const lookup = {members:members,songs:songs};
+  cache.put(UNIVERSE_STATE_LOOKUP_CACHE_KEY_, JSON.stringify(lookup), UNIVERSE_CONFIG.PROFILE_CACHE_SECONDS || 300);
+  return lookup;
 }
 
-function getUniverseDailySong_(userId) {
-  const rows = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.SONGS).filter(function(row){return String(row.SongID||'').trim() && String(row.Title||'').trim();});
+function getUniverseDailySong_(userId, lookup) {
+  lookup = lookup || buildUniverseStateLookup_();
+  const rows = Object.keys(lookup.songs).map(function(id){return lookup.songs[id];}).filter(function(row){return row.songId && row.title;});
   if (!rows.length) return null;
-  const row = rows[deterministicUniverseIndex_(userId, 'song', rows.length)];
-  return {songId:String(row.SongID), title:String(row.Title), artist:String(row.Artist||'')};
+  return rows[deterministicUniverseIndex_(userId, 'song', rows.length)];
 }
 
-function getUniverseDailyMember_(userId) {
-  const rows = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.MEMBERS).filter(function(row){return String(row.MemberID||'').trim() && String(row.DisplayName||'').trim();});
+function getUniverseDailyMember_(userId, lookup) {
+  lookup = lookup || buildUniverseStateLookup_();
+  const rows = Object.keys(lookup.members).map(function(id){return lookup.members[id];}).filter(function(row){return row.memberId && row.displayName;});
   if (!rows.length) return null;
-  const row = rows[deterministicUniverseIndex_(userId, 'member', rows.length)];
-  return {memberId:String(row.MemberID), displayName:String(row.DisplayName), colorHex:String(row.ColorHex||'#9cecff')};
+  return rows[deterministicUniverseIndex_(userId, 'member', rows.length)];
 }
 
 function deterministicUniverseIndex_(userId, kind, length) {
@@ -204,6 +215,11 @@ function deterministicUniverseIndex_(userId, kind, length) {
   let hash = 2166136261;
   for (let i=0;i<input.length;i++) {hash ^= input.charCodeAt(i);hash = Math.imul(hash, 16777619);}
   return Math.abs(hash >>> 0) % length;
+}
+
+function normalizeUniverseColor_(value) {
+  const color = String(value || '').trim();
+  return /^#[0-9a-fA-F]{6}$/.test(color) ? color : '#9cecff';
 }
 
 function universeDateValue_(value) {
