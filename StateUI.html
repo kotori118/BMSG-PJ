@@ -94,6 +94,20 @@
     box-shadow:inset 0 1px 0 rgba(255,255,255,.92);
   }
 
+  /* Initial/bootstrap skeletons whose existing host already defines the page responsibility. */
+  :is(#cardApp,#coverApp):has(> .universe-loading),#performanceTimerApp:has(.pt-loading .universe-loading){
+    position:relative;
+    min-height:292px;
+    overflow:hidden;
+    border-radius:20px;
+    background:
+      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 8px/32% 16px no-repeat,
+      linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 0 38px/54% 10px no-repeat;
+  }
+  :is(#cardApp,#coverApp):has(> .universe-loading) > .universe-loading,#performanceTimerApp:has(.pt-loading .universe-loading) .pt-loading{visibility:hidden!important}
+  :is(#cardApp,#coverApp):has(> .universe-loading)::before,#performanceTimerApp:has(.pt-loading .universe-loading)::before{content:"";position:absolute;left:0;right:0;top:72px;height:62px;border-radius:18px;background:var(--u-skeleton-base);box-shadow:0 76px 0 var(--u-skeleton-base),0 152px 0 var(--u-skeleton-base)}
+  :is(#cardApp,#coverApp):has(> .universe-loading)::after,#performanceTimerApp:has(.pt-loading .universe-loading)::after{content:"";position:absolute;inset:0;transform:translateX(-115%);background:linear-gradient(90deg,transparent 12%,var(--u-skeleton-shine) 50%,transparent 88%);animation:universeSkeletonSweep 1.45s ease-in-out infinite;pointer-events:none}
+
   /* QUIZ partial loads use compact skeletons, while game creation/join keeps spinner loading. */
   #quizRecentRoomsV3:has(> .universe-loading),.quiz-lyrics-modal-body:has(> .universe-loading){position:relative;overflow:hidden;min-height:150px}
   #quizRecentRoomsV3:has(> .universe-loading) > .universe-loading,.quiz-lyrics-modal-body:has(> .universe-loading) > .universe-loading{visibility:hidden}
@@ -115,6 +129,7 @@
   @media(prefers-reduced-motion:reduce){
     :is(.skeleton-block,.profile-member-skeleton)::after,
     :is(.profile-detail-loading,.profile-map-loading,.profile-search-loading,.profile-chemistry-loading,.analysis-loading,.universe-search-loading,.lyrics-loading,.karaoke-loading.is-shared)::after,
+    :is(#cardApp,#coverApp):has(> .universe-loading)::after,#performanceTimerApp:has(.pt-loading .universe-loading)::after,
     #quizRecentRoomsV3:has(> .universe-loading)::after,.quiz-lyrics-modal-body:has(> .universe-loading)::after{animation:none!important;display:none}
     .universe-spinner,.profile-detail-spinner,.profile-map-spinner,.profile-search-spinner,.karaoke-loading::before,.lyrics-loading::before,.loading-space::before{animation:none!important}
   }
