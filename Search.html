@@ -21,6 +21,11 @@
     document.body.style.overflow = '';
   }
 
+  function renderUniverseSearchLoading() {
+    const row = '<button type="button" class="search-result universe-search-result" disabled aria-hidden="true"><span class="universe-search-type skeleton-block" style="display:block;width:52px;height:8px;border-radius:5px"></span><span class="search-result-name skeleton-block" style="display:block;width:58%;height:13px;border-radius:6px"></span><span class="universe-search-subtitle skeleton-block" style="display:block;width:42%;height:9px;border-radius:5px"></span><span class="universe-search-arrow" aria-hidden="true">›</span></button>';
+    return '<div class="universe-search-loading">'+row+row+row+'</div>';
+  }
+
   function runUniverseSearch(event) {
     if (event && typeof event.preventDefault === 'function') event.preventDefault();
     if (universeSearchBusy) return false;
@@ -37,7 +42,7 @@
 
     universeSearchBusy = true;
     if (status) status.textContent = '';
-    if (results) results.innerHTML = '<div class="universe-search-loading">'+renderUniverseLoading('LOADING...','#9cecff')+'</div>';
+    if (results) results.innerHTML = renderUniverseSearchLoading();
 
     google.script.run
       .withSuccessHandler(function(response){
@@ -157,7 +162,7 @@
   .universe-search-form{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:stretch}
   .universe-search-form .search-field{margin:0}
   .universe-search-submit{min-width:86px;padding:0 16px;border:1px solid rgba(156,236,255,.30);border-radius:16px;background:rgba(156,236,255,.10);color:var(--cyan);font:700 11px "Exo 2","Zen Kaku Gothic New",Roboto,sans-serif;letter-spacing:.12em;cursor:pointer}
-  .universe-search-loading{min-height:180px;display:flex;align-items:center;justify-content:center}
+  .universe-search-loading{display:grid;gap:10px;margin-top:14px}
   .universe-search-result{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"type arrow" "name arrow" "sub arrow";align-items:center;gap:4px 16px;padding:17px 18px;text-align:left}
   .universe-search-type{grid-area:type;color:var(--cyan);font:700 9px "Exo 2","Zen Kaku Gothic New",Roboto,sans-serif;letter-spacing:.15em}
   .universe-search-result .search-result-name{grid-area:name;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
