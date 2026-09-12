@@ -1,5 +1,5 @@
 <script>
-  const universeStateClient={favorites:[],recent:[],lastActivityKey:'',lastActivityAt:0,profileOpenTimer:0};
+  const universeStateClient={favorites:[],recent:[],favoritesUserId:'',favoritesLoading:false,lastActivityKey:'',lastActivityAt:0,profileOpenTimer:0};
   const UNIVERSE_FAVORITE_PAGE_ROUTES=Object.freeze({analysis:true,quiz:true,cards:true,poker:true,cover:true});
 
   function universeUserId_(){return typeof getUniverseUserId==='function'?getUniverseUserId():'';}
@@ -7,6 +7,8 @@
     data=data||{};
     universeStateClient.favorites=Array.isArray(data.favorites)?data.favorites.slice():[];
     universeStateClient.recent=Array.isArray(data.recent)?data.recent.slice():[];
+    universeStateClient.favoritesUserId=universeUserId_();
+    universeStateClient.favoritesLoading=false;
     syncCurrentFavoriteButton();
   }
 
@@ -22,11 +24,23 @@
     return universeStateClient.favorites.some(function(item){return item.targetType===target.targetType&&String(item.targetId)===String(target.targetId);});
   }
 
+  function ensureUniverseFavoritesLoaded_(){
+    const userId=universeUserId_();
+    if(!userId||universeStateClient.favoritesLoading||universeStateClient.favoritesUserId===userId)return;
+    universeStateClient.favorites=[];universeStateClient.favoritesLoading=true;
+    google.script.run.withSuccessHandler(function(response){
+      universeStateClient.favoritesLoading=false;universeStateClient.favoritesUserId=userId;
+      universeStateClient.favorites=response&&response.ok&&response.data&&Array.isArray(response.data.favorites)?response.data.favorites:[];
+      syncCurrentFavoriteButton();
+    }).withFailureHandler(function(){universeStateClient.favoritesLoading=false;universeStateClient.favoritesUserId='';}).getUniverseFavorites(userId);
+  }
+
   function syncCurrentFavoriteButton(){
     const button=document.getElementById('favoritePageButton');
     if(!button)return;
     const target=getCurrentUniverseFavoriteTarget();
     if(!target){button.hidden=true;button.classList.remove('is-favorite');button.setAttribute('aria-pressed','false');return;}
+    ensureUniverseFavoritesLoaded_();
     const active=isUniverseFavorite_(target);
     button.hidden=false;button.classList.toggle('is-favorite',active);button.setAttribute('aria-pressed',String(active));button.setAttribute('aria-label',active?'お気に入りから削除':'お気に入りに追加');
     const mark=button.querySelector('[data-favorite-mark]');if(mark)mark.textContent=active?'♥':'♡';
@@ -34,14 +48,14 @@
 
   function toggleCurrentFavorite(){
     const target=getCurrentUniverseFavoriteTarget(),userId=universeUserId_();
-    if(!target||!userId)return;
+    if(!target||!userId||universeStateClient.favoritesLoading)return;
     const active=isUniverseFavorite_(target);
     const message=active?'お気に入りから削除しますか？':'このページをお気に入りにしますか？';
     if(!window.confirm(message))return;
     const button=document.getElementById('favoritePageButton');if(button)button.disabled=true;
     google.script.run.withSuccessHandler(function(response){
       if(button)button.disabled=false;
-      if(response&&response.ok&&response.data){universeStateClient.favorites=Array.isArray(response.data.favorites)?response.data.favorites:[];syncCurrentFavoriteButton();if(currentRoute==='home'&&typeof refreshHomeFavorites==='function')refreshHomeFavorites();}
+      if(response&&response.ok&&response.data){universeStateClient.favorites=Array.isArray(response.data.favorites)?response.data.favorites:[];universeStateClient.favoritesUserId=userId;syncCurrentFavoriteButton();if(currentRoute==='home'&&typeof refreshHomeFavorites==='function')refreshHomeFavorites();}
     }).withFailureHandler(function(error){if(button)button.disabled=false;if(typeof showToast==='function')showToast(error&&error.message?error.message:'お気に入りの更新に失敗しました。');}).setUniverseFavorite({userId:userId,targetType:target.targetType,targetId:target.targetId,favorite:!active});
   }
 
