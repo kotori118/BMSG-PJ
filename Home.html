@@ -23,7 +23,7 @@
     if(homeState.status==='loading'||homeState.status==='idle'){host.innerHTML=renderHomeSkeleton_();return;}
     if(homeState.status==='error'){host.innerHTML='<div class="home-state"><strong>ERROR</strong><p>'+escapeHtml(homeState.error)+'</p><button type="button" onclick="initHomePage()">RETRY</button></div>';return;}
     const data=homeState.data||{};
-    host.innerHTML=renderHomeToday_(data.todaySong,data.luckyMember,data.birthdayMembers||[])+renderHomeListSection_('FAVORITES','お気に入り',data.favoritePreview||[],'favorites')+renderHomeListSection_('RECENT','最近やったこと',data.recentPreview||[],'recent');
+    host.innerHTML=renderHomeToday_(data.todaySong,data.luckyMember,data.birthdayMembers||[])+renderHomeListSection_('FAVORITES','お気に入り',data.favoritePreview||[],'favorites')+renderHomeListSection_('RECENT','履歴',data.recentPreview||[],'recent');
   }
 
   function renderHomeSkeleton_(){
@@ -32,7 +32,7 @@
       +'<article class="home-feature-card home-skeleton-card"><span class="home-feature-label">LUCKY MEMBER</span><span class="home-skeleton-line home-skeleton-title short"></span><span class="home-skeleton-line home-skeleton-meta"></span><span class="home-skeleton-line home-skeleton-action"></span></article>'
       +'</section>'
       +renderHomeSkeletonList_('FAVORITES','お気に入り')
-      +renderHomeSkeletonList_('RECENT','最近やったこと');
+      +renderHomeSkeletonList_('RECENT','履歴');
   }
 
   function renderHomeSkeletonList_(eyebrow,title){
@@ -45,7 +45,7 @@
   function renderHomeToday_(song,member,birthdayMembers){
     const songButton=song?'<button class="home-feature-card home-song-card" type="button" onclick="openUniverseTarget({route:\'lyrics\',params:{song:\''+escapeHtml(song.songId)+'\'}})"><span class="home-feature-label">TODAY\'S SONG</span><strong class="home-song-title">'+escapeHtml(song.title)+'</strong><small>'+escapeHtml(song.artist||'')+'</small><b>PLAY ›</b></button>':'<article class="home-feature-card"><span class="home-feature-label">TODAY\'S SONG</span><strong>NO DATA</strong></article>';
     const members=Array.isArray(birthdayMembers)?birthdayMembers:[];
-    const memberCard=members.length?renderHomeBirthdayMembers_(members):(member?'<button class="home-feature-card home-member-card" style="--home-accent:'+escapeHtml(member.colorHex||'#9cecff')+'" type="button" onclick="openUniverseProfileMember(\''+escapeHtml(member.memberId)+'\')"><span class="home-feature-label">LUCKY MEMBER</span><strong>'+escapeHtml(member.displayName)+'</strong><small>TODAY\'S LUCKY STAR</small><b>PROFILE ›</b></button>':'<article class="home-feature-card"><span class="home-feature-label">LUCKY MEMBER</span><strong>NO DATA</strong></article>');
+    const memberCard=members.length?renderHomeBirthdayMembers_(members):(member?'<button class="home-feature-card home-member-card" style="--home-accent:'+escapeHtml(member.colorHex||'#9cecff')+'" type="button" onclick="openUniverseProfileMember(\''+escapeHtml(member.memberId)+'\')"><span class="home-feature-label">LUCKY MEMBER</span><strong>'+escapeHtml(member.displayName)+'</strong><b>PROFILE ›</b></button>':'<article class="home-feature-card"><span class="home-feature-label">LUCKY MEMBER</span><strong>NO DATA</strong></article>');
     return '<section class="home-today-grid">'+songButton+memberCard+'</section>';
   }
 
