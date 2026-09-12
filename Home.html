@@ -73,12 +73,12 @@
   function openHomeCollection(kind){
     if(homeState.status!=='ready')return;
     const source=kind==='favorites'?(homeState.data.favorites||[]):(homeState.data.recent||[]);
-    const title=kind==='favorites'?'FAVORITES':'RECENT';
+    const title=kind==='favorites'?'お気に入り':'履歴';
     const removable=kind==='favorites';
     const body=source.length?source.map(function(item,index){
       const open='<button class="home-collection-open" type="button" onclick=\'openHomeCollectionItem("'+kind+'",'+index+')\'><span><small>'+escapeHtml(homeListMeta_(item,kind))+'</small><strong>'+escapeHtml(item.label||'')+'</strong></span><b>›</b></button>';
       const remove=removable?'<button class="home-collection-remove" type="button" aria-label="お気に入りから削除" onclick="removeHomeFavorite('+index+')">×</button>':'';
-      return '<div class="home-collection-row">'+open+remove+'</div>';
+      return '<div class="home-collection-row '+(removable?'is-removable':'is-readonly')+'">'+open+remove+'</div>';
     }).join(''):'<p class="home-empty">まだありません。</p>';
     const existing=document.getElementById('homeCollectionOverlay');if(existing)existing.remove();
     const overlay=document.createElement('div');overlay.id='homeCollectionOverlay';overlay.className='modal-overlay home-collection-overlay open';overlay.innerHTML='<section class="settings-panel home-collection-panel" role="dialog" aria-modal="true"><header class="modal-head"><h2 class="modal-title">'+title+'</h2><button class="overlay-close" type="button" onclick="closeHomeCollection()">×</button></header><div class="home-collection-list">'+body+'</div></section>';overlay.addEventListener('click',function(event){if(event.target===overlay)closeHomeCollection();});document.body.appendChild(overlay);document.body.style.overflow='hidden';
