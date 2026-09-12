@@ -43,7 +43,6 @@
     ensureUniverseFavoritesLoaded_();
     const active=isUniverseFavorite_(target);
     button.hidden=false;button.classList.toggle('is-favorite',active);button.setAttribute('aria-pressed',String(active));button.setAttribute('aria-label',active?'お気に入りから削除':'お気に入りに追加');
-    const mark=button.querySelector('[data-favorite-mark]');if(mark)mark.textContent=active?'♥':'♡';
   }
 
   function toggleCurrentFavorite(){
