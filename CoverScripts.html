@@ -12,7 +12,20 @@
       .withFailureHandler(showCoverError).getCoverMakerBootstrap(userId);
   }
 
-  function renderCoverLoading(){const app=document.getElementById('coverApp');if(app)app.innerHTML=typeof renderUniverseLoading==='function'?renderUniverseLoading('LOADING...','#9cecff'):'<div class="cover-empty">LOADING...</div>';}
+  function renderCoverLoading(){
+    const app=document.getElementById('coverApp');if(!app)return;
+    if(coverState.screen==='home'){
+      const row='<button type="button" class="u-btn cover-project-row" disabled aria-hidden="true"><span><strong class="skeleton-block" style="display:block;width:48%;height:15px;border-radius:7px"></strong><span class="cover-row-meta skeleton-block" style="display:block;width:64%;height:10px;border-radius:6px;margin-top:9px"></span></span></button>';
+      app.innerHTML='<div class="cover-home-actions"><button class="u-btn" type="button" disabled><span class="skeleton-block" style="display:block;width:54%;height:14px;border-radius:7px;margin:auto"></span></button><button class="u-btn" type="button" disabled><span class="skeleton-block" style="display:block;width:62%;height:14px;border-radius:7px;margin:auto"></span></button></div><h2 class="cover-section-title">RECENT</h2><div class="cover-stack">'+row+row+row+'</div>';
+      setCanonicalCoverVisualMode('home');return;
+    }
+    if(coverState.screen==='songs'){
+      const row='<button type="button" class="u-btn cover-song-row" disabled aria-hidden="true"><strong class="skeleton-block" style="display:block;width:52%;height:15px;border-radius:7px"></strong></button>';
+      app.innerHTML='<h2 class="cover-section-title">'+escapeHtml(coverState.artist||'')+'</h2><div class="cover-search-wrap"><div class="cover-search" aria-hidden="true"><span class="skeleton-block" style="display:block;width:42%;height:14px;border-radius:7px"></span></div></div><div class="cover-stack">'+row+row+row+row+'</div>';
+      setCanonicalCoverVisualMode('songs');return;
+    }
+    app.innerHTML=typeof renderUniverseLoading==='function'?renderUniverseLoading('LOADING...','#9cecff'):'<div class="cover-empty">LOADING...</div>';
+  }
   function renderCoverMessage(message){const app=document.getElementById('coverApp');if(app)app.innerHTML='<div class="cover-empty">'+escapeHtml(message)+'</div>';}
   function showCoverError(error){coverState.busy=false;const msg=error&&error.message?error.message:String(error||'エラーが発生しました。');if(typeof showToast==='function')showToast(msg);else renderCoverMessage(msg);}
   function coverUserName(id){const list=coverState.bootstrap&&coverState.bootstrap.users||[];const hit=list.find(function(x){return x.userId===id;});return hit?hit.displayName:id;}
