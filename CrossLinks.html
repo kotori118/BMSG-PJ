@@ -1,16 +1,15 @@
 <script>
-  const universeCrossLinksState={route:'',params:{},observer:null,targetApplied:false,coverPrompted:false,credits:{},creditsOpen:{},captureBound:false};
+  const universeCrossLinksState={route:'',params:{},observer:null,targetApplied:false,credits:{},creditsOpen:{}};
 
   function resetUniverseCrossLinks(){
     if(universeCrossLinksState.observer){universeCrossLinksState.observer.disconnect();universeCrossLinksState.observer=null;}
-    universeCrossLinksState.route='';universeCrossLinksState.params={};universeCrossLinksState.targetApplied=false;universeCrossLinksState.coverPrompted=false;
+    universeCrossLinksState.route='';universeCrossLinksState.params={};universeCrossLinksState.targetApplied=false;
   }
 
   function initUniverseCrossLinks(route,params){
     resetUniverseCrossLinks();
     universeCrossLinksState.route=String(route||'');
     universeCrossLinksState.params=params||{};
-    if(!universeCrossLinksState.captureBound&&pageContent){pageContent.addEventListener('click',handleUniverseCoverTargetCapture_,true);universeCrossLinksState.captureBound=true;}
     if(document.body){universeCrossLinksState.observer=new MutationObserver(syncUniverseCrossLinks);universeCrossLinksState.observer.observe(document.body,{childList:true,subtree:true});}
     syncUniverseCrossLinks();
   }
@@ -21,7 +20,6 @@
     else if(universeCrossLinksState.route==='lyrics')syncUniverseLyricsCrossLinks_();
     else if(universeCrossLinksState.route==='analysis')syncUniverseAnalysisCrossLinks_();
     else if(universeCrossLinksState.route==='cards')syncUniverseCardCrossLinks_();
-    else if(universeCrossLinksState.route==='cover')syncUniverseCoverCrossLinks_();
   }
 
   function applyUniverseCrossLinkRouteTarget_(){
@@ -43,10 +41,7 @@
     }
     if(route==='cards'&&params.member&&typeof cardState!=='undefined'&&cardState.ready){
       const memberId=String(params.member);const group=(cardState.groups||[]).find(function(item){return item.name!=='ALL'&&(item.memberIds||[]).map(String).indexOf(memberId)>=0;});
-      universeCrossLinksState.targetApplied=true;cardState.currentGroup=group?group.name:'ALL';if(typeof renderCardGacha==='function')renderCardGacha();if(typeof openCardCollection==='function')openCardCollection();return;
-    }
-    if(route==='cover'&&params.song&&typeof coverState!=='undefined'&&coverState.ready&&!universeCrossLinksState.coverPrompted){
-      universeCrossLinksState.coverPrompted=true;if(typeof openCoverGroupSelect==='function')openCoverGroupSelect();
+      universeCrossLinksState.targetApplied=true;cardState.currentGroup=group?group.name:'ALL';if(typeof renderCardGacha==='function')renderCardGacha();if(typeof openCardCollection==='function')openCardCollection();
     }
   }
 
@@ -100,12 +95,16 @@
     const isBeFirst=!!(meta&&(meta.category==='BE:FIRST'||meta.artist==='BE:FIRST'));
     document.querySelectorAll('.universe-lyrics-crosslinks').forEach(function(node){node.remove();});
     const rows=[].slice.call(document.querySelectorAll('.lyrics-song-actions'));
-    rows.forEach(function(row){const existing=row.querySelector('.universe-lyrics-analysis-link');if(existing)existing.remove();});
-    if(!isBeFirst||!rows.length)return;
-    const row=rows[rows.length-1];
-    const karaoke=row.querySelector('.lyrics-karaoke-icon');
+    if(!rows.length)return;
+    const target=rows[rows.length-1];
+    rows.forEach(function(row){
+      const existing=row.querySelector('.universe-lyrics-analysis-link');
+      if(existing&&(!isBeFirst||row!==target))existing.remove();
+    });
+    if(!isBeFirst||target.querySelector('.universe-lyrics-analysis-link'))return;
+    const karaoke=target.querySelector('.lyrics-karaoke-icon');
     const button=createUniverseCrossLinkButton_('ANALYSIS',function(){navigateToWithParams('analysis',{view:'song',song:songId});},'is-light universe-lyrics-analysis-link');
-    if(karaoke)row.insertBefore(button,karaoke);else row.appendChild(button);
+    if(karaoke)target.insertBefore(button,karaoke);else target.appendChild(button);
   }
 
   function syncUniverseAnalysisCrossLinks_(){
@@ -123,19 +122,6 @@
     if(typeof cardState==='undefined'||!cardState.ready||typeof getCardGroupCards!=='function')return;const sections=[].slice.call(document.querySelectorAll('#cardCollectionBody .card-collection-member'));if(!sections.length)return;
     const byMember={};getCardGroupCards(cardState.currentGroup||'ALL').forEach(function(card){const id=String(card.memberId||'');if(id&&!byMember[id])byMember[id]=[];if(id)byMember[id].push(card);});
     Object.keys(byMember).forEach(function(memberId,index){const section=sections[index];if(!section)return;const titleRow=section.querySelector('.card-collection-member-title-row');if(!titleRow||titleRow.querySelector('.universe-card-profile-link'))return;const button=createUniverseCrossLinkButton_('PROFILE',function(){if(typeof closeCardCollection==='function')closeCardCollection();navigateToWithParams('profile',{member:memberId});},'universe-card-profile-link');titleRow.appendChild(button);});
-  }
-
-  function syncUniverseCoverCrossLinks_(){
-    const params=universeCrossLinksState.params||{};if(!params.song||universeCrossLinksState.targetApplied||typeof coverState==='undefined'||!coverState.ready)return;
-    if(!universeCrossLinksState.coverPrompted){universeCrossLinksState.coverPrompted=true;if(typeof openCoverGroupSelect==='function')openCoverGroupSelect();return;}
-    if(coverState.screen!=='group')return;const groups=coverState.bootstrap&&coverState.bootstrap.groups||[];document.querySelectorAll('#coverApp .cover-content-card').forEach(function(button,index){if(button.dataset.crosslinkCoverReady)return;const group=groups[index];if(!group)return;button.dataset.crosslinkCoverReady='1';button.dataset.crosslinkGroupId=String(group.groupId);});
-  }
-
-  function handleUniverseCoverTargetCapture_(event){
-    if(universeCrossLinksState.route!=='cover'||universeCrossLinksState.targetApplied)return;const params=universeCrossLinksState.params||{};if(!params.song||typeof coverState==='undefined'||coverState.screen!=='group')return;
-    const button=event.target&&event.target.closest?event.target.closest('#coverApp .cover-content-card[data-crosslink-group-id]'):null;if(!button)return;
-    event.preventDefault();event.stopImmediatePropagation();const groupId=String(button.dataset.crosslinkGroupId||'');const groups=coverState.bootstrap&&coverState.bootstrap.groups||[];coverState.coverGroup=groups.find(function(group){return String(group.groupId)===groupId;})||null;if(!coverState.coverGroup)return;
-    universeCrossLinksState.targetApplied=true;if(typeof startCoverEditor==='function')startCoverEditor(String(params.song));
   }
 </script>
 
