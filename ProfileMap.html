@@ -82,7 +82,9 @@
   function renderProfileMapLoading() {
     const panel = document.getElementById('profilePanel');
     if (!panel || profileCurrentView !== 'map') return;
-    panel.innerHTML = `<div class="profile-map-head"><div><p class="profile-panel-eyebrow">RELATION MAP</p><h2 class="profile-map-title">MAP</h2></div></div><div class="profile-map-loading">${renderUniverseLoading('LOADING MAP...', '#9cecff')}</div>`;
+    const memberChip = () => `<button class="profile-map-member" type="button" disabled aria-hidden="true"><span class="profile-map-avatar skeleton-block"></span><span class="profile-map-member-name skeleton-block" style="display:block;width:72px;height:12px;border-radius:6px"></span></button>`;
+    const group = () => `<section class="profile-map-group" aria-hidden="true"><h3><span class="skeleton-block" style="display:block;width:90px;height:16px;border-radius:6px"></span><b class="skeleton-block" style="display:block;width:22px;height:10px;border-radius:5px"></b></h3><div class="profile-map-member-list">${memberChip()}${memberChip()}${memberChip()}</div></section>`;
+    panel.innerHTML = `<div class="profile-map-head"><div><p class="profile-panel-eyebrow">RELATION MAP</p><h2 class="profile-map-title">MAP</h2></div><label class="profile-map-select-label"><span>CATEGORY</span><select disabled aria-label="読み込み中"><option>—</option></select></label></div><div class="profile-map-groups">${group()}${group()}</div>`;
   }
 
   function renderProfileMap() {
