@@ -3,7 +3,6 @@
  * Uses existing Core / Log repositories; no new sheets are created here.
  */
 const UNIVERSE_STATE_USERS_ = Object.freeze(['U001', 'U002', 'U003']);
-const UNIVERSE_RECENT_LIMIT_ = 10;
 const UNIVERSE_HOME_PREVIEW_LIMIT_ = 5;
 const UNIVERSE_STATE_LOOKUP_CACHE_KEY_ = 'universe-state-lookup-v2';
 const UNIVERSE_PAGE_FAVORITES_ = Object.freeze({
@@ -197,8 +196,6 @@ function getUniverseBirthdayMembers_(lookup) {
 
 function getUniverseDailyMember_(userId, lookup) {
   lookup = lookup || buildUniverseStateLookup_();
-  const birthdayMembers = getUniverseBirthdayMembers_(lookup);
-  if (birthdayMembers.length) return birthdayMembers[0];
   const rows = Object.keys(lookup.members).map(function(id){return lookup.members[id];}).filter(function(row){return row.memberId && row.displayName;});
   if (!rows.length) return null;
   return rows[deterministicUniverseIndex_(userId, 'member', rows.length)];
