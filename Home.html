@@ -1,0 +1,72 @@
+<script>
+  const homeState={status:'idle',data:null,error:''};
+
+  function renderHome(){
+    return '<section class="view home '+(homeIntroPlayed?'':'home-intro')+'">'
+      +'<div class="home-title-wrap"><p class="home-kicker">BMSG</p><h1 class="home-title" aria-label="BMSG UNIVERSE"><span class="line">BMSG</span><span class="line">UNIVERSE</span></h1><div class="home-divider" aria-hidden="true"></div></div>'
+      +'<div id="homeDynamic" class="home-dynamic">'+renderHomeLoading_()+'</div>'
+      +'</section>';
+  }
+
+  function initHomePage(){
+    const userId=typeof getUniverseUserId==='function'?getUniverseUserId():'';
+    if(!userId){homeState.status='error';homeState.error='ユーザーを選択してください。';renderHomeDynamic_();return;}
+    homeState.status='loading';homeState.error='';renderHomeDynamic_();
+    google.script.run.withSuccessHandler(function(response){
+      if(!response||!response.ok||!response.data){homeState.status='error';homeState.error='HOMEの読み込みに失敗しました。';renderHomeDynamic_();return;}
+      homeState.status='ready';homeState.data=response.data;setUniverseStateCache({favorites:response.data.favorites,recent:response.data.recent});renderHomeDynamic_();
+    }).withFailureHandler(function(error){homeState.status='error';homeState.error=error&&error.message?error.message:'HOMEの読み込みに失敗しました。';renderHomeDynamic_();}).getUniverseHomeBootstrap(userId);
+  }
+
+  function renderHomeDynamic_(){
+    const host=document.getElementById('homeDynamic');if(!host)return;
+    if(homeState.status==='loading'||homeState.status==='idle'){host.innerHTML=renderHomeLoading_();return;}
+    if(homeState.status==='error'){host.innerHTML='<div class="home-state"><strong>ERROR</strong><p>'+escapeHtml(homeState.error)+'</p><button type="button" onclick="initHomePage()">RETRY</button></div>';return;}
+    const data=homeState.data||{};
+    host.innerHTML=renderHomeToday_(data.todaySong,data.luckyMember)+renderHomeListSection_('RECENT','最近やったこと',data.recentPreview||[],'recent')+renderHomeListSection_('FAVORITES','お気に入り',data.favoritePreview||[],'favorites');
+  }
+
+  function renderHomeLoading_(){return '<div class="home-state">'+(typeof renderUniverseLoading==='function'?renderUniverseLoading('LOADING...','#9cecff'):'LOADING...')+'</div>';}
+
+  function renderHomeToday_(song,member){
+    const songButton=song?'<button class="home-feature-card home-song-card" type="button" onclick="openUniverseTarget({route:\'lyrics\',params:{song:\''+escapeHtml(song.songId)+'\'}})"><span class="home-feature-label">TODAY\'S SONG</span><strong>'+escapeHtml(song.title)+'</strong><small>'+escapeHtml(song.artist||'')+'</small><b>PLAY ›</b></button>':'<article class="home-feature-card"><span class="home-feature-label">TODAY\'S SONG</span><strong>NO DATA</strong></article>';
+    const memberButton=member?'<button class="home-feature-card home-member-card" style="--home-accent:'+escapeHtml(member.colorHex||'#9cecff')+'" type="button" onclick="openUniverseProfileMember(\''+escapeHtml(member.memberId)+'\')"><span class="home-feature-label">LUCKY MEMBER</span><strong>'+escapeHtml(member.displayName)+'</strong><small>TODAY\'S LUCKY STAR</small><b>PROFILE ›</b></button>':'<article class="home-feature-card"><span class="home-feature-label">LUCKY MEMBER</span><strong>NO DATA</strong></article>';
+    return '<section class="home-today-grid">'+songButton+memberButton+'</section>';
+  }
+
+  function renderHomeListSection_(eyebrow,title,items,kind){
+    items=Array.isArray(items)?items:[];
+    const rows=items.length?items.map(function(item){return '<button class="home-list-row" type="button" onclick=\'openUniverseTarget('+JSON.stringify({route:item.route,params:item.params||{}}).replace(/'/g,"&#39;")+')\'><span><small>'+escapeHtml(homeListMeta_(item,kind))+'</small><strong>'+escapeHtml(item.label||'')+'</strong></span><b>›</b></button>';}).join(''):'<p class="home-empty">まだありません。</p>';
+    const more='<button class="home-more" type="button" onclick="openHomeCollection(\''+kind+'\')">もっと見る</button>';
+    return '<section class="home-list-section"><div class="home-section-head"><div><span>'+escapeHtml(eyebrow)+'</span><h2>'+escapeHtml(title)+'</h2></div>'+more+'</div><div class="home-list">'+rows+'</div></section>';
+  }
+
+  function homeListMeta_(item,kind){
+    if(kind==='favorites')return item.targetType==='PAGE'?'PAGE':item.targetType;
+    const labels={VIEW_MEMBER:'PROFILE',VIEW_LYRICS:'LYRICS',PLAY_QUIZ:'QUIZ',PLAY_POKER:'POKER',DRAW_CARD:'TRADING CARD',CREATE_COVER:'COVER MAKER'};
+    return labels[item.activityType]||item.activityType||'';
+  }
+
+  function openHomeCollection(kind){
+    if(homeState.status!=='ready')return;
+    const source=kind==='favorites'?(homeState.data.favorites||[]):(homeState.data.recent||[]);
+    const title=kind==='favorites'?'FAVORITES':'RECENT';
+    const removable=kind==='favorites';
+    const body=source.length?source.map(function(item,index){
+      const open='<button class="home-collection-open" type="button" onclick=\'openHomeCollectionItem("'+kind+'",'+index+')\'><span><small>'+escapeHtml(homeListMeta_(item,kind))+'</small><strong>'+escapeHtml(item.label||'')+'</strong></span><b>›</b></button>';
+      const remove=removable?'<button class="home-collection-remove" type="button" aria-label="お気に入りから削除" onclick="removeHomeFavorite('+index+')">×</button>':'';
+      return '<div class="home-collection-row">'+open+remove+'</div>';
+    }).join(''):'<p class="home-empty">まだありません。</p>';
+    const existing=document.getElementById('homeCollectionOverlay');if(existing)existing.remove();
+    const overlay=document.createElement('div');overlay.id='homeCollectionOverlay';overlay.className='modal-overlay home-collection-overlay open';overlay.innerHTML='<section class="settings-panel home-collection-panel" role="dialog" aria-modal="true"><header class="modal-head"><h2 class="modal-title">'+title+'</h2><button class="overlay-close" type="button" onclick="closeHomeCollection()">×</button></header><div class="home-collection-list">'+body+'</div></section>';overlay.addEventListener('click',function(event){if(event.target===overlay)closeHomeCollection();});document.body.appendChild(overlay);document.body.style.overflow='hidden';
+  }
+
+  function closeHomeCollection(){const overlay=document.getElementById('homeCollectionOverlay');if(overlay)overlay.remove();document.body.style.overflow='';}
+  function openHomeCollectionItem(kind,index){const source=kind==='favorites'?(homeState.data.favorites||[]):(homeState.data.recent||[]);const item=source[index];closeHomeCollection();openUniverseTarget(item);}
+  function removeHomeFavorite(index){
+    const item=homeState.data&&homeState.data.favorites?homeState.data.favorites[index]:null;if(!item||!window.confirm('お気に入りから削除しますか？'))return;
+    const userId=typeof getUniverseUserId==='function'?getUniverseUserId():'';
+    google.script.run.withSuccessHandler(function(response){if(!response||!response.ok)return;homeState.data.favorites=response.data.favorites||[];homeState.data.favoritePreview=homeState.data.favorites.slice(0,5);setUniverseStateCache({favorites:homeState.data.favorites,recent:homeState.data.recent||[]});renderHomeDynamic_();openHomeCollection('favorites');}).withFailureHandler(function(){}).setUniverseFavorite({userId:userId,targetType:item.targetType,targetId:item.targetId,favorite:false});
+  }
+  function refreshHomeFavorites(){if(currentRoute==='home')initHomePage();}
+</script>

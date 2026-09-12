@@ -43,3 +43,14 @@ function appendByHeaders_(sheet, record) {
     return Object.prototype.hasOwnProperty.call(record, header) ? record[header] : '';
   }));
 }
+
+function updateByHeaders_(sheet, rowNumber, record) {
+  if (!rowNumber || rowNumber < 2) throw new Error('Invalid row number.');
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
+  const range = sheet.getRange(rowNumber, 1, 1, headers.length);
+  const values = range.getValues()[0];
+  headers.forEach(function(header, index) {
+    if (Object.prototype.hasOwnProperty.call(record, header)) values[index] = record[header];
+  });
+  range.setValues([values]);
+}

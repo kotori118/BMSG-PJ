@@ -1,0 +1,105 @@
+<script>
+  const universeStateClient={favorites:[],recent:[],favoritesUserId:'',favoritesLoading:false,observedProfileId:'',observedLyricsId:'',observedQuizGameId:'',profileOpenTimer:0};
+  const UNIVERSE_FAVORITE_PAGE_ROUTES=Object.freeze({analysis:true,karaoke:true,quiz:true,cards:true,poker:true,cover:true,metrics:true});
+
+  function universeUserId_(){return typeof getUniverseUserId==='function'?getUniverseUserId():'';}
+  function setUniverseStateCache(data){
+    data=data||{};
+    universeStateClient.favorites=Array.isArray(data.favorites)?data.favorites.slice():[];
+    universeStateClient.recent=Array.isArray(data.recent)?data.recent.slice():[];
+    universeStateClient.favoritesUserId=universeUserId_();
+    universeStateClient.favoritesLoading=false;
+    syncCurrentFavoriteButton();
+  }
+
+  function getCurrentUniverseFavoriteTarget(){
+    if(currentRoute==='profile'&&document.querySelector('.profile-member-detail')&&typeof profileSelectedMemberId!=='undefined'&&profileSelectedMemberId){return{targetType:'MEMBER',targetId:String(profileSelectedMemberId)};}
+    if(currentRoute==='lyrics'&&document.querySelector('.lyrics-song-title')&&typeof lyricsState!=='undefined'&&lyricsState&&lyricsState.song&&lyricsState.song.songId){return{targetType:'LYRICS',targetId:String(lyricsState.song.songId)};}
+    if(UNIVERSE_FAVORITE_PAGE_ROUTES[currentRoute])return{targetType:'PAGE',targetId:currentRoute};
+    return null;
+  }
+
+  function isUniverseFavorite_(target){
+    if(!target)return false;
+    return universeStateClient.favorites.some(function(item){return item.targetType===target.targetType&&String(item.targetId)===String(target.targetId);});
+  }
+
+  function ensureUniverseFavoritesLoaded_(){
+    const userId=universeUserId_();
+    if(!userId||universeStateClient.favoritesLoading||universeStateClient.favoritesUserId===userId)return;
+    universeStateClient.favorites=[];universeStateClient.favoritesLoading=true;
+    google.script.run.withSuccessHandler(function(response){
+      universeStateClient.favoritesLoading=false;universeStateClient.favoritesUserId=userId;
+      universeStateClient.favorites=response&&response.ok&&response.data&&Array.isArray(response.data.favorites)?response.data.favorites:[];
+      syncCurrentFavoriteButton();
+    }).withFailureHandler(function(){universeStateClient.favoritesLoading=false;universeStateClient.favoritesUserId='';}).getUniverseFavorites(userId);
+  }
+
+  function syncCurrentFavoriteButton(){
+    const button=document.getElementById('favoritePageButton');
+    if(!button)return;
+    const target=getCurrentUniverseFavoriteTarget();
+    if(!target){button.hidden=true;button.classList.remove('is-favorite');button.setAttribute('aria-pressed','false');return;}
+    ensureUniverseFavoritesLoaded_();
+    const active=isUniverseFavorite_(target);
+    button.hidden=false;button.classList.toggle('is-favorite',active);button.setAttribute('aria-pressed',String(active));button.setAttribute('aria-label',active?'お気に入りから削除':'お気に入りに追加');
+    const mark=button.querySelector('[data-favorite-mark]');if(mark)mark.textContent=active?'♥':'♡';
+  }
+
+  function toggleCurrentFavorite(){
+    const target=getCurrentUniverseFavoriteTarget(),userId=universeUserId_();
+    if(!target||!userId||universeStateClient.favoritesLoading)return;
+    const active=isUniverseFavorite_(target);
+    if(!window.confirm(active?'お気に入りから削除しますか？':'このページをお気に入りにしますか？'))return;
+    const button=document.getElementById('favoritePageButton');if(button)button.disabled=true;
+    google.script.run.withSuccessHandler(function(response){
+      if(button)button.disabled=false;
+      if(response&&response.ok&&response.data){universeStateClient.favorites=Array.isArray(response.data.favorites)?response.data.favorites:[];universeStateClient.favoritesUserId=userId;syncCurrentFavoriteButton();if(currentRoute==='home'&&typeof refreshHomeFavorites==='function')refreshHomeFavorites();}
+    }).withFailureHandler(function(error){if(button)button.disabled=false;if(typeof showToast==='function')showToast(error&&error.message?error.message:'お気に入りの更新に失敗しました。');}).setUniverseFavorite({userId:userId,targetType:target.targetType,targetId:target.targetId,favorite:!active});
+  }
+
+  function recordUniverseActivityClient(activityType,targetId){
+    const userId=universeUserId_(),id=String(targetId||'');if(!userId||!activityType||!id)return;
+    google.script.run.withSuccessHandler(function(response){if(response&&response.ok&&response.data&&Array.isArray(response.data.recent))universeStateClient.recent=response.data.recent;}).withFailureHandler(function(){}).recordUniverseActivity({userId:userId,activityType:activityType,targetId:id});
+  }
+
+  function openUniverseTarget(item){
+    if(!item||!item.route)return;
+    if(item.route==='profile'&&item.params&&item.params.member){openUniverseProfileMember(item.params.member);return;}
+    navigateToWithParams(item.route,item.params||{});
+  }
+
+  function openUniverseProfileMember(memberId){
+    const id=String(memberId||'');if(!id)return;
+    navigateTo('profile');
+    if(universeStateClient.profileOpenTimer)clearInterval(universeStateClient.profileOpenTimer);
+    let attempts=0;
+    universeStateClient.profileOpenTimer=setInterval(function(){
+      attempts++;
+      const ready=typeof profileMembersState!=='undefined'&&profileMembersState&&profileMembersState.status==='ready';
+      if(ready&&typeof openProfileMemberDetail==='function'){
+        clearInterval(universeStateClient.profileOpenTimer);universeStateClient.profileOpenTimer=0;openProfileMemberDetail(id);return;
+      }
+      if(attempts>=60){clearInterval(universeStateClient.profileOpenTimer);universeStateClient.profileOpenTimer=0;}
+    },100);
+  }
+
+  function observeUniverseInteractionState_(){
+    if(!pageContent||pageContent.dataset.universeStateObserved==='true')return;
+    pageContent.dataset.universeStateObserved='true';
+    const observer=new MutationObserver(function(){
+      syncCurrentFavoriteButton();
+      const profileId=currentRoute==='profile'&&document.querySelector('.profile-member-detail')&&typeof profileSelectedMemberId!=='undefined'?String(profileSelectedMemberId||''):'';
+      if(profileId&&profileId!==universeStateClient.observedProfileId)recordUniverseActivityClient('VIEW_MEMBER',profileId);
+      universeStateClient.observedProfileId=profileId;
+      const lyricsId=currentRoute==='lyrics'&&document.querySelector('.lyrics-song-title')&&typeof lyricsState!=='undefined'&&lyricsState&&lyricsState.song?String(lyricsState.song.songId||''):'';
+      if(lyricsId&&lyricsId!==universeStateClient.observedLyricsId)recordUniverseActivityClient('VIEW_LYRICS',lyricsId);
+      universeStateClient.observedLyricsId=lyricsId;
+      const quizId=currentRoute==='quiz'&&typeof quizState!=='undefined'&&quizState&&quizState.completed&&quizState.game?String(quizState.game.gameId||''):'';
+      if(quizId&&quizId!==universeStateClient.observedQuizGameId)recordUniverseActivityClient('PLAY_QUIZ',quizId);
+      universeStateClient.observedQuizGameId=quizId;
+    });
+    observer.observe(pageContent,{childList:true,subtree:true});
+  }
+  observeUniverseInteractionState_();
+</script>
