@@ -13,14 +13,26 @@
     --u-loading-speed:.8s;
     --u-loading-label-dark:rgba(232,242,247,.62);
     --u-loading-label-light:rgba(21,24,32,.46);
+    --u-skeleton-base:rgba(247,251,255,.065);
+    --u-skeleton-line:rgba(156,236,255,.09);
+    --u-skeleton-shine:rgba(156,236,255,.15);
+  }
+  body.theme-light{
+    --u-skeleton-base:rgba(47,115,130,.065);
+    --u-skeleton-line:rgba(63,139,156,.055);
+    --u-skeleton-shine:rgba(112,213,236,.17);
   }
   :is(.state-card,.profile-members-state,.karaoke-history-empty,.lyrics-empty){border-radius:var(--u-state-radius)}
   body.theme-light :is(.state-card,.profile-members-state,.karaoke-history-empty,.lyrics-empty){border-color:var(--u-state-line-light);color:rgba(21,24,32,.50);background:var(--u-state-light-bg);box-shadow:inset 0 1px 0 rgba(255,255,255,.84)}
-  :is(.skeleton-block,.profile-member-skeleton){position:relative;overflow:hidden}
-  :is(.skeleton-block,.profile-member-skeleton)::after{content:"";position:absolute;inset:0;transform:translateX(-110%);background:linear-gradient(90deg,transparent,rgba(156,236,255,.10),transparent);animation:skeleton-scan 1.3s ease-in-out infinite}
-  body.theme-light :is(.skeleton-block,.profile-member-skeleton){background:rgba(47,115,130,.07)}
+
+  /* Existing page skeletons share the same shimmer authority. */
+  :is(.skeleton-block,.profile-member-skeleton){position:relative;overflow:hidden;background:var(--u-skeleton-base)}
+  :is(.skeleton-block,.profile-member-skeleton)::after{content:"";position:absolute;inset:0;transform:translateX(-110%);background:linear-gradient(90deg,transparent,var(--u-skeleton-shine),transparent);animation:universeSkeletonSweep 1.35s ease-in-out infinite}
+
   .universe-toast{border:1px solid rgba(156,236,255,.22);border-radius:16px;background:linear-gradient(145deg,rgba(10,16,26,.96),rgba(5,10,18,.98));box-shadow:0 18px 46px rgba(0,0,0,.20),inset 0 1px 0 rgba(255,255,255,.04)}
   body.theme-light .universe-toast{border-color:rgba(75,165,184,.24);color:var(--ink);background:linear-gradient(145deg,#fff,rgba(156,236,255,.13));box-shadow:0 16px 36px rgba(21,24,32,.12),inset 0 1px 0 rgba(255,255,255,.86)}
+
+  /* Spinner loading remains the authority for true processing / transition states. */
   .universe-loading,.profile-detail-loading,.profile-map-loading,.profile-search-loading,.karaoke-loading,.lyrics-loading{--loading-accent:var(--u-loading-accent);display:flex;align-items:center;justify-content:center;gap:var(--u-loading-gap);color:var(--u-loading-label-dark);font:600 10px "Exo 2","Zen Kaku Gothic New",Roboto,sans-serif;letter-spacing:.12em}
   body.theme-light :is(.universe-loading,.profile-detail-loading,.profile-map-loading,.profile-search-loading,.karaoke-loading,.lyrics-loading){color:var(--u-loading-label-light)}
   .universe-spinner,.profile-detail-spinner,.profile-map-spinner,.profile-search-spinner,.karaoke-loading::before,.lyrics-loading::before{box-sizing:border-box;width:var(--u-loading-size);height:var(--u-loading-size);flex:0 0 auto;border:var(--u-loading-ring) solid var(--u-loading-track-dark)!important;border-top-color:var(--loading-accent,var(--u-loading-accent))!important;border-right-color:var(--loading-accent,var(--u-loading-accent))!important;border-radius:50%;animation:universeSpinner var(--u-loading-speed) linear infinite!important;box-shadow:0 0 12px rgba(156,236,255,.12)}
@@ -32,6 +44,62 @@
   .lyrics-room-card.is-loading{min-height:118px;display:grid;place-items:center}
   .lyrics-room-card.is-loading::before{display:none!important;content:none!important}
   .lyrics-room-card.is-loading .universe-loading{gap:0}
+
+  /* Skeleton states: predictable-layout screens only. */
+  :is(.profile-detail-loading,.profile-map-loading,.profile-search-loading,.profile-chemistry-loading,.analysis-loading,.universe-search-loading,.lyrics-loading,.karaoke-loading.is-shared){
+    position:relative!important;
+    display:block!important;
+    min-height:232px;
+    overflow:hidden;
+    border-radius:20px;
+    color:transparent!important;
+    background:
+      linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 8px/34% 14px no-repeat,
+      linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 0 34px/58% 10px no-repeat;
+  }
+  :is(.profile-detail-loading,.profile-map-loading,.profile-search-loading,.profile-chemistry-loading,.analysis-loading,.universe-search-loading,.lyrics-loading,.karaoke-loading.is-shared) > *{visibility:hidden!important}
+  :is(.profile-detail-loading,.profile-map-loading,.profile-search-loading,.profile-chemistry-loading,.analysis-loading,.universe-search-loading,.lyrics-loading,.karaoke-loading.is-shared)::before{
+    content:"";
+    position:absolute;
+    left:0;
+    right:0;
+    top:68px;
+    height:58px;
+    border-radius:17px;
+    background:var(--u-skeleton-base);
+    box-shadow:0 72px 0 var(--u-skeleton-base),0 144px 0 var(--u-skeleton-base);
+  }
+  :is(.profile-detail-loading,.profile-map-loading,.profile-search-loading,.profile-chemistry-loading,.analysis-loading,.universe-search-loading,.lyrics-loading,.karaoke-loading.is-shared)::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    transform:translateX(-115%);
+    background:linear-gradient(90deg,transparent 12%,var(--u-skeleton-shine) 50%,transparent 88%);
+    animation:universeSkeletonSweep 1.45s ease-in-out infinite;
+    pointer-events:none;
+  }
+
+  /* Profile detail has denser profile rows under the already-visible hero. */
+  .profile-detail-loading{min-height:290px;margin-top:24px!important;background:
+    linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 0/28% 12px no-repeat,
+    linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 0 27px/72% 10px no-repeat}
+  .profile-detail-loading::before{top:58px;height:52px;box-shadow:0 64px 0 var(--u-skeleton-base),0 128px 0 var(--u-skeleton-base),0 192px 0 var(--u-skeleton-base)}
+
+  /* Search result skeleton: compact list rows. */
+  .universe-search-loading{min-height:224px;margin-top:14px;background:linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 0 8px/26% 11px no-repeat}
+  .universe-search-loading::before{top:34px;height:52px;box-shadow:0 64px 0 var(--u-skeleton-base),0 128px 0 var(--u-skeleton-base)}
+
+  /* Light-theme skeleton A: nearly-white blue tint with soft cyan sweep. */
+  body.theme-light :is(.profile-detail-loading,.profile-map-loading,.profile-search-loading,.profile-chemistry-loading,.analysis-loading,.universe-search-loading,.lyrics-loading,.karaoke-loading.is-shared){
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.92);
+  }
+
+  /* QUIZ partial loads use compact skeletons, while game creation/join keeps spinner loading. */
+  #quizRecentRoomsV3:has(> .universe-loading),.quiz-lyrics-modal-body:has(> .universe-loading){position:relative;overflow:hidden;min-height:150px}
+  #quizRecentRoomsV3:has(> .universe-loading) > .universe-loading,.quiz-lyrics-modal-body:has(> .universe-loading) > .universe-loading{visibility:hidden}
+  #quizRecentRoomsV3:has(> .universe-loading)::before,.quiz-lyrics-modal-body:has(> .universe-loading)::before{content:"";position:absolute;inset:10px 0 auto;height:48px;border-radius:15px;background:var(--u-skeleton-base);box-shadow:0 60px 0 var(--u-skeleton-base)}
+  #quizRecentRoomsV3:has(> .universe-loading)::after,.quiz-lyrics-modal-body:has(> .universe-loading)::after{content:"";position:absolute;inset:0;transform:translateX(-115%);background:linear-gradient(90deg,transparent,var(--u-skeleton-shine),transparent);animation:universeSkeletonSweep 1.45s ease-in-out infinite}
+
   .loading-space{--loading-accent:#9cecff;display:grid;place-items:center;gap:14px;min-height:220px;color:var(--u-loading-label-dark)}
   body.theme-light .loading-space{color:var(--u-loading-label-light)}
   .loading-space .loading-svg,.loading-space .loading-label{display:none!important}
@@ -41,9 +109,13 @@
   .loading-space.loading-space-shared::before,.loading-space.loading-space-shared::after{display:none}
   .loading-space.loading-space-shared .universe-loading{flex-direction:column;gap:14px}
   .loading-space.loading-space-shared .universe-spinner{width:22px;height:22px}
+
   @keyframes universeSpinner{to{transform:rotate(360deg)}}
+  @keyframes universeSkeletonSweep{to{transform:translateX(115%)}}
   @media(prefers-reduced-motion:reduce){
-    :is(.skeleton-block,.profile-member-skeleton)::after{animation:none;display:none}
+    :is(.skeleton-block,.profile-member-skeleton)::after,
+    :is(.profile-detail-loading,.profile-map-loading,.profile-search-loading,.profile-chemistry-loading,.analysis-loading,.universe-search-loading,.lyrics-loading,.karaoke-loading.is-shared)::after,
+    #quizRecentRoomsV3:has(> .universe-loading)::after,.quiz-lyrics-modal-body:has(> .universe-loading)::after{animation:none!important;display:none}
     .universe-spinner,.profile-detail-spinner,.profile-map-spinner,.profile-search-spinner,.karaoke-loading::before,.lyrics-loading::before,.loading-space::before{animation:none!important}
   }
 </style>
@@ -105,50 +177,6 @@
       stateOverlay.classList.remove('open');
       document.body.style.overflow = '';
       stateContent.innerHTML = '';
-    }
-
-    function renderSkeletonPage(route) {
-      const isHome = route === 'home';
-
-      let cardCount = 3;
-      if (route === 'home') cardCount = 2;
-      if (route === 'lab') cardCount = 4;
-
-      const cards = Array.from({ length: cardCount }, () => `
-        <div class="skeleton-block skeleton-card"></div>
-      `).join('');
-
-      return `
-        <section class="view ${isHome ? 'skeleton-home' : 'skeleton-page'}">
-          <div class="skeleton-heading-wrap">
-            <div class="skeleton-block skeleton-title"></div>
-            <div class="skeleton-block skeleton-copy"></div>
-          </div>
-
-          <div class="skeleton-cards">
-            ${cards}
-          </div>
-        </section>
-      `;
-    }
-
-    function showSkeletonState() {
-      closeStateCheck();
-
-      if (skeletonTimer) {
-        clearTimeout(skeletonTimer);
-        skeletonTimer = null;
-      }
-
-      const routeToRestore = currentRoute;
-
-      window.scrollTo(0, 0);
-      pageContent.innerHTML = renderSkeletonPage(routeToRestore);
-
-      skeletonTimer = setTimeout(() => {
-        skeletonTimer = null;
-        renderRoute(routeToRestore);
-      }, 2200);
     }
 
     function showToast(message = '保存しました') {
