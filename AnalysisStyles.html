@@ -102,4 +102,49 @@
   .analysis-card{padding:14px}
   .analysis-table th,.analysis-table td{white-space:nowrap}
 }
+
+/* Loading keeps the real ANALYSIS menu-card frames; only their content is skeletal. */
+.analysis-loading{
+  position:relative!important;
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+  min-height:244px!important;
+  padding:0!important;
+  overflow:hidden;
+  background:none!important;
+  color:transparent!important;
+}
+.analysis-loading>.universe-loading{display:contents!important;visibility:visible!important}
+.analysis-loading>.universe-loading>.universe-spinner,
+.analysis-loading>.universe-loading>span,
+.analysis-loading>.universe-loading::before,
+.analysis-loading>.universe-loading::after{
+  box-sizing:border-box;
+  min-height:116px;
+  border:1px solid rgba(156,236,255,.18)!important;
+  border-radius:18px!important;
+  background:
+    linear-gradient(var(--u-skeleton-base),var(--u-skeleton-base)) 18px 20px/52% 16px no-repeat,
+    linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 18px 52px/76% 10px no-repeat,
+    linear-gradient(var(--u-skeleton-line),var(--u-skeleton-line)) 18px 72px/62% 10px no-repeat,
+    linear-gradient(180deg,rgba(18,25,36,.92),rgba(8,13,21,.92))!important;
+  animation:none!important;
+  box-shadow:0 14px 36px rgba(0,0,0,.16)!important;
+}
+.analysis-loading>.universe-loading>.universe-spinner{width:auto!important;height:auto!important}
+.analysis-loading>.universe-loading>span{display:block!important;font-size:0!important}
+.analysis-loading>.universe-loading::before,.analysis-loading>.universe-loading::after{content:"";display:block}
+.analysis-loading::before{display:none!important}
+.analysis-loading::after{
+  content:""!important;
+  position:absolute!important;
+  inset:0!important;
+  transform:translateX(-115%);
+  background:linear-gradient(90deg,transparent 12%,var(--u-skeleton-shine) 50%,transparent 88%)!important;
+  animation:universeSkeletonSweep 1.45s ease-in-out infinite!important;
+  pointer-events:none;
+}
+@media(max-width:680px){.analysis-loading{grid-template-columns:1fr;min-height:500px!important}}
+@media(prefers-reduced-motion:reduce){.analysis-loading::after{animation:none!important;display:none!important}}
 </style>
