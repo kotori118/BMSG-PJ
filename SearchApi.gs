@@ -128,7 +128,7 @@ function getUniverseSearchIndex_() {
   const memberships = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.GROUP_MEMBERS);
   const profiles = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.PROFILES);
   const songs = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.SONGS);
-  const credits = readCoreSheetObjects_('07_SongCredits');
+  const credits = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.SONG_CREDITS);
   const lyricParts = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.LYRICS_PARTS);
   const images = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.IMAGES);
   const profileSettings = readSheetObjects_(getLogSheet_(UNIVERSE_CONFIG.SHEETS.PROFILE_SETTINGS))
@@ -187,9 +187,9 @@ function getUniverseSearchIndex_() {
       songId:songId,
       title:String(row.Title || '').trim(),
       artist:String(row.Artist || '').trim(),
-      lyricists:splitUniverseSearchCredit_(credit.Lyricists),
-      composers:splitUniverseSearchCredit_(credit.Composers),
-      choreographers:splitUniverseSearchCredit_(credit.Choreographers)
+      lyricists:splitUniverseCreditNames_(credit.Lyricists),
+      composers:splitUniverseCreditNames_(credit.Composers),
+      choreographers:splitUniverseCreditNames_(credit.Choreographers)
     };
   }).filter(function(item) { return item.songId && item.title; });
   const songById = songIndex.reduce(function(map, song) { map[song.songId] = song; return map; }, {});
@@ -233,10 +233,6 @@ function getUniverseSearchIndex_() {
   const serialized = JSON.stringify(index);
   if (serialized.length < 95000) cache.put(UNIVERSE_SEARCH_CACHE_KEY_, serialized, UNIVERSE_SEARCH_CACHE_SECONDS_);
   return index;
-}
-
-function splitUniverseSearchCredit_(value) {
-  return String(value || '').split(',').map(function(item) { return item.trim(); }).filter(Boolean);
 }
 
 function searchNameRank_(value, query) {
