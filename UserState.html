@@ -1,5 +1,5 @@
 <script>
-  const universeStateClient={favorites:[],recent:[],favoritesUserId:'',favoritesLoading:false,lastActivityKey:'',lastActivityAt:0,profileOpenTimer:0};
+  const universeStateClient={favorites:[],recent:[],favoritesUserId:'',favoritesLoading:false,observedProfileId:'',observedLyricsId:'',observedQuizGameId:'',profileOpenTimer:0};
   const UNIVERSE_FAVORITE_PAGE_ROUTES=Object.freeze({analysis:true,quiz:true,cards:true,poker:true,cover:true});
 
   function universeUserId_(){return typeof getUniverseUserId==='function'?getUniverseUserId():'';}
@@ -13,8 +13,8 @@
   }
 
   function getCurrentUniverseFavoriteTarget(){
-    if(currentRoute==='profile'&&typeof profileSelectedMemberId!=='undefined'&&profileSelectedMemberId){return{targetType:'MEMBER',targetId:String(profileSelectedMemberId)};}
-    if(currentRoute==='lyrics'&&typeof lyricsState!=='undefined'&&lyricsState&&lyricsState.song&&lyricsState.song.songId){return{targetType:'LYRICS',targetId:String(lyricsState.song.songId)};}
+    if(currentRoute==='profile'&&document.querySelector('.profile-member-detail')&&typeof profileSelectedMemberId!=='undefined'&&profileSelectedMemberId){return{targetType:'MEMBER',targetId:String(profileSelectedMemberId)};}
+    if(currentRoute==='lyrics'&&document.querySelector('.lyrics-song-title')&&typeof lyricsState!=='undefined'&&lyricsState&&lyricsState.song&&lyricsState.song.songId){return{targetType:'LYRICS',targetId:String(lyricsState.song.songId)};}
     if(UNIVERSE_FAVORITE_PAGE_ROUTES[currentRoute])return{targetType:'PAGE',targetId:currentRoute};
     return null;
   }
@@ -50,8 +50,7 @@
     const target=getCurrentUniverseFavoriteTarget(),userId=universeUserId_();
     if(!target||!userId||universeStateClient.favoritesLoading)return;
     const active=isUniverseFavorite_(target);
-    const message=active?'お気に入りから削除しますか？':'このページをお気に入りにしますか？';
-    if(!window.confirm(message))return;
+    if(!window.confirm(active?'お気に入りから削除しますか？':'このページをお気に入りにしますか？'))return;
     const button=document.getElementById('favoritePageButton');if(button)button.disabled=true;
     google.script.run.withSuccessHandler(function(response){
       if(button)button.disabled=false;
@@ -61,9 +60,6 @@
 
   function recordUniverseActivityClient(activityType,targetId){
     const userId=universeUserId_(),id=String(targetId||'');if(!userId||!activityType||!id)return;
-    const key=activityType+'|'+id,now=Date.now();
-    if(universeStateClient.lastActivityKey===key&&now-universeStateClient.lastActivityAt<1500)return;
-    universeStateClient.lastActivityKey=key;universeStateClient.lastActivityAt=now;
     google.script.run.withSuccessHandler(function(response){if(response&&response.ok&&response.data&&Array.isArray(response.data.recent))universeStateClient.recent=response.data.recent;}).withFailureHandler(function(){}).recordUniverseActivity({userId:userId,activityType:activityType,targetId:id});
   }
 
@@ -93,9 +89,15 @@
     pageContent.dataset.universeStateObserved='true';
     const observer=new MutationObserver(function(){
       syncCurrentFavoriteButton();
-      if(currentRoute==='profile'&&typeof profileSelectedMemberId!=='undefined'&&profileSelectedMemberId)recordUniverseActivityClient('VIEW_MEMBER',profileSelectedMemberId);
-      if(currentRoute==='lyrics'&&typeof lyricsState!=='undefined'&&lyricsState&&lyricsState.song&&lyricsState.song.songId)recordUniverseActivityClient('VIEW_LYRICS',lyricsState.song.songId);
-      if(currentRoute==='quiz'&&typeof quizState!=='undefined'&&quizState&&quizState.completed&&quizState.game&&quizState.game.gameId)recordUniverseActivityClient('PLAY_QUIZ',quizState.game.gameId);
+      const profileId=currentRoute==='profile'&&document.querySelector('.profile-member-detail')&&typeof profileSelectedMemberId!=='undefined'?String(profileSelectedMemberId||''):'';
+      if(profileId&&profileId!==universeStateClient.observedProfileId)recordUniverseActivityClient('VIEW_MEMBER',profileId);
+      universeStateClient.observedProfileId=profileId;
+      const lyricsId=currentRoute==='lyrics'&&document.querySelector('.lyrics-song-title')&&typeof lyricsState!=='undefined'&&lyricsState&&lyricsState.song?String(lyricsState.song.songId||''):'';
+      if(lyricsId&&lyricsId!==universeStateClient.observedLyricsId)recordUniverseActivityClient('VIEW_LYRICS',lyricsId);
+      universeStateClient.observedLyricsId=lyricsId;
+      const quizId=currentRoute==='quiz'&&typeof quizState!=='undefined'&&quizState&&quizState.completed&&quizState.game?String(quizState.game.gameId||''):'';
+      if(quizId&&quizId!==universeStateClient.observedQuizGameId)recordUniverseActivityClient('PLAY_QUIZ',quizId);
+      universeStateClient.observedQuizGameId=quizId;
     });
     observer.observe(pageContent,{childList:true,subtree:true});
   }
