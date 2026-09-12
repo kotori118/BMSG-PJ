@@ -38,10 +38,47 @@ function readSheetObjectsWithRows_(sheet) {
 }
 
 function appendByHeaders_(sheet, record) {
+  if (sheet.getName() === UNIVERSE_CONFIG.SHEETS.RECENT_ACTIVITIES) {
+    appendRecentActivity_(sheet, record);
+    return;
+  }
+  appendRawByHeaders_(sheet, record);
+}
+
+function appendRawByHeaders_(sheet, record) {
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
   sheet.appendRow(headers.map(function(header) {
     return Object.prototype.hasOwnProperty.call(record, header) ? record[header] : '';
   }));
+}
+
+function appendRecentActivity_(sheet, record) {
+  const userId = String(record && record.UserID || '').trim();
+  const activityType = String(record && record.ActivityType || '').trim();
+  const targetId = String(record && record.TargetID || '').trim();
+  if (!userId || !activityType || !targetId) throw new Error('Recent activity requires UserID, ActivityType and TargetID.');
+
+  const rows = readSheetObjectsWithRows_(sheet)
+    .filter(function(row) { return String(row.UserID || '').trim() === userId; })
+    .sort(function(a, b) { return a.__rowNumber - b.__rowNumber; });
+  const latest = rows.length ? rows[rows.length - 1] : null;
+
+  if (latest && String(latest.ActivityType || '').trim() === activityType && String(latest.TargetID || '').trim() === targetId) {
+    updateByHeaders_(sheet, latest.__rowNumber, {OccurredAt: record.OccurredAt || new Date()});
+  } else {
+    appendRawByHeaders_(sheet, record);
+  }
+
+  const currentRows = readSheetObjectsWithRows_(sheet)
+    .filter(function(row) { return String(row.UserID || '').trim() === userId; })
+    .sort(function(a, b) { return a.__rowNumber - b.__rowNumber; });
+  const excess = currentRows.length - 10;
+  if (excess > 0) {
+    currentRows.slice(0, excess)
+      .map(function(row) { return row.__rowNumber; })
+      .sort(function(a, b) { return b - a; })
+      .forEach(function(rowNumber) { sheet.deleteRow(rowNumber); });
+  }
 }
 
 function updateByHeaders_(sheet, rowNumber, record) {
