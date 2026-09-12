@@ -6,6 +6,7 @@
     loaded: false,
     members: [],
     accentRulesPrepared: false,
+    accentObserver: null,
     preferences: createDefaultUniversePreferences_()
   };
 
@@ -231,6 +232,7 @@
     root.style.setProperty('--cyan-soft', 'rgba('+rgb.r+','+rgb.g+','+rgb.b+',.11)');
     root.style.setProperty('--dark-line-strong', 'rgba('+rgb.r+','+rgb.g+','+rgb.b+',.24)');
     document.body.classList.toggle('member-color-mode', accent.toLowerCase() !== UNIVERSE_DEFAULT_ACCENT);
+    rewriteUniverseInlineAccentNode_(document.body);
   }
 
   function prepareUniverseAccentRules_() {
@@ -241,6 +243,21 @@
       try { rules = sheet.cssRules; } catch (error) { return; }
       rewriteUniverseAccentRuleList_(rules);
     });
+    rewriteUniverseInlineAccentNode_(document.body);
+    if (!universePreferencesClient.accentObserver && document.body) {
+      universePreferencesClient.accentObserver = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+          if (mutation.type === 'attributes') {
+            rewriteUniverseInlineAccentElement_(mutation.target);
+            return;
+          }
+          Array.from(mutation.addedNodes || []).forEach(function(node) {
+            if (node && node.nodeType === 1) rewriteUniverseInlineAccentNode_(node);
+          });
+        });
+      });
+      universePreferencesClient.accentObserver.observe(document.body, {childList:true,subtree:true,attributes:true,attributeFilter:['style']});
+    }
   }
 
   function rewriteUniverseAccentRuleList_(rules) {
@@ -254,6 +271,21 @@
         const next = rewriteUniverseAccentValue_(value);
         if (next !== value) rule.style.setProperty(property, next, rule.style.getPropertyPriority(property));
       });
+    });
+  }
+
+  function rewriteUniverseInlineAccentNode_(root) {
+    if (!root || root.nodeType !== 1) return;
+    rewriteUniverseInlineAccentElement_(root);
+    if (root.querySelectorAll) root.querySelectorAll('[style]').forEach(rewriteUniverseInlineAccentElement_);
+  }
+
+  function rewriteUniverseInlineAccentElement_(element) {
+    if (!element || !element.style) return;
+    Array.from(element.style).forEach(function(property) {
+      const value = element.style.getPropertyValue(property);
+      const next = rewriteUniverseAccentValue_(value);
+      if (next !== value) element.style.setProperty(property, next, element.style.getPropertyPriority(property));
     });
   }
 
