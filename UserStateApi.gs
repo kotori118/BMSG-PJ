@@ -79,15 +79,11 @@ function recordUniverseActivity(payload) {
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
   try {
-    const sheet = getLogSheet_(UNIVERSE_CONFIG.SHEETS.RECENT_ACTIVITIES);
-    const userRows = readSheetObjectsWithRows_(sheet).filter(function(row){return String(row.UserID || '') === uid;}).sort(function(a,b){return a.__rowNumber-b.__rowNumber;});
-    const latest = userRows.length ? userRows[userRows.length-1] : null;
-    if (latest && String(latest.ActivityType || '') === activityType && String(latest.TargetID || '') === targetId) {
-      updateByHeaders_(sheet, latest.__rowNumber, {OccurredAt:new Date()});
-    } else {
-      appendByHeaders_(sheet, {ActivityID:Utilities.getUuid(), UserID:uid, ActivityType:activityType, TargetID:targetId, OccurredAt:new Date()});
-    }
-    return {ok:true, data:{recent:normalizeUniverseRecent_(uid)}};
+    appendByHeaders_(getLogSheet_(UNIVERSE_CONFIG.SHEETS.RECENT_ACTIVITIES), {
+      ActivityID:Utilities.getUuid(), UserID:uid, ActivityType:activityType,
+      TargetID:targetId, OccurredAt:new Date()
+    });
+    return {ok:true, data:{recent:readUniverseRecent_(uid)}};
   } finally {
     lock.releaseLock();
   }
