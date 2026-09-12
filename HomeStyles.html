@@ -1,0 +1,31 @@
+<style>
+  .home-dynamic{display:grid;gap:28px;margin-top:28px;padding-bottom:36px}
+  .home-today-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+  .home-feature-card{position:relative;min-height:220px;padding:24px;overflow:hidden;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;text-align:left;border:1px solid rgba(156,236,255,.2);border-radius:26px;background:linear-gradient(145deg,rgba(8,22,35,.94),rgba(11,16,29,.86));box-shadow:0 18px 48px rgba(0,0,0,.22);color:#fff}
+  button.home-feature-card{cursor:pointer}
+  .home-feature-card:before{content:"";position:absolute;inset:auto -35% -45% auto;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(156,236,255,.2),transparent 68%);pointer-events:none}
+  .home-member-card:before{background:radial-gradient(circle,var(--home-accent,#9cecff),transparent 70%);opacity:.22}
+  .home-feature-label{position:absolute;top:22px;left:24px;color:rgba(156,236,255,.72);font:600 10px "Exo 2","Zen Kaku Gothic New",sans-serif;letter-spacing:.18em}
+  .home-feature-card strong{position:relative;font:700 clamp(25px,5vw,42px)/1.04 Orbitron,"Zen Kaku Gothic New",sans-serif;letter-spacing:-.025em;overflow-wrap:anywhere}
+  .home-feature-card small{position:relative;margin-top:9px;color:rgba(255,255,255,.58);font:500 12px "Zen Kaku Gothic New",Roboto,sans-serif}
+  .home-feature-card b{position:relative;margin-top:22px;color:rgba(156,236,255,.78);font:600 10px "Exo 2","Zen Kaku Gothic New",sans-serif;letter-spacing:.14em}
+  .home-list-section{display:grid;gap:12px}
+  .home-section-head{display:flex;align-items:end;justify-content:space-between;gap:18px;padding:0 2px}
+  .home-section-head span{display:block;color:rgba(156,236,255,.58);font:600 9px "Exo 2","Zen Kaku Gothic New",sans-serif;letter-spacing:.18em}
+  .home-section-head h2{margin:4px 0 0;color:#fff;font:700 clamp(19px,4vw,26px) Orbitron,"Zen Kaku Gothic New",sans-serif;letter-spacing:.01em}
+  .home-more{border:0;background:transparent;color:rgba(156,236,255,.72);font:600 11px "Zen Kaku Gothic New",sans-serif;cursor:pointer}
+  .home-list{overflow:hidden;border:1px solid rgba(156,236,255,.13);border-radius:22px;background:rgba(6,15,26,.62);backdrop-filter:blur(16px)}
+  .home-list-row,.home-collection-open{width:100%;min-height:68px;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:14px;border:0;border-top:1px solid rgba(255,255,255,.065);background:transparent;color:#fff;text-align:left;cursor:pointer}
+  .home-list-row:first-child{border-top:0}
+  .home-list-row span,.home-collection-open span{min-width:0;display:grid;gap:3px}
+  .home-list-row small,.home-collection-open small{color:rgba(156,236,255,.54);font:600 9px "Exo 2","Zen Kaku Gothic New",sans-serif;letter-spacing:.14em}
+  .home-list-row strong,.home-collection-open strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:600 14px "Zen Kaku Gothic New",Roboto,sans-serif}
+  .home-list-row b,.home-collection-open b{color:rgba(156,236,255,.52);font:400 25px/1 Roboto,sans-serif}
+  .home-empty{margin:0;padding:24px 18px;color:rgba(255,255,255,.44);font:500 12px "Zen Kaku Gothic New",sans-serif}
+  .home-state{min-height:230px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:#fff;text-align:center}
+  .home-state strong{font:700 18px Orbitron,sans-serif}.home-state p{margin:0;color:rgba(255,255,255,.58);font-size:13px}.home-state button{min-height:42px;padding:0 18px;border:1px solid rgba(156,236,255,.28);border-radius:14px;background:rgba(156,236,255,.08);color:#fff}
+  .utility-btn[hidden]{display:none!important}.utility-favorite{font:400 24px/1 Arial,sans-serif}.utility-favorite.is-favorite{color:var(--cyan,#9cecff)}
+  .home-collection-overlay{z-index:1250}.home-collection-panel{max-width:560px;max-height:min(78vh,720px);display:flex;flex-direction:column}.home-collection-list{overflow:auto;display:grid;gap:8px;padding-top:8px}.home-collection-row{display:grid;grid-template-columns:minmax(0,1fr) 46px;align-items:stretch;overflow:hidden;border:1px solid rgba(156,236,255,.14);border-radius:16px;background:rgba(255,255,255,.025)}
+  .home-collection-open{border-top:0}.home-collection-remove{border:0;border-left:1px solid rgba(255,255,255,.08);background:transparent;color:rgba(255,255,255,.55);font-size:22px;cursor:pointer}
+  @media(max-width:620px){.home-dynamic{gap:24px;margin-top:22px}.home-today-grid{grid-template-columns:1fr}.home-feature-card{min-height:190px;padding:22px}.home-feature-label{top:20px;left:22px}}
+</style>
