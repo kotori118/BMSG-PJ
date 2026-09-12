@@ -94,11 +94,19 @@
   }
 
   function syncUniverseLyricsCrossLinks_(){
-    if(typeof lyricsState==='undefined'||!lyricsState.song)return;const parts=document.querySelector('.lyrics-parts');if(!parts||document.querySelector('.universe-lyrics-crosslinks'))return;
-    const songId=String(lyricsState.song.songId||'');if(!songId)return;const row=document.createElement('div');row.className='universe-crosslink-row universe-lyrics-crosslinks';
-    row.appendChild(createUniverseCrossLinkButton_('ANALYSIS',function(){navigateToWithParams('analysis',{view:'song',song:songId});},'is-light'));
-    row.appendChild(createUniverseCrossLinkButton_('COVER MAKER',function(){navigateToWithParams('cover',{song:songId});},'is-light'));
-    parts.insertAdjacentElement('afterend',row);
+    if(typeof lyricsState==='undefined'||!lyricsState.song)return;
+    const songId=String(lyricsState.song.songId||'');if(!songId)return;
+    const meta=(lyricsState.catalog||[]).find(function(item){return String(item.songId)===songId;});
+    const isBeFirst=!!(meta&&(meta.category==='BE:FIRST'||meta.artist==='BE:FIRST'));
+    document.querySelectorAll('.universe-lyrics-crosslinks').forEach(function(node){node.remove();});
+    document.querySelectorAll('.lyrics-song-actions').forEach(function(row){
+      const existing=row.querySelector('.universe-lyrics-analysis-link');
+      if(!isBeFirst){if(existing)existing.remove();return;}
+      if(existing)return;
+      const karaoke=row.querySelector('.lyrics-karaoke-icon');
+      const button=createUniverseCrossLinkButton_('ANALYSIS',function(){navigateToWithParams('analysis',{view:'song',song:songId});},'is-light universe-lyrics-analysis-link');
+      if(karaoke)row.insertBefore(button,karaoke);else row.appendChild(button);
+    });
   }
 
   function syncUniverseAnalysisCrossLinks_(){
@@ -140,7 +148,8 @@
   .universe-profile-credits h3{margin:0 0 12px;color:var(--cyan);font:600 12px Orbitron,"Zen Kaku Gothic New",sans-serif;letter-spacing:.14em}
   .universe-profile-credits .universe-loading{min-height:60px}
   .universe-credit-list{display:grid;gap:8px}.universe-credit-song{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;width:100%;padding:13px 14px;border:1px solid rgba(255,255,255,.09);border-radius:14px;color:#fff;background:rgba(255,255,255,.03);text-align:left}.universe-credit-song strong{font:600 14px "Zen Kaku Gothic New",sans-serif}.universe-credit-tags{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:5px}.universe-credit-tags i{padding:4px 7px;border-radius:999px;color:var(--cyan);background:rgba(156,236,255,.09);font:600 10px "Zen Kaku Gothic New",sans-serif;font-style:normal}.universe-crosslink-status{margin:0;color:rgba(255,255,255,.58);font-size:12px}
-  .universe-lyrics-crosslinks{margin:10px 0 16px}.universe-crosslink-button.is-light{border-color:rgba(21,24,32,.13);color:var(--ink);background:#fff}.universe-lyrics-crosslinks .universe-crosslink-button{flex:1 1 140px}
+  .universe-crosslink-button.is-light{border-color:rgba(21,24,32,.13);color:var(--ink);background:#fff}
+  .lyrics-song-actions .universe-lyrics-analysis-link{flex:1 1 120px;min-height:46px;margin:0}
   .universe-analysis-profile-link{margin:16px 0 0}.universe-analysis-lyrics-link{margin-top:16px}.universe-card-profile-link{min-height:36px;margin-left:auto;padding:0 11px;font-size:9px}
-  @media(max-width:520px){.universe-profile-crosslinks .universe-crosslink-button{flex:1 1 100%}.universe-credit-song{grid-template-columns:1fr}.universe-credit-tags{justify-content:flex-start}}
+  @media(max-width:520px){.universe-profile-crosslinks .universe-crosslink-button{flex:1 1 100%}.universe-credit-song{grid-template-columns:1fr}.universe-credit-tags{justify-content:flex-start}.lyrics-song-actions .universe-lyrics-analysis-link{padding-inline:12px}}
 </style>
