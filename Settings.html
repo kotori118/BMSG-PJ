@@ -86,13 +86,8 @@
     syncUserChooser();
     closeUserChooser();
     if (previousId !== user.id && typeof resetUniversePreferencesClient_ === 'function') resetUniversePreferencesClient_();
-    if (typeof loadUniverseUserPreferences_ === 'function') {
-      loadUniverseUserPreferences_(user.id, function() {
-        if (previousId !== user.id) refreshUniverseUserContext();
-      });
-    } else if (previousId !== user.id) {
-      refreshUniverseUserContext();
-    }
+    if (previousId !== user.id) refreshUniverseUserContext();
+    if (typeof loadUniverseUserPreferences_ === 'function') loadUniverseUserPreferences_(user.id);
   }
 
   function ensureUniverseUserSelection() {
