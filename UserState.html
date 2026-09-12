@@ -1,6 +1,6 @@
 <script>
   const universeStateClient={favorites:[],recent:[],favoritesUserId:'',favoritesLoading:false,observedProfileId:'',observedLyricsId:'',observedQuizGameId:'',profileOpenTimer:0};
-  const UNIVERSE_FAVORITE_PAGE_ROUTES=Object.freeze({analysis:true,quiz:true,cards:true,poker:true,cover:true});
+  const UNIVERSE_FAVORITE_PAGE_ROUTES=Object.freeze({analysis:true,karaoke:true,quiz:true,cards:true,poker:true,cover:true,metrics:true});
 
   function universeUserId_(){return typeof getUniverseUserId==='function'?getUniverseUserId():'';}
   function setUniverseStateCache(data){
