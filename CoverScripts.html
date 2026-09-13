@@ -1,10 +1,10 @@
 <script>
-  const coverState={ready:false,busy:false,screen:'home',bootstrap:null,coverGroup:null,artist:'',songs:[],editor:null,viewMode:'cover',dirty:false,memberSheetOrder:null,dialogAction:null};
+  const coverState={ready:false,busy:false,screen:'home',bootstrap:null,coverGroup:null,artist:'',songs:[],editor:null,viewMode:'cover',dirty:false,memberSheetOrder:null,dialogAction:null,libraryProjects:[],returnScreen:'projects'};
 
   function renderCover(){const tpl=document.getElementById('coverPageTemplate');return tpl?tpl.innerHTML:'<section class="view cover-page"><div id="coverApp"></div></section>';}
 
   function initCoverPage(){
-    coverState.ready=false;coverState.busy=false;coverState.screen='home';coverState.dirty=false;coverState.editor=null;
+    coverState.ready=false;coverState.busy=false;coverState.screen='home';coverState.dirty=false;coverState.editor=null;coverState.libraryProjects=[];coverState.returnScreen='projects';
     renderCoverLoading();
     const userId=getUniverseUserId();
     if(!userId){if(typeof openUserChooser==='function')openUserChooser(true);renderCoverMessage('利用ユーザーを選択してください。');return;}
@@ -16,7 +16,7 @@
     const app=document.getElementById('coverApp');if(!app)return;
     if(coverState.screen==='home'){
       const row='<button type="button" class="u-btn cover-project-row" disabled aria-hidden="true"><span><strong class="skeleton-block" style="display:block;width:48%;height:15px;border-radius:7px"></strong><span class="cover-row-meta skeleton-block" style="display:block;width:64%;height:10px;border-radius:6px;margin-top:9px"></span></span></button>';
-      app.innerHTML='<div class="cover-home-actions"><button class="u-btn" type="button" disabled><span class="skeleton-block" style="display:block;width:54%;height:14px;border-radius:7px;margin:auto"></span></button><button class="u-btn" type="button" disabled><span class="skeleton-block" style="display:block;width:62%;height:14px;border-radius:7px;margin:auto"></span></button></div><h2 class="cover-section-title">RECENT</h2><div class="cover-stack">'+row+row+row+'</div>';
+      app.innerHTML='<div class="cover-home-actions"><button class="u-btn" type="button" disabled><span class="skeleton-block" style="display:block;width:54%;height:14px;border-radius:7px;margin:auto"></span></button><button class="u-btn" type="button" disabled><span class="skeleton-block" style="display:block;width:62%;height:14px;border-radius:7px;margin:auto"></span></button><button class="u-btn" type="button" disabled><span class="skeleton-block" style="display:block;width:44%;height:14px;border-radius:7px;margin:auto"></span></button></div><h2 class="cover-section-title">RECENT</h2><div class="cover-stack">'+row+row+row+'</div>';
       setCanonicalCoverVisualMode('home');return;
     }
     if(coverState.screen==='songs'){
@@ -32,7 +32,7 @@
   function selectCoverArtist(artist){coverState.artist=artist;coverState.screen='songs';renderCoverLoading();google.script.run.withSuccessHandler(function(songs){coverState.songs=songs||[];renderCoverSongs();}).withFailureHandler(showCoverError).getCoverSourceSongs(artist);}
 
   function startCoverEditor(songId){if(!coverState.coverGroup)return;renderCoverLoading();google.script.run.withSuccessHandler(function(data){coverState.editor=data;coverState.viewMode='cover';coverState.dirty=false;renderCoverEditor();}).withFailureHandler(showCoverError).getCoverEditorData({userId:getUniverseUserId(),coverGroupId:coverState.coverGroup.groupId,songId:songId});}
-  function openSavedCover(projectId){renderCoverLoading();google.script.run.withSuccessHandler(function(data){coverState.editor=data;coverState.coverGroup=data.coverGroup;coverState.viewMode='cover';coverState.dirty=false;coverState.screen='view';renderCoverEditor();}).withFailureHandler(showCoverError).getCoverProject({userId:getUniverseUserId(),projectId:projectId});}
+  function openSavedCover(projectId,returnScreen){coverState.returnScreen=returnScreen||coverState.returnScreen||'projects';renderCoverLoading();google.script.run.withSuccessHandler(function(data){coverState.editor=data;coverState.coverGroup=data.coverGroup;coverState.viewMode='cover';coverState.dirty=false;coverState.screen='view';renderCoverEditor();}).withFailureHandler(showCoverError).getCoverProject({userId:getUniverseUserId(),projectId:projectId});}
   function editSavedCover(){if(!coverState.editor||!coverState.editor.isCreator)return;coverState.screen='editor';coverState.dirty=false;renderCoverEditor();}
 
   function coverOverlayMarkup(){return '<div id="coverSheet" class="cover-sheet" hidden onclick="closeCoverSheetOnBackdrop(event)"><div id="coverSheetPanel" class="cover-sheet-panel"></div></div><div id="coverDialog" class="cover-dialog" hidden onclick="closeCoverDialogOnBackdrop(event)"><div class="cover-dialog-panel"><p id="coverDialogMessage" class="cover-dialog-message"></p><div class="cover-dialog-actions"><button id="coverDialogCancel" type="button" class="u-btn" onclick="closeCoverDialog()">キャンセル</button><button id="coverDialogConfirm" type="button" class="u-btn" onclick="confirmCoverDialog()">OK</button></div></div></div>';}
@@ -54,8 +54,9 @@
     google.script.run.withSuccessHandler(function(result){coverState.busy=false;if(result&&result.requiresConfirm){openCoverDialog(result.message||'原曲担当のまま残っているパートがあります。','編集に戻る','このまま保存',function(){saveCurrentCover(true);});return;}if(result&&result.ok){coverState.dirty=false;if(typeof showToast==='function')showToast('保存しました');refreshCoverHomeAfterSave();}}).withFailureHandler(showCoverError).saveCoverProject(payload);}
   function refreshCoverHomeAfterSave(){google.script.run.withSuccessHandler(function(data){coverState.bootstrap=data||coverState.bootstrap;coverState.editor=null;coverState.coverGroup=null;coverState.artist='';coverState.songs=[];coverState.viewMode='cover';coverState.dirty=false;renderCoverHome();}).withFailureHandler(showCoverError).getCoverMakerBootstrap(getUniverseUserId());}
 
+  function setCurrentCoverSharing(isShared){if(coverState.busy||!coverState.editor||!coverState.editor.isCreator||!coverState.editor.isSaved)return;coverState.busy=true;google.script.run.withSuccessHandler(function(result){coverState.busy=false;if(!result||!result.ok)return;coverState.editor.isShared=!!result.isShared;coverState.editor.sharedAt=result.sharedAt||'';if(typeof showToast==='function')showToast(result.isShared?'共有しました':'共有を解除しました');renderCoverEditor();}).withFailureHandler(showCoverError).setCoverProjectShared({userId:getUniverseUserId(),projectId:coverState.editor.projectId,isShared:!!isShared});}
   function requestDeleteCover(){if(!coverState.editor||!coverState.editor.isCreator)return;openCoverDialog('このカバーを削除しますか？','キャンセル','削除',function(){deleteCurrentCover();});}
-  function deleteCurrentCover(){const id=coverState.editor.projectId;renderCoverLoading();google.script.run.withSuccessHandler(function(){if(typeof showToast==='function')showToast('削除しました');google.script.run.withSuccessHandler(function(data){coverState.bootstrap=data||{};coverState.editor=null;coverState.dirty=false;openCoverProjects();}).withFailureHandler(showCoverError).getCoverMakerBootstrap(getUniverseUserId());}).withFailureHandler(showCoverError).deleteCoverProject({userId:getUniverseUserId(),projectId:id});}
+  function deleteCurrentCover(){const id=coverState.editor.projectId,returnScreen=coverState.returnScreen;renderCoverLoading();google.script.run.withSuccessHandler(function(){if(typeof showToast==='function')showToast('削除しました');google.script.run.withSuccessHandler(function(data){coverState.bootstrap=data||{};coverState.editor=null;coverState.dirty=false;if(returnScreen==='library')openCoverLibrary();else openCoverProjects();}).withFailureHandler(showCoverError).getCoverMakerBootstrap(getUniverseUserId());}).withFailureHandler(showCoverError).deleteCoverProject({userId:getUniverseUserId(),projectId:id});}
 
   function openCoverDialog(message,cancelLabel,confirmLabel,onConfirm){const dialog=document.getElementById('coverDialog');if(!dialog){if(onConfirm)onConfirm();return;}document.getElementById('coverDialogMessage').textContent=message;document.getElementById('coverDialogCancel').textContent=cancelLabel||'キャンセル';document.getElementById('coverDialogConfirm').textContent=confirmLabel||'OK';coverState.dialogAction=onConfirm||null;dialog.hidden=false;document.body.style.overflow='hidden';}
   function closeCoverDialog(){const d=document.getElementById('coverDialog');if(d)d.hidden=true;coverState.dialogAction=null;document.body.style.overflow='';}
@@ -64,33 +65,33 @@
 
   function coverNavigateBack(){if(coverState.screen==='home'){navigateTo('lab');return;}if(coverState.screen==='editor'&&coverState.dirty){openCoverDialog('保存していない変更があります。画面を離れますか？','キャンセル','離れる',function(){coverState.dirty=false;coverReturnFromEditor();});return;}coverReturnFromScreen();}
   function coverReturnFromEditor(){if(coverState.editor&&coverState.editor.isSaved){coverState.screen='view';renderCoverEditor();}else{renderCoverSongs();}}
-  function coverReturnFromScreen(){if(coverState.screen==='group')return renderCoverHome();if(coverState.screen==='artist')return openCoverGroupSelect();if(coverState.screen==='songs')return openCoverArtistSelect();if(coverState.screen==='projects')return renderCoverHome();if(coverState.screen==='view')return openCoverProjects();if(coverState.screen==='editor')return coverReturnFromEditor();renderCoverHome();}
+  function coverReturnFromScreen(){if(coverState.screen==='group')return renderCoverHome();if(coverState.screen==='artist')return openCoverGroupSelect();if(coverState.screen==='songs')return openCoverArtistSelect();if(coverState.screen==='projects'||coverState.screen==='library')return renderCoverHome();if(coverState.screen==='view')return coverState.returnScreen==='library'?openCoverLibrary():openCoverProjects();if(coverState.screen==='editor')return coverReturnFromEditor();renderCoverHome();}
   function coverConfirmExternalNavigation(route){if(currentRoute!=='cover'||!coverState.dirty)return false;openCoverDialog('保存していない変更があります。画面を離れますか？','キャンセル','離れる',function(){coverState.dirty=false;navigateTo(route);});return true;}
   window.addEventListener('beforeunload',function(event){if(currentRoute==='cover'&&coverState.dirty){event.preventDefault();event.returnValue='';}});
 
   /* Canonical COVER runtime authority. */
   function coverCanonicalPage(){return document.querySelector('#pageContent > .cover-page')||document.querySelector('.cover-page');}
   function decorateCanonicalCoverChoiceCards(){const page=coverCanonicalPage();if(!page)return;const groups=(coverState&&coverState.bootstrap&&coverState.bootstrap.groups)||[];const colors={};groups.forEach(function(group){colors[String(group.groupName||'')]=group.color||'#9cecff';});page.querySelectorAll('.cover-content-card').forEach(function(card){const label=card.querySelector('strong');const name=label?String(label.textContent||'').trim():'';if(colors[name])card.style.setProperty('--cover-accent',colors[name]);});}
-  function setCanonicalCoverVisualMode(mode){const page=coverCanonicalPage();if(!page)return;['home','group','artist','songs','projects','editor'].forEach(function(name){page.classList.toggle('is-cover-'+name,mode===name);});page.classList.toggle('is-cover-choice',mode==='group'||mode==='artist');if(mode==='group'||mode==='artist')decorateCanonicalCoverChoiceCards();}
+  function setCanonicalCoverVisualMode(mode){const page=coverCanonicalPage();if(!page)return;['home','group','artist','songs','projects','library','editor'].forEach(function(name){page.classList.toggle('is-cover-'+name,mode===name);});page.classList.toggle('is-cover-choice',mode==='group'||mode==='artist');if(mode==='group'||mode==='artist')decorateCanonicalCoverChoiceCards();}
   function currentCanonicalCoverUserId(){return typeof getUniverseUserId==='function'?String(getUniverseUserId()||''):'';}
   function ownCanonicalCoverProjects(projects){const uid=currentCanonicalCoverUserId();return (projects||[]).filter(function(project){return String(project&&project.creatorUserId||'')===uid;});}
 
   function renderCoverHome(){
     coverState.screen='home';coverState.dirty=false;const app=document.getElementById('coverApp');if(!app)return;
-    const projects=ownCanonicalCoverProjects(coverState.bootstrap&&coverState.bootstrap.projects||[]);
-    app.innerHTML='<div class="cover-home-actions"><button class="u-btn" type="button" onclick="openCoverGroupSelect()">新しく作る</button><button class="u-btn" type="button" onclick="openCoverProjects()">作ったカバーを見る</button></div><h2 class="cover-section-title">RECENT</h2>'+renderCoverProjectRows(projects.slice(0,3),true);
+    const projects=ownCanonicalCoverProjects(coverState.bootstrap&&coverState.bootstrap.projects||[]);const recent=renderCoverProjectRows(projects.slice(0,3),true,false);const more=projects.length>3?'<div class="cover-view-actions is-single"><button type="button" class="u-btn" onclick="openCoverProjects()">もっと見る</button></div>':'';
+    app.innerHTML='<div class="cover-home-actions"><button class="u-btn" type="button" onclick="openCoverGroupSelect()">新しく作る</button><button class="u-btn" type="button" onclick="openCoverProjects()">作ったカバーを見る</button><button class="u-btn" type="button" onclick="openCoverLibrary()">LIBRARY</button></div><h2 class="cover-section-title">RECENT</h2>'+recent+more;
     setCanonicalCoverVisualMode('home');
   }
 
   function openCoverGroupSelect(){
     coverState.screen='group';const groups=coverState.bootstrap&&coverState.bootstrap.groups||[];const app=document.getElementById('coverApp');
-    app.innerHTML='<h2 class="cover-section-title">カバー先GROUP</h2><div class="cover-stack cover-choice-stack">'+groups.map(function(g){return '<button type="button" class="u-btn cover-content-card" style="--cover-accent:'+escapeHtml(g.color)+'" onclick="selectCoverGroup(\''+escapeHtml(g.groupId)+'\')"><strong>'+escapeHtml(g.groupName)+'</strong></button>';}).join('')+'</div>';
+    app.innerHTML='<h2 class="cover-section-title">歌うアーティスト</h2><div class="cover-stack cover-choice-stack">'+groups.map(function(g){return '<button type="button" class="u-btn cover-content-card" style="--cover-accent:'+escapeHtml(g.color)+'" onclick="selectCoverGroup(\''+escapeHtml(g.groupId)+'\')"><strong>'+escapeHtml(g.groupName)+'</strong></button>';}).join('')+'</div>';
     setCanonicalCoverVisualMode('group');
   }
 
   function openCoverArtistSelect(){
     coverState.screen='artist';const app=document.getElementById('coverApp');const artists=coverState.bootstrap.sourceArtists||[];
-    app.innerHTML='<h2 class="cover-section-title">原曲アーティスト</h2><div class="cover-stack cover-choice-stack">'+artists.map(function(a){return '<button type="button" class="u-btn cover-content-card" style="--cover-accent:#9cecff" onclick="selectCoverArtist(\''+escapeHtml(a).replaceAll("'","&#039;")+'\')"><strong>'+escapeHtml(a)+'</strong></button>';}).join('')+'</div>';
+    app.innerHTML='<h2 class="cover-section-title">カバーする原曲</h2><div class="cover-stack cover-choice-stack">'+artists.map(function(a){return '<button type="button" class="u-btn cover-content-card" style="--cover-accent:#9cecff" onclick="selectCoverArtist(\''+escapeHtml(a).replaceAll("'","&#039;")+'\')"><strong>'+escapeHtml(a)+'</strong></button>';}).join('')+'</div>';
     setCanonicalCoverVisualMode('artist');
   }
 
@@ -101,20 +102,26 @@
   }
 
   function openCoverProjects(){
-    coverState.screen='projects';const app=document.getElementById('coverApp');if(!app)return;const projects=ownCanonicalCoverProjects(coverState.bootstrap&&coverState.bootstrap.projects||[]);
-    app.innerHTML='<h2 class="cover-section-title">作ったカバー</h2>'+renderCoverProjectRows(projects,false);setCanonicalCoverVisualMode('projects');
+    coverState.screen='projects';coverState.returnScreen='projects';const app=document.getElementById('coverApp');if(!app)return;const projects=ownCanonicalCoverProjects(coverState.bootstrap&&coverState.bootstrap.projects||[]);
+    app.innerHTML='<h2 class="cover-section-title">作ったカバー</h2>'+renderCoverProjectRows(projects,false,false);setCanonicalCoverVisualMode('projects');
   }
 
-  function renderCoverProjectRows(projects,compact){
-    if(!projects||!projects.length)return '<div class="cover-empty">まだカバーがありません。</div>';
-    return '<div class="cover-stack">'+projects.map(function(p){return '<button type="button" class="u-btn cover-project-row" onclick="openSavedCover(\''+escapeHtml(p.projectId)+'\')"><span><strong>'+escapeHtml(p.title||p.sourceTitle)+'</strong><span class="cover-row-meta">'+escapeHtml(p.sourceArtist)+' → '+escapeHtml(p.coverGroupName)+'</span><span class="cover-project-badges">'+(p.isComplete?'':'<span class="cover-badge is-draft">編集中</span>')+'</span></span></button>';}).join('')+'</div>';
+  function openCoverLibrary(){
+    coverState.screen='library';coverState.returnScreen='library';const app=document.getElementById('coverApp');if(!app)return;app.innerHTML=typeof renderUniverseLoading==='function'?renderUniverseLoading('LOADING...','#9cecff'):'<div class="cover-empty">LOADING...</div>';setCanonicalCoverVisualMode('library');
+    google.script.run.withSuccessHandler(function(projects){coverState.libraryProjects=projects||[];if(coverState.screen!=='library')return;app.innerHTML='<h2 class="cover-section-title">LIBRARY</h2>'+renderCoverProjectRows(coverState.libraryProjects,false,true);}).withFailureHandler(showCoverError).getCoverLibrary(getUniverseUserId());
+  }
+
+  function renderCoverProjectRows(projects,compact,libraryMode){
+    if(!projects||!projects.length)return '<div class="cover-empty">'+(libraryMode?'共有されたカバーはまだありません。':'まだカバーがありません。')+'</div>';
+    const returnScreen=libraryMode?'library':'projects';
+    return '<div class="cover-stack">'+projects.map(function(p){const creator=libraryMode&&p.creatorDisplayName?'<span class="cover-row-meta">'+escapeHtml(p.creatorDisplayName)+' のカバー</span>':'';const badges=(p.isComplete?'':'<span class="cover-badge is-draft">編集中</span>')+(p.isShared?'<span class="cover-badge">共有中</span>':'');return '<button type="button" class="u-btn cover-project-row" onclick="openSavedCover(\''+escapeHtml(p.projectId)+'\',\''+returnScreen+'\')"><span><strong>'+escapeHtml(p.title||p.sourceTitle)+'</strong><span class="cover-row-meta">'+escapeHtml(p.sourceArtist)+' → '+escapeHtml(p.coverGroupName)+'</span>'+creator+'<span class="cover-project-badges">'+badges+'</span></span></button>';}).join('')+'</div>';
   }
 
   function renderCoverEditor(){
     const data=coverState.editor;if(!data)return;coverState.screen=data.isSaved&&!data.isCreator?'view':(coverState.screen==='view'?'view':'editor');const editing=coverState.screen==='editor'&&data.isCreator;const app=document.getElementById('coverApp');const assignmentMap=coverAssignmentMap();const memberMap=coverMemberMap();const isSavedView=coverState.screen==='view';
-    let html='<div class="cover-editor-head"><button type="button" class="u-btn cover-inline-back" aria-label="戻る" onclick="coverNavigateBack()">‹</button><h2 class="cover-song-heading">'+escapeHtml(data.title||data.sourceSong.title)+'</h2><div class="cover-song-context">'+escapeHtml(data.sourceSong.artist)+' → '+escapeHtml(data.coverGroup.groupName)+'</div><div class="cover-tabs"><button type="button" class="u-btn cover-tab '+(coverState.viewMode==='original'?'is-active':'')+'" onclick="setCoverViewMode(\'original\')">ORIGINAL</button><button type="button" class="u-btn cover-tab '+(coverState.viewMode==='cover'?'is-active':'')+'" onclick="setCoverViewMode(\'cover\')">COVER</button></div>';
+    let html='<div class="cover-editor-head"><button type="button" class="u-btn cover-inline-back" aria-label="戻る" onclick="coverNavigateBack()">‹</button><h2 class="cover-song-heading">'+escapeHtml(data.title||data.sourceSong.title)+'</h2><div class="cover-song-context">'+escapeHtml(data.sourceSong.artist)+' → '+escapeHtml(data.coverGroup.groupName)+(data.creatorDisplayName?' / '+escapeHtml(data.creatorDisplayName):'')+'</div><div class="cover-tabs"><button type="button" class="u-btn cover-tab '+(coverState.viewMode==='original'?'is-active':'')+'" onclick="setCoverViewMode(\'original\')">ORIGINAL</button><button type="button" class="u-btn cover-tab '+(coverState.viewMode==='cover'?'is-active':'')+'" onclick="setCoverViewMode(\'cover\')">COVER</button></div>';
     if(editing)html+='<div class="cover-tools"><button type="button" class="u-btn" onclick="openCoverBulkChange()">パート変更</button><button type="button" class="u-btn" onclick="openCoverRatio()">割合確認</button></div>';html+='</div>';
-    if(data.isSaved&&coverState.screen==='view'){html+='<div class="cover-view-actions '+(data.isCreator?'':'is-single')+'">';if(data.isCreator)html+='<button type="button" class="u-btn" onclick="editSavedCover()">EDIT</button><button type="button" class="u-btn" onclick="requestDeleteCover()">DELETE</button>';html+='</div>';}
+    if(data.isSaved&&coverState.screen==='view'&&data.isCreator){html+='<div class="cover-view-actions"><button type="button" class="u-btn" onclick="editSavedCover()">EDIT</button><button type="button" class="u-btn" onclick="requestDeleteCover()">DELETE</button></div><div class="cover-view-actions is-single"><button type="button" class="u-btn" onclick="setCurrentCoverSharing('+(!data.isShared)+')">'+(data.isShared?'共有解除':'共有する')+'</button></div>';}
     html+='<div class="cover-lyrics">'+data.parts.map(function(part){if(coverState.viewMode==='original')return '<div class="cover-lyric-row"><div class="cover-original-label">'+escapeHtml(part.originalSingerLabel)+'</div><div class="cover-lyric-text">'+escapeHtml(part.lyrics)+'</div></div>';const memberId=assignmentMap[String(part.order)]||'';const member=memberMap[memberId];const label=member?member.name:(memberId===part.originalMemberId?part.originalSingerLabel:(memberId||'未設定'));const color=member?member.color:'#777777';return '<div class="cover-lyric-row"><button type="button" class="cover-assignee" style="--cover-member-color:'+escapeHtml(color)+'" '+(editing?'onclick="openCoverMemberSheet('+Number(part.order)+')"':'disabled')+'><span class="cover-assignee-dot"></span>'+escapeHtml(label)+'</button><div class="cover-lyric-text">'+escapeHtml(part.lyrics)+'</div></div>';}).join('')+'</div>';
     if(editing)html+='<div class="cover-save-bar"><div class="cover-save-inner"><button type="button" class="u-btn" onclick="saveCurrentCover(false)" '+(coverState.busy?'disabled':'')+'>保存</button></div></div>';html+=coverOverlayMarkup();app.innerHTML=html;
     setCanonicalCoverVisualMode('editor');const page=coverCanonicalPage();if(page){page.classList.toggle('is-cover-saved-view',isSavedView);page.classList.toggle('is-cover-live-editor',!isSavedView);}
