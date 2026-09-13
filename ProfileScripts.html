@@ -100,5 +100,11 @@
 
     const isDetail = Boolean(active);
     page.classList.toggle('profile-page-detail-mode', isDetail);
+
+    const heading = page.querySelector('.profile-heading');
+    if (heading) heading.style.display = 'grid';
+
+    const serviceBack = page.querySelector('.profile-service-back');
+    if (serviceBack) serviceBack.style.display = isDetail ? 'none' : '';
   }
 </script>
