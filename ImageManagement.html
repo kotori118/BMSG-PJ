@@ -1,0 +1,283 @@
+<div id="imageManagementOverlay" class="modal-overlay image-management-overlay" onclick="closeImageManagementOnBackdrop(event)">
+  <section class="settings-panel image-management-panel" role="dialog" aria-modal="true" aria-labelledby="imageManagementTitle">
+    <header class="modal-head">
+      <div>
+        <h2 id="imageManagementTitle" class="modal-title">画像管理</h2>
+        <p class="image-management-lead">カード画像を登録・差し替え</p>
+      </div>
+      <button class="overlay-close" type="button" onclick="closeImageManagement()" aria-label="画像管理を閉じる">×</button>
+    </header>
+
+    <div id="imageManagementLoading" class="image-management-loading">LOADING...</div>
+
+    <form id="imageManagementForm" class="image-management-form" onsubmit="return submitImageManagement(event)" hidden>
+      <label class="image-management-field">
+        <span>グループ</span>
+        <select id="imageManagementGroup" onchange="changeImageManagementGroup()">
+          <option value="">選択してください</option>
+        </select>
+      </label>
+
+      <label class="image-management-field">
+        <span>メンバー</span>
+        <select id="imageManagementMember" onchange="refreshImageManagementExisting()" disabled>
+          <option value="">先にグループを選択してください</option>
+        </select>
+      </label>
+
+      <label class="image-management-field">
+        <span>レア度</span>
+        <select id="imageManagementRarity" onchange="refreshImageManagementExisting()">
+          <option value="">選択してください</option>
+          <option value="N">N</option>
+          <option value="R">R</option>
+          <option value="SR">SR</option>
+          <option value="SSR">SSR</option>
+        </select>
+      </label>
+
+      <label class="image-management-field image-management-file-field">
+        <span>画像</span>
+        <input id="imageManagementFile" type="file" accept="image/jpeg,image/png,.jpg,.jpeg,.png" onchange="previewImageManagementFile()">
+        <b id="imageManagementFileName">JPEGまたはPNGを選択</b>
+      </label>
+
+      <section id="imageManagementPreviewSection" class="image-management-preview-section" hidden>
+        <p>登録する画像</p>
+        <div class="image-management-preview-card"><img id="imageManagementPreview" alt="登録する画像のプレビュー"></div>
+      </section>
+
+      <p id="imageManagementError" class="image-management-error" role="alert" hidden></p>
+      <button id="imageManagementSubmit" class="image-management-primary" type="submit">画像を登録する</button>
+    </form>
+
+    <section class="image-management-repair">
+      <div>
+        <strong>画像データを修復</strong>
+        <small>Driveに保存されている画像を確認し、画像データとの紐付けを修復します。</small>
+      </div>
+      <button id="imageManagementRepairButton" type="button" onclick="confirmImageManagementRepair()">画像データを修復する</button>
+    </section>
+  </section>
+</div>
+
+<div id="imageReplaceOverlay" class="modal-overlay image-replace-overlay" onclick="closeImageReplaceOnBackdrop(event)">
+  <section class="settings-panel image-replace-panel" role="dialog" aria-modal="true" aria-labelledby="imageReplaceTitle">
+    <header class="modal-head">
+      <div><h2 id="imageReplaceTitle" class="modal-title">画像を差し替えますか？</h2></div>
+      <button class="overlay-close" type="button" onclick="closeImageReplaceConfirm()" aria-label="画像差し替え確認を閉じる">×</button>
+    </header>
+    <p id="imageReplaceCopy" class="image-replace-copy"></p>
+    <div class="image-replace-compare">
+      <div><span>現在の画像</span><div class="image-management-preview-card"><img id="imageReplaceCurrent" alt="現在の画像"></div></div>
+      <b aria-hidden="true">→</b>
+      <div><span>新しい画像</span><div class="image-management-preview-card"><img id="imageReplaceNew" alt="新しい画像"></div></div>
+    </div>
+    <div class="image-replace-actions">
+      <button type="button" class="image-management-secondary" onclick="closeImageReplaceConfirm()">キャンセル</button>
+      <button id="imageReplaceConfirmButton" type="button" class="image-management-primary" onclick="confirmImageReplacement()">画像を差し替える</button>
+    </div>
+  </section>
+</div>
+
+<style>
+  .image-management-overlay,.image-replace-overlay{z-index:1250}
+  .image-replace-overlay{z-index:1300}
+  .image-management-panel{max-width:560px;max-height:min(90vh,820px);overflow:auto}
+  .image-management-lead{margin:4px 0 0;color:rgba(255,255,255,.48);font:500 11px "Zen Kaku Gothic New",Roboto,sans-serif}
+  .image-management-loading{padding:34px 0;text-align:center;color:var(--cyan);font:600 11px "Exo 2",sans-serif;letter-spacing:.16em}
+  .image-management-form{display:grid;gap:16px;margin-top:12px}
+  .image-management-field{display:grid;gap:7px}
+  .image-management-field>span,.image-management-preview-section>p{margin:0;color:rgba(255,255,255,.55);font:700 11px "Zen Kaku Gothic New",Roboto,sans-serif}
+  .image-management-field select{width:100%;min-height:52px;padding:0 14px;border:1px solid rgba(156,236,255,.18);border-radius:15px;background:#0b0f16;color:var(--white);font:600 15px "Zen Kaku Gothic New",Roboto,sans-serif;outline:none}
+  .image-management-field select:focus{border-color:rgba(156,236,255,.58)}
+  .image-management-file-field{position:relative;min-height:88px;padding:15px;border:1px dashed rgba(156,236,255,.26);border-radius:16px;background:rgba(156,236,255,.035);cursor:pointer}
+  .image-management-file-field input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+  .image-management-file-field b{color:var(--white);font:600 14px "Zen Kaku Gothic New",Roboto,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .image-management-preview-section{display:grid;gap:8px}
+  .image-management-preview-card{aspect-ratio:3/4;overflow:hidden;border:1px solid rgba(156,236,255,.16);border-radius:18px;background:#080b10}
+  .image-management-preview-card img{width:100%;height:100%;display:block;object-fit:cover}
+  .image-management-primary,.image-management-secondary,.image-management-repair button{min-height:50px;padding:0 18px;border-radius:14px;font:700 14px "Zen Kaku Gothic New",Roboto,sans-serif;cursor:pointer}
+  .image-management-primary{border:1px solid rgba(156,236,255,.56);background:var(--cyan);color:#061017}
+  .image-management-primary:disabled{opacity:.45;cursor:default}
+  .image-management-secondary{border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.04);color:var(--white)}
+  .image-management-error{margin:0;padding:11px 13px;border:1px solid rgba(255,120,120,.28);border-radius:12px;background:rgba(255,80,80,.07);color:#ffb6b6;font:600 12px "Zen Kaku Gothic New",Roboto,sans-serif}
+  .image-management-repair{margin-top:24px;padding-top:20px;border-top:1px solid rgba(156,236,255,.12);display:grid;gap:12px}
+  .image-management-repair>div{display:grid;gap:4px}
+  .image-management-repair strong{font:700 15px "Zen Kaku Gothic New",Roboto,sans-serif}
+  .image-management-repair small{color:rgba(255,255,255,.46);font:500 11px/1.7 "Zen Kaku Gothic New",Roboto,sans-serif}
+  .image-management-repair button{border:1px solid rgba(156,236,255,.22);background:rgba(156,236,255,.07);color:var(--cyan)}
+  .image-replace-panel{max-width:620px}
+  .image-replace-copy{margin:4px 0 18px;color:rgba(255,255,255,.65);font:500 13px/1.7 "Zen Kaku Gothic New",Roboto,sans-serif}
+  .image-replace-compare{display:grid;grid-template-columns:minmax(0,1fr) 24px minmax(0,1fr);align-items:center;gap:10px}
+  .image-replace-compare>div{display:grid;gap:7px}
+  .image-replace-compare span{color:rgba(255,255,255,.5);font:700 10px "Zen Kaku Gothic New",Roboto,sans-serif;text-align:center}
+  .image-replace-compare>b{color:var(--cyan);text-align:center;font-size:22px}
+  .image-replace-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px}
+  body.theme-light .image-management-field>span,body.theme-light .image-management-preview-section>p,body.theme-light .image-management-lead,body.theme-light .image-management-repair small,body.theme-light .image-replace-copy,body.theme-light .image-replace-compare span{color:rgba(21,24,32,.55)}
+  body.theme-light .image-management-field select{background:#fff;color:var(--ink);border-color:rgba(75,165,184,.25)}
+  body.theme-light .image-management-file-field{background:rgba(156,236,255,.10)}
+  body.theme-light .image-management-file-field b,body.theme-light .image-management-secondary{color:var(--ink)}
+  @media(max-width:520px){.image-management-panel,.image-replace-panel{width:calc(100vw - 24px);padding:18px}.image-replace-compare{gap:6px}.image-replace-actions{grid-template-columns:1fr}.image-management-preview-card{border-radius:14px}}
+</style>
+
+<script>
+  const imageManagementState = {
+    bootstrap:null,
+    previewUrl:'',
+    status:null,
+    pendingFile:null,
+    pendingData:null
+  };
+
+  function openImageManagement() {
+    closeSettings();
+    const overlay = document.getElementById('imageManagementOverlay');
+    if (!overlay) return;
+    overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    if (imageManagementState.bootstrap) {
+      renderImageManagementBootstrap(imageManagementState.bootstrap);
+      return;
+    }
+    setImageManagementLoading(true);
+    google.script.run
+      .withSuccessHandler(function(data){ imageManagementState.bootstrap=data; renderImageManagementBootstrap(data); })
+      .withFailureHandler(function(error){ showImageManagementError(readImageManagementError(error)); setImageManagementLoading(false); })
+      .getImageManagementBootstrap();
+  }
+
+  function closeImageManagement() {
+    const overlay = document.getElementById('imageManagementOverlay');
+    if (overlay) overlay.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  function closeImageManagementOnBackdrop(event){ if(event.target && event.target.id==='imageManagementOverlay') closeImageManagement(); }
+
+  function renderImageManagementBootstrap(data) {
+    const group = document.getElementById('imageManagementGroup');
+    group.innerHTML = '<option value="">選択してください</option>' + (data.groups||[]).map(function(item){return '<option value="'+escapeImageManagementHtml(item.name)+'">'+escapeImageManagementHtml(item.name)+'</option>';}).join('');
+    setImageManagementLoading(false);
+    document.getElementById('imageManagementForm').hidden = false;
+    changeImageManagementGroup();
+  }
+
+  function setImageManagementLoading(loading) {
+    const node=document.getElementById('imageManagementLoading');
+    if(node) node.hidden=!loading;
+  }
+
+  function changeImageManagementGroup() {
+    const groupName=document.getElementById('imageManagementGroup').value;
+    const member=document.getElementById('imageManagementMember');
+    const group=(imageManagementState.bootstrap&&imageManagementState.bootstrap.groups||[]).find(function(item){return item.name===groupName;});
+    if(!group){member.disabled=true;member.innerHTML='<option value="">先にグループを選択してください</option>';imageManagementState.status=null;return;}
+    member.disabled=false;
+    member.innerHTML='<option value="">選択してください</option>'+group.members.map(function(item){return '<option value="'+escapeImageManagementHtml(item.memberId)+'">'+escapeImageManagementHtml(item.name)+'</option>';}).join('');
+    imageManagementState.status=null;
+  }
+
+  function refreshImageManagementExisting() {
+    imageManagementState.status=null;
+    const memberId=document.getElementById('imageManagementMember').value;
+    const rarity=document.getElementById('imageManagementRarity').value;
+    if(!memberId||!rarity)return;
+    google.script.run.withSuccessHandler(function(status){imageManagementState.status=status;}).withFailureHandler(function(error){showImageManagementError(readImageManagementError(error));}).getImageManagementStatus(memberId,rarity);
+  }
+
+  function previewImageManagementFile() {
+    clearImageManagementError();
+    const input=document.getElementById('imageManagementFile');
+    const file=input.files&&input.files[0];
+    const name=document.getElementById('imageManagementFileName');
+    const section=document.getElementById('imageManagementPreviewSection');
+    if(imageManagementState.previewUrl){URL.revokeObjectURL(imageManagementState.previewUrl);imageManagementState.previewUrl='';}
+    imageManagementState.pendingFile=null;imageManagementState.pendingData=null;
+    if(!file){name.textContent='JPEGまたはPNGを選択';section.hidden=true;return;}
+    if(['image/jpeg','image/png'].indexOf(String(file.type||'').toLowerCase())<0){input.value='';name.textContent='JPEGまたはPNGを選択';section.hidden=true;showImageManagementError('この画像形式には対応していません。JPEGまたはPNGの画像を選択してください。');return;}
+    imageManagementState.pendingFile=file;
+    name.textContent=file.name;
+    imageManagementState.previewUrl=URL.createObjectURL(file);
+    document.getElementById('imageManagementPreview').src=imageManagementState.previewUrl;
+    section.hidden=false;
+  }
+
+  function submitImageManagement(event) {
+    if(event)event.preventDefault();
+    clearImageManagementError();
+    const groupName=document.getElementById('imageManagementGroup').value;
+    const memberId=document.getElementById('imageManagementMember').value;
+    const rarity=document.getElementById('imageManagementRarity').value;
+    const file=imageManagementState.pendingFile;
+    if(!groupName||!memberId||!rarity||!file){showImageManagementError('グループ・メンバー・レア度・画像をすべて選択してください。');return false;}
+    const button=document.getElementById('imageManagementSubmit');button.disabled=true;
+    getImageManagementStatusFresh_(memberId,rarity,function(status){
+      button.disabled=false;
+      imageManagementState.status=status;
+      if(status.hasImage){openImageReplaceConfirm(status);return;}
+      readImageManagementFile_(file,function(data){saveImageManagement_(groupName,memberId,rarity,file,data,false,'');});
+    },function(error){button.disabled=false;showImageManagementError(readImageManagementError(error));});
+    return false;
+  }
+
+  function openImageReplaceConfirm(status) {
+    const file=imageManagementState.pendingFile;if(!file)return;
+    document.getElementById('imageReplaceCopy').textContent=status.memberName+'の'+status.rarity+'画像はすでに登録されています。現在の画像を新しい画像に置き換えますか？';
+    document.getElementById('imageReplaceCurrent').src=status.previewUrl;
+    document.getElementById('imageReplaceNew').src=imageManagementState.previewUrl;
+    const overlay=document.getElementById('imageReplaceOverlay');overlay.classList.add('open');document.body.style.overflow='hidden';
+  }
+  function closeImageReplaceConfirm(){const overlay=document.getElementById('imageReplaceOverlay');if(overlay)overlay.classList.remove('open');}
+  function closeImageReplaceOnBackdrop(event){if(event.target&&event.target.id==='imageReplaceOverlay')closeImageReplaceConfirm();}
+
+  function confirmImageReplacement() {
+    const status=imageManagementState.status,file=imageManagementState.pendingFile;if(!status||!file)return;
+    const button=document.getElementById('imageReplaceConfirmButton');button.disabled=true;
+    readImageManagementFile_(file,function(data){
+      saveImageManagement_(status.groupName,status.memberId,status.rarity,file,data,true,status.driveFileId,function(){button.disabled=false;closeImageReplaceConfirm();});
+    },function(error){button.disabled=false;showImageManagementError(error);});
+  }
+
+  function saveImageManagement_(groupName,memberId,rarity,file,base64,replace,expectedOldFileId,done) {
+    const submit=document.getElementById('imageManagementSubmit');submit.disabled=true;
+    google.script.run.withSuccessHandler(function(result){
+      submit.disabled=false;if(done)done();
+      resetImageManagementForm();
+      showImageManagementToast((result&&result.message)||'画像を登録しました。');
+    }).withFailureHandler(function(error){
+      submit.disabled=false;if(done)done();
+      showImageManagementError(readImageManagementError(error));
+    }).saveImageManagementImage({groupName:groupName,memberId:memberId,rarity:rarity,mimeType:file.type,fileName:file.name,base64:base64,replace:replace,expectedOldFileId:expectedOldFileId});
+  }
+
+  function readImageManagementFile_(file,success,failure) {
+    const reader=new FileReader();
+    reader.onload=function(){const value=String(reader.result||'');success(value.indexOf(',')>=0?value.split(',')[1]:value);};
+    reader.onerror=function(){if(failure)failure('画像を読み込めませんでした。');};
+    reader.readAsDataURL(file);
+  }
+
+  function getImageManagementStatusFresh_(memberId,rarity,success,failure){google.script.run.withSuccessHandler(success).withFailureHandler(failure).getImageManagementStatus(memberId,rarity);}
+
+  function resetImageManagementForm() {
+    const form=document.getElementById('imageManagementForm');if(form)form.reset();
+    const member=document.getElementById('imageManagementMember');if(member){member.disabled=true;member.innerHTML='<option value="">先にグループを選択してください</option>';}
+    const section=document.getElementById('imageManagementPreviewSection');if(section)section.hidden=true;
+    const name=document.getElementById('imageManagementFileName');if(name)name.textContent='JPEGまたはPNGを選択';
+    if(imageManagementState.previewUrl)URL.revokeObjectURL(imageManagementState.previewUrl);
+    imageManagementState.previewUrl='';imageManagementState.status=null;imageManagementState.pendingFile=null;imageManagementState.pendingData=null;
+    clearImageManagementError();
+  }
+
+  function confirmImageManagementRepair() {
+    if(!window.confirm('Driveの画像をもとに画像データを確認・修復します。実行しますか？'))return;
+    const button=document.getElementById('imageManagementRepairButton');button.disabled=true;
+    google.script.run.withSuccessHandler(function(result){button.disabled=false;const suffix=result&&result.warnings?'\n判断できない画像が '+result.warnings+' 件あります。':'';showImageManagementToast('画像データを修復しました。更新 '+((result&&result.updated)||0)+' 件。'+suffix);}).withFailureHandler(function(error){button.disabled=false;showImageManagementError(readImageManagementError(error));}).repairImageManagementData();
+  }
+
+  function showImageManagementError(message){const node=document.getElementById('imageManagementError');if(!node)return;node.textContent=message||'処理に失敗しました。';node.hidden=false;}
+  function clearImageManagementError(){const node=document.getElementById('imageManagementError');if(node){node.textContent='';node.hidden=true;}}
+  function showImageManagementToast(message){if(typeof showToast==='function'){showToast(message);return;}alert(message);}
+  function readImageManagementError(error){return String(error&&error.message?error.message:error||'処理に失敗しました。').replace(/^Exception:\s*/,'');}
+  function escapeImageManagementHtml(value){return String(value==null?'':value).replace(/[&<>'"]/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch];});}
+</script>
