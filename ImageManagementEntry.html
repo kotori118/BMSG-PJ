@@ -1,0 +1,15 @@
+<script>
+  function ensureImageManagementSettingsEntry() {
+    const settingsPanel = document.querySelector('#settingsOverlay .settings-panel');
+    if (!settingsPanel || document.getElementById('imageManagementSettingsGroup')) return;
+    const section = document.createElement('section');
+    section.id = 'imageManagementSettingsGroup';
+    section.className = 'settings-group';
+    section.innerHTML = '<p class="settings-section-title">管理</p>' +
+      '<button class="settings-row settings-row-button" type="button" onclick="openImageManagement()">' +
+      '<span class="settings-row-copy"><strong>画像管理</strong><small>カード画像を登録・差し替え・修復</small></span>' +
+      '<span class="settings-arrow">›</span></button>';
+    settingsPanel.appendChild(section);
+  }
+  ensureImageManagementSettingsEntry();
+</script>
