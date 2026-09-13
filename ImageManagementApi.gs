@@ -234,7 +234,9 @@ function imageMgmtFindImageRow_(core, memberId, rarity) {
       String(row.record.Rarity || '').trim().toUpperCase() === rarity;
   });
   if (matches.length > 1) throw new Error('同じメンバー・レア度の画像データが重複しています。修復してください。');
-  return matches[0] || null;
+  const match = matches[0] || null;
+  if (match) match.map = table.map;
+  return match;
 }
 
 function imageMgmtEnsureMemberRows_(core, memberId, displayOrder) {
@@ -303,7 +305,16 @@ function imageMgmtReadTable_(sheet) {
 function imageMgmtDriveFileExists_(fileId) {
   try { DriveApp.getFileById(fileId).getName(); return true; } catch (e) { return false; }
 }
-function imageMgmtPreviewUrl_(fileId) { return 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(fileId) + '&sz=w900'; }
+function imageMgmtPreviewUrl_(fileId) {
+  try {
+    const file = DriveApp.getFileById(fileId);
+    const blob = file.getBlob();
+    const mimeType = String(blob.getContentType() || file.getMimeType() || 'image/jpeg');
+    return 'data:' + mimeType + ';base64,' + Utilities.base64Encode(blob.getBytes());
+  } catch (e) {
+    return '';
+  }
+}
 function imageMgmtClearCardCache_() {
   try { CacheService.getScriptCache().remove(CARD_CATALOG_CACHE_KEY_); } catch (e) {}
 }
