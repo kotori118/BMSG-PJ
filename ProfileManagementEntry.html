@@ -1,0 +1,25 @@
+<script>
+  function ensureProfileManagementSettingsEntry(){
+    if(document.getElementById('profileManagementSettingsRow'))return;
+    const settingsPanel=document.querySelector('#settingsOverlay .settings-panel');
+    if(!settingsPanel)return;
+
+    let section=document.getElementById('imageManagementSettingsGroup');
+    if(!section){
+      section=document.createElement('section');
+      section.id='profileManagementSettingsGroup';
+      section.className='settings-group';
+      section.innerHTML='<p class="settings-section-title">管理</p>';
+      settingsPanel.appendChild(section);
+    }
+
+    const button=document.createElement('button');
+    button.id='profileManagementSettingsRow';
+    button.className='settings-row settings-row-button';
+    button.type='button';
+    button.onclick=openProfileManagement;
+    button.innerHTML='<span class="settings-row-copy"><strong>プロフィール管理</strong><small>既存メンバーのプロフィールを編集</small></span><span class="settings-arrow">›</span>';
+    section.appendChild(button);
+  }
+  ensureProfileManagementSettingsEntry();
+</script>
