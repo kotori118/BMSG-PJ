@@ -1,6 +1,6 @@
 <style>
   /* =========================================================
-     Universe Shared Button System v3
+     Universe Shared Button System v4
      HOME is the visual source of truth.
      Every button inherits one interaction/focus/disabled system;
      semantic families only override layout, never create a new
@@ -197,6 +197,72 @@
     box-shadow:inset 0 1px 0 rgba(255,255,255,.88)!important;
     transform:scale(.985);
   }
+
+  /* =========================================================
+     MANAGEMENT authority
+     PROFILE / IMAGE / SONG+LYRICS management must not invent
+     local button surfaces. Layout may stay feature-specific,
+     but visual state always comes from the shared button system.
+     ========================================================= */
+  :is(
+    .profile-management-primary,.profile-management-add-button,
+    .image-management-primary,.image-management-secondary,.image-management-repair button,
+    .slm-choice,.slm-icon-btn,.universe-singer-remove,.universe-singer-add
+  ){
+    box-sizing:border-box!important;
+    border:1px solid var(--btn-line-dark)!important;
+    border-radius:15px!important;
+    color:var(--white)!important;
+    background:var(--btn-bg-dark)!important;
+    box-shadow:var(--btn-shadow-dark)!important;
+    filter:none!important;
+  }
+  :is(
+    .profile-management-primary,.profile-management-add-button,
+    .image-management-primary,.image-management-secondary,.image-management-repair button,
+    .slm-choice,.universe-singer-add
+  ){min-height:50px!important}
+  :is(.slm-icon-btn,.universe-singer-remove){border-radius:12px!important;color:var(--cyan)!important}
+  :is(.profile-management-primary,.image-management-primary){color:var(--cyan)!important}
+
+  body.theme-light :is(
+    .profile-management-primary,.profile-management-add-button,
+    .image-management-primary,.image-management-secondary,.image-management-repair button,
+    .slm-choice,.slm-icon-btn,.universe-singer-remove,.universe-singer-add
+  ){
+    border-color:var(--btn-line-light)!important;
+    color:var(--ink)!important;
+    background:var(--btn-bg-light)!important;
+    box-shadow:var(--btn-shadow-light)!important;
+  }
+  body.theme-light :is(.slm-icon-btn,.universe-singer-remove){color:#3f8b9c!important}
+
+  @media(hover:hover){
+    :is(
+      .profile-management-primary,.profile-management-add-button,
+      .image-management-primary,.image-management-secondary,.image-management-repair button,
+      .slm-choice,.slm-icon-btn,.universe-singer-remove,.universe-singer-add
+    ):not(:disabled):hover{
+      border-color:var(--btn-line-dark-hover)!important;
+      background:var(--btn-bg-dark-hover)!important;
+    }
+    body.theme-light :is(
+      .profile-management-primary,.profile-management-add-button,
+      .image-management-primary,.image-management-secondary,.image-management-repair button,
+      .slm-choice,.slm-icon-btn,.universe-singer-remove,.universe-singer-add
+    ):not(:disabled):hover{
+      border-color:var(--btn-line-light-hover)!important;
+      background:var(--btn-bg-light-hover)!important;
+    }
+  }
+
+  /* Existing .u-btn actions inside management screens share the same size/radius. */
+  :is(.profile-management-panel,.image-management-panel,.image-replace-panel,.slm-panel,.slm-confirm-panel) .u-btn{
+    min-height:50px!important;
+    border-radius:15px!important;
+    padding:0 18px!important;
+  }
+  :is(.slm-back){width:46px!important;height:46px!important;min-width:46px!important;min-height:46px!important;padding:0!important;border-radius:14px!important;display:grid!important;place-items:center!important;font-size:28px!important;line-height:1!important}
 
   @media(prefers-reduced-motion:reduce){
     button{transition:none!important}
