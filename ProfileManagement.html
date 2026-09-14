@@ -1,24 +1,24 @@
 <div id="profileManagementOverlay" class="modal-overlay profile-management-overlay" onclick="closeProfileManagementOnBackdrop(event)">
-  <section class="settings-panel profile-management-panel" role="dialog" aria-modal="true" aria-labelledby="profileManagementTitle">
+  <section class="settings-panel management-panel profile-management-panel" role="dialog" aria-modal="true" aria-labelledby="profileManagementTitle">
     <header class="modal-head">
       <div>
         <h2 id="profileManagementTitle" class="modal-title">プロフィール管理</h2>
-        <p class="profile-management-lead">既存メンバーのプロフィールを編集</p>
+        <p class="management-lead profile-management-lead">既存メンバーのプロフィールを編集</p>
       </div>
       <button class="overlay-close" type="button" onclick="closeProfileManagement()" aria-label="プロフィール管理を閉じる">×</button>
     </header>
 
-    <div id="profileManagementLoading" class="profile-management-loading">LOADING...</div>
+    <div id="profileManagementLoading" class="management-loading profile-management-loading">LOADING...</div>
 
     <div id="profileManagementBody" hidden>
       <div class="profile-management-selectors">
-        <label class="profile-management-field">
+        <label class="management-field profile-management-field">
           <span>グループ</span>
           <select id="profileManagementGroup" onchange="changeProfileManagementGroup()">
             <option value="">選択してください</option>
           </select>
         </label>
-        <label class="profile-management-field">
+        <label class="management-field profile-management-field">
           <span>メンバー</span>
           <select id="profileManagementMember" onchange="changeProfileManagementMember()" disabled>
             <option value="">先にグループを選択してください</option>
@@ -26,10 +26,10 @@
         </label>
       </div>
 
-      <div id="profileManagementMemberLoading" class="profile-management-loading" hidden>LOADING...</div>
+      <div id="profileManagementMemberLoading" class="management-loading profile-management-loading" hidden>LOADING...</div>
       <form id="profileManagementForm" class="profile-management-form" onsubmit="return submitProfileManagement(event)" hidden>
         <div id="profileManagementSections"></div>
-        <p id="profileManagementError" class="profile-management-error" role="alert" hidden></p>
+        <p id="profileManagementError" class="management-error profile-management-error" role="alert" hidden></p>
         <button id="profileManagementSubmit" class="profile-management-primary" type="submit" disabled>プロフィールを保存する</button>
       </form>
     </div>
@@ -213,12 +213,12 @@
     const value=profileManagementState.values[field.profileId];
     if(field.isMultiValue){
       const tags=Array.isArray(value)?value:[];
-      return '<div class="profile-management-control" data-profile-id="'+escapeProfileManagementHtml(field.profileId)+'"><span class="profile-management-label">'+escapeProfileManagementHtml(field.label)+'</span><div class="profile-management-tags" id="'+id+'_tags">'+tags.map(function(tag,index){return renderProfileManagementTag_(field.profileId,tag,index);}).join('')+'</div><div class="profile-management-tag-add"><input class="profile-management-input" id="'+id+'_input" type="text" autocomplete="off"><button class="profile-management-add-button" type="button" onclick="addProfileManagementTag(\''+escapeProfileManagementJs_(field.profileId)+'\')">＋追加</button></div></div>';
+      return '<div class="profile-management-control" data-profile-id="'+escapeProfileManagementHtml(field.profileId)+'"><span class="management-label profile-management-label">'+escapeProfileManagementHtml(field.label)+'</span><div class="profile-management-tags" id="'+id+'_tags">'+tags.map(function(tag,index){return renderProfileManagementTag_(field.profileId,tag,index);}).join('')+'</div><div class="profile-management-tag-add"><input class="management-input profile-management-input" id="'+id+'_input" type="text" autocomplete="off"><button class="profile-management-add-button" type="button" onclick="addProfileManagementTag(\''+escapeProfileManagementJs_(field.profileId)+'\')">＋追加</button></div></div>';
     }
     const type=field.dataType==='DATE'?'date':field.dataType==='NUMBER'?'number':'text';
     const step=field.dataType==='NUMBER'?' step="any"':'';
-    const input='<input class="profile-management-input" id="'+id+'" data-profile-input="'+escapeProfileManagementHtml(field.profileId)+'" type="'+type+'"'+step+' value="'+escapeProfileManagementHtml(value==null?'':value)+'" autocomplete="off">';
-    return '<label class="profile-management-control"><span class="profile-management-label">'+escapeProfileManagementHtml(field.label)+'</span>'+(field.unit?'<span class="profile-management-number-wrap">'+input+'<b class="profile-management-unit">'+escapeProfileManagementHtml(field.unit)+'</b></span>':input)+'</label>';
+    const input='<input class="management-input profile-management-input" id="'+id+'" data-profile-input="'+escapeProfileManagementHtml(field.profileId)+'" type="'+type+'"'+step+' value="'+escapeProfileManagementHtml(value==null?'':value)+'" autocomplete="off">';
+    return '<label class="profile-management-control"><span class="management-label profile-management-label">'+escapeProfileManagementHtml(field.label)+'</span>'+(field.unit?'<span class="profile-management-number-wrap">'+input+'<b class="profile-management-unit">'+escapeProfileManagementHtml(field.unit)+'</b></span>':input)+'</label>';
   }
 
   function renderProfileManagementTag_(profileId,tag,index){

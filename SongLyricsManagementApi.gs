@@ -68,7 +68,7 @@ function getSongLyricsManagementSong(userId, songId) {
     });
   return {
     song:slmSongModel_(songRow),
-    credits:{lyricists:String(credits.Lyricists||''),composers:String(credits.Composers||''),choreographers:String(credits.Choreographers||''),originalSongId:slmId_(credits.OriginalSongID)},
+    credits:{lyricists:String(credits.Lyricists||''),composers:String(credits.Composers||''),choreographers:String(credits.Choreographers||'')},
     parts:parts
   };
 }

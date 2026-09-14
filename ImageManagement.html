@@ -1,31 +1,31 @@
 <div id="imageManagementOverlay" class="modal-overlay image-management-overlay" onclick="closeImageManagementOnBackdrop(event)">
-  <section class="settings-panel image-management-panel" role="dialog" aria-modal="true" aria-labelledby="imageManagementTitle">
+  <section class="settings-panel management-panel image-management-panel" role="dialog" aria-modal="true" aria-labelledby="imageManagementTitle">
     <header class="modal-head">
       <div>
         <h2 id="imageManagementTitle" class="modal-title">画像管理</h2>
-        <p class="image-management-lead">カード画像を登録・差し替え</p>
+        <p class="management-lead image-management-lead">カード画像を登録・差し替え</p>
       </div>
       <button class="overlay-close" type="button" onclick="closeImageManagement()" aria-label="画像管理を閉じる">×</button>
     </header>
 
-    <div id="imageManagementLoading" class="image-management-loading">LOADING...</div>
+    <div id="imageManagementLoading" class="management-loading image-management-loading">LOADING...</div>
 
     <form id="imageManagementForm" class="image-management-form" onsubmit="return submitImageManagement(event)" hidden>
-      <label class="image-management-field">
+      <label class="management-field image-management-field">
         <span>グループ</span>
         <select id="imageManagementGroup" onchange="changeImageManagementGroup()">
           <option value="">選択してください</option>
         </select>
       </label>
 
-      <label class="image-management-field">
+      <label class="management-field image-management-field">
         <span>メンバー</span>
         <select id="imageManagementMember" onchange="refreshImageManagementExisting()" disabled>
           <option value="">先にグループを選択してください</option>
         </select>
       </label>
 
-      <label class="image-management-field">
+      <label class="management-field image-management-field">
         <span>レア度</span>
         <select id="imageManagementRarity" onchange="refreshImageManagementExisting()">
           <option value="">選択してください</option>
@@ -36,7 +36,7 @@
         </select>
       </label>
 
-      <label class="image-management-field image-management-file-field">
+      <label class="management-field image-management-field image-management-file-field">
         <span>画像</span>
         <input id="imageManagementFile" type="file" accept="image/jpeg,image/png,.jpg,.jpeg,.png" onchange="previewImageManagementFile()">
         <b id="imageManagementFileName">JPEGまたはPNGを選択</b>
@@ -47,7 +47,7 @@
         <div class="image-management-preview-card"><img id="imageManagementPreview" alt="登録する画像のプレビュー"></div>
       </section>
 
-      <p id="imageManagementError" class="image-management-error" role="alert" hidden></p>
+      <p id="imageManagementError" class="management-error image-management-error" role="alert" hidden></p>
       <button id="imageManagementSubmit" class="image-management-primary" type="submit">画像を登録する</button>
     </form>
 
@@ -62,7 +62,7 @@
 </div>
 
 <div id="imageReplaceOverlay" class="modal-overlay image-replace-overlay" onclick="closeImageReplaceOnBackdrop(event)">
-  <section class="settings-panel image-replace-panel" role="dialog" aria-modal="true" aria-labelledby="imageReplaceTitle">
+  <section class="settings-panel management-panel image-replace-panel" role="dialog" aria-modal="true" aria-labelledby="imageReplaceTitle">
     <header class="modal-head">
       <div><h2 id="imageReplaceTitle" class="modal-title">画像を差し替えますか？</h2></div>
       <button class="overlay-close" type="button" onclick="closeImageReplaceConfirm()" aria-label="画像差し替え確認を閉じる">×</button>
