@@ -1,7 +1,6 @@
 const IMAGE_MGMT_GROUPS_ = Object.freeze(['BE:FIRST','MAZZEL','STARGLOW','HANA','BMSG POSSE']);
 const IMAGE_MGMT_RARITIES_ = Object.freeze(['SSR','SR','R','N']);
 const IMAGE_MGMT_MIME_EXT_ = Object.freeze({'image/jpeg':'jpg','image/png':'png'});
-const IMAGE_MGMT_FOLDER_KEY_ = 'card_image_folder_id';
 
 function getImageManagementBootstrap() {
   const core = SpreadsheetApp.openById(UNIVERSE_CONFIG.CORE_DB_ID);
@@ -75,7 +74,7 @@ function saveImageManagementImage(payload) {
       if (String(payload.expectedOldFileId || '') !== oldFileId) throw new Error('画像データが更新されています。画面を開き直して確認してください。');
     }
 
-    const folder = DriveApp.getFolderById(imageMgmtGetFolderId_(core));
+    const folder = DriveApp.getFolderById(imageMgmtGetFolderId_());
     const extension = imageMgmtResolveExtension_(payload.fileName, mimeType);
     const fileName = '[' + rarity + ']' + context.memberName + '(' + context.groupName + ').' + extension;
     const blob = Utilities.newBlob(Utilities.base64Decode(base64), mimeType, fileName);
@@ -140,7 +139,7 @@ function repairImageManagementData() {
 
     const filesByKey = {};
     const allImageIds = {};
-    const files = DriveApp.getFolderById(imageMgmtGetFolderId_(core)).getFiles();
+    const files = DriveApp.getFolderById(imageMgmtGetFolderId_()).getFiles();
     while (files.hasNext()) {
       const file = files.next();
       if (String(file.getMimeType()).indexOf('image/') !== 0) continue;
@@ -217,10 +216,8 @@ function imageMgmtResolveExtension_(fileName, mimeType) {
   return IMAGE_MGMT_MIME_EXT_[mimeType];
 }
 
-function imageMgmtGetFolderId_(core) {
-  const config = imageMgmtReadObjects_(core.getSheetByName('00_Config'));
-  const row = config.find(function(item){ return String(item.Key || '').trim() === IMAGE_MGMT_FOLDER_KEY_; });
-  const folderId = row ? String(row.Value || '').trim() : '';
+function imageMgmtGetFolderId_() {
+  const folderId = String(UNIVERSE_CONFIG.CARD_IMAGE_FOLDER_ID || '').trim();
   if (!folderId) throw new Error('画像保存先フォルダを確認できません。');
   return folderId;
 }
@@ -246,7 +243,10 @@ function imageMgmtEnsureMemberRows_(core, memberId, displayOrder) {
     if (table.map[name] == null) throw new Error('09_Images に必要な列「' + name + '」がありません。');
   });
   const existing = {};
+  let liveMax = 0;
   table.rows.forEach(function(row){
+    const imageNo = Number(asId_(row.record.ImageID));
+    if (Number.isFinite(imageNo)) liveMax = Math.max(liveMax, imageNo);
     if (String(row.record.TargetType || '').trim().toLowerCase() === 'member' && asId_(row.record.TargetID) === String(memberId)) {
       existing[String(row.record.Rarity || '').trim().toUpperCase()] = true;
     }
@@ -254,34 +254,40 @@ function imageMgmtEnsureMemberRows_(core, memberId, displayOrder) {
   const missing = IMAGE_MGMT_RARITIES_.filter(function(r){ return !existing[r]; });
   if (!missing.length) return;
 
-  const configSheet = core.getSheetByName('00_Config');
-  const configTable = imageMgmtReadTable_(configSheet);
-  const configRow = configTable.rows.find(function(row){ return String(row.record.Key || '').trim() === 'NEXT_IMAGE_ID'; });
-  if (!configRow) throw new Error('00_Config の NEXT_IMAGE_ID がありません。');
-  let nextId = Number(configRow.record.Value);
-  if (!Number.isFinite(nextId) || nextId <= 0) throw new Error('NEXT_IMAGE_ID が不正です。');
-  const rows = missing.map(function(rarity){
-    const values = new Array(table.headers.length).fill('');
-    values[table.map.ImageID] = String(nextId++);
-    values[table.map.TargetType] = 'Member';
-    values[table.map.TargetID] = String(memberId);
-    values[table.map.Rarity] = rarity;
-    values[table.map.DriveFileID] = '';
-    values[table.map.DisplayOrder] = (Number(displayOrder) - 1) * 4 + IMAGE_MGMT_RARITIES_.indexOf(rarity) + 1;
-    values[table.map.IsProfileMain] = rarity === 'SSR';
-    return values;
-  });
-  const startRow = sheet.getLastRow() + 1;
-  sheet.getRange(startRow, 1, rows.length, table.headers.length).setValues(rows);
-  if (startRow > 2) {
-    const source = sheet.getRange(startRow - 1, 1, 1, table.headers.length);
-    const target = sheet.getRange(startRow, 1, rows.length, table.headers.length);
-    source.copyTo(target, SpreadsheetApp.CopyPasteType.PASTE_FORMAT, false);
-    source.copyTo(target, SpreadsheetApp.CopyPasteType.PASTE_DATA_VALIDATION, false);
+  const reservations = [];
+  const appendedRows = [];
+  try {
+    const rows = missing.map(function(rarity){
+      const reservation = reserveUniverseId_('IMAGE','GLOBAL',liveMax,null,'BMSG-PJ','画像管理不足行: Member '+memberId+' / '+rarity);
+      reservations.push(reservation);
+      liveMax = Math.max(liveMax, reservation.numericValue);
+      const values = new Array(table.headers.length).fill('');
+      values[table.map.ImageID] = reservation.issuedId;
+      values[table.map.TargetType] = 'Member';
+      values[table.map.TargetID] = String(memberId);
+      values[table.map.Rarity] = rarity;
+      values[table.map.DriveFileID] = '';
+      values[table.map.DisplayOrder] = (Number(displayOrder) - 1) * 4 + IMAGE_MGMT_RARITIES_.indexOf(rarity) + 1;
+      values[table.map.IsProfileMain] = rarity === 'SSR';
+      return values;
+    });
+    const startRow = sheet.getLastRow() + 1;
+    if (startRow + rows.length - 1 > sheet.getMaxRows()) sheet.insertRowsAfter(sheet.getMaxRows(), startRow + rows.length - 1 - sheet.getMaxRows());
+    if (startRow > 2) {
+      const source = sheet.getRange(startRow - 1, 1, 1, table.headers.length);
+      const target = sheet.getRange(startRow, 1, rows.length, table.headers.length);
+      source.copyTo(target, SpreadsheetApp.CopyPasteType.PASTE_FORMAT, false);
+      source.copyTo(target, SpreadsheetApp.CopyPasteType.PASTE_DATA_VALIDATION, false);
+    }
     sheet.getRange(startRow, 1, rows.length, table.headers.length).setValues(rows);
+    for (let i=0;i<rows.length;i++) appendedRows.push(startRow+i);
+    SpreadsheetApp.flush();
+    reservations.forEach(function(reservation){finalizeUniverseIdReservation_(reservation,true,'09_Images不足行作成完了');});
+  } catch (error) {
+    appendedRows.slice().sort(function(a,b){return b-a;}).forEach(function(rowNumber){try{if(rowNumber<=sheet.getLastRow())sheet.deleteRow(rowNumber);}catch(ignore){}});
+    reservations.forEach(function(reservation){try{finalizeUniverseIdReservation_(reservation,false,'09_Images不足行作成失敗');}catch(ignore){}});
+    throw error;
   }
-  configSheet.getRange(configRow.rowNumber, configTable.map.Value + 1).setValue(nextId);
-  if (configTable.map.UpdatedAt != null) configSheet.getRange(configRow.rowNumber, configTable.map.UpdatedAt + 1).setValue(new Date());
 }
 
 function imageMgmtReadObjects_(sheet) { return imageMgmtReadTable_(sheet).rows.map(function(row){ return row.record; }); }
