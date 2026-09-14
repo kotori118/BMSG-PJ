@@ -10,9 +10,6 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    env:
-      SECOND_SCRIPT_ID: ${{ secrets.SECOND_SCRIPT_ID }}
-      SECOND_DEPLOYMENT_ID: ${{ secrets.SECOND_DEPLOYMENT_ID }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -37,20 +34,3 @@ jobs:
 
       - name: Deploy to GAS
         run: clasp deploy --deploymentId ${{ secrets.DEPLOYMENT_ID }}
-
-      - name: Create secondary .clasp.json
-        if: ${{ env.SECOND_SCRIPT_ID != '' && env.SECOND_DEPLOYMENT_ID != '' }}
-        run: |
-          echo "{\"scriptId\":\"${SECOND_SCRIPT_ID}\",\"rootDir\":\".\"}" > .clasp.json
-
-      - name: Push to secondary GAS
-        if: ${{ env.SECOND_SCRIPT_ID != '' && env.SECOND_DEPLOYMENT_ID != '' }}
-        run: clasp push --force
-
-      - name: Deploy to secondary GAS
-        if: ${{ env.SECOND_SCRIPT_ID != '' && env.SECOND_DEPLOYMENT_ID != '' }}
-        run: clasp deploy --deploymentId "$SECOND_DEPLOYMENT_ID"
-
-      - name: Secondary GAS deploy not configured
-        if: ${{ env.SECOND_SCRIPT_ID == '' || env.SECOND_DEPLOYMENT_ID == '' }}
-        run: echo "Secondary GAS deploy skipped. Configure SECOND_SCRIPT_ID and SECOND_DEPLOYMENT_ID."
