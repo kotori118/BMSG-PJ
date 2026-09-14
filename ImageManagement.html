@@ -83,20 +83,20 @@
 <style>
   .image-management-overlay,.image-replace-overlay{z-index:1250}
   .image-replace-overlay{z-index:1300}
-  .image-management-panel{max-width:560px;max-height:min(90vh,820px);overflow:auto}
-  .image-management-lead{margin:4px 0 0;color:rgba(255,255,255,.48);font:500 11px "Zen Kaku Gothic New",Roboto,sans-serif}
+  
+  
     .image-management-form{display:grid;gap:16px;margin-top:12px}
-  .image-management-field{display:grid;gap:7px}
-  .image-management-field>span,.image-management-preview-section>p{margin:0;color:rgba(255,255,255,.55);font:700 11px "Zen Kaku Gothic New",Roboto,sans-serif}
-  .image-management-field select{width:100%;min-height:52px;padding:0 14px;border:1px solid rgba(156,236,255,.18);border-radius:15px;background:#0b0f16;color:var(--white);font:600 15px "Zen Kaku Gothic New",Roboto,sans-serif;outline:none}
-  .image-management-field select:focus{border-color:rgba(156,236,255,.58)}
+  
+  
+  
+  
   .image-management-file-field{position:relative;min-height:88px;padding:15px;border:1px dashed rgba(156,236,255,.26);border-radius:16px;background:rgba(156,236,255,.035);cursor:pointer}
   .image-management-file-field input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
   .image-management-file-field b{color:var(--white);font:600 14px "Zen Kaku Gothic New",Roboto,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .image-management-preview-section{display:grid;gap:8px}
   .image-management-preview-card{aspect-ratio:3/4;overflow:hidden;border:1px solid rgba(156,236,255,.16);border-radius:18px;background:#080b10}
   .image-management-preview-card img{width:100%;height:100%;display:block;object-fit:cover}
-          .image-management-error{margin:0;padding:11px 13px;border:1px solid rgba(255,120,120,.28);border-radius:12px;background:rgba(255,80,80,.07);color:#ffb6b6;font:600 12px "Zen Kaku Gothic New",Roboto,sans-serif}
+          
   .image-management-repair{margin-top:24px;padding-top:20px;border-top:1px solid rgba(156,236,255,.12);display:grid;gap:12px}
   .image-management-repair>div{display:grid;gap:4px}
   .image-management-repair strong{font:700 15px "Zen Kaku Gothic New",Roboto,sans-serif}
@@ -108,11 +108,11 @@
   .image-replace-compare span{color:rgba(255,255,255,.5);font:700 10px "Zen Kaku Gothic New",Roboto,sans-serif;text-align:center}
   .image-replace-compare>b{color:var(--cyan);text-align:center;font-size:22px}
   .image-replace-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px}
-  body.theme-light .image-management-field>span,body.theme-light .image-management-preview-section>p,body.theme-light .image-management-lead,body.theme-light .image-management-repair small,body.theme-light .image-replace-copy,body.theme-light .image-replace-compare span{color:rgba(21,24,32,.55)}
-  body.theme-light .image-management-field select{background:#fff;color:var(--ink);border-color:rgba(75,165,184,.25)}
+  
+  body.theme-light 
   body.theme-light .image-management-file-field{background:rgba(156,236,255,.10)}
   body.theme-light .image-management-file-field b{color:var(--ink)}
-  @media(max-width:520px){.image-management-panel,.image-replace-panel{width:calc(100vw - 24px);padding:18px}.image-replace-compare{gap:6px}.image-replace-actions{grid-template-columns:1fr}.image-management-preview-card{border-radius:14px}}
+  @media(max-width:520px){.image-replace-compare{gap:6px}.image-replace-actions{grid-template-columns:1fr}.image-management-preview-card{border-radius:14px}}
 </style>
 
 <script>
