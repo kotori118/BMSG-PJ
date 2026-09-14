@@ -38,17 +38,15 @@ function parseSongLyricsManagement(payload) {
 function registerSongLyricsGuest(payload) {
   payload = payload || {};
   slmRequireUser_(payload.userId);
-  const result = BMSGDB.registerSongLyricsGuestForUniverse(payload);
-  slmClearCaches_();
-  return result;
+  try { return BMSGDB.registerSongLyricsGuestForUniverse(payload); }
+  finally { clearUniverseAnalysisMutationCaches_(); }
 }
 
 function saveNewSongLyricsManagement(payload) {
   payload = payload || {};
   slmRequireUser_(payload.userId);
-  const result = BMSGDB.saveNewSongLyricsForUniverse(payload);
-  slmClearCaches_();
-  return result;
+  try { return BMSGDB.saveNewSongLyricsForUniverse(payload); }
+  finally { clearUniverseSongMutationCaches_(); }
 }
 
 function getSongLyricsManagementSong(userId, songId) {
@@ -75,15 +73,15 @@ function getSongLyricsManagementSong(userId, songId) {
 
 function saveSongLyricsManagementInfo(payload) {
   payload=payload||{};slmRequireUser_(payload.userId);
-  const result=BMSGDB.saveSongInfoForUniverse(payload);slmClearCaches_();return result;
+  try{return BMSGDB.saveSongInfoForUniverse(payload);}finally{clearUniverseSongMutationCaches_();}
 }
 function saveSongLyricsManagementCredits(payload) {
   payload=payload||{};slmRequireUser_(payload.userId);
-  const result=BMSGDB.saveSongCreditsForUniverse(payload);slmClearCaches_();return result;
+  try{return BMSGDB.saveSongCreditsForUniverse(payload);}finally{clearUniverseSongMutationCaches_();}
 }
 function saveSongLyricsManagementLyrics(payload) {
   payload=payload||{};slmRequireUser_(payload.userId);
-  const result=BMSGDB.saveSongPartsForUniverse(payload);slmClearCaches_();return result;
+  try{return BMSGDB.saveSongPartsForUniverse(payload);}finally{clearUniverseSongMutationCaches_();}
 }
 
 function slmRequireUser_(userId){if(SLM_USERS_.indexOf(String(userId||'').trim())<0)throw new Error('利用ユーザーを選択してください。');}
@@ -107,7 +105,4 @@ function slmAssignmentsFromRaw_(raw,singerMap){
     const m=token.match(/_(up|down|sub)$/i);const role=m?m[1].toUpperCase():'MAIN';const id=m?token.slice(0,-m[0].length):token;const item=singerMap[id]||{name:id};
     return {id:id,name:item.name||id,role:role};
   }).filter(Boolean);
-}
-function slmClearCaches_(){
-  try{CacheService.getScriptCache().remove('analysis_bootstrap_v1');}catch(error){}
 }

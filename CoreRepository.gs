@@ -21,7 +21,7 @@ function readCoreSheetObjects_(sheetName) {
 
   return values.slice(1).filter(function(row) {
     return row.some(function(value) {
-      return value !== '' && value !== null;
+      return value !== '' && value !== null && value !== false;
     });
   }).map(function(row) {
     return headers.reduce(function(record, header, index) {

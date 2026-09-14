@@ -101,7 +101,7 @@ function saveImageManagementImage(payload) {
       }
     }
 
-    imageMgmtClearCardCache_();
+    clearUniverseImageMutationCaches_(context.memberId);
     return {
       ok: true,
       message: '画像を登録しました。',
@@ -178,7 +178,7 @@ function repairImageManagementData() {
       }
     });
     SpreadsheetApp.flush();
-    imageMgmtClearCardCache_();
+    clearUniverseImageRepairCaches_();
     return {ok:true, updated:updated, warnings:warnings, message:'画像データを修復しました。'};
   } finally {
     lock.releaseLock();
@@ -271,7 +271,7 @@ function imageMgmtEnsureMemberRows_(core, memberId, displayOrder) {
       values[table.map.IsProfileMain] = rarity === 'SSR';
       return values;
     });
-    const startRow = sheet.getLastRow() + 1;
+    const startRow = table.rows.reduce(function(maxRow,row){ return Math.max(maxRow,row.rowNumber); }, 1) + 1;
     if (startRow + rows.length - 1 > sheet.getMaxRows()) sheet.insertRowsAfter(sheet.getMaxRows(), startRow + rows.length - 1 - sheet.getMaxRows());
     if (startRow > 2) {
       const source = sheet.getRange(startRow - 1, 1, 1, table.headers.length);
@@ -300,7 +300,7 @@ function imageMgmtReadTable_(sheet) {
   headers.forEach(function(name,index){ if (name) map[name] = index; });
   const rows = [];
   for (let i = 1; i < values.length; i++) {
-    if (!values[i].some(function(value){ return value !== '' && value !== null; })) continue;
+    if (!values[i].some(function(value){ return value !== '' && value !== null && value !== false; })) continue;
     const record = {};
     headers.forEach(function(name,index){ if (name) record[name] = values[i][index]; });
     rows.push({sheet:sheet,rowNumber:i+1,record:record,values:values[i]});
@@ -320,7 +320,4 @@ function imageMgmtPreviewUrl_(fileId) {
   } catch (e) {
     return '';
   }
-}
-function imageMgmtClearCardCache_() {
-  try { CacheService.getScriptCache().remove(CARD_CATALOG_CACHE_KEY_); } catch (e) {}
 }

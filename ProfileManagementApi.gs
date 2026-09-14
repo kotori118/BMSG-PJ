@@ -93,15 +93,30 @@ function saveProfileManagementMember(payload) {
       if (table.map[profileId] == null) throw new Error('05_Profiles に必要な列「' + profileId + '」がありません。');
       updates.push({
         column: table.map[profileId] + 1,
-        value: profileMgmtNormalizeForSheet_(input[profileId], setting)
+        value: profileMgmtNormalizeForSheet_(input[profileId], setting),
+        previousValue: sheet.getRange(row.rowNumber, table.map[profileId] + 1).getValue()
       });
     });
 
-    updates.forEach(function(update){ sheet.getRange(row.rowNumber, update.column).setValue(update.value); });
-    SpreadsheetApp.flush();
-    profileMgmtClearCaches_(memberId);
-
-    return { ok:true, memberId:memberId, message:'プロフィールを保存しました。' };
+    try {
+      updates.forEach(function(update){ sheet.getRange(row.rowNumber, update.column).setValue(update.value); });
+      SpreadsheetApp.flush();
+      const mismatched = updates.some(function(update){
+        return !profileMgmtValuesEqual_(sheet.getRange(row.rowNumber, update.column).getValue(), update.value);
+      });
+      if (mismatched) throw new Error('プロフィールの保存後照合に失敗しました。');
+      clearUniverseProfileMutationCaches_(memberId);
+      return { ok:true, memberId:memberId, message:'プロフィールを保存しました。' };
+    } catch (error) {
+      const rollbackErrors = [];
+      updates.forEach(function(update){
+        try { sheet.getRange(row.rowNumber, update.column).setValue(update.previousValue); }
+        catch (rollbackError) { rollbackErrors.push(rollbackError.message); }
+      });
+      SpreadsheetApp.flush();
+      clearUniverseProfileMutationCaches_(memberId);
+      throw new Error((error && error.message ? error.message : String(error)) + (rollbackErrors.length ? '\n復元にも失敗しました: ' + rollbackErrors.join(' / ') : ''));
+    }
   } finally {
     lock.releaseLock();
   }
@@ -170,6 +185,15 @@ function profileMgmtNormalizeForSheet_(value, setting) {
   return text;
 }
 
+function profileMgmtValuesEqual_(actual, expected) {
+  if (actual instanceof Date || expected instanceof Date) {
+    const actualDate = actual instanceof Date ? actual : new Date(actual);
+    const expectedDate = expected instanceof Date ? expected : new Date(expected);
+    return Number.isFinite(actualDate.getTime()) && Number.isFinite(expectedDate.getTime()) && actualDate.getTime() === expectedDate.getTime();
+  }
+  return String(actual == null ? '' : actual).trim() === String(expected == null ? '' : expected).trim();
+}
+
 function profileMgmtResolveMember_(core, memberId) {
   const members = profileMgmtReadObjects_(core.getSheetByName(UNIVERSE_CONFIG.SHEETS.MEMBERS));
   const groups = profileMgmtReadObjects_(core.getSheetByName(UNIVERSE_CONFIG.SHEETS.GROUPS));
@@ -186,13 +210,6 @@ function profileMgmtCategoryForMember_(memberId, groupId, groupNameById) {
   if (/^5/.test(String(memberId || ''))) return 'BMSG POSSE';
   const name = groupNameById[asId_(groupId)] || '';
   return PROFILE_MGMT_GROUPS_.slice(0,4).indexOf(name) >= 0 ? name : '';
-}
-
-function profileMgmtClearCaches_(memberId) {
-  const cache = CacheService.getScriptCache();
-  ['PROFILE_MEMBERS_V2_0_1','PROFILE_MEMBER_DETAIL_V1_' + memberId,'PROFILE_MAP_V1','PROFILE_SEARCH_V2'].forEach(function(key){
-    try { cache.remove(key); } catch (ignore) {}
-  });
 }
 
 function profileMgmtReadObjects_(sheet) {
