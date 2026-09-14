@@ -1,0 +1,86 @@
+name: Audit Management UI
+on:
+  push:
+    paths:
+      - '.github/workflows/audit-management-ui.yml'
+permissions:
+  contents: write
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: audit-management-ui-20260914
+      - name: Apply shared management classes and remove OriginalSong UI
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          def patch(path, replacements):
+            p=Path(path); s=p.read_text()
+            for a,b in replacements: s=s.replace(a,b)
+            p.write_text(s)
+
+          patch('ProfileManagement.html', [
+            ('class="settings-panel profile-management-panel"','class="settings-panel management-panel profile-management-panel"'),
+            ('class="profile-management-lead"','class="management-lead profile-management-lead"'),
+            ('class="profile-management-loading"','class="management-loading profile-management-loading"'),
+            ('class="profile-management-field"','class="management-field profile-management-field"'),
+            ('class="profile-management-input"','class="management-input profile-management-input"'),
+            ('class="profile-management-label"','class="management-label profile-management-label"'),
+            ('class="profile-management-error"','class="management-error profile-management-error"')
+          ])
+
+          patch('ImageManagement.html', [
+            ('class="settings-panel image-management-panel"','class="settings-panel management-panel image-management-panel"'),
+            ('class="settings-panel image-replace-panel"','class="settings-panel management-panel image-replace-panel"'),
+            ('class="image-management-lead"','class="management-lead image-management-lead"'),
+            ('class="image-management-loading"','class="management-loading image-management-loading"'),
+            ('class="image-management-field','class="management-field image-management-field'),
+            ('class="image-management-error"','class="management-error image-management-error"')
+          ])
+
+          p=Path('SongLyricsManagement.html'); s=p.read_text()
+          reps=[
+            ('class="settings-panel slm-panel"','class="settings-panel management-panel slm-panel"'),
+            ('class="settings-panel slm-confirm-panel"','class="settings-panel management-panel slm-confirm-panel"'),
+            ('class="slm-lead"','class="management-lead slm-lead"'),
+            ('class="slm-loading"','class="management-loading slm-loading"'),
+            ('class="slm-card"','class="management-card slm-card"'),
+            ('class="slm-section-title"','class="management-section-title slm-section-title"'),
+            ('class="slm-field','class="management-field slm-field'),
+            ('class="slm-actions"','class="management-actions slm-actions"'),
+            ('class="slm-error"','class="management-error slm-error"')
+          ]
+          for a,b in reps:s=s.replace(a,b)
+          # OriginalSong is not part of the new/edit workflow. Remove state, field, bindings and helper.
+          s=s.replace(",originalSongId:''", '')
+          s=s.replace(",originalSongId:slmId_(credits.OriginalSongID)", '')
+          s=re.sub(r"\+slmSongSelectField_\([^\n]*?\)", '', s)
+          s=re.sub(r"\n\s*function slmSongSelectField_\([\s\S]*?\n\s*}\n", '\n', s)
+          s=re.sub(r"\n\s*const original=document\.getElementById\([^\n]*\);[^\n]*", '', s)
+          s=re.sub(r"\n\s*if\(original\)[^\n]*", '', s)
+          s=re.sub(r"\n\s*originalSongId\s*:[^,}\n]+,?", '', s)
+          p.write_text(s)
+
+          p=Path('SongLyricsManagementApi.gs'); s=p.read_text()
+          s=s.replace(",originalSongId:slmId_(credits.OriginalSongID)", '')
+          p.write_text(s)
+          PY
+      - name: Verify audit cleanup
+        run: |
+          grep -q 'management-panel profile-management-panel' ProfileManagement.html
+          grep -q 'management-panel image-management-panel' ImageManagement.html
+          grep -q 'management-panel slm-panel' SongLyricsManagement.html
+          grep -q 'management-card slm-card' SongLyricsManagement.html
+          ! grep -RInE 'OriginalSongID|originalSongId|Original Song|原曲|slmSongSelectField_' SongLyricsManagement.html SongLyricsManagementApi.gs
+      - name: Commit
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add ProfileManagement.html ImageManagement.html SongLyricsManagement.html SongLyricsManagementApi.gs
+          git diff --cached --quiet && exit 0
+          git commit -m 'Unify management UI and remove OriginalSong UI'
+          git push origin HEAD:audit-management-ui-20260914
