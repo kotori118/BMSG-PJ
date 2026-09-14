@@ -60,7 +60,6 @@ jobs:
             (",originalSongId:document.getElementById('slmEditOriginal').value", '')
           ]:
             s=s.replace(a,b)
-          s='\n'.join(line for line in s.split('\n') if 'function slmSongSelectField_' not in line)
           p.write_text(s)
 
           p=Path('SongLyricsManagementApi.gs'); s=p.read_text()
@@ -73,7 +72,8 @@ jobs:
           grep -q 'management-panel image-management-panel' ImageManagement.html
           grep -q 'management-panel slm-panel' SongLyricsManagement.html
           grep -q 'management-card slm-card' SongLyricsManagement.html
-          ! grep -RInE 'OriginalSongID|originalSongId|Original Song|原曲|slmSongSelectField_' SongLyricsManagement.html SongLyricsManagementApi.gs
+          grep -q 'function slmSongSelectField_' SongLyricsManagement.html
+          ! grep -RInE 'OriginalSongID|originalSongId|Original Song|原曲' SongLyricsManagement.html SongLyricsManagementApi.gs
       - name: Commit
         run: |
           git config user.name github-actions[bot]
