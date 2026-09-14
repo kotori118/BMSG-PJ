@@ -51,7 +51,7 @@ function updateLyricsPart(payload) {
   payload=payload||{};
   const userId=asId_(payload.userId);
   if(LYRICS_USERS_.indexOf(userId)<0)throw new Error('利用ユーザーを選択してください。');
-  const result=BMSGDB.updateSongPartForUniverse(payload);
+  const result=BMSGDB.updateLyricsPartForUniverse(payload);
   try{CacheService.getScriptCache().remove('analysis_bootstrap_v1');}catch(error){}
   return result;
 }
