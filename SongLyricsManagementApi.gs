@@ -81,7 +81,7 @@ function saveSongLyricsManagementCredits(payload) {
   payload=payload||{};slmRequireUser_(payload.userId);
   const result=BMSGDB.saveSongCreditsForUniverse(payload);slmClearCaches_();return result;
 }
-function saveSongLyricsManagementParts(payload) {
+function saveSongLyricsManagementLyrics(payload) {
   payload=payload||{};slmRequireUser_(payload.userId);
   const result=BMSGDB.saveSongPartsForUniverse(payload);slmClearCaches_();return result;
 }
