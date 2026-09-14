@@ -34,23 +34,48 @@
   body.theme-light .universe-toast{border-color:rgba(75,165,184,.24);color:var(--ink);background:linear-gradient(145deg,#fff,rgba(156,236,255,.13));box-shadow:0 16px 36px rgba(21,24,32,.12),inset 0 1px 0 rgba(255,255,255,.86)}
 
   /* Spinner authority for genuine processing / transitions. */
-  .universe-loading,.profile-detail-loading,.profile-map-loading,.profile-search-loading,.karaoke-loading,.lyrics-loading{--loading-accent:var(--u-loading-accent);display:flex;align-items:center;justify-content:center;gap:var(--u-loading-gap);color:var(--u-loading-label-dark);font:600 10px "Exo 2","Zen Kaku Gothic New",Roboto,sans-serif;letter-spacing:.12em}
-  body.theme-light :is(.universe-loading,.profile-detail-loading,.profile-map-loading,.profile-search-loading,.karaoke-loading,.lyrics-loading){color:var(--u-loading-label-light)}
-  .universe-spinner,.profile-detail-spinner,.profile-map-spinner,.profile-search-spinner,.karaoke-loading::before,.lyrics-loading::before{box-sizing:border-box;width:var(--u-loading-size);height:var(--u-loading-size);flex:0 0 auto;border:var(--u-loading-ring) solid var(--u-loading-track-dark)!important;border-top-color:var(--loading-accent,var(--u-loading-accent))!important;border-right-color:var(--loading-accent,var(--u-loading-accent))!important;border-radius:50%;animation:universeSpinner var(--u-loading-speed) linear infinite!important;box-shadow:0 0 12px rgba(156,236,255,.12)}
-  body.theme-light :is(.universe-spinner,.profile-detail-spinner,.profile-map-spinner,.profile-search-spinner,.karaoke-loading::before,.lyrics-loading::before){border-color:var(--u-loading-track-light)!important;border-top-color:var(--loading-accent,var(--u-loading-accent))!important;border-right-color:var(--loading-accent,var(--u-loading-accent))!important}
-  .karaoke-loading::before,.lyrics-loading::before{content:""}
+  .universe-loading,.profile-detail-loading,.profile-map-loading,.profile-search-loading,.karaoke-loading,.lyrics-loading,
+  .profile-management-loading,.image-management-loading,.slm-loading{
+    --loading-accent:var(--u-loading-accent);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:var(--u-loading-gap);
+    color:var(--u-loading-label-dark)!important;
+    font:600 10px "Exo 2","Zen Kaku Gothic New",Roboto,sans-serif!important;
+    letter-spacing:.12em!important;
+  }
+  body.theme-light :is(.universe-loading,.profile-detail-loading,.profile-map-loading,.profile-search-loading,.karaoke-loading,.lyrics-loading,.profile-management-loading,.image-management-loading,.slm-loading){color:var(--u-loading-label-light)!important}
+  .universe-spinner,.profile-detail-spinner,.profile-map-spinner,.profile-search-spinner,.karaoke-loading::before,.lyrics-loading::before,
+  .profile-management-loading::before,.image-management-loading::before,.slm-loading::before{
+    box-sizing:border-box;
+    width:var(--u-loading-size);
+    height:var(--u-loading-size);
+    flex:0 0 auto;
+    border:var(--u-loading-ring) solid var(--u-loading-track-dark)!important;
+    border-top-color:var(--loading-accent,var(--u-loading-accent))!important;
+    border-right-color:var(--loading-accent,var(--u-loading-accent))!important;
+    border-radius:50%;
+    animation:universeSpinner var(--u-loading-speed) linear infinite!important;
+    box-shadow:0 0 12px rgba(156,236,255,.12);
+  }
+  body.theme-light :is(.universe-spinner,.profile-detail-spinner,.profile-map-spinner,.profile-search-spinner,.karaoke-loading::before,.lyrics-loading::before,.profile-management-loading::before,.image-management-loading::before,.slm-loading::before){border-color:var(--u-loading-track-light)!important;border-top-color:var(--loading-accent,var(--u-loading-accent))!important;border-right-color:var(--loading-accent,var(--u-loading-accent))!important}
+  .karaoke-loading::before,.lyrics-loading::before,.profile-management-loading::before,.image-management-loading::before,.slm-loading::before{content:""}
   .karaoke-loading.is-shared::before,.lyrics-loading.is-shared::before{display:none!important;content:none!important}
   .profile-member-detail .profile-detail-loading{--loading-accent:var(--member-accent,var(--u-loading-accent))}
-  .profile-map-loading,.profile-search-loading,.karaoke-loading,.lyrics-loading{--loading-accent:#9cecff}
+  .profile-map-loading,.profile-search-loading,.karaoke-loading,.lyrics-loading,.profile-management-loading,.image-management-loading,.slm-loading{--loading-accent:#9cecff}
   .lyrics-room-card.is-loading{min-height:118px;display:grid;place-items:center}
   .lyrics-room-card.is-loading::before{display:none!important;content:none!important}
   .lyrics-room-card.is-loading .universe-loading{gap:0}
+
+  /* Management overlays use exactly one loading rhythm. Local files may choose only the vertical space. */
+  :is(.profile-management-loading,.image-management-loading,.slm-loading){min-height:72px;padding:24px 0!important;text-align:center}
 
   @keyframes universeSpinner{to{transform:rotate(360deg)}}
   @keyframes universeSkeletonSweep{to{transform:translateX(115%)}}
   @media(prefers-reduced-motion:reduce){
     :is(.skeleton-block,.profile-member-skeleton)::after{animation:none!important;display:none}
-    .universe-spinner,.profile-detail-spinner,.profile-map-spinner,.profile-search-spinner,.karaoke-loading::before,.lyrics-loading::before{animation:none!important}
+    .universe-spinner,.profile-detail-spinner,.profile-map-spinner,.profile-search-spinner,.karaoke-loading::before,.lyrics-loading::before,.profile-management-loading::before,.image-management-loading::before,.slm-loading::before{animation:none!important}
   }
 </style>
 <script>
