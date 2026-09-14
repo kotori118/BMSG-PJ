@@ -1,4 +1,4 @@
-/** Shared ID registry for BMSG Universe runtime-owned IDs. */
+/** Shared ID registry for BMSG Universe runtime-owned IMAGE IDs only. */
 const UNIVERSE_ID_REGISTRY_HEADERS_ = Object.freeze([
   'EntityType','Scope','IssuedID','NumericValue','Status','RequestID','Source','IssuedAt','UpdatedAt','Note'
 ]);
@@ -7,6 +7,7 @@ function reserveUniverseId_(entityType, scope, liveMax, formatter, source, note)
   const entity = String(entityType || '').trim().toUpperCase();
   const normalizedScope = String(scope || 'GLOBAL').trim() || 'GLOBAL';
   if (!entity) throw new Error('ID種別を確認できません。');
+  if (entity !== 'IMAGE') throw new Error('BMSG-PJで自動採番できるのはIMAGEだけです。Song / Lyrics / Guest等の採番はBMSG-DBが管理します。');
   const sheet = getLogSheet_(UNIVERSE_CONFIG.SHEETS.ID_REGISTRY);
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getDisplayValues()[0].map(function(v){return String(v||'').trim();});
   UNIVERSE_ID_REGISTRY_HEADERS_.forEach(function(name){
@@ -41,6 +42,7 @@ function reserveUniverseId_(entityType, scope, liveMax, formatter, source, note)
 
 function finalizeUniverseIdReservation_(reservation, committed, note) {
   if (!reservation || !reservation.requestId) return;
+  if (String(reservation.entityType || '').trim().toUpperCase() !== 'IMAGE') throw new Error('BMSG-PJのID確定処理はIMAGE専用です。');
   const sheet = getLogSheet_(UNIVERSE_CONFIG.SHEETS.ID_REGISTRY);
   const rows = readSheetObjectsWithRows_(sheet);
   const row = rows.find(function(item){return String(item.RequestID || '') === String(reservation.requestId);});
