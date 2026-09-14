@@ -1,0 +1,88 @@
+name: One-shot source cleanup
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/code-cleanup.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Remove management UI duplicate visual CSS
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def edit(path, replacements):
+              p = Path(path)
+              s = p.read_text()
+              for old, new in replacements:
+                  if old not in s:
+                      raise SystemExit(f'Expected pattern not found in {path}: {old[:80]!r}')
+                  s = s.replace(old, new)
+              p.write_text(s)
+
+          edit('ProfileManagement.html', [
+              ('.profile-management-loading{padding:34px 0;text-align:center;color:var(--cyan);font:600 11px "Exo 2",sans-serif;letter-spacing:.16em}\n', ''),
+              ('.profile-management-add-button{min-width:76px;border:1px solid rgba(156,236,255,.25);border-radius:14px;background:rgba(156,236,255,.07);color:var(--cyan);font:700 12px "Zen Kaku Gothic New",sans-serif;cursor:pointer}', '.profile-management-add-button{min-width:76px}'),
+              ('.profile-management-primary{min-height:52px;padding:0 18px;border:1px solid rgba(156,236,255,.56);border-radius:14px;background:var(--cyan);color:#061017;font:700 14px "Zen Kaku Gothic New",Roboto,sans-serif;cursor:pointer}\n', ''),
+              ('.profile-management-primary:disabled{opacity:.42;cursor:default}\n', ''),
+          ])
+
+          edit('ImageManagement.html', [
+              ('.image-management-loading{padding:34px 0;text-align:center;color:var(--cyan);font:600 11px "Exo 2",sans-serif;letter-spacing:.16em}\n', ''),
+              ('.image-management-primary,.image-management-secondary,.image-management-repair button{min-height:50px;padding:0 18px;border-radius:14px;font:700 14px "Zen Kaku Gothic New",Roboto,sans-serif;cursor:pointer}\n', ''),
+              ('.image-management-primary{border:1px solid rgba(156,236,255,.56);background:var(--cyan);color:#061017}\n', ''),
+              ('.image-management-primary:disabled{opacity:.45;cursor:default}\n', ''),
+              ('.image-management-secondary{border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.04);color:var(--white)}\n', ''),
+              ('.image-management-repair button{border:1px solid rgba(156,236,255,.22);background:rgba(156,236,255,.07);color:var(--cyan)}\n', ''),
+              ('body.theme-light .image-management-file-field b,body.theme-light .image-management-secondary{color:var(--ink)}', 'body.theme-light .image-management-file-field b{color:var(--ink)}'),
+          ])
+
+          edit('SongLyricsManagement.html', [
+              ('.slm-loading{padding:48px 0;text-align:center;color:var(--cyan);font:600 11px "Exo 2",sans-serif;letter-spacing:.16em}', ''),
+              ('.slm-choice{min-height:76px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;border:1px solid rgba(156,236,255,.18);border-radius:18px;background:rgba(255,255,255,.025);color:#fff;text-align:left;cursor:pointer}', '.slm-choice{display:flex;align-items:center;justify-content:space-between;padding:0 18px;text-align:left}'),
+              ('.slm-actions .u-btn{min-height:48px;padding:0 18px}', ''),
+              ('.slm-icon-btn{width:38px;height:38px;border:1px solid rgba(156,236,255,.16);border-radius:10px;background:rgba(156,236,255,.04);color:var(--cyan);font-weight:700}', '.slm-icon-btn{width:38px;height:38px;font-weight:700}'),
+              ('body.theme-light .slm-choice{color:var(--ink);background:#fff;border-color:rgba(75,165,184,.22)}', ''),
+          ])
+
+          edit('SingerEditor.html', [
+              ('.universe-singer-remove,.universe-singer-add{min-height:44px;border:1px solid rgba(156,236,255,.22);border-radius:12px;background:rgba(156,236,255,.06);color:var(--cyan);font:700 13px "Zen Kaku Gothic New",sans-serif;cursor:pointer}\n', ''),
+          ])
+          PY
+      - name: Static ownership and call audit
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          api = Path('SongLyricsManagementApi.gs').read_text()
+          ui = Path('SongLyricsManagement.html').read_text()
+          lyrics = Path('LyricsApi.gs').read_text()
+          registry = Path('IdRegistry.gs').read_text()
+          assert 'function saveSongLyricsManagementLyrics(payload)' in api
+          assert 'saveSongLyricsManagementLyrics(' in ui
+          assert 'saveSongLyricsManagementParts' not in api
+          assert 'BMSGDB.updateLyricsPartForUniverse(payload)' in lyrics
+          assert 'BMSGDB.updateSongPartForUniverse' not in lyrics
+          assert "entity !== 'IMAGE'" in registry
+          for name in ['ProfileManagement.html','ImageManagement.html','SongLyricsManagement.html','SingerEditor.html']:
+              s = Path(name).read_text()
+              assert 'management-loading{padding:' not in s
+          print('static audit OK')
+          PY
+      - name: Commit cleanup
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add ProfileManagement.html ImageManagement.html SongLyricsManagement.html SingerEditor.html
+          git diff --cached --check
+          git commit -m 'Remove duplicate management visual styles'
+          git push origin HEAD:main
