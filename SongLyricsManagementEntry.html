@@ -1,0 +1,20 @@
+<script>
+  function ensureSongLyricsManagementSettingsEntry(){
+    if(document.getElementById('songLyricsManagementSettingsRow'))return;
+    const settingsPanel=document.querySelector('#settingsOverlay .settings-panel');
+    if(!settingsPanel)return;
+    let section=document.getElementById('imageManagementSettingsGroup');
+    if(!section){
+      section=document.createElement('section');
+      section.id='imageManagementSettingsGroup';
+      section.className='settings-group';
+      section.innerHTML='<p class="settings-section-title">管理</p>';
+      settingsPanel.appendChild(section);
+    }
+    const button=document.createElement('button');
+    button.id='songLyricsManagementSettingsRow';button.className='settings-row settings-row-button';button.type='button';button.onclick=openSongLyricsManagement;
+    button.innerHTML='<span class="settings-row-copy"><strong>楽曲・歌詞管理</strong><small>新規楽曲の登録・既存曲の編集</small></span><span class="settings-arrow">›</span>';
+    section.appendChild(button);
+  }
+  ensureSongLyricsManagementSettingsEntry();
+</script>

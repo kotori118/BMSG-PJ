@@ -1,0 +1,74 @@
+<script>
+  function normalizeUniverseSingerAssignments(items){
+    return (Array.isArray(items)?items:[]).map(function(item){
+      return {id:String(item&&item.id||'').trim(),name:String(item&&item.name||'').trim(),role:String(item&&item.role||'MAIN').trim().toUpperCase()||'MAIN'};
+    }).filter(function(item){return item.id;});
+  }
+
+  function mountUniverseSingerEditor(container,assignments,options,onChange,config){
+    if(!container)return;
+    const state={
+      items:normalizeUniverseSingerAssignments(assignments),
+      options:Array.isArray(options)?options:[],
+      onChange:typeof onChange==='function'?onChange:function(){},
+      config:config||{}
+    };
+    if(!state.items.length)state.items=[{id:'',name:'',role:'MAIN'}];
+    container.__universeSingerState=state;
+    renderUniverseSingerEditor_(container);
+  }
+
+  function renderUniverseSingerEditor_(container){
+    const state=container&&container.__universeSingerState;if(!state)return;
+    const grouped={MEMBER:[],GUEST:[],SPECIAL:[]};
+    state.options.forEach(function(item){(grouped[item.type]||grouped.GUEST).push(item);});
+    function optionHtml(selected){
+      let html='<option value="">Singerを選択</option>';
+      [['MEMBER','メンバー'],['GUEST','Guest'],['SPECIAL','その他']].forEach(function(group){
+        if(!grouped[group[0]].length)return;
+        html+='<optgroup label="'+escapeUniverseSinger_(group[1])+'">'+grouped[group[0]].map(function(item){
+          return '<option value="'+escapeUniverseSinger_(item.id)+'"'+(String(item.id)===String(selected)?' selected':'')+'>'+escapeUniverseSinger_(item.name)+'</option>';
+        }).join('')+'</optgroup>';
+      });
+      return html;
+    }
+    container.innerHTML='<div class="universe-singer-editor-list">'+state.items.map(function(item,index){
+      return '<div class="universe-singer-editor-row" data-singer-index="'+index+'">'+
+        '<select class="universe-singer-person" aria-label="Singer">'+optionHtml(item.id)+'</select>'+
+        '<select class="universe-singer-role" aria-label="役割">'+['MAIN','UP','DOWN','SUB'].map(function(role){return '<option value="'+role+'"'+(item.role===role?' selected':'')+'>'+role+'</option>';}).join('')+'</select>'+
+        '<button type="button" class="universe-singer-remove" aria-label="Singerを削除">×</button></div>';
+    }).join('')+'</div><button type="button" class="universe-singer-add">＋ Singer</button>';
+
+    container.querySelectorAll('.universe-singer-editor-row').forEach(function(row){
+      const index=Number(row.dataset.singerIndex),person=row.querySelector('.universe-singer-person'),role=row.querySelector('.universe-singer-role'),remove=row.querySelector('.universe-singer-remove');
+      person.addEventListener('change',function(){
+        const selected=state.options.find(function(item){return String(item.id)===person.value;});
+        state.items[index].id=person.value;state.items[index].name=selected?selected.name:'';notifyUniverseSingerEditor_(container);
+      });
+      role.addEventListener('change',function(){state.items[index].role=role.value;notifyUniverseSingerEditor_(container);});
+      remove.addEventListener('click',function(){
+        state.items.splice(index,1);if(!state.items.length)state.items.push({id:'',name:'',role:'MAIN'});renderUniverseSingerEditor_(container);notifyUniverseSingerEditor_(container);
+      });
+    });
+    const add=container.querySelector('.universe-singer-add');
+    if(add)add.addEventListener('click',function(){state.items.push({id:'',name:'',role:'MAIN'});renderUniverseSingerEditor_(container);notifyUniverseSingerEditor_(container);});
+  }
+
+  function notifyUniverseSingerEditor_(container){
+    const state=container.__universeSingerState;
+    state.onChange(normalizeUniverseSingerAssignments(state.items));
+  }
+  function getUniverseSingerEditorValue(container){
+    const state=container&&container.__universeSingerState;
+    return normalizeUniverseSingerAssignments(state?state.items:[]).filter(function(item){return item.id;});
+  }
+  function escapeUniverseSinger_(value){return String(value==null?'':value).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+</script>
+<style>
+  .universe-singer-editor-list{display:grid;gap:8px}.universe-singer-editor-row{display:grid;grid-template-columns:minmax(0,1fr) 96px 42px;gap:8px;align-items:center}
+  .universe-singer-editor-row select{width:100%;min-height:44px;border:1px solid rgba(156,236,255,.2);border-radius:12px;background:#0b0f16;color:#fff;padding:0 10px;font:600 13px "Zen Kaku Gothic New",sans-serif}
+  .universe-singer-remove,.universe-singer-add{min-height:44px;border:1px solid rgba(156,236,255,.22);border-radius:12px;background:rgba(156,236,255,.06);color:var(--cyan);font:700 13px "Zen Kaku Gothic New",sans-serif;cursor:pointer}
+  .universe-singer-remove{font-size:20px}.universe-singer-add{margin-top:8px;width:100%}
+  body.theme-light .universe-singer-editor-row select{background:#fff;color:var(--ink);border-color:rgba(75,165,184,.25)}
+  @media(max-width:480px){.universe-singer-editor-row{grid-template-columns:minmax(0,1fr) 82px 40px}}
+</style>
