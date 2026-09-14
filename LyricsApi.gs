@@ -1,5 +1,6 @@
 const LYRICS_USERS_ = Object.freeze(['U001', 'U002', 'U003']);
 const LYRICS_CATEGORIES_ = Object.freeze(['ALL', 'BE:FIRST', 'MAZZEL', 'STARGLOW', 'HANA', 'UNIT']);
+const LYRICS_SINGER_ROLES_ = Object.freeze(['MAIN','UP','DOWN','SUB']);
 
 function getLyricsCatalog() {
   const songs = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.SONGS);
@@ -78,16 +79,32 @@ function getLyricsSong(songId) {
   return { songId: id, title: String(song.Title || ''), artist: String(song.Artist || ''), parts: parts };
 }
 
+function getLyricsSingerOptions() {
+  const options = [];
+  readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.MEMBERS).forEach(function(row){
+    const id=asId_(row.MemberID), name=String(row.DisplayName||'').trim();
+    if(id&&name)options.push({id:id,name:name,type:'MEMBER'});
+  });
+  readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.GUESTS).forEach(function(row){
+    const id=asId_(row.GuestID), name=String(row.DisplayName||'').trim();
+    if(id&&name)options.push({id:id,name:name,type:'GUEST'});
+  });
+  options.push({id:'99',name:'ALL',type:'SPECIAL'},{id:'109',name:'その他',type:'SPECIAL'});
+  return options;
+}
+
 function updateLyricsPart(payload) {
   payload = payload || {};
   const userId = asId_(payload.userId);
   const songId = asId_(payload.songId);
   const partOrder = Number(payload.partOrder);
-  const singer = String(payload.singer || '').trim();
   const lyrics = String(payload.lyrics || '').trim();
   if (LYRICS_USERS_.indexOf(userId) < 0) throw new Error('利用ユーザーを選択してください。');
   if (!songId || !Number.isInteger(partOrder) || partOrder < 1) throw new Error('更新対象が不正です。');
-  if (!singer || !lyrics) throw new Error('歌唱者と歌詞は必須です。');
+  if (!lyrics) throw new Error('歌詞は必須です。');
+  const singerMap = buildLyricsSingerMap_();
+  const singer = encodeLyricsSingerAssignments_(payload.singers, singerMap);
+  if (!singer) throw new Error('歌唱者を選択してください。');
 
   const lock = LockService.getScriptLock();
   lock.waitLock(20000);
@@ -122,10 +139,21 @@ function updateLyricsPart(payload) {
     if (checkedSinger !== singer || checkedLyrics !== lyrics) {
       throw new Error('保存内容を確認できませんでした。もう一度試してください。');
     }
-    return { ok: true, songId: songId, partOrder: partOrder, singer: singer, singers: formatLyricsSingers_(singer, buildLyricsSingerMap_()), lyrics: lyrics };
+    return { ok: true, songId: songId, partOrder: partOrder, singer: singer, singers: formatLyricsSingers_(singer, singerMap), lyrics: lyrics };
   } finally {
     lock.releaseLock();
   }
+}
+
+function encodeLyricsSingerAssignments_(items,singerMap){
+  if(!Array.isArray(items)||!items.length)return '';
+  return items.map(function(item){
+    const id=asId_(item&&item.id);
+    const role=String(item&&item.role||'MAIN').trim().toUpperCase();
+    if(!id||!singerMap[id])throw new Error('未登録の歌唱者です: '+id);
+    if(LYRICS_SINGER_ROLES_.indexOf(role)<0)throw new Error('歌唱役割が不正です: '+role);
+    return id+(role==='MAIN'?'':'_'+role.toLowerCase());
+  }).join(',');
 }
 
 function lyricsCategory_(artist) {
@@ -167,6 +195,8 @@ function formatLyricsSingers_(raw, singerMap) {
     });
     return {
       raw: token,
+      id: base,
+      role: harmony ? harmony.toUpperCase() : 'MAIN',
       name: people.map(function(person) { return person.name; }).join(' & '),
       color: people[0].color,
       harmony: harmony
