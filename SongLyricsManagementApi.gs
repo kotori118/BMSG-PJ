@@ -32,7 +32,11 @@ function getSongLyricsManagementBootstrap(userId) {
 function parseSongLyricsManagement(payload) {
   payload = payload || {};
   slmRequireUser_(payload.userId);
-  return BMSGDB.parseSongLyricsForUniverse(payload);
+  const result = BMSGDB.parseSongLyricsForUniverse(payload);
+  const ignored = slmIgnoredGuestCandidateMap_(payload.ignoredGuestCandidates);
+  result.unknownGuests = (result.unknownGuests || []).filter(function(name){return !ignored[slmGuestCandidateKey_(name)];});
+  result.canRegister = result.unknownGuests.length === 0 && !(result.errors || []).length;
+  return result;
 }
 
 function registerSongLyricsGuest(payload) {
@@ -45,7 +49,12 @@ function registerSongLyricsGuest(payload) {
 function saveNewSongLyricsManagement(payload) {
   payload = payload || {};
   slmRequireUser_(payload.userId);
-  try { return BMSGDB.saveNewSongLyricsForUniverse(payload); }
+  try {
+    if (Array.isArray(payload.ignoredGuestCandidates) && payload.ignoredGuestCandidates.length) {
+      return BMSGDB.saveNewSongLyricsWithIgnoredGuestsForUniverse(payload);
+    }
+    return BMSGDB.saveNewSongLyricsForUniverse(payload);
+  }
   finally { clearUniverseSongMutationCaches_(); }
 }
 
@@ -86,6 +95,8 @@ function saveSongLyricsManagementLyrics(payload) {
 
 function slmRequireUser_(userId){if(SLM_USERS_.indexOf(String(userId||'').trim())<0)throw new Error('利用ユーザーを選択してください。');}
 function slmId_(value){return value==null?'':String(value).trim().replace(/\.0+$/,'');}
+function slmGuestCandidateKey_(value){const text=String(value==null?'':value).trim();return typeof text.normalize==='function'?text.normalize('NFKC'):text;}
+function slmIgnoredGuestCandidateMap_(values){const out=Object.create(null);(Array.isArray(values)?values:[]).forEach(function(value){const key=slmGuestCandidateKey_(value);if(key)out[key]=true;});return out;}
 function slmSingerOptions_(members,guests){
   const out=[];
   members.forEach(function(row){const id=slmId_(row.MemberID),name=String(row.DisplayName||'').trim();if(id&&name)out.push({id:id,name:name,type:'MEMBER'});});
