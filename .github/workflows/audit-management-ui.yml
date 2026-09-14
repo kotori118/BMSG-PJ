@@ -16,11 +16,11 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          import re
 
           def patch(path, replacements):
             p=Path(path); s=p.read_text()
-            for a,b in replacements: s=s.replace(a,b)
+            for a,b in replacements:
+              s=s.replace(a,b)
             p.write_text(s)
 
           patch('ProfileManagement.html', [
@@ -43,7 +43,7 @@ jobs:
           ])
 
           p=Path('SongLyricsManagement.html'); s=p.read_text()
-          reps=[
+          for a,b in [
             ('class="settings-panel slm-panel"','class="settings-panel management-panel slm-panel"'),
             ('class="settings-panel slm-confirm-panel"','class="settings-panel management-panel slm-confirm-panel"'),
             ('class="slm-lead"','class="management-lead slm-lead"'),
@@ -52,17 +52,15 @@ jobs:
             ('class="slm-section-title"','class="management-section-title slm-section-title"'),
             ('class="slm-field','class="management-field slm-field'),
             ('class="slm-actions"','class="management-actions slm-actions"'),
-            ('class="slm-error"','class="management-error slm-error"')
-          ]
-          for a,b in reps:s=s.replace(a,b)
-          # OriginalSong is not part of the new/edit workflow. Remove state, field, bindings and helper.
-          s=s.replace(",originalSongId:''", '')
-          s=s.replace(",originalSongId:slmId_(credits.OriginalSongID)", '')
-          s=re.sub(r"\+slmSongSelectField_\([^\n]*?\)", '', s)
-          s=re.sub(r"\n\s*function slmSongSelectField_\([\s\S]*?\n\s*}\n", '\n', s)
-          s=re.sub(r"\n\s*const original=document\.getElementById\([^\n]*\);[^\n]*", '', s)
-          s=re.sub(r"\n\s*if\(original\)[^\n]*", '', s)
-          s=re.sub(r"\n\s*originalSongId\s*:[^,}\n]+,?", '', s)
+            ('class="slm-error"','class="management-error slm-error"'),
+            (",originalSongId:''", ''),
+            (",originalSongId:slmId_(credits.OriginalSongID)", ''),
+            ("+slmSongSelectField_((isEdit?'slmEdit':'slmNew')+'Original','原曲',songs,credits.originalSongId,isEdit&&songLyricsManagementState.existing?songLyricsManagementState.existing.song.songId:'')", ''),
+            (";c.originalSongId=value('slmNewOriginal')", ''),
+            (",originalSongId:document.getElementById('slmEditOriginal').value", '')
+          ]:
+            s=s.replace(a,b)
+          s='\n'.join(line for line in s.split('\n') if 'function slmSongSelectField_' not in line)
           p.write_text(s)
 
           p=Path('SongLyricsManagementApi.gs'); s=p.read_text()
