@@ -7,12 +7,10 @@
      ========================================================= */
   :root{
     --mgmt-panel-width:620px;
-    --mgmt-field-height:58px;
-    --mgmt-field-radius:18px;
-    --mgmt-card-radius:22px;
-    --mgmt-gap:20px;
-    --mgmt-panel-padding:24px;
-    --mgmt-card-padding:22px;
+    --mgmt-field-height:52px;
+    --mgmt-field-radius:15px;
+    --mgmt-card-radius:18px;
+    --mgmt-gap:16px;
   }
 
   .management-panel{
@@ -20,65 +18,62 @@
     max-width:var(--mgmt-panel-width);
     max-height:min(92vh,900px);
     overflow:auto;
-    padding-bottom:calc(var(--mgmt-panel-padding) + env(safe-area-inset-bottom));
+    padding-bottom:calc(24px + env(safe-area-inset-bottom));
   }
   .management-lead{
-    margin:6px 0 0;
+    margin:4px 0 0;
     color:rgba(255,255,255,.48);
-    font:500 12px "Zen Kaku Gothic New",Roboto,sans-serif;
+    font:500 11px "Zen Kaku Gothic New",Roboto,sans-serif;
   }
   .management-loading[hidden]{display:none!important}
 
-  .management-field{display:grid;gap:9px;min-width:0;width:100%;max-width:100%}
+  .management-field{display:grid;gap:7px;min-width:0}
   .management-field>span,.management-label{
     color:rgba(255,255,255,.55);
-    font:700 13px "Zen Kaku Gothic New",Roboto,sans-serif;
+    font:700 11px "Zen Kaku Gothic New",Roboto,sans-serif;
   }
   .management-field input:not([type="checkbox"]):not([type="file"]),
   .management-field select,
   .management-field textarea,
   .management-input{
-    display:block;width:100%;max-width:100%;min-width:0;box-sizing:border-box;
+    width:100%;max-width:100%;min-width:0;box-sizing:border-box;
     min-height:var(--mgmt-field-height);
-    padding:0 16px;
-    border:1px solid rgba(156,236,255,.22);
+    padding:0 14px;
+    border:1px solid rgba(156,236,255,.18);
     border-radius:var(--mgmt-field-radius);
     background:#0b0f16;color:var(--white);
     font:600 15px "Zen Kaku Gothic New",Roboto,sans-serif;
     outline:none;
   }
   .management-field input[type="date"]{
-    display:block!important;
     width:100%!important;
     max-width:100%!important;
     min-width:0!important;
     inline-size:100%!important;
+    max-inline-size:100%!important;
+    min-inline-size:0!important;
     box-sizing:border-box!important;
-    -webkit-appearance:none;
-    appearance:none;
   }
-  .management-field textarea{padding:14px 16px;line-height:1.7;resize:vertical}
-  .management-field input:focus,.management-field select:focus,.management-field textarea:focus,.management-input:focus{border-color:rgba(156,236,255,.62)}
+  .management-field textarea{padding:12px 14px;line-height:1.7;resize:vertical}
+  .management-field input:focus,.management-field select:focus,.management-field textarea:focus,.management-input:focus{border-color:rgba(156,236,255,.58)}
   .management-field input:disabled,.management-field select:disabled{opacity:.55}
 
   .management-card{
-    display:grid;gap:var(--mgmt-gap);padding:var(--mgmt-card-padding);
-    border:1px solid rgba(156,236,255,.16);
+    display:grid;gap:var(--mgmt-gap);padding:16px;
+    border:1px solid rgba(156,236,255,.12);
     border-radius:var(--mgmt-card-radius);
     background:rgba(255,255,255,.018);
-    box-sizing:border-box;
-    width:100%;max-width:100%;min-width:0;
   }
   .management-section-title{
     margin:0;color:var(--cyan);
-    font:700 14px "Zen Kaku Gothic New",sans-serif;
-    letter-spacing:.02em;
+    font:700 12px "Exo 2","Zen Kaku Gothic New",sans-serif;
+    letter-spacing:.06em;
   }
-  .management-actions{display:flex;gap:12px;justify-content:flex-end;margin-top:20px}
+  .management-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}
   .management-error{
-    margin:0;padding:12px 14px;
+    margin:0;padding:11px 13px;
     border:1px solid rgba(255,120,120,.28);
-    border-radius:14px;background:rgba(255,80,80,.07);
+    border-radius:12px;background:rgba(255,80,80,.07);
     color:#ffb6b6;font:600 12px "Zen Kaku Gothic New",Roboto,sans-serif;
   }
 
@@ -88,18 +83,12 @@
   body.theme-light .management-field input:not([type="checkbox"]):not([type="file"]),
   body.theme-light .management-field select,
   body.theme-light .management-field textarea,
-  body.theme-light .management-input{background:#fff;color:var(--ink);border-color:rgba(75,165,184,.28)}
-  body.theme-light .management-card{background:#fff;border-color:rgba(75,165,184,.22)}
+  body.theme-light .management-input{background:#fff;color:var(--ink);border-color:rgba(75,165,184,.25)}
+  body.theme-light .management-card{background:#fff;border-color:rgba(75,165,184,.18)}
 
   @media(max-width:520px){
-    .management-panel{
-      width:calc(100vw - 24px);
-      padding:var(--mgmt-panel-padding)!important;
-      padding-bottom:calc(var(--mgmt-panel-padding) + env(safe-area-inset-bottom))!important;
-    }
-    .management-card{padding:var(--mgmt-card-padding)!important}
+    .management-panel{width:calc(100vw - 24px);padding:18px}
     .management-actions{display:grid;grid-template-columns:1fr 1fr}
     .management-actions>*{width:100%}
-    .management-field input[type="date"]{font-size:16px!important}
   }
 </style>
