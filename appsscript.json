@@ -1,6 +1,15 @@
 {
   "timeZone": "Asia/Tokyo",
-  "dependencies": {},
+  "dependencies": {
+    "libraries": [
+      {
+        "userSymbol": "BMSGDB",
+        "libraryId": "1NiJ94p1UVFGxd3DrNXz0x3MFC1haPopa11LQy593-3ft4exsoJM4huwZ",
+        "version": "3",
+        "developmentMode": false
+      }
+    ]
+  },
   "exceptionLogging": "STACKDRIVER",
   "runtimeVersion": "V8",
   "webapp": {
