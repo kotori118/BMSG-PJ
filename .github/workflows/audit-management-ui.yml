@@ -12,73 +12,88 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: audit-management-ui-20260914
-      - name: Apply shared management classes and remove OriginalSong UI
+      - name: Remove duplicated management visual CSS
         run: |
           python3 - <<'PY'
           from pathlib import Path
+          import re
 
-          def patch(path, replacements):
+          def remove_rules(path, selectors):
             p=Path(path); s=p.read_text()
-            for a,b in replacements:
-              s=s.replace(a,b)
+            for selector in selectors:
+              pattern=re.escape(selector)+r'\{[^{}]*\}'
+              s,n=re.subn(pattern,'',s)
             p.write_text(s)
 
-          patch('ProfileManagement.html', [
-            ('class="settings-panel profile-management-panel"','class="settings-panel management-panel profile-management-panel"'),
-            ('class="profile-management-lead"','class="management-lead profile-management-lead"'),
-            ('class="profile-management-loading"','class="management-loading profile-management-loading"'),
-            ('class="profile-management-field"','class="management-field profile-management-field"'),
-            ('class="profile-management-input"','class="management-input profile-management-input"'),
-            ('class="profile-management-label"','class="management-label profile-management-label"'),
-            ('class="profile-management-error"','class="management-error profile-management-error"')
+          remove_rules('ProfileManagement.html', [
+            '.profile-management-panel',
+            '.profile-management-lead',
+            '.profile-management-field',
+            '.profile-management-field>span,.profile-management-label',
+            '.profile-management-field select,.profile-management-input',
+            '.profile-management-field select:focus,.profile-management-input:focus',
+            '.profile-management-error',
+            'body.theme-light .profile-management-field>span,body.theme-light .profile-management-label,body.theme-light .profile-management-lead,body.theme-light .profile-management-unit',
+            'body.theme-light .profile-management-field select,body.theme-light .profile-management-input'
           ])
 
-          patch('ImageManagement.html', [
-            ('class="settings-panel image-management-panel"','class="settings-panel management-panel image-management-panel"'),
-            ('class="settings-panel image-replace-panel"','class="settings-panel management-panel image-replace-panel"'),
-            ('class="image-management-lead"','class="management-lead image-management-lead"'),
-            ('class="image-management-loading"','class="management-loading image-management-loading"'),
-            ('class="image-management-field','class="management-field image-management-field'),
-            ('class="image-management-error"','class="management-error image-management-error"')
+          remove_rules('ImageManagement.html', [
+            '.image-management-panel',
+            '.image-management-lead',
+            '.image-management-field',
+            '.image-management-field>span,.image-management-preview-section>p',
+            '.image-management-field select',
+            '.image-management-field select:focus',
+            '.image-management-error',
+            'body.theme-light .image-management-field>span,body.theme-light .image-management-preview-section>p,body.theme-light .image-management-lead,body.theme-light .image-management-repair small,body.theme-light .image-replace-copy,body.theme-light .image-replace-compare span',
+            'body.theme-light .image-management-field select'
           ])
 
+          remove_rules('SongLyricsManagement.html', [
+            '.slm-lead',
+            '.slm-card',
+            '.slm-section-title',
+            '.slm-field',
+            '.slm-field>span',
+            '.slm-field input,.slm-field select,.slm-field textarea',
+            '.slm-field input:disabled,.slm-field select:disabled',
+            '.slm-actions',
+            '.slm-error',
+            'body.theme-light .slm-lead,body.theme-light .slm-field>span,body.theme-light .slm-note',
+            'body.theme-light .slm-field input,body.theme-light .slm-field select,body.theme-light .slm-field textarea,body.theme-light .slm-part-card textarea',
+            'body.theme-light .slm-card,body.theme-light .slm-preview-part,body.theme-light .slm-part-card'
+          ])
+
+          # Keep only feature-specific panel sizing/scroll behavior; width/padding come from ManagementSystem.
           p=Path('SongLyricsManagement.html'); s=p.read_text()
-          for a,b in [
-            ('class="settings-panel slm-panel"','class="settings-panel management-panel slm-panel"'),
-            ('class="settings-panel slm-confirm-panel"','class="settings-panel management-panel slm-confirm-panel"'),
-            ('class="slm-lead"','class="management-lead slm-lead"'),
-            ('class="slm-loading"','class="management-loading slm-loading"'),
-            ('class="slm-card"','class="management-card slm-card"'),
-            ('class="slm-section-title"','class="management-section-title slm-section-title"'),
-            ('class="slm-field','class="management-field slm-field'),
-            ('class="slm-actions"','class="management-actions slm-actions"'),
-            ('class="slm-error"','class="management-error slm-error"'),
-            (",originalSongId:''", ''),
-            (",originalSongId:slmId_(credits.OriginalSongID)", ''),
-            ("+slmSongSelectField_((isEdit?'slmEdit':'slmNew')+'Original','原曲',songs,credits.originalSongId,isEdit&&songLyricsManagementState.existing?songLyricsManagementState.existing.song.songId:'')", ''),
-            (";c.originalSongId=value('slmNewOriginal')", ''),
-            (",originalSongId:document.getElementById('slmEditOriginal').value", '')
-          ]:
-            s=s.replace(a,b)
+          s=s.replace('.slm-panel{width:min(760px,calc(100vw - 24px));max-width:760px;max-height:min(94vh,980px);overflow:auto;padding-bottom:calc(24px + env(safe-area-inset-bottom))}', '.slm-panel{max-height:min(94vh,980px)}')
+          # Common mobile panel/action rules now belong to ManagementSystem; retain only song-specific grid/step/confirm adaptations.
+          s=s.replace('@media(max-width:560px){.slm-panel{padding:17px}.slm-grid{grid-template-columns:1fr}.slm-field.is-wide{grid-column:auto}.slm-actions{display:grid;grid-template-columns:1fr 1fr}.slm-actions .u-btn{width:100%}.slm-step{font-size:9px}.slm-confirm-actions{grid-template-columns:1fr}}', '@media(max-width:560px){.slm-grid{grid-template-columns:1fr}.slm-field.is-wide{grid-column:auto}.slm-step{font-size:9px}.slm-confirm-actions{grid-template-columns:1fr}}')
           p.write_text(s)
 
-          p=Path('SongLyricsManagementApi.gs'); s=p.read_text()
-          s=s.replace(",originalSongId:slmId_(credits.OriginalSongID)", '')
+          p=Path('ProfileManagement.html'); s=p.read_text()
+          s=s.replace('@media(max-width:520px){.profile-management-panel{width:calc(100vw - 24px);padding:18px}.profile-management-tag-add{grid-template-columns:minmax(0,1fr) 78px}}', '@media(max-width:520px){.profile-management-tag-add{grid-template-columns:minmax(0,1fr) 78px}}')
+          p.write_text(s)
+
+          p=Path('ImageManagement.html'); s=p.read_text()
+          s=s.replace('@media(max-width:520px){.image-management-panel,.image-replace-panel{width:calc(100vw - 24px);padding:18px}.image-replace-compare{gap:6px}.image-replace-actions{grid-template-columns:1fr}.image-management-preview-card{border-radius:14px}}', '@media(max-width:520px){.image-replace-compare{gap:6px}.image-replace-actions{grid-template-columns:1fr}.image-management-preview-card{border-radius:14px}}')
           p.write_text(s)
           PY
-      - name: Verify audit cleanup
+      - name: Verify common authority
         run: |
           grep -q 'management-panel profile-management-panel' ProfileManagement.html
           grep -q 'management-panel image-management-panel' ImageManagement.html
           grep -q 'management-panel slm-panel' SongLyricsManagement.html
-          grep -q 'management-card slm-card' SongLyricsManagement.html
-          grep -q 'function slmSongSelectField_' SongLyricsManagement.html
+          grep -q 'ManagementSystem' Index.html
+          ! grep -q '\.profile-management-field select,.profile-management-input{' ProfileManagement.html
+          ! grep -q '\.image-management-field select{' ImageManagement.html
+          ! grep -q '\.slm-field input,.slm-field select,.slm-field textarea{' SongLyricsManagement.html
           ! grep -RInE 'OriginalSongID|originalSongId|Original Song|原曲' SongLyricsManagement.html SongLyricsManagementApi.gs
       - name: Commit
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add ProfileManagement.html ImageManagement.html SongLyricsManagement.html SongLyricsManagementApi.gs
+          git add ProfileManagement.html ImageManagement.html SongLyricsManagement.html
           git diff --cached --quiet && exit 0
-          git commit -m 'Unify management UI and remove OriginalSong UI'
+          git commit -m 'Centralize management visual styles'
           git push origin HEAD:audit-management-ui-20260914
