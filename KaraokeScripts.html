@@ -81,7 +81,7 @@
   function renderKaraokeEntry(){
     karaokeState.screen='entry';
     document.getElementById('karaokeView').innerHTML=
-      '<button class="karaoke-top-back audit-local-back" type="button" aria-label="戻る" onclick="navigateTo(\'lyrics\')">‹</button>'+
+      '<button class="karaoke-top-back karaoke-group-return" type="button" onclick="navigateTo(\'lyrics\')"><span>グループ選択に戻る</span></button>'+
       '<section class="karaoke-room-card"><div id="karaokeRoomBody"></div></section>'+
       '<section id="karaokeHistoryArea" class="karaoke-history-area"></section>';
     updateKaraokeRoomCard();
@@ -116,7 +116,7 @@
     karaokeState.screen='ranking';
     const today=karaokeDayKey(new Date());
     const daily=karaokeState.history.filter(function(item){return karaokeDayKey(item.createdAt)===today;});
-    document.getElementById('karaokeView').innerHTML='<button class="karaoke-top-back audit-local-back" type="button" aria-label="戻る" onclick="renderKaraokeEntry()">‹</button><div class="karaoke-title"><p>本日の集計</p><h2>担当者ランキング</h2></div><section class="karaoke-member-ranking">'+karaokeState.users.map(function(user){
+    document.getElementById('karaokeView').innerHTML='<button class="karaoke-top-back karaoke-group-return" type="button" onclick="renderKaraokeEntry()"><span>履歴に戻る</span></button><div class="karaoke-title"><p>本日の集計</p><h2>担当者ランキング</h2></div><section class="karaoke-member-ranking">'+karaokeState.users.map(function(user){
       const counts={};
       daily.forEach(function(item){((item.assignments&&item.assignments[user.userId])||[]).forEach(function(slot){const name=typeof slot==='string'?slot:(slot.name||slot.memberId||'');if(name)counts[name]=(counts[name]||0)+1;});});
       const rows=Object.keys(counts).sort(function(a,b){return counts[b]-counts[a]||a.localeCompare(b,'ja');});
@@ -219,11 +219,17 @@
     else if(current===userId)delete karaokeState.assignments[key];
   }
 
+  function shuffleKaraoke_(items){
+    const out=items.slice();
+    for(let i=out.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));const t=out[i];out[i]=out[j];out[j]=t;}
+    return out;
+  }
+
   function randomizeKaraokeLocal(){
-    const singers=karaokeSingers().slice();
-    for(let i=singers.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));const t=singers[i];singers[i]=singers[j];singers[j]=t;}
+    const singers=shuffleKaraoke_(karaokeSingers());
+    const users=shuffleKaraoke_(karaokeState.users);
     karaokeState.assignments={};
-    singers.forEach(function(singer,index){karaokeState.assignments[singer.key]=karaokeState.users[index%karaokeState.users.length].userId;});
+    singers.forEach(function(singer,index){karaokeState.assignments[singer.key]=users[index%users.length].userId;});
     renderKaraokeSetup();
   }
 
