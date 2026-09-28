@@ -186,7 +186,7 @@
   function confirmDiscardLyricsChanges_(){
     if(lyricsState.editSaving){showLyricsError('保存中です');return false;}
     if(!lyricsEditSessionActive_()&&!lyricsState.editDirty)return true;
-    const message=lyricsState.editDirty?'保存していない変更があります。破棄しますか？':'編集モードを終了して戻りますか？';
+    const message=lyricsState.editDirty?'保存していない変更があります。破棄しますか？':'編集内容を破棄して戻りますか？';
     if(!window.confirm(message))return false;
     lyricsState.editDraft=null;lyricsState.editDirty=false;lyricsState.editing=null;lyricsState.editingIndex=-1;
     const editor=document.getElementById('lyricsEditor');if(editor)editor.hidden=true;
