@@ -21,7 +21,7 @@
     karaokeState.partsBySong=data.partsBySong||{};
     if(params&&params.mode==='latest'){
       const article='<article aria-hidden="true"><div class="karaoke-owner"><span class="skeleton-block" style="display:block;width:42%;height:11px;border-radius:6px"></span></div><p><span class="skeleton-block" style="display:block;width:88%;height:14px;border-radius:7px"></span><span class="skeleton-block" style="display:block;width:64%;height:14px;border-radius:7px;margin-top:9px"></span></p></article>';
-      document.getElementById('karaokeView').innerHTML='<button class="karaoke-top-back audit-local-back" type="button" disabled aria-hidden="true">‹</button><div class="karaoke-title"><h2><span class="skeleton-block" style="display:block;width:58%;height:24px;border-radius:8px"></span></h2></div><section class="karaoke-lyrics">'+article+article+article+article+'</section><div class="karaoke-song-footer" aria-hidden="true"><button type="button" disabled>‹</button><button type="button" disabled><span class="skeleton-block" style="display:block;width:110px;height:12px;border-radius:6px"></span></button></div>';
+      document.getElementById('karaokeView').innerHTML='<button class="karaoke-top-back karaoke-group-return" type="button" disabled aria-hidden="true"><span class="skeleton-block" style="display:block;width:116px;height:12px;border-radius:6px"></span></button><div class="karaoke-title"><h2><span class="skeleton-block" style="display:block;width:58%;height:24px;border-radius:8px"></span></h2></div><section class="karaoke-lyrics">'+article+article+article+article+'</section><div class="karaoke-song-footer is-single" aria-hidden="true"><button type="button" disabled><span class="skeleton-block" style="display:block;width:116px;height:12px;border-radius:6px"></span></button></div>';
       loadKaraokeRoom(params.room,function(){
         if(karaokeState.history.length)openKaraokeResultSong(karaokeState.history[0]);
         else{renderKaraokeEntry();showKaraokeError('まだ振り分け結果がありません。');}
@@ -174,14 +174,14 @@
   function renderKaraokeSetup(){
     const singers=karaokeSingers();
     document.getElementById('karaokeView').innerHTML=
-      '<button class="karaoke-top-back audit-local-back" type="button" aria-label="戻る" onclick="backToLyricsSong()">‹</button><div class="karaoke-title"><h2>カラオケ設定</h2></div>'+
+      '<button class="karaoke-top-back karaoke-group-return" type="button" onclick="navigateTo(\'lyrics\')"><span>グループ選択に戻る</span></button><div class="karaoke-title"><h2>カラオケ設定</h2></div>'+
       '<section class="karaoke-user-settings">'+karaokeState.users.map(function(user){
         return '<article><h3>'+escapeLyrics(user.displayName)+'</h3><div>'+singers.map(function(singer){
           const checked=karaokeState.assignments[singer.key]===user.userId?' checked':'';
           return '<label><input type="checkbox"'+checked+' onchange="toggleKaraokeSinger(\''+encodeURIComponent(singer.key)+'\',\''+user.userId+'\',this)"><span></span><b>'+escapeLyrics(singer.name)+'</b></label>';
         }).join('')+'</div></article>';
       }).join('')+'</section>'+
-      '<div class="karaoke-actions"><button class="karaoke-random" type="button" onclick="randomizeKaraoke()">ランダム振り分け</button><button class="karaoke-reset" type="button" onclick="resetKaraoke()">リセット</button><button class="karaoke-start" type="button" onclick="startKaraoke()">カラオケ開始</button><button class="karaoke-top-link" type="button" onclick="navigateTo(\'lyrics\')">トップページへ戻る</button></div>';
+      '<div class="karaoke-actions"><button class="karaoke-random" type="button" onclick="randomizeKaraoke()">ランダム振り分け</button><button class="karaoke-reset" type="button" onclick="resetKaraoke()">リセット</button><button class="karaoke-start" type="button" onclick="startKaraoke()">カラオケ開始</button><button class="karaoke-top-link" type="button" onclick="navigateTo(\'lyrics\')">グループ選択に戻る</button></div>';
     if(typeof injectKaraokeFavoriteStar==='function')injectKaraokeFavoriteStar();
   }
 
@@ -275,12 +275,6 @@
     scrollKaraokeTop();
   }
 
-  function backFromKaraokeResult(){
-    const params={page:'lyrics'};
-    google.script.history.push(params,params,'');
-    renderRoute('lyrics',params);
-  }
-
   function karaokePartOwners(part){
     const items=part.singers&&part.singers.length?part.singers:[{raw:part.singer,name:part.singer,color:'#777777'}];
     const owners=[];
@@ -295,25 +289,27 @@
     return owners;
   }
 
+  function returnToKaraokeSetup(){
+    karaokeState.screen='setup';
+    setKaraokeUrl('setup');
+    renderKaraokeSetup();
+    scrollKaraokeTop();
+  }
+
   function renderKaraokeSong(){
     const song=karaokeState.song;
-    const backAction=karaokeState.resultView?'backFromKaraokeResult()':"renderKaraokeSetup();karaokeState.screen='setup';setKaraokeUrl('setup')";
+    const settingsButton=karaokeState.resultView?'':'<button type="button" onclick="returnToKaraokeSetup()">設定に戻る</button>';
+    const footerClass=karaokeState.resultView?'karaoke-song-footer is-single':'karaoke-song-footer';
     document.getElementById('karaokeView').innerHTML=
-      '<button class="karaoke-top-back audit-local-back" type="button" aria-label="戻る" onclick="'+backAction+'">‹</button><div class="karaoke-title"><h2>'+escapeLyrics(song.title)+' <small>（カラオケ）</small></h2></div>'+
+      '<button class="karaoke-top-back karaoke-group-return" type="button" onclick="navigateTo(\'lyrics\')"><span>グループ選択に戻る</span></button><div class="karaoke-title"><h2>'+escapeLyrics(song.title)+' <small>（カラオケ）</small></h2></div>'+
       '<section class="karaoke-lyrics">'+song.parts.map(function(part){
         return '<article><div class="karaoke-owner">'+karaokePartOwners(part).map(function(owner){return '<span style="color:'+escapeLyrics(owner.color)+'">'+escapeLyrics(owner.label)+'</span>';}).join(' / ')+'</div><p>'+escapeLyrics(part.lyrics)+'</p></article>';
-      }).join('')+'</section><div class="karaoke-song-footer"><button type="button" aria-label="戻る" onclick="'+backAction+'">‹</button><button type="button" onclick="navigateTo(\'lyrics\')">トップページへ戻る</button></div>';
+      }).join('')+'</section><div class="'+footerClass+'">'+settingsButton+'<button type="button" onclick="navigateTo(\'lyrics\')">グループ選択に戻る</button></div>';
   }
 
   function setKaraokeUrl(mode){
     const params={page:'karaoke',song:karaokeState.song&&karaokeState.song.songId,mode:mode,group:karaokeState.backParams.group,unit:karaokeState.backParams.unit};
     google.script.history.push(params,params,'');
-  }
-
-  function backToLyricsSong(){
-    const params={page:'lyrics',song:karaokeState.song.songId,group:karaokeState.backParams.group,unit:karaokeState.backParams.unit};
-    google.script.history.push(params,params,'');
-    renderRoute('lyrics',params);
   }
 
   function scrollKaraokeTop(){const scroller=document.querySelector('.page-wrap');if(scroller)scroller.scrollTo({top:0,behavior:'smooth'});}
