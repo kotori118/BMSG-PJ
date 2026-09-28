@@ -191,17 +191,34 @@
     return out;
   }
 
+  function karaokeLyricsParams_(){
+    if(!karaokeState.song)return{};
+    const meta=karaokeState.songs.find(function(item){return String(item.songId)===String(karaokeState.song.songId);})||{};
+    const group=karaokeState.backParams.group||meta.category||'';
+    const unit=karaokeState.backParams.unit||(group==='BMSG ALLSTARS'?(meta.unitCategory||''):'');
+    return{song:karaokeState.song.songId,group:group,unit:unit};
+  }
+
+  function returnToLyricsFromKaraoke(){
+    if(!karaokeState.song){navigateTo('lyrics');return;}
+    navigateToWithParams('lyrics',karaokeLyricsParams_());
+  }
+
+  function karaokeSongTopNavigation_(){
+    return '<div class="karaoke-song-top-nav"><button class="karaoke-top-back karaoke-lyrics-return" type="button" onclick="returnToLyricsFromKaraoke()"><span>歌詞に戻る</span></button><button class="karaoke-top-back karaoke-group-return" type="button" onclick="navigateTo(\'lyrics\')"><span>グループ選択に戻る</span></button></div>';
+  }
+
   function renderKaraokeSetup(){
     const singers=karaokeSingers();
     document.getElementById('karaokeView').innerHTML=
-      '<button class="karaoke-top-back karaoke-group-return" type="button" onclick="navigateTo(\'lyrics\')"><span>グループ選択に戻る</span></button><div class="karaoke-title"><h2>カラオケ設定</h2></div>'+
+      karaokeSongTopNavigation_()+'<div class="karaoke-title"><h2>カラオケ設定</h2></div>'+
       '<section class="karaoke-user-settings">'+karaokeState.users.map(function(user){
         return '<article><h3>'+escapeLyrics(user.displayName)+'</h3><div>'+singers.map(function(singer){
           const checked=karaokeState.assignments[singer.key]===user.userId?' checked':'';
           return '<label><input type="checkbox"'+checked+' onchange="toggleKaraokeSinger(\''+encodeURIComponent(singer.key)+'\',\''+user.userId+'\',this)"><span></span><b>'+escapeLyrics(singer.name)+'</b></label>';
         }).join('')+'</div></article>';
       }).join('')+'</section>'+
-      '<div class="karaoke-actions"><button class="karaoke-random" type="button" onclick="randomizeKaraoke()">ランダム振り分け</button><button class="karaoke-reset" type="button" onclick="resetKaraoke()">リセット</button><button class="karaoke-start" type="button" onclick="startKaraoke()">カラオケ開始</button><button class="karaoke-top-link" type="button" onclick="navigateTo(\'lyrics\')">グループ選択に戻る</button></div>';
+      '<div class="karaoke-actions"><button class="karaoke-random" type="button" onclick="randomizeKaraoke()">ランダム振り分け</button><button class="karaoke-reset" type="button" onclick="resetKaraoke()">リセット</button><button class="karaoke-start" type="button" onclick="startKaraoke()">カラオケ開始</button></div>';
     if(typeof injectKaraokeFavoriteStar==='function')injectKaraokeFavoriteStar();
   }
 
@@ -325,13 +342,12 @@
 
   function renderKaraokeSong(){
     const song=karaokeState.song;
-    const settingsButton=karaokeState.resultView?'':'<button type="button" onclick="returnToKaraokeSetup()">設定に戻る</button>';
-    const footerClass=karaokeState.resultView?'karaoke-song-footer is-single':'karaoke-song-footer';
+    const settingsButton=karaokeState.resultView?'':'<div class="karaoke-song-footer is-single"><button type="button" onclick="returnToKaraokeSetup()">設定に戻る</button></div>';
     document.getElementById('karaokeView').innerHTML=
-      '<button class="karaoke-top-back karaoke-group-return" type="button" onclick="navigateTo(\'lyrics\')"><span>グループ選択に戻る</span></button><div class="karaoke-title"><h2>'+escapeLyrics(song.title)+' <small>（カラオケ）</small></h2></div>'+
+      karaokeSongTopNavigation_()+'<div class="karaoke-title"><h2>'+escapeLyrics(song.title)+' <small>（カラオケ）</small></h2></div>'+
       '<section class="karaoke-lyrics">'+song.parts.map(function(part){
         return '<article><div class="karaoke-owner">'+karaokePartOwners(part).map(function(owner){return '<span style="color:'+escapeLyrics(owner.color)+'">'+escapeLyrics(owner.label)+'</span>';}).join(' / ')+'</div><p>'+escapeLyrics(part.lyrics)+'</p></article>';
-      }).join('')+'</section><div class="'+footerClass+'">'+settingsButton+'<button type="button" onclick="navigateTo(\'lyrics\')">グループ選択に戻る</button></div>';
+      }).join('')+'</section>'+settingsButton;
   }
 
   function setKaraokeUrl(mode){
