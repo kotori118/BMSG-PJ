@@ -197,6 +197,7 @@
     return true;
   }
   function returnToLyricsSongListFromSong(){
+    if(lyricsEditSessionActive_()&&!confirmDiscardLyricsChanges_())return;
     if(!lyricsState.group){navigateTo('lyrics');return;}
     setLyricsUrl({group:lyricsState.group,unit:lyricsState.unit||''});
     renderLyricsGroupSongs();
