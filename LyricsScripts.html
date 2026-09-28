@@ -204,12 +204,11 @@
     const parts=[];for(let index=0;index<list.length;index++){const part=list[index],singers=lyricsDraftAssignments_(part),lyrics=String(part.lyrics||'').trim();if(!singers.length){showLyricsError('PART '+(index+1)+' の歌唱者を設定してね。');return;}if(!lyrics){showLyricsError('PART '+(index+1)+' の歌詞を入力してね。');return;}parts.push({singers:singers,lyrics:lyrics});}
     const userId=requireLyricsUniverseUser();if(!userId)return;lyricsState.editSaving=true;renderLyricsSong();
     google.script.run.withSuccessHandler(function(){
-      google.script.run.withSuccessHandler(function(saved){
-        lyricsState.editSaving=false;lyricsState.editDirty=false;lyricsState.editDraft=null;lyricsState.song.parts=saved.parts||[];lyricsState.partsBySong[lyricsState.song.songId]=lyricsState.song.parts;
-        const meta=lyricsState.catalog.find(function(item){return item.songId===lyricsState.song.songId;});if(meta)meta.partCount=lyricsState.song.parts.length;
-        try{sessionStorage.setItem('bmsgLyricsDataV4',JSON.stringify({songs:lyricsState.catalog,partsBySong:lyricsState.partsBySong,groupColors:lyricsState.groupColors}));}catch(error){}
-        renderLyricsSong();if(typeof showToast==='function')showToast('変更を保存しました');
-      }).withFailureHandler(function(error){lyricsState.editSaving=false;renderLyricsSong();showLyricsError(error);}).getLyricsSong(lyricsState.song.songId);
+      const savedParts=ensureLyricsEditDraft_().map(function(part,index){return{partOrder:index+1,singer:(part.singers||[]).map(function(s){const role=String(s.role||(s.harmony?s.harmony.toUpperCase():'MAIN')).toUpperCase();return String(s.id||'')+(role==='MAIN'?'':'_'+role.toLowerCase());}).filter(Boolean).join(','),singers:(part.singers||[]).map(function(s){return Object.assign({},s);}),lyrics:String(part.lyrics||'').trim()};});
+      lyricsState.editSaving=false;lyricsState.editDirty=false;lyricsState.editDraft=null;lyricsState.song.parts=savedParts;lyricsState.partsBySong[lyricsState.song.songId]=savedParts;
+      const meta=lyricsState.catalog.find(function(item){return item.songId===lyricsState.song.songId;});if(meta)meta.partCount=savedParts.length;
+      try{sessionStorage.setItem('bmsgLyricsDataV4',JSON.stringify({songs:lyricsState.catalog,partsBySong:lyricsState.partsBySong,groupColors:lyricsState.groupColors}));}catch(error){}
+      renderLyricsSong();if(typeof showToast==='function')showToast('変更を保存しました');
     }).withFailureHandler(function(error){lyricsState.editSaving=false;renderLyricsSong();showLyricsError(error);}).saveLyricsSongParts({userId:userId,songId:lyricsState.song.songId,parts:parts});
   }
   function scrollLyricsTop(){const scroller=document.querySelector('.page-wrap');if(scroller)scroller.scrollTo({top:0,behavior:'smooth'});}
