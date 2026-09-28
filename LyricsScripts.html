@@ -182,8 +182,8 @@
     const editor=document.getElementById('lyricsEditor');if(editor)editor.hidden=true;
     return true;
   }
-  function returnToLyricsGroupsFromSong(){if(!confirmDiscardLyricsChanges_())return;navigateTo('lyrics');}
-  function openKaraokeFromLyrics(encoded){if(!confirmDiscardLyricsChanges_())return;const songId=decodeURIComponent(encoded);const params={page:'karaoke',song:songId,group:lyricsState.group||'',unit:lyricsState.unit||''};google.script.history.push(params,params,'');renderRoute('karaoke',params);}
+  function returnToLyricsGroupsFromSong(){navigateTo('lyrics');}
+  function openKaraokeFromLyrics(encoded){const songId=decodeURIComponent(encoded);navigateToWithParams('karaoke',{song:songId,group:lyricsState.group||'',unit:lyricsState.unit||''});}
 
   function lyricsRawAssignments_(raw){return String(raw||'').split(',').map(function(token){token=token.trim();if(!token)return null;const match=token.match(/_(up|down|sub)$/i);return{id:match?token.slice(0,-match[0].length):token,role:match?match[1].toUpperCase():'MAIN'};}).filter(Boolean);}
   function lyricsDraftAssignments_(part){if(Array.isArray(part&&part.singers)&&part.singers.length)return part.singers.map(function(s){return{id:String(s.id||s.raw||'').replace(/_(up|down|sub)$/i,''),role:String(s.role||(s.harmony?s.harmony.toUpperCase():'MAIN')).toUpperCase()};}).filter(function(s){return s.id;});return lyricsRawAssignments_(part&&part.singer);}
