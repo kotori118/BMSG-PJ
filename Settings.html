@@ -83,6 +83,7 @@
     const user = UNIVERSE_USERS.find(function(item) { return item.id === userId; });
     if (!user) return;
     const previousId = readUniverseUserId();
+    if(previousId!==user.id&&typeof currentRoute!=='undefined'&&currentRoute==='lyrics'&&typeof lyricsState!=='undefined'&&lyricsState.song&&typeof confirmDiscardLyricsChanges_==='function'&&!confirmDiscardLyricsChanges_()){syncUserChooser();return;}
     localStorage.setItem('bmsgUniverseUserId', user.id);
     syncSettingsUserName();
     syncUserChooser();
