@@ -25,14 +25,14 @@ function getAnalysisBootstrap() {
 }
 
 function buildAnalysisDataset_() {
-  const spreadsheet = SpreadsheetApp.openById(UNIVERSE_CONFIG.CORE_DB_ID);
+  const spreadsheet = getCoreSpreadsheet_();
   const sheets = UNIVERSE_CONFIG.SHEETS;
-  const songsRows = readAnalysisSheetObjects_(spreadsheet, sheets.SONGS);
-  const creditsRows = readAnalysisSheetObjects_(spreadsheet, sheets.SONG_CREDITS);
-  const lyricsRows = readAnalysisSheetObjects_(spreadsheet, sheets.LYRICS_PARTS);
-  const membersRows = readAnalysisSheetObjects_(spreadsheet, sheets.MEMBERS);
-  const groupMembersRows = readAnalysisSheetObjects_(spreadsheet, sheets.GROUP_MEMBERS);
-  const transfersRows = readAnalysisSheetObjects_(spreadsheet, sheets.PART_TRANSFERS);
+  const songsRows = readCoreSheetObjectsFromSpreadsheet_(spreadsheet, sheets.SONGS);
+  const creditsRows = readCoreSheetObjectsFromSpreadsheet_(spreadsheet, sheets.SONG_CREDITS);
+  const lyricsRows = readCoreSheetObjectsFromSpreadsheet_(spreadsheet, sheets.LYRICS_PARTS);
+  const membersRows = readCoreSheetObjectsFromSpreadsheet_(spreadsheet, sheets.MEMBERS);
+  const groupMembersRows = readCoreSheetObjectsFromSpreadsheet_(spreadsheet, sheets.GROUP_MEMBERS);
+  const transfersRows = readCoreSheetObjectsFromSpreadsheet_(spreadsheet, sheets.PART_TRANSFERS);
   const metrics = readAnalysisMetrics_(spreadsheet);
 
   const groupMemberIds = new Set(groupMembersRows
@@ -179,19 +179,6 @@ function buildAnalysisDataset_() {
     partTransferData: partTransfer,
     songDetails: songDetails
   };
-}
-
-function readAnalysisSheetObjects_(spreadsheet, sheetName) {
-  const sheet = spreadsheet.getSheetByName(sheetName);
-  if (!sheet) throw new Error('Core DB sheet not found: ' + sheetName);
-  const values = sheet.getDataRange().getValues();
-  if (values.length < 2) return [];
-  const headers = values[0].map(function(value){ return String(value || '').trim(); });
-  return values.slice(1).filter(function(row){ return row.some(function(value){ return value !== '' && value !== null; }); }).map(function(row){
-    const record = {};
-    headers.forEach(function(header, index){ if (header) record[header] = row[index]; });
-    return record;
-  });
 }
 
 function readAnalysisMetrics_(spreadsheet) {

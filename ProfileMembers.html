@@ -69,6 +69,7 @@
     profileMembersState.error = '';
     writeProfileMembersSessionCache();
     renderProfilePanel();
+    if (typeof syncUniverseCrossLinks === 'function') syncUniverseCrossLinks();
   }
 
   function handleProfileMembersFailure(error) {
@@ -180,6 +181,7 @@
     const accent = /^#[0-9a-f]{6}$/i.test(member.colorHex || '') ? member.colorHex : '#9cecff';
     const image = member.imageUrl ? `<img src="${escapeHtml(member.imageUrl)}" data-fallback-src="${escapeHtml(member.imageFallbackUrl || '')}" alt="${escapeHtml(member.displayName)}" decoding="async" referrerpolicy="no-referrer" onerror="handleProfileImageError(this)">` : '';
     panel.innerHTML = `<article class="profile-member-detail" style="--member-accent:${escapeHtml(accent)}"><button class="profile-detail-back" type="button" onclick="closeProfileMemberDetail()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5L8 12l6.5 6.5"></path></svg><span>MEMBERS</span></button><div class="profile-detail-hero"><div class="profile-detail-visual"><span class="profile-member-fallback" aria-hidden="true">${escapeHtml(initial)}</span>${image}<span class="profile-detail-line" aria-hidden="true"></span></div><div class="profile-detail-identity"><p class="profile-detail-group">${escapeHtml(member.primaryGroupName || 'SOLO')}</p><h2 class="profile-detail-name">${escapeHtml(member.displayName)}</h2></div></div>${renderProfileDetailContent()}</article>`;
+    if (typeof syncUniverseCrossLinks === 'function') syncUniverseCrossLinks();
   }
 
   function renderProfileDetailContent() {

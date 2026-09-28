@@ -65,44 +65,11 @@
     const pageContent = document.getElementById('pageContent');
     const searchOverlay = document.getElementById('searchOverlay');
     const settingsOverlay = document.getElementById('settingsOverlay');
-    const starField = document.getElementById('starField');
     const toastRegion = document.getElementById('toastRegion');
 
     let homeIntroPlayed = false;
     let toastTimer = null;
     let currentRoute = 'home';
-
-    function buildMinimalStarField() {
-      if (!starField || starField.childElementCount) return;
-
-      // Deterministic pseudo-random field so it does not "jump" on every render.
-      let seed = 1988;
-      function rand() {
-        seed = (seed * 9301 + 49297) % 233280;
-        return seed / 233280;
-      }
-
-      const fragment = document.createDocumentFragment();
-      const count = window.innerWidth < 560 ? 52 : 76;
-
-      for (let i = 0; i < count; i++) {
-        const star = document.createElement('span');
-        const size = 0.7 + rand() * 1.25;
-        const alpha = 0.20 + rand() * 0.42;
-        const glow = 2 + rand() * 5;
-
-        star.className = 'space-star' + (i % 11 === 0 ? ' star-cyan' : '');
-        star.style.left = `${rand() * 100}%`;
-        star.style.top = `${rand() * 100}%`;
-        star.style.setProperty('--star-size', `${size}px`);
-        star.style.setProperty('--star-alpha', alpha.toFixed(2));
-        star.style.setProperty('--star-glow', `${glow}px`);
-        fragment.appendChild(star);
-      }
-
-      starField.appendChild(fragment);
-    }
-
 
     function lockAppOverscroll() {
       const scroller = document.querySelector('.page-wrap');
@@ -123,7 +90,6 @@
       }, { passive: false });
     }
 
-    buildMinimalStarField();
     lockAppOverscroll();
 
 </script>

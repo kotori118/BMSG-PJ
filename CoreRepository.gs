@@ -2,23 +2,41 @@
  * Read a Core DB sheet as header-keyed objects.
  * No write methods are defined in this repository.
  */
-function readCoreSheetObjects_(sheetName) {
-  const spreadsheet = SpreadsheetApp.openById(UNIVERSE_CONFIG.CORE_DB_ID);
+function getCoreSpreadsheet_() {
+  return SpreadsheetApp.openById(UNIVERSE_CONFIG.CORE_DB_ID);
+}
+
+function getCoreSheetFromSpreadsheet_(spreadsheet, sheetName) {
   const sheet = spreadsheet.getSheetByName(sheetName);
+  if (!sheet) throw new Error('Core DB sheet not found: ' + sheetName);
+  return sheet;
+}
 
-  if (!sheet) {
-    throw new Error('Core DB sheet not found: ' + sheetName);
-  }
+function readCoreSheetObjects_(sheetName) {
+  return readCoreSheetObjectsFromSpreadsheet_(getCoreSpreadsheet_(), sheetName);
+}
 
+function readCoreSheetObjectsFromSpreadsheet_(spreadsheet, sheetName) {
+  const sheet = getCoreSheetFromSpreadsheet_(spreadsheet, sheetName);
   const lastRow = sheet.getLastRow();
   const lastColumn = sheet.getLastColumn();
   if (lastRow < 2 || lastColumn < 1) return [];
 
   const values = sheet.getRange(1, 1, lastRow, lastColumn).getValues();
+  return coreRowsToObjects_(values);
+}
+
+function readCoreSheetDisplayObjects_(sheetName) {
+  const sheet = getCoreSheetFromSpreadsheet_(getCoreSpreadsheet_(), sheetName);
+  const values = sheet.getDataRange().getDisplayValues();
+  return coreRowsToObjects_(values);
+}
+
+function coreRowsToObjects_(values) {
+  if (!values || values.length < 2) return [];
   const headers = values[0].map(function(header) {
     return String(header || '').trim();
   });
-
   return values.slice(1).filter(function(row) {
     return row.some(function(value) {
       return value !== '' && value !== null && value !== false;

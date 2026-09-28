@@ -49,12 +49,7 @@ function registerSongLyricsGuest(payload) {
 function saveNewSongLyricsManagement(payload) {
   payload = payload || {};
   slmRequireUser_(payload.userId);
-  try {
-    if (Array.isArray(payload.ignoredGuestCandidates) && payload.ignoredGuestCandidates.length) {
-      return BMSGDB.saveNewSongLyricsWithIgnoredGuestsForUniverse(payload);
-    }
-    return BMSGDB.saveNewSongLyricsForUniverse(payload);
-  }
+  try { return BMSGDB.saveNewSongLyricsForUniverse(payload); }
   finally { clearUniverseSongMutationCaches_(); }
 }
 
