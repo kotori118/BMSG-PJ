@@ -49,10 +49,22 @@ function getLyricsSingerOptions() {
 
 function updateLyricsPart(payload) {
   payload=payload||{};
-  const userId=asId_(payload.userId);
-  if(LYRICS_USERS_.indexOf(userId)<0)throw new Error('利用ユーザーを選択してください。');
+  lyricsRequireUser_(payload.userId);
   try{return BMSGDB.updateLyricsPartForUniverse(payload);}
   finally{clearUniverseSongMutationCaches_();}
+}
+
+function saveLyricsSongParts(payload) {
+  payload=payload||{};
+  lyricsRequireUser_(payload.userId);
+  try{return BMSGDB.saveSongPartsForUniverse(payload);}
+  finally{clearUniverseSongMutationCaches_();}
+}
+
+function lyricsRequireUser_(userId) {
+  const id=asId_(userId);
+  if(LYRICS_USERS_.indexOf(id)<0)throw new Error('利用ユーザーを選択してください。');
+  return id;
 }
 
 function encodeLyricsSingerAssignments_(items,singerMap){
