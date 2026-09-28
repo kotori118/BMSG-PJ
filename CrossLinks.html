@@ -1,8 +1,7 @@
 <script>
-  const universeCrossLinksState={route:'',params:{},observer:null,targetApplied:false,credits:{},creditsOpen:{}};
+  const universeCrossLinksState={route:'',params:{},targetApplied:false,credits:{},creditsOpen:{}};
 
   function resetUniverseCrossLinks(){
-    if(universeCrossLinksState.observer){universeCrossLinksState.observer.disconnect();universeCrossLinksState.observer=null;}
     universeCrossLinksState.route='';universeCrossLinksState.params={};universeCrossLinksState.targetApplied=false;
   }
 
@@ -10,7 +9,6 @@
     resetUniverseCrossLinks();
     universeCrossLinksState.route=String(route||'');
     universeCrossLinksState.params=params||{};
-    if(document.body){universeCrossLinksState.observer=new MutationObserver(syncUniverseCrossLinks);universeCrossLinksState.observer.observe(document.body,{childList:true,subtree:true});}
     syncUniverseCrossLinks();
   }
 
