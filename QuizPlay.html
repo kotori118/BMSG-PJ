@@ -1,6 +1,5 @@
 <script>
 (function(){
-  function clearTimer(){if(quizState.v3Timer){clearInterval(quizState.v3Timer);quizState.v3Timer=0;}}
 
   function isOfflineProfile_(){return !!(quizState.game&&quizState.game.mode==='OFFLINE'&&quizState.game.genre==='PROFILE');}
   function renderSongAwardButtons_(){const buttons=quizState.game.players.map(function(id){return '<button class="quiz-award" onclick="awardOfflineLyrics_(\''+quizArg_(id)+'\')">'+quizEscape_(quizUserName_(id))+'</button>';});buttons.push('<button class="quiz-award is-none" onclick="awardOfflineLyrics_(\'\')">なし</button>');return '<div class="quiz-award-grid">'+buttons.join('')+'</div>';}
@@ -9,7 +8,7 @@
   function advanceQuizBase_(){if(quizState.stage!=='answered')return;if(quizState.index>=quizState.game.questions.length-1){finishQuiz_();return;}quizState.index+=1;quizState.stage='question';renderQuizQuestion_();scrollAppToTop('smooth');}
 
   renderQuizQuestion_=function(){
-    clearTimer();const game=quizState.game,question=game&&game.questions&&game.questions[quizState.index];if(!question)return finishQuiz_();
+    clearQuizQuestionTimer_();const game=quizState.game,question=game&&game.questions&&game.questions[quizState.index];if(!question)return finishQuiz_();
     quizState.timeRecorded=false;quizState.questionStartedAt=Date.now();
     const host=quizHost_();if(!host)return;const progress=Math.round((quizState.index/game.questions.length)*100);
     host.innerHTML=(game.roomId?renderQuizRoomBanner_(game.roomId):'')+'<div class="quiz-progress" aria-label="進行度"><span style="width:'+progress+'%"></span></div><section class="quiz-panel"><div class="quiz-question-head"><p class="quiz-step-label">'+quizEscape_(quizGenreLabel_(game.genre))+' / '+quizEscape_(quizDifficultyLabel_(game.difficulty))+'</p><span class="quiz-question-count">'+String(quizState.index+1).padStart(2,'0')+' / 10</span></div><div id="quizTimerV3"></div><div id="quizQuestionBody">'+renderQuizQuestionBodyV3_(question)+'</div><div class="quiz-actions"><button id="quizNextButton" class="quiz-action is-primary" onclick="advanceQuiz_()" disabled>次へ</button><button class="quiz-action quiz-danger" onclick="abandonQuiz_()">終了する</button></div></section>';
@@ -41,7 +40,7 @@
   window.answerProfileV3_=function(encoded){
     if(quizState.stage==='answered')return;const value=decodeURIComponent(encoded),q=quizState.game.questions[quizState.index];
     const elapsed=recordQuestionTimeV3_(20000);const correct=String(value)===String(q.correct.value);
-    quizState.answers[quizState.index]={value:value,timedOut:false,answerTimeMs:elapsed,correct:correct};quizState.stage='answered';clearTimer();hideTimerV3_();flashV3_(correct?'正解':'不正解',!correct);replaceBodyV3_();enableQuizNext_();
+    quizState.answers[quizState.index]={value:value,timedOut:false,answerTimeMs:elapsed,correct:correct};quizState.stage='answered';clearQuizQuestionTimer_();hideTimerV3_();flashV3_(correct?'正解':'不正解',!correct);replaceBodyV3_();enableQuizNext_();
   };
 
   window.revealOfflineProfile_=function(){if(!isOfflineProfile_()||quizState.stage!=='question')return;quizState.stage='profileAward';replaceBodyV3_();};
@@ -81,7 +80,7 @@
     if(String(value)!==String(q.correct.songId)){
       const status=document.getElementById('quizSongStatusV3');if(status){status.className='quiz-v3-inline-status is-wrong';status.textContent='不正解 — まだ回答できます';setTimeout(function(){if(status)status.className='quiz-v3-inline-status';},350);}return;
     }
-    const elapsed=recordQuestionTimeV3_(30000);quizState.answers[quizState.index]={songId:value,singerId:'',songCorrect:true,timedOut:false,answerTimeMs:elapsed};clearTimer();hideTimerV3_();quizState.stage='singer';flashV3_('正解',false);setTimeout(replaceBodyV3_,220);
+    const elapsed=recordQuestionTimeV3_(30000);quizState.answers[quizState.index]={songId:value,singerId:'',songCorrect:true,timedOut:false,answerTimeMs:elapsed};clearQuizQuestionTimer_();hideTimerV3_();quizState.stage='singer';flashV3_('正解',false);setTimeout(replaceBodyV3_,220);
   };
 
   window.answerSingerV3_=function(){
@@ -99,7 +98,7 @@
     return '<p class="quiz-question-text is-lyrics">'+quizEscape_(question.text)+'</p><div class="quiz-v3-feedback"><div class="quiz-v3-feedback-mark">結果</div><div class="quiz-v3-feedback-answer">曲名：'+quizEscape_(question.source.title)+'<br>歌唱：'+quizEscape_((question.source.singerNames||[]).join(' / '))+'<br><small>曲名正解：'+quizEscape_(quizUserName_(award.songWinner)||'なし')+' / 歌唱ボーナス：'+(award.singerWinner?'+1':'なし')+'</small></div></div>'+renderQuizLyricsLink_(question);
   }
 
-  window.revealOfflineLyricsV3_=function(){if(quizState.stage!=='question')return;clearTimer();hideTimerV3_();quizState.stage='songAward';replaceBodyV3_();};
+  window.revealOfflineLyricsV3_=function(){if(quizState.stage!=='question')return;clearQuizQuestionTimer_();hideTimerV3_();quizState.stage='songAward';replaceBodyV3_();};
 
   awardOfflineLyrics_=function(encoded){
     const id=encoded?decodeURIComponent(encoded):'';
@@ -122,13 +121,13 @@
   };
 
   function startTimerV3_(limit,kind){
-    clearTimer();const host=document.getElementById('quizTimerV3');if(!host)return;
+    clearQuizQuestionTimer_();const host=document.getElementById('quizTimerV3');if(!host)return;
     host.innerHTML='<div class="quiz-v3-timer"><div class="quiz-v3-timer-head"><span>TIME</span><strong id="quizTimerTextV3">'+Math.ceil(limit/1000)+'</strong></div><div class="quiz-v3-timer-track"><span id="quizTimerBarV3" class="quiz-v3-timer-bar"></span></div></div>';
     const started=quizState.questionStartedAt;
     quizState.v3Timer=setInterval(function(){
       const elapsed=Date.now()-started,remain=Math.max(0,limit-elapsed),ratio=remain/limit;const text=document.getElementById('quizTimerTextV3'),bar=document.getElementById('quizTimerBarV3'),box=bar&&bar.closest('.quiz-v3-timer');
       if(text)text.textContent=(remain/1000).toFixed(remain<10000?1:0);if(bar)bar.style.width=(ratio*100)+'%';if(box&&ratio<.25)box.classList.add('is-danger');
-      if(remain<=0){clearTimer();onTimeoutV3_(kind);}
+      if(remain<=0){clearQuizQuestionTimer_();onTimeoutV3_(kind);}
     },100);
   }
 
@@ -162,6 +161,6 @@
 
   function flashV3_(text,isWrong){if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;const el=document.createElement('div');el.className='quiz-v3-stage-flash'+(isWrong?' is-wrong':'');el.innerHTML='<span>'+quizEscape_(text)+'</span>';document.body.appendChild(el);setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el);},560);}
 
-  window.advanceQuiz_=function(){clearTimer();advanceQuizBase_();};
+  window.advanceQuiz_=function(){clearQuizQuestionTimer_();advanceQuizBase_();};
 })();
 </script>
