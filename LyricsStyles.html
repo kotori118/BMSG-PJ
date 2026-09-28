@@ -55,8 +55,19 @@
   .lyrics-singer-separator{color:rgba(21,24,32,.35)}
   .lyrics-part p{margin:8px 0 0;font:400 18px/1.9 "Zen Kaku Gothic New",sans-serif;white-space:pre-wrap;overflow-wrap:anywhere}
   .lyrics-part small{display:none}
-  .lyrics-parts.is-editing .lyrics-part{padding:13px;border:1px dashed rgba(21,24,32,.28);border-radius:14px;cursor:pointer}
-  .lyrics-parts.is-editing .lyrics-part small{position:absolute;right:10px;top:10px;display:block;color:rgba(21,24,32,.42);font:600 9px "Exo 2","Zen Kaku Gothic New",sans-serif}
+  .lyrics-parts.is-editing{display:grid;gap:0}
+  .lyrics-parts.is-editing .lyrics-part{margin:0;padding:13px;border:1px dashed rgba(21,24,32,.28);border-radius:14px;background:#fff}
+  .lyrics-edit-part-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+  .lyrics-edit-part-head>span{color:rgba(21,24,32,.5);font:700 10px "Exo 2","Zen Kaku Gothic New",sans-serif;letter-spacing:.1em}
+  .lyrics-edit-part-head>div{display:flex;gap:6px}
+  .lyrics-edit-part-head .u-btn{width:38px;height:38px;min-width:38px;min-height:38px;padding:0;border-radius:12px}
+  .lyrics-edit-part-body{box-sizing:border-box;display:block;width:100%;padding:0;border:0;color:var(--ink);background:transparent;text-align:left}
+  .lyrics-edit-part-body p{margin:8px 0 0}
+  .lyrics-edit-part-body small{display:block!important;margin-top:10px;color:#4d7f8a;font:700 10px "Zen Kaku Gothic New",sans-serif}
+  .lyrics-part-insert{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:42px;margin:9px 0;padding:0 14px;border-radius:14px!important}
+  .lyrics-part-insert span{font-size:20px;line-height:1}.lyrics-part-insert b{font:700 11px "Zen Kaku Gothic New",sans-serif}
+  .lyrics-edit-save{display:flex;justify-content:stretch;margin:24px 0 30px}
+  .lyrics-edit-save-button{width:100%;min-height:52px!important;font:700 13px "Zen Kaku Gothic New",sans-serif}
 
   .lyrics-editor[hidden]{display:none}
   .lyrics-editor{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:18px;background:rgba(8,14,22,.56)}
