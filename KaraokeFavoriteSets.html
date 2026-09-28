@@ -121,7 +121,7 @@
     const section=document.createElement('section');
     section.id='karaokeFavoriteSettingsSection';
     section.className='settings-group';
-    section.innerHTML='<p class="settings-section-title">KARAOKE</p><button class="settings-row settings-row-button" type="button" onclick="openKaraokeFavoriteSettings()"><span class="settings-row-copy"><strong>推しセット</strong><small>正式グループごとの担当を設定</small></span><span class="settings-arrow">›</span></button>';
+    section.innerHTML='<p class="settings-section-title">カラオケ</p><button class="settings-row settings-row-button" type="button" onclick="openKaraokeFavoriteSettings()"><span class="settings-row-copy"><strong>推しセット</strong><small>正式グループごとの担当を設定</small></span><span class="settings-arrow">›</span></button>';
     if(tools&&tools.parentNode)tools.parentNode.insertBefore(section,tools);else settings.querySelector('.settings-panel').appendChild(section);
   }
 
@@ -130,7 +130,7 @@
     const overlay=document.createElement('div');
     overlay.id='karaokeFavoriteSettingsOverlay';
     overlay.className='modal-overlay karaoke-favorite-settings-modal';
-    overlay.innerHTML='<section class="settings-panel karaoke-favorite-settings-panel" role="dialog" aria-modal="true" aria-labelledby="karaokeFavoriteSettingsTitle"><header class="modal-head"><div><p class="settings-eyebrow">KARAOKE</p><h2 id="karaokeFavoriteSettingsTitle" class="modal-title">推しセット</h2></div><button class="overlay-close" type="button" onclick="closeKaraokeFavoriteSettings()" aria-label="推しセット設定を閉じる">×</button></header><div id="karaokeFavoriteSettingsBody"></div></section>';
+    overlay.innerHTML='<section class="settings-panel karaoke-favorite-settings-panel" role="dialog" aria-modal="true" aria-labelledby="karaokeFavoriteSettingsTitle"><header class="modal-head"><div><p class="settings-eyebrow">カラオケ</p><h2 id="karaokeFavoriteSettingsTitle" class="modal-title">推しセット</h2></div><button class="overlay-close" type="button" onclick="closeKaraokeFavoriteSettings()" aria-label="推しセット設定を閉じる">×</button></header><div id="karaokeFavoriteSettingsBody"></div></section>';
     document.body.appendChild(overlay);
   }
 
