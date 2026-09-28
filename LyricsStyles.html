@@ -126,8 +126,9 @@
   .lyrics-room-subactions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
 
   .lyrics-song-actions{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin:0 0 34px}
-  .lyrics-song-actions:not(:last-child){display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:stretch}
-  .lyrics-song-actions:not(:last-child) .lyrics-list-back,.lyrics-song-actions:not(:last-child) .lyrics-karaoke-icon{width:100%;min-height:46px;margin:0}
+  .lyrics-song-actions:not(:last-child){display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr);align-items:stretch}
+  .lyrics-song-actions:not(:last-child) .lyrics-karaoke-icon{grid-column:2;width:100%;min-height:46px;margin:0}
+  .lyrics-song-actions:not(:last-child) .lyrics-group-return{grid-column:3;width:100%;min-height:46px;margin:0}
   .lyrics-song-actions:last-child{display:grid;grid-template-columns:minmax(96px,120px) minmax(0,1fr);gap:10px 12px;align-items:stretch;margin:14px 0 0}
   .lyrics-song-actions .lyrics-list-back{flex:1 1 150px;margin:0}
   .lyrics-song-actions:last-child .lyrics-karaoke-icon{grid-column:1/-1;grid-row:1;width:100%;min-height:64px;padding:0 20px;font-size:11px;letter-spacing:.14em}
