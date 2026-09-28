@@ -111,7 +111,6 @@
   body.theme-light .lyrics-page button{-webkit-tap-highlight-color:transparent;transition:none}
   body.theme-light .lyrics-page button:focus{outline:none}
   body.theme-light .lyrics-page button:focus-visible{outline:1px solid rgba(21,24,32,.28);outline-offset:2px}
-  body.theme-light .lyrics-page button:active{filter:none;box-shadow:none;background-color:#f7f8f8}
 
   .lyrics-karaoke-entry{box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;width:100%;min-height:66px;margin-bottom:18px;padding:0 18px;border:1px solid rgba(21,24,32,.12);border-radius:18px;color:var(--ink);background:#f4f7f7;text-align:left;-webkit-tap-highlight-color:transparent}
   .lyrics-karaoke-entry strong{font:600 17px Orbitron,"Zen Kaku Gothic New",sans-serif}
@@ -152,7 +151,6 @@
   .lyrics-room-card.is-active{padding:18px}
   .lyrics-room-card.is-active .lyrics-room-id{margin:0 0 12px;padding:0 0 13px;border-top:0}
   .lyrics-room-card.is-active .lyrics-room-primary{min-height:50px}
-  .lyrics-karaoke-icon{border-color:rgba(69,126,140,.32);background:rgba(156,236,255,.28)}
 
   .lyrics-room-card>p{font-size:12px}
   .lyrics-room-id span{font-size:12px}
@@ -190,19 +188,6 @@
   .lyrics-groups .lyrics-group-card:last-child:nth-child(odd){grid-column:1!important}
   .lyrics-groups .lyrics-group-card:not(:disabled):active{background:#fff!important;box-shadow:0 3px 10px rgba(21,24,32,.035)!important;filter:none!important}
   @media(hover:hover){.lyrics-groups .lyrics-group-card:not(:disabled):hover{background:#fff!important;box-shadow:0 6px 18px rgba(21,24,32,.045)!important;filter:none!important}}
-
-  /* ROOM-specific source authority (absorbed from RoomPolish). */
-  body.theme-light .lyrics-room-card .lyrics-room-primary,
-  body.theme-light .lyrics-room-card .lyrics-room-join button,
-  body.theme-light .lyrics-room-card.is-active .lyrics-room-subactions button{box-sizing:border-box;min-height:50px;border:1px solid rgba(75,165,184,.28)!important;border-radius:15px!important;color:var(--ink)!important;background:linear-gradient(145deg,#fff,rgba(156,236,255,.18))!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.86)!important;font:600 13px "Zen Kaku Gothic New",Roboto,sans-serif}
-  body.theme-light .lyrics-room-card .lyrics-room-primary{width:100%;padding:0 18px;text-align:center}
-  body.theme-light .lyrics-room-card.is-active .lyrics-room-primary{position:relative;padding:0 44px 0 18px;text-align:left}
-  body.theme-light .lyrics-room-card.is-active .lyrics-room-primary:not(:disabled)::after{content:'›';position:absolute;right:18px;top:50%;transform:translateY(-52%);color:var(--cyan-ink);font:500 25px/1 Roboto,"Zen Kaku Gothic New",sans-serif}
-  body.theme-light .lyrics-room-card .lyrics-room-primary:active,
-  body.theme-light .lyrics-room-card .lyrics-room-join button:active,
-  body.theme-light .lyrics-room-card.is-active .lyrics-room-subactions button:active{transform:scale(.985);background:linear-gradient(145deg,#fff,rgba(156,236,255,.26))!important}
-  body.theme-light .lyrics-room-card .lyrics-room-primary:disabled{opacity:.48}
-  body.theme-light .lyrics-room-card .lyrics-room-join input{min-height:50px;border:1px solid rgba(21,24,32,.13);border-radius:15px;background:#fff}
 
   /* LYRICS initial skeleton mirrors the real first-view layout; shimmer stays shared in StateUI. */
   .lyrics-view .lyrics-loading.is-page-layout{
