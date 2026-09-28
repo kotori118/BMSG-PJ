@@ -85,6 +85,7 @@
     const previousId = readUniverseUserId();
     if(previousId!==user.id&&typeof currentRoute!=='undefined'&&currentRoute==='lyrics'&&typeof lyricsState!=='undefined'&&lyricsState.song&&typeof confirmDiscardLyricsChanges_==='function'&&!confirmDiscardLyricsChanges_()){syncUserChooser();return;}
     localStorage.setItem('bmsgUniverseUserId', user.id);
+    if(previousId!==user.id&&typeof setKaraokeLatestShortcutState_==='function')setKaraokeLatestShortcutState_(null,[]);
     syncSettingsUserName();
     syncUserChooser();
     closeUserChooser();
