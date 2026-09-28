@@ -217,9 +217,15 @@
     const singers=getUniverseSingerEditorValue(editor),lyrics=lyricsInput.value.trim();
     if(!singers.length||!lyrics){showLyricsError('歌唱者と歌詞を入力してね。');return;}
     const part=ensureLyricsEditDraft_()[lyricsState.editingIndex];if(!part)return;
-    part.singers=singers.map(function(s){const option=lyricsState.singerOptions.find(function(o){return String(o.id)===String(s.id);})||{};const role=String(s.role||'MAIN').toUpperCase();return{id:String(s.id),raw:String(s.id)+(role==='MAIN'?'':'_'+role.toLowerCase()),name:option.name||String(s.id),color:option.color||'#777777',harmony:role==='MAIN'?'':role.toLowerCase(),role:role};});
-    part.singer=part.singers.map(function(s){return s.raw;}).join(',');
-    part.lyrics=lyrics;lyricsState.editDirty=true;closeLyricsEditor();renderLyricsSong();
+    const beforeAssignments=lyricsDraftAssignments_(part).map(function(s){return{id:String(s.id),role:String(s.role||'MAIN').toUpperCase()};});
+    const nextAssignments=singers.map(function(s){return{id:String(s.id),role:String(s.role||'MAIN').toUpperCase()};});
+    const changed=String(part.lyrics||'').trim()!==lyrics||JSON.stringify(beforeAssignments)!==JSON.stringify(nextAssignments);
+    if(changed){
+      part.singers=singers.map(function(s){const option=lyricsState.singerOptions.find(function(o){return String(o.id)===String(s.id);})||{};const role=String(s.role||'MAIN').toUpperCase();return{id:String(s.id),raw:String(s.id)+(role==='MAIN'?'':'_'+role.toLowerCase()),name:option.name||String(s.id),color:option.color||'#777777',harmony:role==='MAIN'?'':role.toLowerCase(),role:role};});
+      part.singer=part.singers.map(function(s){return s.raw;}).join(',');
+      part.lyrics=lyrics;lyricsState.editDirty=true;
+    }
+    closeLyricsEditor();renderLyricsSong();
   }
   function addLyricsPartAt(index){if(lyricsState.editSaving)return;const list=ensureLyricsEditDraft_();list.splice(Math.max(0,Math.min(index,list.length)),0,{partOrder:0,singer:'',singers:[],lyrics:''});lyricsState.editDirty=true;renderLyricsSong();openLyricsEditor(Math.max(0,Math.min(index,list.length-1)));}
   function moveLyricsPart(index,delta){if(lyricsState.editSaving)return;const list=ensureLyricsEditDraft_(),next=index+delta;if(next<0||next>=list.length)return;const item=list.splice(index,1)[0];list.splice(next,0,item);lyricsState.editDirty=true;renderLyricsSong();}
