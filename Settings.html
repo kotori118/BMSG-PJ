@@ -25,7 +25,9 @@
     if (status) { status.textContent = isLyricsEditMode() ? 'ON' : 'OFF'; status.classList.toggle('active', isLyricsEditMode()); }
   }
   function toggleLyricsEditMode() {
-    localStorage.setItem('bmsgLyricsEditMode', isLyricsEditMode() ? 'false' : 'true');
+    const turningOff=isLyricsEditMode();
+    if(turningOff&&typeof lyricsState!=='undefined'&&lyricsState.song&&typeof confirmDiscardLyricsChanges_==='function'&&!confirmDiscardLyricsChanges_()){syncLyricsEditMode();return;}
+    localStorage.setItem('bmsgLyricsEditMode', turningOff ? 'false' : 'true');
     syncLyricsEditMode();
     if (typeof lyricsState !== 'undefined' && lyricsState.song && typeof renderLyricsSong === 'function') renderLyricsSong();
   }
