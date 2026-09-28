@@ -65,6 +65,7 @@
       lyricsState.karaokeRoomUserId='';
       lyricsState.karaokeRoom=null;
       lyricsState.karaokeHistory=[];
+      if(typeof setKaraokeLatestShortcutState_==='function')setKaraokeLatestShortcutState_(null,[]);
       updateLyricsKaraokeRoom();
       return;
     }
@@ -74,6 +75,7 @@
       lyricsState.karaokeRoomReady=false;
       lyricsState.karaokeRoom=null;
       lyricsState.karaokeHistory=[];
+      if(typeof setKaraokeLatestShortcutState_==='function')setKaraokeLatestShortcutState_(null,[]);
       updateLyricsKaraokeRoom();
     }
 
@@ -83,6 +85,7 @@
       lyricsState.karaokeRoomUserId=userId;
       lyricsState.karaokeRoom=data.room||null;
       lyricsState.karaokeHistory=data.history||[];
+      if(typeof setKaraokeLatestShortcutState_==='function')setKaraokeLatestShortcutState_(lyricsState.karaokeRoom,lyricsState.karaokeHistory);
       updateLyricsKaraokeRoom();
     }).withFailureHandler(function(error){
       if(requestId!==lyricsState.karaokeRoomRequestId)return;
@@ -106,6 +109,7 @@
       lyricsState.karaokeBusy=false;
       lyricsState.karaokeRoom=room;
       lyricsState.karaokeHistory=[];
+      if(typeof setKaraokeLatestShortcutState_==='function')setKaraokeLatestShortcutState_(lyricsState.karaokeRoom,lyricsState.karaokeHistory);
       updateLyricsKaraokeRoom();
     }).withFailureHandler(function(error){lyricsState.karaokeBusy=false;showLyricsError(error);}).createKaraokeRoom(userId);
   }
@@ -122,6 +126,7 @@
       lyricsState.karaokeBusy=false;
       lyricsState.karaokeRoom=data.room;
       lyricsState.karaokeHistory=data.history||[];
+      if(typeof setKaraokeLatestShortcutState_==='function')setKaraokeLatestShortcutState_(lyricsState.karaokeRoom,lyricsState.karaokeHistory);
       updateLyricsKaraokeRoom();
     }).withFailureHandler(function(error){lyricsState.karaokeBusy=false;showLyricsError(error);}).joinKaraokeRoom(userId,roomId);
   }
