@@ -72,11 +72,11 @@ function getCardCatalogModel_() {
   if (cached) {
     try { return JSON.parse(cached); } catch (e) {}
   }
-  const core = SpreadsheetApp.openById(UNIVERSE_CONFIG.CORE_DB_ID);
-  const groups = readSheetObjects_(requireUniverseSheet_(core, UNIVERSE_CONFIG.SHEETS.GROUPS));
-  const members = readSheetObjects_(requireUniverseSheet_(core, UNIVERSE_CONFIG.SHEETS.MEMBERS));
-  const memberships = readSheetObjects_(requireUniverseSheet_(core, UNIVERSE_CONFIG.SHEETS.GROUP_MEMBERS));
-  const images = readSheetObjects_(requireUniverseSheet_(core, UNIVERSE_CONFIG.SHEETS.IMAGES));
+  const core = getCoreSpreadsheet_();
+  const groups = readCoreSheetObjectsFromSpreadsheet_(core, UNIVERSE_CONFIG.SHEETS.GROUPS);
+  const members = readCoreSheetObjectsFromSpreadsheet_(core, UNIVERSE_CONFIG.SHEETS.MEMBERS);
+  const memberships = readCoreSheetObjectsFromSpreadsheet_(core, UNIVERSE_CONFIG.SHEETS.GROUP_MEMBERS);
+  const images = readCoreSheetObjectsFromSpreadsheet_(core, UNIVERSE_CONFIG.SHEETS.IMAGES);
   const model = buildCardCatalog_(groups, members, memberships, images);
   const serialized = JSON.stringify(model);
   if (serialized.length < 95000) cache.put(CARD_CATALOG_CACHE_KEY_, serialized, CARD_CACHE_SECONDS_);
