@@ -47,13 +47,6 @@ function getLyricsSingerOptions() {
   return options;
 }
 
-function updateLyricsPart(payload) {
-  payload=payload||{};
-  lyricsRequireUser_(payload.userId);
-  try{return BMSGDB.updateLyricsPartForUniverse(payload);}
-  finally{clearUniverseSongMutationCaches_();}
-}
-
 function saveLyricsSongParts(payload) {
   payload=payload||{};
   lyricsRequireUser_(payload.userId);
