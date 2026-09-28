@@ -238,6 +238,7 @@
       karaokeState.busy=false;
       karaokeState.history=karaokeState.history.filter(function(item){return item.createdAt!==result.createdAt;});
       karaokeState.history.unshift(result);
+      if(currentRoute==='lyrics'&&typeof loadLyricsKaraokeRoom==='function')loadLyricsKaraokeRoom();
     }).withFailureHandler(karaokeFailure).saveKaraokeAssignment(payload);
   }
 
