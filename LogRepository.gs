@@ -7,6 +7,22 @@ function getLogSheet_(name) {
   return sheet;
 }
 
+function readLogSheetDisplayObjects_(name) {
+  const sheet = getLogSheet_(name);
+  const values = sheet.getDataRange().getDisplayValues();
+  if (values.length < 2) return [];
+  const headers = values[0].map(function(value) { return String(value).trim(); });
+  return values.slice(1).filter(function(row) {
+    return row.some(function(value) { return String(value).trim() !== ''; });
+  }).map(function(row) {
+    const object = {};
+    headers.forEach(function(header, index) {
+      if (header) object[header] = row[index];
+    });
+    return object;
+  });
+}
+
 function readSheetObjects_(sheet) {
   const values = sheet.getDataRange().getValues();
   if (values.length < 2) return [];
