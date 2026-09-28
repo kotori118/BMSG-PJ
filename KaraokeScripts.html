@@ -9,9 +9,9 @@
   }
   function syncKaraokeLatestShortcut_(){
     const route=typeof currentRoute!=='undefined'?currentRoute:'';
-    const globalButton=document.getElementById('karaokeLatestShortcut');
+    const karaokeButton=document.getElementById('karaokePageLatestShortcut');
     const lyricsButton=document.getElementById('lyricsLatestShortcut');
-    if(globalButton)globalButton.hidden=!(route==='karaoke'&&karaokeLatestShortcutState.roomId);
+    if(karaokeButton)karaokeButton.hidden=!(route==='karaoke'&&karaokeLatestShortcutState.roomId);
     if(lyricsButton)lyricsButton.hidden=!(route==='lyrics'&&karaokeLatestShortcutState.roomId);
   }
   function openKaraokeLatestShortcut(){
