@@ -68,15 +68,6 @@
       background: var(--star-off-white);
     }
 
-    button {
-      font: inherit;
-    }
-
-    button:focus-visible {
-      outline: 2px solid var(--cyan);
-      outline-offset: 3px;
-    }
-
     .app-shell {
       position: relative;
       isolation: isolate;
@@ -914,7 +905,6 @@
     }
 
     @media (hover: none) and (pointer: coarse) {
-      button,
       [role="button"],
       .category-card,
       .route-card {
@@ -926,7 +916,6 @@
         will-change: transform, filter, opacity;
       }
 
-      button:active,
       [role="button"]:active,
       .category-card:active,
       .route-card:active {
