@@ -84,10 +84,7 @@ function getProfileMapData() {
 }
 
 function buildProfileMapPayload_() {
-  const profiles = readProfileSheetObjects_(
-    UNIVERSE_CONFIG.CORE_DB_ID,
-    UNIVERSE_CONFIG.SHEETS.PROFILES
-  );
+  const profiles = readCoreSheetDisplayObjects_(UNIVERSE_CONFIG.SHEETS.PROFILES);
 
   const members = profiles.map(function(profile) {
     const memberId = asId_(profile.MemberID);
@@ -186,8 +183,8 @@ function getProfileSearchData() {
 }
 
 function buildProfileSearchPayload_() {
-  const profiles = readProfileSheetObjects_(UNIVERSE_CONFIG.CORE_DB_ID, UNIVERSE_CONFIG.SHEETS.PROFILES);
-  const settings = readProfileSheetObjects_(UNIVERSE_CONFIG.LOG_DB_ID, UNIVERSE_CONFIG.SHEETS.PROFILE_SETTINGS)
+  const profiles = readCoreSheetDisplayObjects_(UNIVERSE_CONFIG.SHEETS.PROFILES);
+  const settings = readLogSheetDisplayObjects_(UNIVERSE_CONFIG.SHEETS.PROFILE_SETTINGS)
     .filter(function(setting) {
       return asBoolean_(setting.IsActive) && asBoolean_(setting.IsCompareTarget) && asId_(setting.ProfileID);
     })
@@ -245,14 +242,8 @@ function normalizeProfileSearchValues_(value, isMultiValue) {
 }
 
 function buildProfileMemberDetailPayload_(memberId) {
-  const profiles = readProfileSheetObjects_(
-    UNIVERSE_CONFIG.CORE_DB_ID,
-    UNIVERSE_CONFIG.SHEETS.PROFILES
-  );
-  const settings = readProfileSheetObjects_(
-    UNIVERSE_CONFIG.LOG_DB_ID,
-    UNIVERSE_CONFIG.SHEETS.PROFILE_SETTINGS
-  );
+  const profiles = readCoreSheetDisplayObjects_(UNIVERSE_CONFIG.SHEETS.PROFILES);
+  const settings = readLogSheetDisplayObjects_(UNIVERSE_CONFIG.SHEETS.PROFILE_SETTINGS);
   const profile = profiles.find(function(row) {
     return asId_(row.MemberID) === memberId;
   });
@@ -278,49 +269,6 @@ function buildProfileMemberDetailPayload_(memberId) {
   return { memberId: memberId, fields: fields };
 }
 
-function readProfileSheetObjects_(spreadsheetId, sheetName) {
-  const sheet = SpreadsheetApp.openById(spreadsheetId).getSheetByName(sheetName);
-  if (!sheet) throw new Error('Sheet not found: ' + sheetName);
-
-  const values = sheet.getDataRange().getDisplayValues();
-  if (values.length < 2) return [];
-
-  const headers = values[0].map(function(value) { return String(value).trim(); });
-  return values.slice(1).filter(function(row) {
-    return row.some(function(value) { return String(value).trim() !== ''; });
-  }).map(function(row) {
-    return headers.reduce(function(object, header, index) {
-      if (header) object[header] = row[index];
-      return object;
-    }, {});
-  });
-}
-
-function readProfileCoreSheetObjects_(spreadsheet, sheetName) {
-  const sheet = spreadsheet.getSheetByName(sheetName);
-  if (!sheet) throw new Error('Core DB sheet not found: ' + sheetName);
-
-  const lastRow = sheet.getLastRow();
-  const lastColumn = sheet.getLastColumn();
-  if (lastRow < 2 || lastColumn < 1) return [];
-
-  const values = sheet.getRange(1, 1, lastRow, lastColumn).getValues();
-  const headers = values[0].map(function(header) {
-    return String(header || '').trim();
-  });
-
-  return values.slice(1).filter(function(row) {
-    return row.some(function(value) {
-      return value !== '' && value !== null;
-    });
-  }).map(function(row) {
-    return headers.reduce(function(record, header, index) {
-      if (header) record[header] = row[index];
-      return record;
-    }, {});
-  });
-}
-
 function formatProfileDetailValue_(value, dataType, isMultiValue) {
   const text = String(value == null ? '' : value).trim();
   if (!text) return '—';
@@ -335,11 +283,11 @@ function formatProfileDetailValue_(value, dataType, isMultiValue) {
 }
 
 function buildProfileMembersPayload_() {
-  const spreadsheet = SpreadsheetApp.openById(UNIVERSE_CONFIG.CORE_DB_ID);
-  const groups = readProfileCoreSheetObjects_(spreadsheet, UNIVERSE_CONFIG.SHEETS.GROUPS);
-  const members = readProfileCoreSheetObjects_(spreadsheet, UNIVERSE_CONFIG.SHEETS.MEMBERS);
-  const groupMembers = readProfileCoreSheetObjects_(spreadsheet, UNIVERSE_CONFIG.SHEETS.GROUP_MEMBERS);
-  const images = readProfileCoreSheetObjects_(spreadsheet, UNIVERSE_CONFIG.SHEETS.IMAGES);
+  const spreadsheet = getCoreSpreadsheet_();
+  const groups = readCoreSheetObjectsFromSpreadsheet_(spreadsheet, UNIVERSE_CONFIG.SHEETS.GROUPS);
+  const members = readCoreSheetObjectsFromSpreadsheet_(spreadsheet, UNIVERSE_CONFIG.SHEETS.MEMBERS);
+  const groupMembers = readCoreSheetObjectsFromSpreadsheet_(spreadsheet, UNIVERSE_CONFIG.SHEETS.GROUP_MEMBERS);
+  const images = readCoreSheetObjectsFromSpreadsheet_(spreadsheet, UNIVERSE_CONFIG.SHEETS.IMAGES);
 
   const groupsById = groups.reduce(function(map, group) {
     const groupId = asId_(group.GroupID);
