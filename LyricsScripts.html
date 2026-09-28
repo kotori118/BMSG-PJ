@@ -140,6 +140,7 @@
       lyricsState.karaokeBusy=false;
       lyricsState.karaokeRoom=null;
       lyricsState.karaokeHistory=[];
+      if(typeof setKaraokeLatestShortcutState_==='function')setKaraokeLatestShortcutState_(null,[]);
       updateLyricsKaraokeRoom();
     }).withFailureHandler(function(error){lyricsState.karaokeBusy=false;showLyricsError(error);}).leaveKaraokeRoom(userId);
   }
