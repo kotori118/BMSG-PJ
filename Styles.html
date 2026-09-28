@@ -847,45 +847,6 @@
       bottom: calc(24px + env(safe-area-inset-bottom));
     }
 
-    .universe-toast {
-      min-height: 48px;
-      padding: 0 18px;
-      border: 1px solid rgba(156, 236, 255, .14);
-      border-radius: 999px;
-      color: rgba(247,251,255,.88);
-      background: rgba(7, 13, 22, .94);
-      box-shadow: 0 14px 42px rgba(0,0,0,.24);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: "Zen Kaku Gothic New", sans-serif;
-      font-size: 14px;
-      font-weight: 500;
-      opacity: 0;
-      transform: translateY(10px) scale(.985);
-      animation: toast-in 190ms var(--ease) forwards;
-    }
-
-    .universe-toast.toast-out {
-      animation: toast-out 170ms var(--ease) forwards;
-    }
-
-    @keyframes toast-in {
-      to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-      }
-    }
-
-    @keyframes toast-out {
-      to {
-        opacity: 0;
-        transform: translateY(8px) scale(.99);
-      }
-    }
-
     /* =========================================================
        v1.6 — Background fix only
        ========================================================= */
