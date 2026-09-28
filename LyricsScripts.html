@@ -40,7 +40,7 @@
   function renderLyricsKaraokeRoom(){
     if(!lyricsState.karaokeRoomReady)return '<section class="lyrics-room-card is-loading">'+renderUniverseLoading(false,'#9cecff')+'</section>';
     if(!lyricsState.karaokeRoom){
-      return '<section class="lyrics-room-card"><p>KARAOKE ROOM</p><button class="lyrics-room-primary" type="button" onclick="createLyricsKaraokeRoom()">ルームを作る</button><div class="lyrics-room-join"><input id="lyricsRoomInput" inputmode="numeric" maxlength="4" placeholder="4桁のルームID"><button type="button" onclick="joinLyricsKaraokeRoom()">参加</button></div></section>';
+      return '<section class="lyrics-room-card"><p>カラオケルーム</p><button class="lyrics-room-primary" type="button" onclick="createLyricsKaraokeRoom()">ルームを作る</button><div class="lyrics-room-join"><input id="lyricsRoomInput" inputmode="numeric" maxlength="4" placeholder="4桁のルームID"><button type="button" onclick="joinLyricsKaraokeRoom()">参加</button></div></section>';
     }
     return '<section class="lyrics-room-card is-active"><div class="lyrics-room-id"><span>ROOM ID</span><strong>'+escapeLyrics(lyricsState.karaokeRoom.roomId)+'</strong></div><button class="lyrics-room-primary" type="button" onclick="openLatestLyricsKaraoke()">最新結果を見る</button><div class="lyrics-room-subactions"><button type="button" onclick="navigateTo(\'karaoke\')">履歴</button><button type="button" onclick="leaveLyricsKaraokeRoom()">退出</button></div></section>';
   }
@@ -65,6 +65,7 @@
       lyricsState.karaokeRoomUserId='';
       lyricsState.karaokeRoom=null;
       lyricsState.karaokeHistory=[];
+      if(typeof setKaraokeLatestShortcutState_==='function')setKaraokeLatestShortcutState_(null,[]);
       updateLyricsKaraokeRoom();
       return;
     }
@@ -74,6 +75,7 @@
       lyricsState.karaokeRoomReady=false;
       lyricsState.karaokeRoom=null;
       lyricsState.karaokeHistory=[];
+      if(typeof setKaraokeLatestShortcutState_==='function')setKaraokeLatestShortcutState_(null,[]);
       updateLyricsKaraokeRoom();
     }
 
@@ -83,6 +85,7 @@
       lyricsState.karaokeRoomUserId=userId;
       lyricsState.karaokeRoom=data.room||null;
       lyricsState.karaokeHistory=data.history||[];
+      if(typeof setKaraokeLatestShortcutState_==='function')setKaraokeLatestShortcutState_(lyricsState.karaokeRoom,lyricsState.karaokeHistory);
       updateLyricsKaraokeRoom();
     }).withFailureHandler(function(error){
       if(requestId!==lyricsState.karaokeRoomRequestId)return;
@@ -106,6 +109,7 @@
       lyricsState.karaokeBusy=false;
       lyricsState.karaokeRoom=room;
       lyricsState.karaokeHistory=[];
+      if(typeof setKaraokeLatestShortcutState_==='function')setKaraokeLatestShortcutState_(lyricsState.karaokeRoom,lyricsState.karaokeHistory);
       updateLyricsKaraokeRoom();
     }).withFailureHandler(function(error){lyricsState.karaokeBusy=false;showLyricsError(error);}).createKaraokeRoom(userId);
   }
@@ -122,6 +126,7 @@
       lyricsState.karaokeBusy=false;
       lyricsState.karaokeRoom=data.room;
       lyricsState.karaokeHistory=data.history||[];
+      if(typeof setKaraokeLatestShortcutState_==='function')setKaraokeLatestShortcutState_(lyricsState.karaokeRoom,lyricsState.karaokeHistory);
       updateLyricsKaraokeRoom();
     }).withFailureHandler(function(error){lyricsState.karaokeBusy=false;showLyricsError(error);}).joinKaraokeRoom(userId,roomId);
   }
@@ -135,6 +140,7 @@
       lyricsState.karaokeBusy=false;
       lyricsState.karaokeRoom=null;
       lyricsState.karaokeHistory=[];
+      if(typeof setKaraokeLatestShortcutState_==='function')setKaraokeLatestShortcutState_(null,[]);
       updateLyricsKaraokeRoom();
     }).withFailureHandler(function(error){lyricsState.karaokeBusy=false;showLyricsError(error);}).leaveKaraokeRoom(userId);
   }
@@ -167,17 +173,21 @@
   function openLyricsSong(encoded,pushUrl){const songId=decodeURIComponent(encoded);const meta=lyricsState.catalog.find(function(item){return item.songId===songId;});if(!meta){showLyricsError('曲が見つかりません。');return;}lyricsState.song={songId:songId,title:meta.title,artist:meta.artist,parts:lyricsState.partsBySong[songId]||[]};lyricsState.editDraft=null;lyricsState.editDirty=false;lyricsState.editing=null;lyricsState.editingIndex=-1;if(pushUrl!==false)setLyricsUrl({group:lyricsState.group,unit:lyricsState.unit,song:songId});renderLyricsSong();scrollLyricsTop();}
   function renderLyricsSinger(part){const items=(part.singers&&part.singers.length)?part.singers:[{name:part.singer,color:'#777777',harmony:''}];return items.map(function(singer){const mark=singer.harmony==='up'?' ↑':singer.harmony==='down'?' ↓':singer.harmony==='sub'?' (SUB)':'';return '<span style="color:'+escapeLyrics(singer.color)+'">'+escapeLyrics(singer.name+mark)+'</span>';}).join('<span class="lyrics-singer-separator"> / </span>');}
   function lyricsMicrophoneIcon(){return '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="3" width="8" height="12" rx="4"></rect><path d="M5 11a7 7 0 0 0 14 0M12 18v3M8.5 21h7"></path></svg>';}
-  function lyricsSongActions(){const disabled=lyricsState.editSaving?' disabled':'';return '<div class="lyrics-song-actions"><button class="lyrics-list-back lyrics-group-return" type="button" onclick="returnToLyricsGroupsFromSong()"'+disabled+'>グループ選択に戻る</button><button class="lyrics-karaoke-icon" type="button" aria-label="カラオケ設定" onclick="openKaraokeFromLyrics(\''+lyricArg(lyricsState.song.songId)+'\')"'+disabled+'>'+lyricsMicrophoneIcon()+'<span>KARAOKE</span></button></div>';}
+  function lyricsSongActions(){const disabled=lyricsState.editSaving?' disabled':'';return '<div class="lyrics-song-actions"><button class="lyrics-list-back lyrics-group-return" type="button" onclick="returnToLyricsGroupsFromSong()"'+disabled+'>グループ選択に戻る</button><button class="lyrics-karaoke-icon" type="button" aria-label="カラオケ設定" onclick="openKaraokeFromLyrics(\''+lyricArg(lyricsState.song.songId)+'\')"'+disabled+'>'+lyricsMicrophoneIcon()+'<span>カラオケ</span></button></div>';}
   function cloneLyricsDraftParts_(){return (lyricsState.song&&lyricsState.song.parts||[]).map(function(part){return{partOrder:part.partOrder,singer:part.singer,singers:(part.singers||[]).map(function(s){return{id:s.id||s.raw||'',raw:s.raw||'',name:s.name||'',color:s.color||'#777777',harmony:s.harmony||'',role:s.role||(s.harmony?s.harmony.toUpperCase():'MAIN')};}),lyrics:part.lyrics||''};});}
   function ensureLyricsEditDraft_(){if(!lyricsState.editDraft)lyricsState.editDraft=cloneLyricsDraftParts_();return lyricsState.editDraft;}
   function lyricsEditableParts_(){const editing=typeof isLyricsEditMode==='function'&&isLyricsEditMode();return editing?ensureLyricsEditDraft_():(lyricsState.song&&lyricsState.song.parts||[]);}
   function lyricsInsertButton_(index){return '<button class="u-btn lyrics-part-insert" type="button" onclick="addLyricsPartAt('+index+')" aria-label="ここにパートを追加"'+(lyricsState.editSaving?' disabled':'')+'><span>＋</span><b>パート追加</b></button>';}
   function lyricsEditPartHtml_(part,index){const saving=lyricsState.editSaving;return '<article class="lyrics-part lyrics-edit-part"><div class="lyrics-edit-part-head"><span>PART '+(index+1)+'</span><div><button class="u-btn" type="button" aria-label="上へ移動" onclick="moveLyricsPart('+index+',-1)"'+(saving||index===0?' disabled':'')+'>↑</button><button class="u-btn" type="button" aria-label="下へ移動" onclick="moveLyricsPart('+index+',1)"'+(saving||index===ensureLyricsEditDraft_().length-1?' disabled':'')+'>↓</button><button class="u-btn" type="button" aria-label="削除" onclick="deleteLyricsPart('+index+')"'+(saving?' disabled':'')+'>×</button></div></div><button class="lyrics-edit-part-body" type="button" onclick="openLyricsEditor('+index+')"'+(saving?' disabled':'')+'><div class="lyrics-singer">'+renderLyricsSinger(part)+'</div><p>'+escapeLyrics(part.lyrics||'')+'</p><small>編集</small></button></article>';}
   function renderLyricsSong(){const song=lyricsState.song;const editing=typeof isLyricsEditMode==='function'&&isLyricsEditMode();if(!editing){lyricsState.editDraft=null;lyricsState.editDirty=false;}const parts=lyricsEditableParts_();let partsHtml='';if(editing){partsHtml+=lyricsInsertButton_(0);parts.forEach(function(part,index){partsHtml+=lyricsEditPartHtml_(part,index)+lyricsInsertButton_(index+1);});}else{partsHtml=parts.map(function(part){return '<div class="lyrics-part"><div class="lyrics-singer">'+renderLyricsSinger(part)+'</div><p>'+escapeLyrics(part.lyrics)+'</p></div>';}).join('');}const saveHtml=editing?'<div class="lyrics-edit-save"><button class="u-btn lyrics-edit-save-button" type="button" onclick="saveLyricsSongChanges()"'+(lyricsState.editSaving?' disabled':'')+'>変更を保存</button></div>':'';document.getElementById('lyricsView').innerHTML='<div class="lyrics-song-title"><h2>'+escapeLyrics(song.title)+'</h2></div>'+lyricsSongActions()+'<section class="lyrics-parts '+(editing?'is-editing':'')+'">'+partsHtml+'</section>'+saveHtml+lyricsSongActions();}
+  function lyricsEditSessionActive_(){
+    return typeof isLyricsEditMode==='function'&&isLyricsEditMode()&&!!lyricsState.song;
+  }
   function confirmDiscardLyricsChanges_(){
     if(lyricsState.editSaving){showLyricsError('保存中です');return false;}
-    if(!lyricsState.editDirty)return true;
-    if(!window.confirm('保存していない変更があります。破棄しますか？'))return false;
+    if(!lyricsEditSessionActive_()&&!lyricsState.editDirty)return true;
+    const message=lyricsState.editDirty?'保存していない変更があります。破棄しますか？':'編集内容を破棄して戻りますか？';
+    if(!window.confirm(message))return false;
     lyricsState.editDraft=null;lyricsState.editDirty=false;lyricsState.editing=null;lyricsState.editingIndex=-1;
     const editor=document.getElementById('lyricsEditor');if(editor)editor.hidden=true;
     return true;
@@ -224,5 +234,5 @@
   function scrollLyricsTop(){const scroller=document.querySelector('.page-wrap');if(scroller)scroller.scrollTo({top:0,behavior:'smooth'});}
   function showLyricsError(error){const message=error&&error.message?error.message:String(error);if(typeof showToast==='function')showToast(message);else alert(message);}
   function escapeLyrics(value){const div=document.createElement('div');div.textContent=String(value==null?'':value);return div.innerHTML;}
-  window.addEventListener('beforeunload',function(event){if(typeof currentRoute!=='undefined'&&currentRoute==='lyrics'&&typeof lyricsState!=='undefined'&&(lyricsState.editDirty||lyricsState.editSaving)){event.preventDefault();event.returnValue='';}});
+  window.addEventListener('beforeunload',function(event){if(typeof currentRoute!=='undefined'&&currentRoute==='lyrics'&&typeof lyricsState!=='undefined'&&(lyricsState.editSaving||lyricsState.editDirty||lyricsEditSessionActive_())){event.preventDefault();event.returnValue='';}});
 </script>
