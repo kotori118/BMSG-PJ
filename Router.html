@@ -24,7 +24,21 @@
     document.title=meta.title+' | BMSG UNIVERSE'; scrollAppToTop('smooth'); syncCurrentFavoriteButton();
   }
 
+  function lyricsSaveNavigationLocked_(){
+    return currentRoute==='lyrics'&&typeof lyricsState!=='undefined'&&!!lyricsState.editSaving;
+  }
+
+  function restoreCurrentLyricsHistoryState_(){
+    if(typeof lyricsState==='undefined')return;
+    const state={page:'lyrics'};
+    if(lyricsState.group)state.group=lyricsState.group;
+    if(lyricsState.unit)state.unit=lyricsState.unit;
+    if(lyricsState.song&&lyricsState.song.songId)state.song=lyricsState.song.songId;
+    google.script.history.replace(state,state,'');
+  }
+
   function canNavigateUniverse_(route){
+    if(lyricsSaveNavigationLocked_()){if(typeof showToast==='function')showToast('保存中です');return false;}
     if(currentRoute==='cover'&&typeof coverConfirmExternalNavigation==='function'&&coverConfirmExternalNavigation(route))return false;
     if(currentRoute==='quiz'&&typeof quizCanLeave_==='function'&&!quizCanLeave_())return false;
     if(currentRoute==='metrics'&&route!=='metrics'&&typeof performanceTimerCanLeave_==='function'&&!performanceTimerCanLeave_())return false;
@@ -53,6 +67,6 @@
     renderRoute(page, params || {});
   }
 
-  function initRouter(){google.script.history.setChangeHandler(function(event){const page=event&&event.location&&event.location.parameter&&event.location.parameter.page?event.location.parameter.page:'home';if(currentRoute==='cover'&&coverState&&coverState.dirty){google.script.history.replace({page:'cover'},{page:'cover'},'');if(typeof coverConfirmExternalNavigation==='function')coverConfirmExternalNavigation(page);return;}if(currentRoute==='quiz'&&typeof quizCanLeave_==='function'&&!quizCanLeave_()){const state={page:'quiz'};if(quizState&&quizState.game&&quizState.game.roomId)state.room=quizState.game.roomId;google.script.history.replace(state,state,'');return;}if(currentRoute==='metrics'&&page!=='metrics'&&typeof performanceTimerCanLeave_==='function'&&!performanceTimerCanLeave_()){google.script.history.replace({page:'metrics'},{page:'metrics'},'');return;}renderRoute(page,event.location.parameter||{});});google.script.url.getLocation(function(location){const page=location&&location.parameter&&location.parameter.page?location.parameter.page:'home';const params=location&&location.parameter?location.parameter:{};if(!location.parameter||!location.parameter.page){google.script.history.replace({page:'home'},{page:'home'},'');}renderInitialUniverseRoute_(page,params);});}
+  function initRouter(){google.script.history.setChangeHandler(function(event){const page=event&&event.location&&event.location.parameter&&event.location.parameter.page?event.location.parameter.page:'home';if(lyricsSaveNavigationLocked_()){restoreCurrentLyricsHistoryState_();if(typeof showToast==='function')showToast('保存中です');return;}if(currentRoute==='cover'&&coverState&&coverState.dirty){google.script.history.replace({page:'cover'},{page:'cover'},'');if(typeof coverConfirmExternalNavigation==='function')coverConfirmExternalNavigation(page);return;}if(currentRoute==='quiz'&&typeof quizCanLeave_==='function'&&!quizCanLeave_()){const state={page:'quiz'};if(quizState&&quizState.game&&quizState.game.roomId)state.room=quizState.game.roomId;google.script.history.replace(state,state,'');return;}if(currentRoute==='metrics'&&page!=='metrics'&&typeof performanceTimerCanLeave_==='function'&&!performanceTimerCanLeave_()){google.script.history.replace({page:'metrics'},{page:'metrics'},'');return;}renderRoute(page,event.location.parameter||{});});google.script.url.getLocation(function(location){const page=location&&location.parameter&&location.parameter.page?location.parameter.page:'home';const params=location&&location.parameter?location.parameter:{};if(!location.parameter||!location.parameter.page){google.script.history.replace({page:'home'},{page:'home'},'');}renderInitialUniverseRoute_(page,params);});}
   initRouter();
 </script>
