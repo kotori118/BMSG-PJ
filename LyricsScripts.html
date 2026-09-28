@@ -1,5 +1,5 @@
 <script>
-  const lyricsState={catalog:[],partsBySong:{},groupColors:{},group:'',unit:'',query:'',song:null,editing:null,singerOptions:[],initialParams:{},karaokeRoom:null,karaokeHistory:[],karaokeRoomReady:false,karaokeBusy:false};
+  const lyricsState={catalog:[],partsBySong:{},groupColors:{},group:'',unit:'',query:'',song:null,editing:null,singerOptions:[],initialParams:{},karaokeRoom:null,karaokeHistory:[],karaokeRoomReady:false,karaokeBusy:false,karaokeRoomRequestId:0};
   const LYRICS_GROUPS=['BE:FIRST','MAZZEL','STARGLOW','HANA','BMSG ALLSTARS'];
   const LYRICS_UNITS=['ALL','BMSG ALLSTARS','ShowMinorSavage','BMSG POSSE','BMSG EAST','BMSG WEST','BMSG SKY','BMSG GAIA','BMSG MARINE','BMSG STRIKERS','その他UNIT'];
   function renderLyrics(){return document.getElementById('lyricsPageTemplate').innerHTML.replace('__LYRICS_LOADING__',renderUniverseLoading('LOADING...','#9cecff'));}
@@ -59,6 +59,7 @@
   }
 
   function loadLyricsKaraokeRoom(){
+    const requestId=++lyricsState.karaokeRoomRequestId;
     const userId=requireLyricsUniverseUser();
     if(!userId){
       lyricsState.karaokeRoomReady=true;
@@ -78,12 +79,14 @@
     }
 
     google.script.run.withSuccessHandler(function(data){
+      if(requestId!==lyricsState.karaokeRoomRequestId)return;
       lyricsState.karaokeRoomReady=true;
       lyricsState.karaokeRoomUserId=userId;
       lyricsState.karaokeRoom=data.room||null;
       lyricsState.karaokeHistory=data.history||[];
       updateLyricsKaraokeRoom();
     }).withFailureHandler(function(error){
+      if(requestId!==lyricsState.karaokeRoomRequestId)return;
       if(!canReuse){
         lyricsState.karaokeRoomReady=true;
         lyricsState.karaokeRoomUserId=userId;
