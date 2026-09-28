@@ -125,18 +125,15 @@
   .lyrics-room-join input{width:100%;padding:0 15px;outline:0;font-size:16px;font-weight:400}
   .lyrics-room-subactions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
 
-  .lyrics-song-actions{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin:0 0 34px}
-  .lyrics-song-actions:not(:last-child){display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr);align-items:stretch}
-  .lyrics-song-actions:not(:last-child) .lyrics-karaoke-icon{grid-column:2;width:100%;min-height:46px;margin:0}
-  .lyrics-song-actions:not(:last-child) .lyrics-group-return{grid-column:3;width:100%;min-height:46px;margin:0}
-  .lyrics-song-actions:last-child{display:grid;grid-template-columns:minmax(96px,120px) minmax(0,1fr);gap:10px 12px;align-items:stretch;margin:14px 0 0}
-  .lyrics-song-actions .lyrics-list-back{flex:1 1 150px;margin:0}
-  .lyrics-song-actions:last-child .lyrics-karaoke-icon{grid-column:1/-1;grid-row:1;width:100%;min-height:64px;padding:0 20px;font-size:11px;letter-spacing:.14em}
-  .lyrics-song-actions:last-child .lyrics-group-return{grid-column:2;grid-row:2;width:100%;min-height:44px;padding:0 14px}
-  .lyrics-song-actions:last-child:not(:has(.universe-lyrics-analysis-link)) .lyrics-group-return{grid-column:1/-1}
-  .lyrics-karaoke-icon{display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:46px;padding:0 16px;border:1px solid rgba(21,24,32,.13);border-radius:14px;color:var(--ink);background:#fff;font:600 9px "Exo 2","Zen Kaku Gothic New",sans-serif;letter-spacing:.12em}
-  .lyrics-karaoke-icon svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-  .lyrics-song-actions:last-child .lyrics-karaoke-icon svg{width:22px;height:22px}
+  .lyrics-song-actions{display:grid;grid-template-columns:minmax(0,.72fr) minmax(0,1fr) minmax(0,1.38fr);gap:10px;align-items:stretch;margin:0 0 34px}
+  .lyrics-song-actions.is-bottom{margin:14px 0 0}
+  .lyrics-song-actions .lyrics-list-back,
+  .lyrics-song-actions .lyrics-karaoke-icon,
+  .lyrics-song-actions .lyrics-group-return{box-sizing:border-box;width:100%;min-width:0;min-height:46px;margin:0;padding:0 10px}
+  .lyrics-song-actions .lyrics-list-back,
+  .lyrics-song-actions .lyrics-group-return{border:1px solid rgba(21,24,32,.13);border-radius:14px;color:var(--ink);background:#fff;font:600 10px "Zen Kaku Gothic New",sans-serif;line-height:1.35}
+  .lyrics-karaoke-icon{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid rgba(21,24,32,.13);border-radius:14px;color:var(--ink);background:#fff;font:600 9px "Exo 2","Zen Kaku Gothic New",sans-serif;letter-spacing:.1em}
+  .lyrics-karaoke-icon svg{width:19px;height:19px;flex:0 0 19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 
   .lyrics-room-card.is-active{padding:18px}
   .lyrics-room-card.is-active .lyrics-room-id{margin:0 0 12px;padding:0 0 13px;border-top:0}
