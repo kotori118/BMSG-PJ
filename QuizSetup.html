@@ -1,10 +1,9 @@
 <script>
 (function(){
-  function clearTimer(){if(quizState.v3Timer){clearInterval(quizState.v3Timer);quizState.v3Timer=0;}}
-  function resetRuntime(){clearTimer();quizState.totalAnswerTimeMs=0;quizState.questionStartedAt=0;quizState.timeRecorded=false;}
+  function resetRuntime(){clearQuizQuestionTimer_();quizState.totalAnswerTimeMs=0;quizState.questionStartedAt=0;quizState.timeRecorded=false;}
 
   window.openQuizRoomJoinV3_=function(){
-    clearTimer();quizState.screen='join';const host=quizHost_();if(!host)return;
+    clearQuizQuestionTimer_();quizState.screen='join';const host=quizHost_();if(!host)return;
     host.innerHTML='<section class="quiz-panel quiz-v3-room-join"><p class="quiz-kicker">JOIN ROOM</p><h2 class="quiz-panel-title">ルームに参加する</h2><div class="quiz-v3-room-input-row"><input id="quizRoomInputV3" class="quiz-room-input" inputmode="numeric" maxlength="4" placeholder="0000" aria-label="4桁のルームID"><button class="quiz-action is-primary" onclick="joinQuizRoomV3_()">参加</button></div><div><p class="quiz-setting-title">最新のルーム</p><div id="quizRecentRoomsV3" class="quiz-v3-recent">'+(typeof renderUniverseLoading==='function'?renderUniverseLoading(false,'#9cecff'):'LOADING...')+'</div></div><div class="quiz-actions"><button class="quiz-action" onclick="renderQuizSetup_()">戻る</button></div></section>';
     google.script.run.withSuccessHandler(renderQuizRecentRoomsV3_).withFailureHandler(function(){const el=document.getElementById('quizRecentRoomsV3');if(el)el.innerHTML='<p class="quiz-muted">ルームを読み込めませんでした。</p>';}).getRecentQuizRooms(quizState.userId);
   };
@@ -23,7 +22,7 @@
   };
 
   startQuizClientGame_=function(game){
-    clearTimer();quizState.game=game;quizState.index=0;quizState.stage='ready';quizState.answers=[];quizState.awards=[];quizState.completed=!!game.hasAnswered;resetRuntime();
+    clearQuizQuestionTimer_();quizState.game=game;quizState.index=0;quizState.stage='ready';quizState.answers=[];quizState.awards=[];quizState.completed=!!game.hasAnswered;resetRuntime();
     if(game.hasAnswered){quizState.screen='result';renderQuizResult_(game.scoreboard||[]);return;}
     quizState.screen='ready';renderQuizReadyV3_();
   };
