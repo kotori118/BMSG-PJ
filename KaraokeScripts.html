@@ -1,5 +1,22 @@
 <script>
   const karaokeState={users:[{userId:'U001',displayName:'ももたん'},{userId:'U002',displayName:'みおたん'},{userId:'U003',displayName:'りおたん'}],room:null,history:[],songs:[],partsBySong:{},song:null,assignments:{},screen:'entry',busy:false,roomReady:false,pendingSave:null,resultView:false,backParams:{}};
+  const karaokeLatestShortcutState={roomId:'',hasResult:false};
+
+  function setKaraokeLatestShortcutState_(room,history){
+    karaokeLatestShortcutState.roomId=room&&room.roomId?String(room.roomId):'';
+    karaokeLatestShortcutState.hasResult=Array.isArray(history)&&history.length>0;
+    syncKaraokeLatestShortcut_();
+  }
+  function syncKaraokeLatestShortcut_(){
+    const button=document.getElementById('karaokeLatestShortcut');if(!button)return;
+    const inScope=typeof currentRoute!=='undefined'&&(currentRoute==='lyrics'||currentRoute==='karaoke');
+    button.hidden=!(inScope&&karaokeLatestShortcutState.roomId);
+  }
+  function openKaraokeLatestShortcut(){
+    if(!karaokeLatestShortcutState.roomId)return;
+    if(!karaokeLatestShortcutState.hasResult){if(typeof showToast==='function')showToast('まだ結果がありません');else alert('まだ結果がありません');return;}
+    navigateToWithParams('karaoke',{mode:'latest',room:karaokeLatestShortcutState.roomId});
+  }
 
   function renderKaraoke(){return document.getElementById('karaokePageTemplate').innerHTML;}
 
@@ -40,6 +57,7 @@
       karaokeState.users=data.users&&data.users.length?data.users:karaokeState.users;
       karaokeState.room=data.room||null;
       karaokeState.history=data.history||[];
+      setKaraokeLatestShortcutState_(karaokeState.room,karaokeState.history);
       updateKaraokeRoomCard();
       if(karaokeState.pendingSave&&karaokeState.room){
         const payload=karaokeState.pendingSave;
@@ -51,6 +69,8 @@
     }).withFailureHandler(function(error){
       karaokeState.roomReady=true;
       karaokeState.room=null;
+      karaokeState.history=[];
+      setKaraokeLatestShortcutState_(null,[]);
       updateKaraokeRoomCard();
       karaokeState.pendingSave=null;
       showKaraokeError(error);
@@ -118,7 +138,7 @@
     if(karaokeState.busy)return;
     karaokeState.busy=true;
     google.script.run.withSuccessHandler(function(room){
-      karaokeState.busy=false;karaokeState.room=room;karaokeState.history=[];updateKaraokeRoomCard();
+      karaokeState.busy=false;karaokeState.room=room;karaokeState.history=[];setKaraokeLatestShortcutState_(karaokeState.room,karaokeState.history);updateKaraokeRoomCard();
       if(typeof showToast==='function')showToast('ルーム '+room.roomId+' を作成しました');
     }).withFailureHandler(karaokeFailure).createKaraokeRoom(getUniverseUserId());
   }
@@ -129,13 +149,13 @@
     if(!/^\d{4}$/.test(value)){showKaraokeError('4桁のルームIDを入力してね。');return;}
     karaokeState.busy=true;
     google.script.run.withSuccessHandler(function(data){
-      karaokeState.busy=false;karaokeState.room=data.room;karaokeState.history=data.history||[];updateKaraokeRoomCard();
+      karaokeState.busy=false;karaokeState.room=data.room;karaokeState.history=data.history||[];setKaraokeLatestShortcutState_(karaokeState.room,karaokeState.history);updateKaraokeRoomCard();
       if(typeof showToast==='function')showToast('ルーム '+data.room.roomId+' に参加しました');
     }).withFailureHandler(karaokeFailure).joinKaraokeRoom(getUniverseUserId(),value);
   }
 
   function leaveKaraokeRoomUI(){
-    google.script.run.withSuccessHandler(function(){karaokeState.room=null;karaokeState.history=[];updateKaraokeRoomCard();}).withFailureHandler(showKaraokeError).leaveKaraokeRoom(getUniverseUserId());
+    google.script.run.withSuccessHandler(function(){karaokeState.room=null;karaokeState.history=[];setKaraokeLatestShortcutState_(null,[]);updateKaraokeRoomCard();}).withFailureHandler(showKaraokeError).leaveKaraokeRoom(getUniverseUserId());
   }
 
   function karaokeFailure(error){karaokeState.busy=false;showKaraokeError(error);}
@@ -238,6 +258,7 @@
       karaokeState.busy=false;
       karaokeState.history=karaokeState.history.filter(function(item){return item.createdAt!==result.createdAt;});
       karaokeState.history.unshift(result);
+      setKaraokeLatestShortcutState_(karaokeState.room,karaokeState.history);
       if(currentRoute==='lyrics'&&typeof loadLyricsKaraokeRoom==='function')loadLyricsKaraokeRoom();
     }).withFailureHandler(karaokeFailure).saveKaraokeAssignment(payload);
   }
