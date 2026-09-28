@@ -21,6 +21,7 @@
     else if(route==='cover'){pageContent.innerHTML=renderCover();initCoverPage(routeParams||{});}
     else{pageContent.innerHTML=renderPlaceholder(route);}
     if(typeof initUniverseCrossLinks==='function')initUniverseCrossLinks(route,routeParams||{});
+    if(typeof syncKaraokeLatestShortcut_==='function')syncKaraokeLatestShortcut_();
     document.title=meta.title+' | BMSG UNIVERSE'; scrollAppToTop('smooth'); syncCurrentFavoriteButton();
   }
 
