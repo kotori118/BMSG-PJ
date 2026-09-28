@@ -8,9 +8,11 @@
     syncKaraokeLatestShortcut_();
   }
   function syncKaraokeLatestShortcut_(){
-    const button=document.getElementById('karaokeLatestShortcut');if(!button)return;
-    const inScope=typeof currentRoute!=='undefined'&&(currentRoute==='lyrics'||currentRoute==='karaoke');
-    button.hidden=!(inScope&&karaokeLatestShortcutState.roomId);
+    const route=typeof currentRoute!=='undefined'?currentRoute:'';
+    const globalButton=document.getElementById('karaokeLatestShortcut');
+    const lyricsButton=document.getElementById('lyricsLatestShortcut');
+    if(globalButton)globalButton.hidden=!(route==='karaoke'&&karaokeLatestShortcutState.roomId);
+    if(lyricsButton)lyricsButton.hidden=!(route==='lyrics'&&karaokeLatestShortcutState.roomId);
   }
   function openKaraokeLatestShortcut(){
     if(!karaokeLatestShortcutState.roomId)return;
