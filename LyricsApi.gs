@@ -41,9 +41,9 @@ function getLyricsSong(songId) {
 
 function getLyricsSingerOptions() {
   const options=[];
-  readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.MEMBERS).forEach(function(row){const id=asId_(row.MemberID),name=String(row.DisplayName||'').trim();if(id&&name)options.push({id:id,name:name,type:'MEMBER'});});
-  readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.GUESTS).forEach(function(row){const id=asId_(row.GuestID),name=String(row.DisplayName||'').trim();if(id&&name)options.push({id:id,name:name,type:'GUEST'});});
-  options.push({id:'99',name:'ALL',type:'SPECIAL'},{id:'109',name:'その他',type:'SPECIAL'});
+  readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.MEMBERS).forEach(function(row){const id=asId_(row.MemberID),name=String(row.DisplayName||'').trim(),color=String(row.ColorHex||'#777777');if(id&&name)options.push({id:id,name:name,type:'MEMBER',color:color});});
+  readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.GUESTS).forEach(function(row){const id=asId_(row.GuestID),name=String(row.DisplayName||'').trim();if(id&&name)options.push({id:id,name:name,type:'GUEST',color:'#777777'});});
+  options.push({id:'99',name:'ALL',type:'SPECIAL',color:'#777777'},{id:'109',name:'その他',type:'SPECIAL',color:'#777777'});
   return options;
 }
 
