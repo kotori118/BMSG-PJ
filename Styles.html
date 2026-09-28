@@ -88,70 +88,6 @@
     }
 
     /* =========================================================
-       Cosmic Background
-       HOMEは強め、通常Darkページは控えめ。
-       ========================================================= */
-    .cosmic-bg {
-      position: fixed;
-      inset: 0;
-      z-index: -3;
-      overflow: hidden;
-      pointer-events: none;
-      opacity: .68;
-      transition: opacity var(--normal) var(--ease);
-      background:
-        radial-gradient(circle at 50% -12%, rgba(156, 236, 255, .075), transparent 34%),
-        radial-gradient(circle at 92% 24%, rgba(171, 155, 255, .055), transparent 26%),
-        linear-gradient(180deg, var(--starry-black), var(--starry-black-2) 58%, var(--starry-black));
-    }
-
-    body.is-home .cosmic-bg {
-      opacity: 1;
-      background:
-        radial-gradient(circle at 50% -8%, rgba(156, 236, 255, .14), transparent 37%),
-        radial-gradient(circle at 88% 24%, rgba(171, 155, 255, .07), transparent 29%),
-        radial-gradient(circle at 9% 73%, rgba(156, 236, 255, .045), transparent 28%),
-        linear-gradient(180deg, #04060b, #08101b 58%, #04070d);
-    }
-
-    body.theme-light .cosmic-bg {
-      opacity: 0;
-    }
-
-    .stars,
-    .stars::before,
-    .stars::after {
-      position: absolute;
-      inset: 0;
-      content: "";
-      background-repeat: repeat;
-    }
-
-    .stars {
-      opacity: .32;
-      background-image:
-        radial-gradient(circle, rgba(255,255,255,.74) 0 1px, transparent 1.15px);
-      background-size: 63px 63px;
-      background-position: 8px 14px;
-    }
-
-    .stars::before {
-      opacity: .48;
-      background-image:
-        radial-gradient(circle, rgba(156,236,255,.78) 0 .9px, transparent 1.1px);
-      background-size: 109px 109px;
-      background-position: 48px 32px;
-    }
-
-    .stars::after {
-      opacity: .22;
-      background-image:
-        radial-gradient(circle, rgba(255,255,255,.9) 0 .7px, transparent 1px);
-      background-size: 41px 41px;
-      background-position: 15px 5px;
-    }
-
-    /* =========================================================
        Shell
        ========================================================= */
     .page-wrap {
@@ -503,45 +439,6 @@
     /* =========================================================
        v0.6 VISUAL REFINEMENT
        ========================================================= */
-    .cosmic-bg {
-      background:
-        radial-gradient(ellipse at 18% 8%, rgba(91, 191, 218, .11), transparent 31%),
-        radial-gradient(ellipse at 88% 22%, rgba(117, 102, 196, .055), transparent 28%),
-        radial-gradient(ellipse at 42% 58%, rgba(35, 90, 112, .035), transparent 34%),
-        linear-gradient(180deg, #03070d 0%, #07111c 44%, #040910 100%);
-    }
-
-    body.is-home .cosmic-bg {
-      background:
-        radial-gradient(ellipse at 28% 2%, rgba(112, 221, 242, .14), transparent 31%),
-        radial-gradient(ellipse at 92% 21%, rgba(128, 110, 204, .06), transparent 26%),
-        radial-gradient(ellipse at 14% 66%, rgba(45, 135, 165, .045), transparent 34%),
-        linear-gradient(180deg, #03070c 0%, #08131f 46%, #030810 100%);
-    }
-
-    .stars {
-      opacity: .30;
-      background-image:
-        radial-gradient(circle, rgba(255,255,255,.70) 0 .8px, transparent 1px);
-      background-size: 71px 71px;
-      background-position: 10px 17px;
-    }
-
-    .stars::before {
-      opacity: .44;
-      background-image:
-        radial-gradient(circle, rgba(154,236,255,.80) 0 .75px, transparent 1px);
-      background-size: 119px 119px;
-      background-position: 51px 36px;
-    }
-
-    .stars::after {
-      opacity: .17;
-      background-image:
-        radial-gradient(circle, rgba(255,255,255,.86) 0 .6px, transparent .9px);
-      background-size: 47px 47px;
-      background-position: 19px 7px;
-    }
 
     /* top utility actions */
     .utility-actions {
@@ -854,43 +751,9 @@
     }
 
     .cosmic-bg,
-    body.is-home .cosmic-bg {
-      opacity: 1;
-      background:
-        linear-gradient(
-          180deg,
-          #02060b 0%,
-          #050b13 48%,
-          #02060b 100%
-        );
-    }
 
     .stars,
     .stars::before,
-    .stars::after {
-      background-image: none !important;
-      background: none !important;
-      opacity: 1;
-    }
-
-    .star-field {
-      position: absolute;
-      inset: 0;
-      overflow: hidden;
-    }
-
-    .space-star {
-      position: absolute;
-      width: var(--star-size);
-      height: var(--star-size);
-      border-radius: 50%;
-      background: rgba(230, 244, 249, var(--star-alpha));
-      box-shadow: 0 0 var(--star-glow) rgba(149, 229, 246, .20);
-    }
-
-    .space-star.star-cyan {
-      background: rgba(156, 236, 255, var(--star-alpha));
-    }
 
     body.nav-hidden .bottom-nav {
       display: none;
@@ -1039,58 +902,9 @@
     }
 
     /* =========================================================
-       Inline Skeleton
-       ========================================================= */
-    .skeleton-block {
-      position: relative;
-      overflow: hidden;
-      background: rgba(255,255,255,.045);
-    }
-
-    .skeleton-block::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      transform: translateX(-115%);
-      background:
-        linear-gradient(
-          90deg,
-          transparent 0%,
-          rgba(156,236,255,.025) 38%,
-          rgba(255,255,255,.075) 50%,
-          rgba(156,236,255,.025) 62%,
-          transparent 100%
-        );
-      animation: universe-skeleton 1.6s ease-in-out infinite;
-    }
-
-    @keyframes universe-skeleton {
-      to { transform: translateX(115%); }
-    }
-
-    body.theme-light .skeleton-block {
-      background: rgba(20,25,34,.065);
-    }
-
-    body.theme-light .skeleton-block::after {
-      background:
-        linear-gradient(
-          90deg,
-          transparent 0%,
-          rgba(20,25,34,.015) 38%,
-          rgba(255,255,255,.45) 50%,
-          rgba(20,25,34,.015) 62%,
-          transparent 100%
-        );
-    }
-
-    /* =========================================================
        v1.6 — Background fix only
        ========================================================= */
     .star-field,
-    .space-star {
-      display: none !important;
-    }
 
     @media (prefers-reduced-motion: reduce) {
       .skeleton-block::after {
@@ -1167,7 +981,6 @@
 
     body.theme-light .utility-btn{border-color:rgba(21,24,32,.13);color:var(--ink);background:rgba(255,255,255,.94);box-shadow:none}
     body.theme-light .utility-btn:active{filter:none;background:#f5f7f7}
-    body.theme-light .universe-toast{border-color:rgba(21,24,32,.12);color:var(--ink);background:rgba(255,255,255,.97);box-shadow:0 10px 28px rgba(8,14,22,.12)}
 
     /* Shared SEARCH / SETTINGS authority (absorbed from the former polish layer). */
     :root{--cyan-ink:#2f7382}
