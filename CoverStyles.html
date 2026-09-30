@@ -114,4 +114,32 @@
   /* Confirmation actions use the same substantial tap geometry as the rest of Universe. */
   .cover-dialog-actions .u-btn{min-height:50px!important;padding:0 14px!important;border-radius:16px!important;justify-content:center!important;text-align:center!important}
   .cover-page.is-cover-home .cover-back-btn{display:grid!important}
+
+  /* 2026-09-30: COVER external source + BMSG ALLSTARS selection. */
+  .cover-page .cover-allstar-member-card{display:flex!important;flex-direction:column!important;justify-content:center!important;gap:7px!important}
+  .cover-page .cover-allstar-member-card.is-selected{border-width:2px!important;background:color-mix(in srgb,var(--cover-accent,#9cecff) 8%,#fff)!important}
+  .cover-member-select-state{min-height:14px;font-size:11px;font-weight:700;letter-spacing:.04em;color:rgba(21,24,32,.58)}
+  .cover-choice-next{display:flex;justify-content:center;margin-top:18px}
+  .cover-choice-next .u-btn{width:min(320px,100%)!important;min-height:52px!important;border-radius:18px!important}
+  .cover-external-form{display:grid;gap:16px;max-width:720px;margin:0 auto}
+  .cover-field{display:grid;gap:7px;font-size:12px;font-weight:700;letter-spacing:.04em;color:rgba(21,24,32,.72)}
+  .cover-field input,.cover-field textarea{width:100%;box-sizing:border-box;border:1px solid rgba(21,24,32,.15);border-radius:16px;background:#fff;color:var(--ink,#151820);padding:13px 14px;font:inherit;line-height:1.65;outline:none}
+  .cover-field input{min-height:52px}
+  .cover-field textarea{resize:vertical;min-height:112px;white-space:pre-wrap}
+  .cover-field input:focus,.cover-field textarea:focus{border-color:var(--cyan,#9cecff);box-shadow:0 0 0 3px color-mix(in srgb,var(--cyan,#9cecff) 22%,transparent)}
+  .cover-external-primary{width:min(320px,100%)!important;min-height:52px!important;margin:4px auto 0!important;border-radius:18px!important}
+  .cover-external-summary{display:grid;gap:4px;margin-bottom:16px;padding:14px 16px;border:1px solid rgba(21,24,32,.12);border-radius:16px;background:#fff}
+  .cover-external-summary strong{font-size:17px}
+  .cover-external-summary span{font-size:12px;color:rgba(21,24,32,.58)}
+  .cover-external-preview{display:grid;gap:12px}
+  .cover-external-part{display:grid;gap:12px;padding:15px;border:1px solid rgba(21,24,32,.12);border-radius:18px;background:#fff}
+  .cover-external-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}
+  .cover-external-actions .u-btn{min-height:52px!important;border-radius:18px!important}
+  .cover-page button,.cover-page input,.cover-page select,.cover-page textarea{font-family:inherit!important}
+  @media(max-width:600px){
+    .cover-external-form{max-width:none}
+    .cover-external-part{padding:13px}
+    .cover-external-actions{grid-template-columns:1fr}
+  }
+
 </style>
