@@ -1,8 +1,9 @@
 /** BMSG Universe COVER MAKER */
 const COVER_USERS_ = Object.freeze(['U001','U002','U003']);
 const COVER_SOURCE_ARTISTS_ = Object.freeze(['BE:FIRST','MAZZEL','STARGLOW','HANA','ShowMinorSavage']);
-const COVER_DESTINATION_GROUPS_ = Object.freeze(['BE:FIRST','MAZZEL','STARGLOW','HANA','ShowMinorSavage']);
+const COVER_DESTINATION_GROUPS_ = Object.freeze(['BE:FIRST','MAZZEL','STARGLOW','HANA','ShowMinorSavage','BMSG ALLSTARS']);
 const COVER_ALL_ID_ = '99';
+const COVER_ALLSTARS_GROUP_ID_ = '8';
 
 function getCoverMakerBootstrap(userId) {
   const uid = validateCoverUser_(userId);
@@ -13,6 +14,7 @@ function getCoverMakerBootstrap(userId) {
     users: getCoverUsers_(),
     groups: groups,
     sourceArtists: COVER_SOURCE_ARTISTS_.slice(),
+    allStarMembers: getCoverAllStarMembers_(snapshot),
     projects: listCoverProjects_(snapshot, uid)
   };
 }
@@ -42,7 +44,7 @@ function getCoverEditorData(payload) {
   const group = requireCoverGroup_(snapshot, coverGroupId);
   const song = snapshot.songs.find(function(row){ return asId_(row.SongID) === songId; });
   if (!song || COVER_SOURCE_ARTISTS_.indexOf(String(song.Artist || '').trim()) < 0) throw new Error('原曲が見つかりません。');
-  const members = getCoverGroupMembers_(snapshot, coverGroupId);
+  const members = getCoverDestinationMembers_(snapshot, coverGroupId, payload.allStarMemberIds);
   if (!members.length) throw new Error('カバー担当メンバーが見つかりません。');
   const nameMap = buildCoverSingerNameMap_(snapshot);
   const parts = snapshot.lyrics.filter(function(row){ return asId_(row.SongID) === songId; })
@@ -61,6 +63,8 @@ function getCoverEditorData(payload) {
     currentUserId: userId,
     projectId: '',
     sourceSong: normalizeCoverSong_(song),
+    sourceSnapshot: null,
+    selectedMemberIds: isCoverAllStarsGroup_(coverGroupId) ? members.map(function(member){ return member.memberId; }) : [],
     coverGroup: { groupId: coverGroupId, groupName: String(group.GroupName || ''), color: normalizeHex_(group.ColorHex, '#9cecff') },
     members: [{memberId:COVER_ALL_ID_,name:'ALL',color:'#777777',isAll:true}].concat(members),
     parts: parts,
@@ -76,47 +80,112 @@ function getCoverEditorData(payload) {
   };
 }
 
+
+function getCoverExternalEditorData(payload) {
+  payload = payload || {};
+  const userId = validateCoverUser_(payload.userId);
+  const coverGroupId = asId_(payload.coverGroupId);
+  const snapshot = getCoverCoreSnapshot_();
+  const group = requireCoverGroup_(snapshot, coverGroupId);
+  const members = getCoverDestinationMembers_(snapshot, coverGroupId, payload.allStarMemberIds);
+  if (!members.length) throw new Error('カバー担当メンバーが見つかりません。');
+  const source = normalizeCoverExternalSource_(payload.sourceSnapshot);
+  const song = {Title:source.title, Artist:source.artist};
+  return {
+    currentUserId: userId,
+    projectId: '',
+    sourceSong: {songId:'',title:source.title,artist:source.artist,releaseDate:'',isExternal:true},
+    sourceSnapshot: {
+      isExternal: true,
+      title: source.title,
+      artist: source.artist,
+      parts: source.parts.map(function(part){ return {order:part.order,singerLabel:part.originalSingerLabel,lyrics:part.lyrics}; })
+    },
+    selectedMemberIds: isCoverAllStarsGroup_(coverGroupId) ? members.map(function(member){ return member.memberId; }) : [],
+    coverGroup: { groupId: coverGroupId, groupName: String(group.GroupName || ''), color: normalizeHex_(group.ColorHex, '#9cecff') },
+    members: [{memberId:COVER_ALL_ID_,name:'ALL',color:'#777777',isAll:true}].concat(members),
+    parts: source.parts,
+    assignments: source.parts.map(function(part){ return {order:part.order,memberId:part.originalMemberId}; }),
+    title: buildCoverTitle_(song, group),
+    creatorUserId: userId,
+    creatorDisplayName: coverUserDisplayName_(userId),
+    isCreator: true,
+    isSaved: false,
+    isShared: false,
+    sharedAt: '',
+    isComplete: false
+  };
+}
+
 function getCoverProject(payload) {
   payload = payload || {};
   const uid = validateCoverUser_(payload.userId);
   const projectId = asId_(payload.projectId);
   const snapshot = getCoverCoreSnapshot_();
   const projectSheet = getCoverLogSheet_(UNIVERSE_CONFIG.SHEETS.COVER_PROJECTS);
+  const sourceSheet = getCoverLogSheet_(UNIVERSE_CONFIG.SHEETS.COVER_SOURCE_SNAPSHOTS);
+  const memberSheet = getCoverLogSheet_(UNIVERSE_CONFIG.SHEETS.COVER_PROJECT_MEMBERS);
   const project = readSheetObjects_(projectSheet).find(function(row){ return asId_(row.CoverProjectID) === projectId; });
   const creatorUserId = project ? asId_(project.CreatorUserID) : '';
   const isCreator = creatorUserId === uid;
   const isShared = project ? asCoverBoolean_(project.IsShared) : false;
   if (!project || (!isCreator && !isShared)) throw new Error('カバーが見つかりません。');
-  const group = requireCoverGroup_(snapshot, asId_(project.CoverGroupID));
-  const song = snapshot.songs.find(function(row){ return asId_(row.SongID) === asId_(project.SourceSongID); });
-  if (!song) throw new Error('原曲が見つかりません。');
-  const members = getCoverGroupMembers_(snapshot, asId_(project.CoverGroupID));
-  const nameMap = buildCoverSingerNameMap_(snapshot);
-  const parts = snapshot.lyrics.filter(function(row){ return asId_(row.SongID) === asId_(project.SourceSongID); })
-    .sort(function(a,b){ return Number(a.PartOrder || 0) - Number(b.PartOrder || 0); })
-    .map(function(row){
-      const singer = String(row.Singer || '').trim();
-      return {
-        order: Number(row.PartOrder || 0),
-        lyrics: String(row.Lyrics || ''),
-        originalSinger: singer,
-        originalSingerLabel: formatCoverSingerLabel_(singer, nameMap),
-        originalMemberId: getCoverPrimarySingerId_(singer)
-      };
-    });
+
+  const groupId = asId_(project.CoverGroupID);
+  const group = requireCoverGroup_(snapshot, groupId);
+  const sourceRows = getCoverSourceSnapshotRows_(sourceSheet, projectId);
+  const isExternal = sourceRows.length > 0 || !asId_(project.SourceSongID);
+  let sourceSong;
+  let sourceSnapshot = null;
+  let parts;
+
+  if (isExternal) {
+    const source = coverExternalSourceFromRows_(sourceRows);
+    sourceSong = {songId:'',title:source.title,artist:source.artist,releaseDate:'',isExternal:true};
+    sourceSnapshot = {
+      isExternal:true,
+      title:source.title,
+      artist:source.artist,
+      parts:source.parts.map(function(part){return {order:part.order,singerLabel:part.originalSingerLabel,lyrics:part.lyrics};})
+    };
+    parts = source.parts;
+  } else {
+    const song = snapshot.songs.find(function(row){ return asId_(row.SongID) === asId_(project.SourceSongID); });
+    if (!song) throw new Error('原曲が見つかりません。');
+    sourceSong = normalizeCoverSong_(song);
+    const nameMap = buildCoverSingerNameMap_(snapshot);
+    parts = snapshot.lyrics.filter(function(row){ return asId_(row.SongID) === asId_(project.SourceSongID); })
+      .sort(function(a,b){ return Number(a.PartOrder || 0) - Number(b.PartOrder || 0); })
+      .map(function(row){
+        const singer = String(row.Singer || '').trim();
+        return {
+          order:Number(row.PartOrder || 0),
+          lyrics:String(row.Lyrics || ''),
+          originalSinger:singer,
+          originalSingerLabel:formatCoverSingerLabel_(singer,nameMap),
+          originalMemberId:getCoverPrimarySingerId_(singer)
+        };
+      });
+  }
+
+  const selectedMemberIds = isCoverAllStarsGroup_(groupId) ? getCoverProjectMemberIds_(memberSheet, projectId) : [];
+  const members = getCoverDestinationMembers_(snapshot, groupId, selectedMemberIds);
   const assignments = readSheetObjects_(getCoverLogSheet_(UNIVERSE_CONFIG.SHEETS.COVER_ASSIGNMENTS))
     .filter(function(row){ return asId_(row.CoverProjectID) === projectId; })
     .map(function(row){ return {order:Number(row.Order || 0),memberId:asId_(row.MemberID)}; })
     .sort(function(a,b){ return a.order-b.order; });
+
   return {
     currentUserId: uid,
     projectId: projectId,
-    sourceSong: normalizeCoverSong_(song),
-    coverGroup: { groupId: asId_(group.GroupID), groupName: String(group.GroupName || ''), color: normalizeHex_(group.ColorHex, '#9cecff') },
+    sourceSong: sourceSong,
+    sourceSnapshot: sourceSnapshot,
+    selectedMemberIds: selectedMemberIds,
+    coverGroup: { groupId: groupId, groupName: String(group.GroupName || ''), color: normalizeHex_(group.ColorHex, '#9cecff') },
     members: [{memberId:COVER_ALL_ID_,name:'ALL',color:'#777777',isAll:true}].concat(members),
     parts: parts,
     assignments: assignments,
-    title: String(project.Title || buildCoverTitle_(song, group)),
+    title: String(project.Title || buildCoverTitle_({Title:sourceSong.title,Artist:sourceSong.artist}, group)),
     creatorUserId: creatorUserId,
     creatorDisplayName: coverUserDisplayName_(creatorUserId),
     isCreator: isCreator,
@@ -135,41 +204,77 @@ function saveCoverProject(payload) {
     const snapshot = getCoverCoreSnapshot_();
     const projectSheet = getCoverLogSheet_(UNIVERSE_CONFIG.SHEETS.COVER_PROJECTS);
     const assignmentSheet = getCoverLogSheet_(UNIVERSE_CONFIG.SHEETS.COVER_ASSIGNMENTS);
+    const sourceSheet = getCoverLogSheet_(UNIVERSE_CONFIG.SHEETS.COVER_SOURCE_SNAPSHOTS);
+    const memberSheet = getCoverLogSheet_(UNIVERSE_CONFIG.SHEETS.COVER_PROJECT_MEMBERS);
     const projectIdInput = asId_(payload.projectId);
     const existingRows = readSheetObjectsWithRows_(projectSheet);
     const existing = projectIdInput ? existingRows.find(function(row){ return asId_(row.CoverProjectID) === projectIdInput; }) : null;
     if (projectIdInput && !existing) throw new Error('保存対象のカバーが見つかりません。');
     if (existing && asId_(existing.CreatorUserID) !== uid) throw new Error('このカバーは編集できません。');
 
-    const songId = asId_(existing ? existing.SourceSongID : payload.songId);
     const groupId = asId_(existing ? existing.CoverGroupID : payload.coverGroupId);
-    const song = snapshot.songs.find(function(row){ return asId_(row.SongID) === songId; });
     const group = requireCoverGroup_(snapshot, groupId);
-    if (!song || COVER_SOURCE_ARTISTS_.indexOf(String(song.Artist || '').trim()) < 0) throw new Error('原曲が正しくありません。');
-    const members = getCoverGroupMembers_(snapshot, groupId);
+    const existingSourceRows = existing ? getCoverSourceSnapshotRows_(sourceSheet, projectIdInput) : [];
+    const isExternal = existing
+      ? (existingSourceRows.length > 0 || !asId_(existing.SourceSongID))
+      : Boolean(payload.sourceSnapshot && payload.sourceSnapshot.isExternal);
+
+    let songId = '';
+    let song;
+    let externalSource = null;
+    let parts;
+    if (isExternal) {
+      externalSource = existing ? coverExternalSourceFromRows_(existingSourceRows) : normalizeCoverExternalSource_(payload.sourceSnapshot);
+      song = {Title:externalSource.title,Artist:externalSource.artist};
+      parts = externalSource.parts;
+    } else {
+      songId = asId_(existing ? existing.SourceSongID : payload.songId);
+      song = snapshot.songs.find(function(row){ return asId_(row.SongID) === songId; });
+      if (!song || COVER_SOURCE_ARTISTS_.indexOf(String(song.Artist || '').trim()) < 0) throw new Error('原曲が正しくありません。');
+      parts = snapshot.lyrics.filter(function(row){ return asId_(row.SongID) === songId; });
+    }
+
+    const selectedMemberIds = isCoverAllStarsGroup_(groupId)
+      ? (existing ? getCoverProjectMemberIds_(memberSheet, projectIdInput) : payload.allStarMemberIds)
+      : [];
+    const members = getCoverDestinationMembers_(snapshot, groupId, selectedMemberIds);
     const allowed = {};
     members.forEach(function(member){ allowed[member.memberId] = true; });
     allowed[COVER_ALL_ID_] = true;
 
-    const parts = snapshot.lyrics.filter(function(row){ return asId_(row.SongID) === songId; });
     const validOrders = {};
-    parts.forEach(function(row){ validOrders[String(Number(row.PartOrder || 0))] = true; });
+    const originalsByOrder = {};
+    parts.forEach(function(row){
+      const order = Number(row.order !== undefined ? row.order : row.PartOrder || 0);
+      const original = row.originalMemberId !== undefined
+        ? asId_(row.originalMemberId)
+        : getCoverPrimarySingerId_(String(row.Singer || '').trim());
+      validOrders[String(order)] = true;
+      originalsByOrder[String(order)] = original;
+    });
+
     const submitted = Array.isArray(payload.assignments) ? payload.assignments : [];
     if (submitted.length !== parts.length) throw new Error('歌割りの件数が一致しません。');
     const seenOrders = {};
     const assignments = submitted.map(function(item){
       const order = Number(item && item.order || 0);
+      const key = String(order);
       const memberId = asId_(item && item.memberId);
-      if (!validOrders[String(order)] || seenOrders[String(order)]) throw new Error('歌割りOrderが正しくありません。');
-      seenOrders[String(order)] = true;
+      if (!validOrders[key] || seenOrders[key]) throw new Error('歌割りOrderが正しくありません。');
+      seenOrders[key] = true;
       if (!memberId) throw new Error('未設定のパートがあります。');
-      if (!allowed[memberId]) throw new Error('選択したグループに所属しないメンバーが含まれています。');
+      if (!allowed[memberId] && !(isExternal && memberId === originalsByOrder[key])) {
+        throw new Error('選択したグループに所属しないメンバーが含まれています。');
+      }
       return {order:order,memberId:memberId};
     }).sort(function(a,b){return a.order-b.order;});
 
     const coverParts = parts.map(function(row){
-      const singer = String(row.Singer || '').trim();
-      return {order:Number(row.PartOrder || 0),originalMemberId:getCoverPrimarySingerId_(singer)};
+      const order = Number(row.order !== undefined ? row.order : row.PartOrder || 0);
+      const original = row.originalMemberId !== undefined
+        ? asId_(row.originalMemberId)
+        : getCoverPrimarySingerId_(String(row.Singer || '').trim());
+      return {order:order,originalMemberId:original};
     });
     const incomplete = !isCoverComplete_(assignments, members, coverParts);
     if (incomplete && !payload.confirmIncomplete) {
@@ -179,33 +284,55 @@ function saveCoverProject(payload) {
     const beforeAssignments = existing ? readSheetObjects_(assignmentSheet)
       .filter(function(row){ return asId_(row.CoverProjectID) === projectIdInput; })
       .map(function(row){ return {order:Number(row.Order || 0),memberId:asId_(row.MemberID)}; }) : [];
+    const beforeSourceRows = existing ? getCoverSourceSnapshotRows_(sourceSheet, projectIdInput) : [];
+    const beforeMemberRows = existing ? getCoverProjectMemberRows_(memberSheet, projectIdInput) : [];
     const wasComplete = existing ? isCoverComplete_(beforeAssignments, members, coverParts) : false;
     const nowComplete = isCoverComplete_(assignments, members, coverParts);
     const projectId = existing ? projectIdInput : Utilities.getUuid();
     const title = buildCoverTitle_(song, group);
     const createdAt = existing ? existing.CreatedAt : new Date();
 
+    const sourceRecords = isExternal ? externalSource.parts.map(function(part){
+      return {
+        CoverProjectID:projectId,
+        SourceTitle:externalSource.title,
+        SourceArtist:externalSource.artist,
+        Order:part.order,
+        OriginalSingerKey:part.originalMemberId,
+        OriginalSingerLabel:part.originalSingerLabel,
+        Lyrics:part.lyrics
+      };
+    }) : [];
+    const memberRecords = isCoverAllStarsGroup_(groupId) ? members.map(function(member,index){
+      return {CoverProjectID:projectId,DisplayOrder:index+1,MemberID:member.memberId};
+    }) : [];
+
     const beforeProject = existing ? Object.assign({}, existing) : null;
     let writeStarted = false;
     try {
       writeStarted = true;
       if (!existing) {
-        appendByHeaders_(projectSheet, {CoverProjectID:projectId,CreatorUserID:uid,SourceSongID:songId,CoverGroupID:groupId,Title:title,CreatedAt:createdAt,IsShared:false,SharedAt:''});
+        appendByHeaders_(projectSheet, {CoverProjectID:projectId,CreatorUserID:uid,SourceSongID:isExternal?'':songId,CoverGroupID:groupId,Title:title,CreatedAt:createdAt,IsShared:false,SharedAt:''});
+        sourceRecords.forEach(function(record){ appendByHeaders_(sourceSheet, record); });
+        memberRecords.forEach(function(record){ appendByHeaders_(memberSheet, record); });
       } else {
         updateCoverProjectRow_(projectSheet, projectId, {Title:title});
       }
       deleteCoverAssignments_(assignmentSheet, projectId);
       assignments.forEach(function(item){ appendByHeaders_(assignmentSheet,{CoverProjectID:projectId,Order:item.order,MemberID:item.memberId}); });
       SpreadsheetApp.flush();
-      assertCoverSaved_(projectSheet, assignmentSheet, projectId, uid, songId, groupId, title, assignments);
+      assertCoverSaved_(projectSheet, assignmentSheet, sourceSheet, memberSheet, projectId, uid, isExternal?'':songId, groupId, title, assignments, sourceRecords, memberRecords);
 
       if (nowComplete && !wasComplete) try { appendCoverActivity_(uid, 'CREATE_COVER', projectId); } catch (error) { console.error(error); }
       return {ok:true,projectId:projectId,title:title,isComplete:nowComplete,requiresConfirm:false};
     } catch (error) {
       if (!writeStarted) throw error;
       const rollbackErrors = [];
-      try { restoreCoverSnapshot_(projectSheet, assignmentSheet, projectId, beforeProject, beforeAssignments); }
-      catch (rollbackError) { rollbackErrors.push(rollbackError.message); }
+      try {
+        restoreCoverSnapshot_(projectSheet, assignmentSheet, sourceSheet, memberSheet, projectId, beforeProject, beforeAssignments, beforeSourceRows, beforeMemberRows);
+      } catch (rollbackError) {
+        rollbackErrors.push(rollbackError.message);
+      }
       throw coverRollbackError_(error, rollbackErrors);
     }
   });
@@ -234,6 +361,8 @@ function deleteCoverProject(payload) {
   return withCoverLock_(function(){
     const projectSheet = getCoverLogSheet_(UNIVERSE_CONFIG.SHEETS.COVER_PROJECTS);
     const assignmentSheet = getCoverLogSheet_(UNIVERSE_CONFIG.SHEETS.COVER_ASSIGNMENTS);
+    const sourceSheet = getCoverLogSheet_(UNIVERSE_CONFIG.SHEETS.COVER_SOURCE_SNAPSHOTS);
+    const memberSheet = getCoverLogSheet_(UNIVERSE_CONFIG.SHEETS.COVER_PROJECT_MEMBERS);
     const values = projectSheet.getDataRange().getValues();
     if (values.length < 2) throw new Error('カバーが見つかりません。');
     const headers = values[0].map(String);
@@ -243,26 +372,38 @@ function deleteCoverProject(payload) {
     for (let i=1;i<values.length;i++) {
       if (asId_(values[i][idCol]) === projectId) {
         if (asId_(values[i][creatorCol]) !== uid) throw new Error('このカバーは削除できません。');
-        rowIndex = i + 1; break;
+        rowIndex = i + 1;
+        break;
       }
     }
     if (rowIndex < 0) throw new Error('カバーが見つかりません。');
+
     const beforeProject = readSheetObjectsWithRows_(projectSheet).find(function(row){ return asId_(row.CoverProjectID) === projectId; });
     const beforeAssignments = readSheetObjects_(assignmentSheet).filter(function(row){ return asId_(row.CoverProjectID) === projectId; })
       .map(function(row){ return {order:Number(row.Order || 0),memberId:asId_(row.MemberID)}; });
+    const beforeSourceRows = getCoverSourceSnapshotRows_(sourceSheet, projectId);
+    const beforeMemberRows = getCoverProjectMemberRows_(memberSheet, projectId);
+
     try {
       deleteCoverAssignments_(assignmentSheet, projectId);
+      deleteCoverProjectRows_(sourceSheet, projectId);
+      deleteCoverProjectRows_(memberSheet, projectId);
       projectSheet.deleteRow(rowIndex);
       SpreadsheetApp.flush();
       if (readSheetObjects_(projectSheet).some(function(row){return asId_(row.CoverProjectID)===projectId;}) ||
-          readSheetObjects_(assignmentSheet).some(function(row){return asId_(row.CoverProjectID)===projectId;})) {
+          readSheetObjects_(assignmentSheet).some(function(row){return asId_(row.CoverProjectID)===projectId;}) ||
+          readSheetObjects_(sourceSheet).some(function(row){return asId_(row.CoverProjectID)===projectId;}) ||
+          readSheetObjects_(memberSheet).some(function(row){return asId_(row.CoverProjectID)===projectId;})) {
         throw new Error('カバーの削除後照合に失敗しました。');
       }
       return {ok:true};
     } catch (error) {
       const rollbackErrors = [];
-      try { restoreCoverSnapshot_(projectSheet, assignmentSheet, projectId, beforeProject, beforeAssignments); }
-      catch (rollbackError) { rollbackErrors.push(rollbackError.message); }
+      try {
+        restoreCoverSnapshot_(projectSheet, assignmentSheet, sourceSheet, memberSheet, projectId, beforeProject, beforeAssignments, beforeSourceRows, beforeMemberRows);
+      } catch (rollbackError) {
+        rollbackErrors.push(rollbackError.message);
+      }
       throw coverRollbackError_(error, rollbackErrors);
     }
   });
@@ -316,6 +457,107 @@ function getCoverGroupMembers_(snapshot, groupId) {
       const member = memberMap[asId_(row.MemberID)];
       return member ? {memberId:asId_(member.MemberID),name:String(member.DisplayName || ''),color:normalizeHex_(member.ColorHex,'#777777')} : null;
     }).filter(Boolean);
+}
+
+
+function isCoverAllStarsGroup_(groupId) {
+  return asId_(groupId) === COVER_ALLSTARS_GROUP_ID_;
+}
+
+function getCoverAllStarMembers_(snapshot) {
+  return snapshot.members.slice()
+    .sort(function(a,b){return Number(a.DisplayOrder||999)-Number(b.DisplayOrder||999);})
+    .map(function(member){
+      return {
+        memberId:asId_(member.MemberID),
+        name:String(member.DisplayName||''),
+        color:normalizeHex_(member.ColorHex,'#777777')
+      };
+    })
+    .filter(function(member){return member.memberId && member.name;});
+}
+
+function getCoverDestinationMembers_(snapshot, groupId, selectedIds) {
+  if (!isCoverAllStarsGroup_(groupId)) return getCoverGroupMembers_(snapshot, groupId);
+  const allMembers = getCoverAllStarMembers_(snapshot);
+  const requested = [];
+  const seen = {};
+  (Array.isArray(selectedIds) ? selectedIds : []).forEach(function(value){
+    const id = asId_(value);
+    if (id && !seen[id]) { seen[id] = true; requested.push(id); }
+  });
+  if (!requested.length) throw new Error('BMSG ALLSTARSの参加メンバーを1人以上選択してください。');
+  const available = {};
+  allMembers.forEach(function(member){available[member.memberId]=true;});
+  if (requested.some(function(id){return !available[id];})) throw new Error('BMSG ALLSTARSの参加メンバーが正しくありません。');
+  return allMembers.filter(function(member){return seen[member.memberId];});
+}
+
+function normalizeCoverExternalSource_(source) {
+  source = source || {};
+  const title = String(source.title || '').trim();
+  const artist = String(source.artist || '').trim();
+  if (!title) throw new Error('曲名を入力してください。');
+  if (!artist) throw new Error('原アーティスト名を入力してください。');
+  const inputParts = Array.isArray(source.parts) ? source.parts : [];
+  if (!inputParts.length) throw new Error('歌割りを入力してください。');
+
+  const singerKeyMap = {};
+  let singerKeyIndex = 1;
+  const parts = inputParts.map(function(item,index){
+    const label = String(item && (item.singerLabel !== undefined ? item.singerLabel : item.originalSingerLabel) || '').trim();
+    const lyrics = String(item && item.lyrics || '').trim();
+    if (!label || !lyrics) throw new Error('歌割りの歌唱者または歌詞が空欄です。');
+    if (!singerKeyMap[label]) {
+      singerKeyMap[label] = 'EXT' + String(singerKeyIndex).padStart(3,'0');
+      singerKeyIndex += 1;
+    }
+    const key = singerKeyMap[label];
+    return {
+      order:index+1,
+      lyrics:lyrics,
+      originalSinger:key,
+      originalSingerLabel:label,
+      originalMemberId:key
+    };
+  });
+  return {title:title,artist:artist,parts:parts};
+}
+
+function coverExternalSourceFromRows_(rows) {
+  const sorted = (rows || []).slice().sort(function(a,b){return Number(a.Order||0)-Number(b.Order||0);});
+  if (!sorted.length) throw new Error('外部曲の保存データが見つかりません。');
+  const title = String(sorted[0].SourceTitle || '').trim();
+  const artist = String(sorted[0].SourceArtist || '').trim();
+  const parts = sorted.map(function(row){
+    return {
+      order:Number(row.Order||0),
+      lyrics:String(row.Lyrics||''),
+      originalSinger:asId_(row.OriginalSingerKey),
+      originalSingerLabel:String(row.OriginalSingerLabel||''),
+      originalMemberId:asId_(row.OriginalSingerKey)
+    };
+  });
+  if (!title || !artist || parts.some(function(part){return !part.order || !part.originalMemberId || !part.originalSingerLabel || !part.lyrics;})) {
+    throw new Error('外部曲の保存データが不完全です。');
+  }
+  return {title:title,artist:artist,parts:parts};
+}
+
+function getCoverSourceSnapshotRows_(sheet, projectId) {
+  return readSheetObjects_(sheet)
+    .filter(function(row){return asId_(row.CoverProjectID)===projectId;})
+    .sort(function(a,b){return Number(a.Order||0)-Number(b.Order||0);});
+}
+
+function getCoverProjectMemberRows_(sheet, projectId) {
+  return readSheetObjects_(sheet)
+    .filter(function(row){return asId_(row.CoverProjectID)===projectId;})
+    .sort(function(a,b){return Number(a.DisplayOrder||0)-Number(b.DisplayOrder||0);});
+}
+
+function getCoverProjectMemberIds_(sheet, projectId) {
+  return getCoverProjectMemberRows_(sheet, projectId).map(function(row){return asId_(row.MemberID);}).filter(Boolean);
 }
 
 function buildCoverSingerNameMap_(snapshot) {
@@ -398,27 +640,65 @@ function buildCoverProjectSummaries_(snapshot, predicate) {
   const groupMap = {}; snapshot.groups.forEach(function(row){groupMap[asId_(row.GroupID)] = row;});
   const songMap = {}; snapshot.songs.forEach(function(row){songMap[asId_(row.SongID)] = row;});
   const assignmentsByProject = {};
+  const sourceRowsByProject = {};
+  const memberIdsByProject = {};
+
   readSheetObjects_(getCoverLogSheet_(UNIVERSE_CONFIG.SHEETS.COVER_ASSIGNMENTS)).forEach(function(row){
     const id = asId_(row.CoverProjectID); if(!assignmentsByProject[id])assignmentsByProject[id]=[];
     assignmentsByProject[id].push({order:Number(row.Order||0),memberId:asId_(row.MemberID)});
   });
+  readSheetObjects_(getCoverLogSheet_(UNIVERSE_CONFIG.SHEETS.COVER_SOURCE_SNAPSHOTS)).forEach(function(row){
+    const id = asId_(row.CoverProjectID); if(!sourceRowsByProject[id])sourceRowsByProject[id]=[];
+    sourceRowsByProject[id].push(row);
+  });
+  readSheetObjects_(getCoverLogSheet_(UNIVERSE_CONFIG.SHEETS.COVER_PROJECT_MEMBERS)).forEach(function(row){
+    const id = asId_(row.CoverProjectID); if(!memberIdsByProject[id])memberIdsByProject[id]=[];
+    memberIdsByProject[id].push({displayOrder:Number(row.DisplayOrder||0),memberId:asId_(row.MemberID)});
+  });
+  Object.keys(memberIdsByProject).forEach(function(id){
+    memberIdsByProject[id].sort(function(a,b){return a.displayOrder-b.displayOrder;});
+  });
+
   return readSheetObjects_(getCoverLogSheet_(UNIVERSE_CONFIG.SHEETS.COVER_PROJECTS))
     .filter(predicate)
     .map(function(row){
       const projectId = asId_(row.CoverProjectID);
       const creatorUserId = asId_(row.CreatorUserID);
-      const group = groupMap[asId_(row.CoverGroupID)] || {};
-      const song = songMap[asId_(row.SourceSongID)] || {};
-      const members = getCoverGroupMembers_(snapshot, asId_(row.CoverGroupID));
+      const groupId = asId_(row.CoverGroupID);
+      const group = groupMap[groupId] || {};
+      const externalRows = sourceRowsByProject[projectId] || [];
+      const isExternal = externalRows.length > 0 || !asId_(row.SourceSongID);
+      let sourceTitle = '';
+      let sourceArtist = '';
+      let parts = [];
+      if (isExternal) {
+        const source = coverExternalSourceFromRows_(externalRows);
+        sourceTitle = source.title;
+        sourceArtist = source.artist;
+        parts = source.parts;
+      } else {
+        const song = songMap[asId_(row.SourceSongID)] || {};
+        sourceTitle = String(song.Title || '');
+        sourceArtist = String(song.Artist || '');
+        parts = snapshot.lyrics.filter(function(part){return asId_(part.SongID) === asId_(row.SourceSongID);});
+      }
+      const selectedIds = (memberIdsByProject[projectId] || []).map(function(item){return item.memberId;});
+      const members = getCoverDestinationMembers_(snapshot, groupId, selectedIds);
       return {
-        projectId:projectId,creatorUserId:creatorUserId,creatorDisplayName:coverUserDisplayName_(creatorUserId),sourceSongId:asId_(row.SourceSongID),
-        sourceTitle:String(song.Title || ''),sourceArtist:String(song.Artist || ''),coverGroupId:asId_(row.CoverGroupID),
-        coverGroupName:String(group.GroupName || ''),coverGroupColor:normalizeHex_(group.ColorHex,'#9cecff'),title:String(row.Title || ''),
-        createdAt:toCoverIso_(row.CreatedAt),isShared:asCoverBoolean_(row.IsShared),sharedAt:toCoverIso_(row.SharedAt),isComplete:isCoverComplete_(
-          assignmentsByProject[projectId] || [],
-          members,
-          snapshot.lyrics.filter(function(part){return asId_(part.SongID) === asId_(row.SourceSongID);})
-        )
+        projectId:projectId,
+        creatorUserId:creatorUserId,
+        creatorDisplayName:coverUserDisplayName_(creatorUserId),
+        sourceSongId:isExternal?'':asId_(row.SourceSongID),
+        sourceTitle:sourceTitle,
+        sourceArtist:sourceArtist,
+        coverGroupId:groupId,
+        coverGroupName:String(group.GroupName || ''),
+        coverGroupColor:normalizeHex_(group.ColorHex,'#9cecff'),
+        title:String(row.Title || ''),
+        createdAt:toCoverIso_(row.CreatedAt),
+        isShared:asCoverBoolean_(row.IsShared),
+        sharedAt:toCoverIso_(row.SharedAt),
+        isComplete:isCoverComplete_(assignmentsByProject[projectId] || [], members, parts)
       };
     });
 }
@@ -464,7 +744,7 @@ function deleteCoverProjectRows_(sheet, projectId) {
   for(let r=values.length-1;r>=1;r--) if(asId_(values[r][idCol])===projectId) sheet.deleteRow(r+1);
 }
 
-function assertCoverSaved_(projectSheet, assignmentSheet, projectId, userId, songId, groupId, title, assignments) {
+function assertCoverSaved_(projectSheet, assignmentSheet, sourceSheet, memberSheet, projectId, userId, songId, groupId, title, assignments, sourceRecords, memberRecords) {
   const projects=readSheetObjects_(projectSheet).filter(function(row){return asId_(row.CoverProjectID)===projectId;});
   if(projects.length!==1 || asId_(projects[0].CreatorUserID)!==userId || asId_(projects[0].SourceSongID)!==songId ||
       asId_(projects[0].CoverGroupID)!==groupId || String(projects[0].Title||'')!==title) {
@@ -476,15 +756,37 @@ function assertCoverSaved_(projectSheet, assignmentSheet, projectId, userId, son
   if(actual.length!==expected.length || actual.some(function(value,index){return value!==expected[index];})) {
     throw new Error('カバー担当の保存後照合に失敗しました。');
   }
+
+  const actualSource=getCoverSourceSnapshotRows_(sourceSheet,projectId).map(function(row){
+    return [String(row.SourceTitle||''),String(row.SourceArtist||''),Number(row.Order||0),asId_(row.OriginalSingerKey),String(row.OriginalSingerLabel||''),String(row.Lyrics||'')].join('|');
+  }).sort();
+  const expectedSource=(sourceRecords||[]).map(function(row){
+    return [String(row.SourceTitle||''),String(row.SourceArtist||''),Number(row.Order||0),asId_(row.OriginalSingerKey),String(row.OriginalSingerLabel||''),String(row.Lyrics||'')].join('|');
+  }).sort();
+  if(actualSource.length!==expectedSource.length || actualSource.some(function(value,index){return value!==expectedSource[index];})) {
+    throw new Error('外部曲Snapshotの保存後照合に失敗しました。');
+  }
+
+  const actualMembers=getCoverProjectMemberRows_(memberSheet,projectId)
+    .map(function(row){return Number(row.DisplayOrder||0)+'|'+asId_(row.MemberID);}).sort();
+  const expectedMembers=(memberRecords||[])
+    .map(function(row){return Number(row.DisplayOrder||0)+'|'+asId_(row.MemberID);}).sort();
+  if(actualMembers.length!==expectedMembers.length || actualMembers.some(function(value,index){return value!==expectedMembers[index];})) {
+    throw new Error('BMSG ALLSTARS参加メンバーの保存後照合に失敗しました。');
+  }
 }
 
-function restoreCoverSnapshot_(projectSheet, assignmentSheet, projectId, project, assignments) {
+function restoreCoverSnapshot_(projectSheet, assignmentSheet, sourceSheet, memberSheet, projectId, project, assignments, sourceRows, memberRows) {
   deleteCoverAssignments_(assignmentSheet, projectId);
+  deleteCoverProjectRows_(sourceSheet, projectId);
+  deleteCoverProjectRows_(memberSheet, projectId);
   deleteCoverProjectRows_(projectSheet, projectId);
   if(project) appendByHeaders_(projectSheet, project);
   (assignments||[]).forEach(function(item){
     appendByHeaders_(assignmentSheet,{CoverProjectID:projectId,Order:item.order,MemberID:item.memberId});
   });
+  (sourceRows||[]).forEach(function(row){appendByHeaders_(sourceSheet,row);});
+  (memberRows||[]).forEach(function(row){appendByHeaders_(memberSheet,row);});
   SpreadsheetApp.flush();
 }
 
