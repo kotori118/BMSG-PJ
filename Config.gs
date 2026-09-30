@@ -18,6 +18,7 @@ const UNIVERSE_CONFIG = Object.freeze({
     POKER_VOTES: 'PokerVotes', POKER_HIGHLIGHTS: 'PokerHighlights',
     QUIZ_ROOMS: 'QuizRooms', QUIZ_QUESTIONS: 'QuizQuestions',
     QUIZ_RESULTS: 'QuizRoomResults', QUIZ_SCORES: 'QuizScores',
-    COVER_PROJECTS: 'COVER_Projects', COVER_ASSIGNMENTS: 'COVER_Assignments'
+    COVER_PROJECTS: 'COVER_Projects', COVER_ASSIGNMENTS: 'COVER_Assignments',
+    COVER_SOURCE_SNAPSHOTS: 'COVER_SourceSnapshots', COVER_PROJECT_MEMBERS: 'COVER_ProjectMembers'
   })
 });
