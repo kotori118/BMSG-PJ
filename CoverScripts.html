@@ -238,6 +238,10 @@
     if(resetDraft||!coverState.externalDraft){
       coverState.externalDraft={title:'',artist:'',rawText:''};
       coverState.externalParts=[];
+    }else if((coverState.externalParts||[]).length){
+      coverState.externalDraft.rawText=coverState.externalParts.map(function(part){
+        return String(part.singerLabel||'').trim()+'\n'+String(part.lyrics||'').trim();
+      }).join('\n\n');
     }
     const draft=coverState.externalDraft;
     app.innerHTML='<h2 class="cover-section-title">曲を登録する</h2><div class="cover-external-form">'
