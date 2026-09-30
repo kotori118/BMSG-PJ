@@ -4,7 +4,7 @@
   function renderCover(){const tpl=document.getElementById('coverPageTemplate');return tpl?tpl.innerHTML:'<section class="view cover-page"><div id="coverApp"></div></section>';}
 
   function initCoverPage(){
-    coverState.ready=false;coverState.busy=false;coverState.screen='home';coverState.dirty=false;coverState.editor=null;coverState.libraryProjects=[];coverState.returnScreen='projects';coverState.selectedMemberIds=[];coverState.externalDraft=null;coverState.externalPreview=[];coverState.newEditorOrigin='songs';coverState.allStarMemberIds=[];coverState.externalDraft=null;coverState.externalParts=[];
+    coverState.ready=false;coverState.busy=false;coverState.screen='home';coverState.dirty=false;coverState.editor=null;coverState.libraryProjects=[];coverState.returnScreen='projects';coverState.allStarMemberIds=[];coverState.externalDraft=null;coverState.externalParts=[];
     renderCoverLoading();
     const userId=getUniverseUserId();
     if(!userId){if(typeof openUserChooser==='function')openUserChooser(true);renderCoverMessage('利用ユーザーを選択してください。');return;}
@@ -31,25 +31,33 @@
     const groups=coverState.bootstrap.groups||[];
     coverState.coverGroup=groups.find(function(g){return String(g.groupId)===String(groupId);})||null;
     if(!coverState.coverGroup)return;
-    coverState.selectedMemberIds=[];
+    coverState.artist='';
+    coverState.songs=[];
     coverState.externalDraft=null;
-    coverState.externalPreview=[];
-    if(String(coverState.coverGroup.groupId)==='8'){openCoverAllStarsSelect();return;}
+    coverState.externalParts=[];
+    if(String(coverState.coverGroup.groupId)==='8'||String(coverState.coverGroup.groupName)==='BMSG ALLSTARS'){
+      coverState.allStarMemberIds=[];
+      openCoverAllStarsMemberSelect();
+      return;
+    }
+    coverState.allStarMemberIds=[];
     openCoverArtistSelect();
   }
   function selectCoverArtist(artist){coverState.artist=artist;coverState.screen='songs';renderCoverLoading();google.script.run.withSuccessHandler(function(songs){coverState.songs=songs||[];renderCoverSongs();}).withFailureHandler(showCoverError).getCoverSourceSongs(artist);}
 
   function startCoverEditor(songId){
     if(!coverState.coverGroup)return;
-    coverState.newEditorOrigin='songs';
     renderCoverLoading();
     google.script.run.withSuccessHandler(function(data){
-      coverState.editor=data;coverState.viewMode='cover';coverState.dirty=false;renderCoverEditor();
+      coverState.editor=data;
+      coverState.viewMode='cover';
+      coverState.dirty=false;
+      renderCoverEditor();
     }).withFailureHandler(showCoverError).getCoverEditorData({
       userId:getUniverseUserId(),
       coverGroupId:coverState.coverGroup.groupId,
       songId:songId,
-      selectedMemberIds:coverState.selectedMemberIds
+      allStarMemberIds:coverState.allStarMemberIds
     });
   }
   function openSavedCover(projectId,returnScreen){coverState.returnScreen=returnScreen||coverState.returnScreen||'projects';renderCoverLoading();google.script.run.withSuccessHandler(function(data){coverState.editor=data;coverState.coverGroup=data.coverGroup;coverState.viewMode='cover';coverState.dirty=false;coverState.screen='view';renderCoverEditor();}).withFailureHandler(showCoverError).getCoverProject({userId:getUniverseUserId(),projectId:projectId});}
@@ -77,21 +85,13 @@
     const payload={
       userId:getUniverseUserId(),
       projectId:data.projectId||'',
-      songId:data.sourceSong.songId,
+      songId:data.sourceSong&&data.sourceSong.songId||'',
       coverGroupId:data.coverGroup.groupId,
+      allStarMemberIds:data.selectedMemberIds||coverState.allStarMemberIds||[],
+      sourceSnapshot:data.sourceSnapshot||null,
       assignments:data.assignments,
-      selectedMemberIds:data.selectedMemberIds||coverState.selectedMemberIds||[],
       confirmIncomplete:!!confirmIncomplete
     };
-    if(data.isExternalSource){
-      payload.externalSource={
-        title:data.sourceSong.title,
-        artist:data.sourceSong.artist,
-        parts:(data.parts||[]).map(function(part){
-          return {singer:part.originalSingerLabel||part.originalSinger||'',lyrics:part.lyrics||''};
-        })
-      };
-    }
     google.script.run.withSuccessHandler(function(result){
       coverState.busy=false;
       if(result&&result.requiresConfirm){
@@ -114,10 +114,9 @@
       coverState.songs=[];
       coverState.viewMode='cover';
       coverState.dirty=false;
-      coverState.selectedMemberIds=[];
+      coverState.allStarMemberIds=[];
       coverState.externalDraft=null;
-      coverState.externalPreview=[];
-      coverState.newEditorOrigin='songs';
+      coverState.externalParts=[];
       renderCoverHome();
     }).withFailureHandler(showCoverError).getCoverMakerBootstrap(getUniverseUserId());
   }
@@ -133,17 +132,27 @@
 
   function coverNavigateBack(){if(coverState.screen==='home'){navigateTo('lab');return;}if(coverState.screen==='editor'&&coverState.dirty){openCoverDialog('保存していない変更があります。画面を離れますか？','キャンセル','離れる',function(){coverState.dirty=false;coverReturnFromEditor();});return;}coverReturnFromScreen();}
   function coverReturnFromEditor(){
-    if(coverState.editor&&coverState.editor.isSaved){coverState.screen='view';renderCoverEditor();return;}
-    if(coverState.newEditorOrigin==='externalPreview'){renderCoverExternalPreview();return;}
+    if(coverState.editor&&coverState.editor.isSaved){
+      coverState.screen='view';
+      renderCoverEditor();
+      return;
+    }
+    if(coverState.editor&&coverState.editor.sourceSong&&coverState.editor.sourceSong.isExternal){
+      renderCoverExternalPreview();
+      return;
+    }
     renderCoverSongs();
   }
   function coverReturnFromScreen(){
     if(coverState.screen==='group')return renderCoverHome();
     if(coverState.screen==='allstars')return openCoverGroupSelect();
-    if(coverState.screen==='artist')return String(coverState.coverGroup&&coverState.coverGroup.groupId||'')==='8'?openCoverAllStarsSelect():openCoverGroupSelect();
+    if(coverState.screen==='artist'){
+      if(coverState.coverGroup&&(String(coverState.coverGroup.groupId)==='8'||String(coverState.coverGroup.groupName)==='BMSG ALLSTARS'))return openCoverAllStarsMemberSelect();
+      return openCoverGroupSelect();
+    }
     if(coverState.screen==='songs')return openCoverArtistSelect();
     if(coverState.screen==='external')return openCoverArtistSelect();
-    if(coverState.screen==='externalPreview')return renderCoverExternalForm();
+    if(coverState.screen==='externalPreview')return openCoverExternalSongForm(false);
     if(coverState.screen==='projects'||coverState.screen==='library')return renderCoverHome();
     if(coverState.screen==='view')return coverState.returnScreen==='library'?openCoverLibrary():openCoverProjects();
     if(coverState.screen==='editor')return coverReturnFromEditor();
@@ -158,8 +167,8 @@
   function setCanonicalCoverVisualMode(mode){
     const page=coverCanonicalPage();if(!page)return;
     ['home','group','allstars','artist','songs','external','externalPreview','projects','library','editor'].forEach(function(name){page.classList.toggle('is-cover-'+name,mode===name);});
-    page.classList.toggle('is-cover-choice',mode==='group'||mode==='artist');
-    if(mode==='group'||mode==='artist')decorateCanonicalCoverChoiceCards();
+    page.classList.toggle('is-cover-choice',mode==='group'||mode==='artist'||mode==='allstars');
+    if(mode==='group'||mode==='artist'||mode==='allstars')decorateCanonicalCoverChoiceCards();
   }
   function currentCanonicalCoverUserId(){return typeof getUniverseUserId==='function'?String(getUniverseUserId()||''):'';}
   function ownCanonicalCoverProjects(projects){const uid=currentCanonicalCoverUserId();return (projects||[]).filter(function(project){return String(project&&project.creatorUserId||'')===uid;});}
@@ -176,120 +185,6 @@
     setCanonicalCoverVisualMode('group');
   }
 
-  function openCoverAllStarsSelect(){
-    coverState.screen='allstars';
-    const app=document.getElementById('coverApp');if(!app)return;
-    const members=coverState.bootstrap&&coverState.bootstrap.allStarsMembers||[];
-    const selected={};(coverState.selectedMemberIds||[]).forEach(function(id){selected[String(id)]=true;});
-    const cards=members.map(function(member){
-      const active=!!selected[String(member.memberId)];
-      return '<button type="button" class="u-btn cover-allstars-member '+(active?'is-selected':'')+'" style="--member-color:'+escapeHtml(member.color||'#9cecff')+'" onclick="toggleCoverAllStarsMember(\''+escapeHtml(member.memberId)+'\')"><span class="cover-member-dot"></span><strong>'+escapeHtml(member.name)+'</strong></button>';
-    }).join('');
-    app.innerHTML='<h2 class="cover-section-title">参加メンバー</h2><p class="cover-help">1人以上選択してください。選んだメンバーを全員使う必要はありません。</p><div class="cover-allstars-grid">'+cards+'</div><div class="cover-step-actions"><button type="button" class="u-btn" '+((coverState.selectedMemberIds||[]).length?'':'disabled')+' onclick="confirmCoverAllStarsMembers()">このメンバーで作る</button></div>';
-    setCanonicalCoverVisualMode('allstars');
-  }
-
-  function toggleCoverAllStarsMember(memberId){
-    const id=String(memberId||'');
-    const current=(coverState.selectedMemberIds||[]).slice();
-    const index=current.indexOf(id);
-    if(index>=0)current.splice(index,1);else current.push(id);
-    coverState.selectedMemberIds=current;
-    openCoverAllStarsSelect();
-  }
-
-  function confirmCoverAllStarsMembers(){
-    if(!(coverState.selectedMemberIds||[]).length){if(typeof showToast==='function')showToast('参加メンバーを1人以上選択してください。');return;}
-    openCoverArtistSelect();
-  }
-
-  function openCoverExternalForm(resetDraft){
-    if(resetDraft||!coverState.externalDraft)coverState.externalDraft={title:'',artist:'',text:''};
-    renderCoverExternalForm();
-  }
-
-  function renderCoverExternalForm(){
-    coverState.screen='external';
-    const app=document.getElementById('coverApp');if(!app)return;
-    const draft=coverState.externalDraft||{title:'',artist:'',text:''};
-    app.innerHTML='<h2 class="cover-section-title">曲を登録する</h2><div class="cover-form-stack">'+
-      '<label class="cover-field"><span>曲名</span><input type="text" value="'+escapeHtml(draft.title||'')+'" oninput="updateCoverExternalDraft(\'title\',this.value)"></label>'+
-      '<label class="cover-field"><span>原アーティスト</span><input type="text" value="'+escapeHtml(draft.artist||'')+'" oninput="updateCoverExternalDraft(\'artist\',this.value)"></label>'+
-      '<label class="cover-field"><span>歌割り</span><textarea rows="14" oninput="updateCoverExternalDraft(\'text\',this.value)" placeholder="ソウマ&#10;こんにちは&#10;&#10;レン&#10;こんばんは">'+escapeHtml(draft.text||'')+'</textarea></label>'+
-      '<p class="cover-help">空行ごとにパートを区切り、各ブロックの1行目を歌唱者、2行目以降を歌詞として自動判定します。</p>'+
-      '<button type="button" class="u-btn cover-primary-action" onclick="previewCoverExternal()">歌割りを確認</button></div>';
-    setCanonicalCoverVisualMode('external');
-  }
-
-  function updateCoverExternalDraft(field,value){
-    if(!coverState.externalDraft)coverState.externalDraft={title:'',artist:'',text:''};
-    coverState.externalDraft[field]=value;
-  }
-
-  function parseCoverExternalText(raw){
-    const text=String(raw||'').replace(/\r\n?/g,'\n').trim();
-    if(!text)return [];
-    return text.split(/\n\s*\n+/).map(function(block,index){
-      const lines=block.split('\n');
-      const singer=String(lines.shift()||'').trim();
-      const lyrics=lines.join('\n').trim();
-      return {order:index+1,singer:singer,lyrics:lyrics,valid:!!singer&&!!lyrics};
-    });
-  }
-
-  function previewCoverExternal(){
-    const draft=coverState.externalDraft||{};
-    if(!String(draft.title||'').trim()){if(typeof showToast==='function')showToast('曲名を入力してください。');return;}
-    if(!String(draft.artist||'').trim()){if(typeof showToast==='function')showToast('原アーティスト名を入力してください。');return;}
-    const parts=parseCoverExternalText(draft.text);
-    if(!parts.length){if(typeof showToast==='function')showToast('歌割りを入力してください。');return;}
-    coverState.externalPreview=parts;
-    renderCoverExternalPreview();
-  }
-
-  function renderCoverExternalPreview(){
-    coverState.screen='externalPreview';
-    const app=document.getElementById('coverApp');if(!app)return;
-    const parts=coverState.externalPreview||[];
-    const invalid=parts.some(function(part){return !String(part.singer||'').trim()||!String(part.lyrics||'').trim();});
-    const rows=parts.map(function(part,index){
-      return '<div class="cover-preview-part '+(part.valid===false?'has-error':'')+'"><div class="cover-preview-no">PART '+(index+1)+'</div>'+
-        '<label class="cover-field"><span>歌唱者</span><input type="text" value="'+escapeHtml(part.singer||'')+'" oninput="updateCoverExternalPreview('+index+',\'singer\',this.value)"></label>'+
-        '<label class="cover-field"><span>歌詞</span><textarea rows="4" oninput="updateCoverExternalPreview('+index+',\'lyrics\',this.value)">'+escapeHtml(part.lyrics||'')+'</textarea></label></div>';
-    }).join('');
-    app.innerHTML='<h2 class="cover-section-title">歌割りプレビュー</h2><div class="cover-song-context">'+escapeHtml((coverState.externalDraft&&coverState.externalDraft.artist)||'')+' / '+escapeHtml((coverState.externalDraft&&coverState.externalDraft.title)||'')+'</div>'+
-      (invalid?'<div class="cover-form-error">歌唱者または歌詞が空のパートを修正してください。</div>':'')+
-      '<div class="cover-preview-list">'+rows+'</div><div class="cover-step-actions"><button type="button" class="u-btn" onclick="startExternalCoverEditor()">COVER EDITORへ進む</button></div>';
-    setCanonicalCoverVisualMode('externalPreview');
-  }
-
-  function updateCoverExternalPreview(index,field,value){
-    const part=coverState.externalPreview&&coverState.externalPreview[index];if(!part)return;
-    part[field]=value;part.valid=!!String(part.singer||'').trim()&&!!String(part.lyrics||'').trim();
-  }
-
-  function startExternalCoverEditor(){
-    const draft=coverState.externalDraft||{};
-    const parts=(coverState.externalPreview||[]).map(function(part,index){
-      return {order:index+1,singer:String(part.singer||'').trim(),lyrics:String(part.lyrics||'').trim()};
-    });
-    if(!parts.length||parts.some(function(part){return !part.singer||!part.lyrics;})){
-      if(typeof showToast==='function')showToast('歌割りプレビューを修正してください。');renderCoverExternalPreview();return;
-    }
-    coverState.newEditorOrigin='externalPreview';
-    renderCoverLoading();
-    google.script.run.withSuccessHandler(function(data){
-      coverState.editor=data;coverState.viewMode='cover';coverState.dirty=false;renderCoverEditor();
-    }).withFailureHandler(showCoverError).getCoverExternalEditorData({
-      userId:getUniverseUserId(),
-      coverGroupId:coverState.coverGroup&&coverState.coverGroup.groupId,
-      selectedMemberIds:coverState.selectedMemberIds,
-      title:String(draft.title||'').trim(),
-      artist:String(draft.artist||'').trim(),
-      parts:parts
-    });
-  }
-
   function openCoverArtistSelect(){
     coverState.screen='artist';
     const app=document.getElementById('coverApp');
@@ -297,7 +192,7 @@
     const artistCards=artists.map(function(a){
       return '<button type="button" class="u-btn cover-content-card" style="--cover-accent:#9cecff" onclick="selectCoverArtist(\''+escapeHtml(a).replaceAll("'","&#039;")+'\')"><strong>'+escapeHtml(a)+'</strong></button>';
     }).join('');
-    const registerCard='<button type="button" class="u-btn cover-content-card" style="--cover-accent:#9cecff" onclick="openCoverExternalForm(true)"><strong>曲を登録する</strong></button>';
+    const registerCard='<button type="button" class="u-btn cover-content-card cover-register-song-card" style="--cover-accent:#9cecff" onclick="openCoverExternalSongForm(true)"><strong>曲を登録する</strong></button>';
     app.innerHTML='<h2 class="cover-section-title">カバーする原曲</h2><div class="cover-stack cover-choice-stack">'+artistCards+registerCard+'</div>';
     setCanonicalCoverVisualMode('artist');
   }
