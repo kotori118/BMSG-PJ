@@ -44,11 +44,17 @@ test('cover save shows progress and batches spreadsheet row writes', () => {
   const styles = fs.readFileSync(path.join(root, 'CoverStyles.html'), 'utf8');
   const server = fs.readFileSync(path.join(root, 'CoverApi.gs'), 'utf8');
 
-  assert.match(client, /setCoverSavingState\(true,'保存しています…'/);
+  assert.match(client, /setCoverSavingState\(true\)/);
   assert.match(client, /id="coverSaving"/);
-  assert.match(client, /renderUniverseLoading\(label\|\|'保存しています…','#9cecff'\)/);
+  assert.match(client, /renderUniverseLoading\('LOADING\.\.\.','#9cecff'\)/);
+  assert.doesNotMatch(client, /class="cover-dialog cover-saving"/);
+  assert.doesNotMatch(client, /function refreshCoverHomeAfterSave/);
+  assert.match(client, /function finishCoverSave\(project\)/);
   assert.doesNotMatch(styles, /cover-saving-spinner|@keyframes cover-saving-spin/);
+  assert.match(styles, /\.cover-saving\[hidden\]\{display:none!important\}/);
   assert.match(server, /function appendCoverRecordsByHeaders_/);
   assert.doesNotMatch(server, /assignments\.forEach\(function\(item\)\{ appendByHeaders_/);
   assert.doesNotMatch(server, /sheet\.deleteRow\(/);
+  assert.match(server, /!allowed\[memberId\] && memberId !== originalsByOrder\[key\]/);
+  assert.match(server, /function readCoverWrittenRecords_/);
 });

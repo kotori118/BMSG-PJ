@@ -63,20 +63,31 @@
   function openSavedCover(projectId,returnScreen){coverState.returnScreen=returnScreen||coverState.returnScreen||'projects';renderCoverLoading();google.script.run.withSuccessHandler(function(data){coverState.editor=data;coverState.coverGroup=data.coverGroup;coverState.viewMode='cover';coverState.dirty=false;coverState.screen='view';renderCoverEditor();}).withFailureHandler(showCoverError).getCoverProject({userId:getUniverseUserId(),projectId:projectId});}
   function editSavedCover(){if(!coverState.editor||!coverState.editor.isCreator)return;coverState.screen='editor';coverState.dirty=false;renderCoverEditor();}
 
-  function coverSavingIndicatorMarkup(label){return typeof renderUniverseLoading==='function'?renderUniverseLoading(label||'保存しています…','#9cecff'):'<div class="universe-loading" role="status" aria-live="polite"><span>'+escapeHtml(label||'保存しています…')+'</span></div>';}
-  function coverOverlayMarkup(){return '<div id="coverSheet" class="cover-sheet" hidden onclick="closeCoverSheetOnBackdrop(event)"><div id="coverSheetPanel" class="cover-sheet-panel"></div></div><div id="coverDialog" class="cover-dialog" hidden onclick="closeCoverDialogOnBackdrop(event)"><div class="cover-dialog-panel"><p id="coverDialogMessage" class="cover-dialog-message"></p><div class="cover-dialog-actions"><button id="coverDialogCancel" type="button" class="u-btn" onclick="closeCoverDialog()">キャンセル</button><button id="coverDialogConfirm" type="button" class="u-btn" onclick="confirmCoverDialog()">OK</button></div></div></div><div id="coverSaving" class="cover-dialog cover-saving" hidden aria-busy="true"><div class="cover-dialog-panel cover-saving-panel"><div id="coverSavingIndicator">'+coverSavingIndicatorMarkup('保存しています…')+'</div><span id="coverSavingDetail">歌割りを安全に記録しています。</span></div></div>';}
-  function setCoverSavingState(isSaving,title,detail){
+  function coverSavingIndicatorMarkup(){return typeof renderUniverseLoading==='function'?renderUniverseLoading('LOADING...','#9cecff'):'<div class="universe-loading" role="status" aria-live="polite"><span>LOADING...</span></div>';}
+  function coverOverlayMarkup(){return '<div id="coverSheet" class="cover-sheet" hidden onclick="closeCoverSheetOnBackdrop(event)"><div id="coverSheetPanel" class="cover-sheet-panel"></div></div><div id="coverDialog" class="cover-dialog" hidden onclick="closeCoverDialogOnBackdrop(event)"><div class="cover-dialog-panel"><p id="coverDialogMessage" class="cover-dialog-message"></p><div class="cover-dialog-actions"><button id="coverDialogCancel" type="button" class="u-btn" onclick="closeCoverDialog()">キャンセル</button><button id="coverDialogConfirm" type="button" class="u-btn" onclick="confirmCoverDialog()">OK</button></div></div></div><div id="coverSaving" class="cover-saving" hidden aria-busy="true">'+coverSavingIndicatorMarkup()+'</div>';}
+  function setCoverSavingState(isSaving){
     const overlay=document.getElementById('coverSaving'),button=document.querySelector('.cover-save-button');
     if(button){button.disabled=!!isSaving;button.textContent=isSaving?'保存中…':'保存';}
     if(!overlay)return;
-    const indicator=document.getElementById('coverSavingIndicator'),detailNode=document.getElementById('coverSavingDetail');
-    if(indicator)indicator.innerHTML=coverSavingIndicatorMarkup(title||'保存しています…');
-    if(detailNode)detailNode.textContent=detail||'歌割りを安全に記録しています。';
     overlay.hidden=!isSaving;
   }
   function setCoverViewMode(mode){coverState.viewMode=mode==='original'?'original':'cover';renderCoverEditor();}
   function coverAssignmentMap(){const map={};(coverState.editor&&coverState.editor.assignments||[]).forEach(function(a){map[String(a.order)]=String(a.memberId||'');});return map;}
   function coverMemberMap(){const map={};(coverState.editor&&coverState.editor.members||[]).forEach(function(m){map[String(m.memberId)]=m;});return map;}
+  function isCurrentCoverComplete(){
+    const data=coverState.editor||{},parts=data.parts||[],assignments=data.assignments||[];
+    if(!parts.length||assignments.length!==parts.length)return false;
+    const allowed={99:true},originals={},seen={};
+    (data.members||[]).forEach(function(member){allowed[String(member.memberId||'')]=true;});
+    parts.forEach(function(part){originals[String(Number(part.order||0))]=String(part.originalMemberId||'');});
+    return assignments.every(function(item){
+      const order=String(Number(item&&item.order||0)),memberId=String(item&&item.memberId||'');
+      if(!Object.prototype.hasOwnProperty.call(originals,order)||seen[order]||!allowed[memberId])return false;
+      seen[order]=true;
+      const originalId=originals[order];
+      return memberId==='99'||originalId==='99'||!originalId||memberId!==originalId;
+    });
+  }
   function coverOriginalSingerNameMap(){const map={};(coverState.editor&&coverState.editor.parts||[]).forEach(function(part){const ids=String(part.originalSinger||'').split(',');const labels=String(part.originalSingerLabel||'').split(' / ');ids.forEach(function(token,index){const id=String(token||'').trim().replace(/_(up|down|sub)$/i,'');const label=String(labels[index]||'').trim().replace(/\s(?:↑|↓|SUB)$/i,'');if(id&&label&&!map[id])map[id]=label;});});return map;}
 
   function openCoverMemberSheet(order){if(coverState.screen!=='editor')return;coverState.memberSheetOrder=Number(order);const panel=document.getElementById('coverSheetPanel'),sheet=document.getElementById('coverSheet');if(!panel||!sheet)return;panel.innerHTML='<h3 class="cover-sheet-title">担当MEMBER</h3><div class="cover-member-list">'+(coverState.editor.members||[]).map(function(m){return '<button type="button" class="u-btn cover-member-option" style="--member-color:'+escapeHtml(m.color)+'" onclick="setCoverMember(\''+escapeHtml(m.memberId)+'\')">'+escapeHtml(m.name)+'</button>';}).join('')+'</div>';sheet.hidden=false;document.body.style.overflow='hidden';}
@@ -90,8 +101,12 @@
 
   function saveCurrentCover(confirmIncomplete){
     if(coverState.busy||!coverState.editor||!coverState.editor.isCreator)return;
+    if(!confirmIncomplete&&!isCurrentCoverComplete()){
+      openCoverDialog('原曲担当のまま残っているパートがあります。','編集に戻る','このまま保存',function(){saveCurrentCover(true);});
+      return;
+    }
     coverState.busy=true;
-    setCoverSavingState(true,'保存しています…','歌割りを安全に記録しています。');
+    setCoverSavingState(true);
     const data=coverState.editor;
     const payload={
       userId:getUniverseUserId(),
@@ -112,29 +127,27 @@
       }
       if(result&&result.ok){
         coverState.dirty=false;
-        setCoverSavingState(true,'保存しました','画面を更新しています…');
-        refreshCoverHomeAfterSave();
+        finishCoverSave(result.project);
         return;
       }
       showCoverError(new Error('保存結果を確認できませんでした。'));
     }).withFailureHandler(showCoverError).saveCoverProject(payload);
   }
-  function refreshCoverHomeAfterSave(){
-    google.script.run.withSuccessHandler(function(data){
-      coverState.busy=false;
-      coverState.bootstrap=data||coverState.bootstrap;
-      coverState.editor=null;
-      coverState.coverGroup=null;
-      coverState.artist='';
-      coverState.songs=[];
-      coverState.viewMode='cover';
-      coverState.dirty=false;
-      coverState.allStarMemberIds=[];
-      coverState.externalDraft=null;
-      coverState.externalParts=[];
-      renderCoverHome();
-      if(typeof showToast==='function')showToast('保存しました');
-    }).withFailureHandler(showCoverError).getCoverMakerBootstrap(getUniverseUserId());
+  function finishCoverSave(project){
+    const bootstrap=coverState.bootstrap||(coverState.bootstrap={}),projects=bootstrap.projects||(bootstrap.projects=[]);
+    if(project){const index=projects.findIndex(function(item){return String(item.projectId||'')===String(project.projectId||'');});if(index>=0)projects[index]=project;else projects.unshift(project);}
+    coverState.busy=false;
+    coverState.editor=null;
+    coverState.coverGroup=null;
+    coverState.artist='';
+    coverState.songs=[];
+    coverState.viewMode='cover';
+    coverState.dirty=false;
+    coverState.allStarMemberIds=[];
+    coverState.externalDraft=null;
+    coverState.externalParts=[];
+    renderCoverHome();
+    if(typeof showToast==='function')showToast('保存しました');
   }
 
   function setCurrentCoverSharing(isShared){if(coverState.busy||!coverState.editor||!coverState.editor.isCreator||!coverState.editor.isSaved)return;coverState.busy=true;google.script.run.withSuccessHandler(function(result){coverState.busy=false;if(!result||!result.ok)return;coverState.editor.isShared=!!result.isShared;coverState.editor.sharedAt=result.sharedAt||'';if(typeof showToast==='function')showToast(result.isShared?'共有しました':'共有を解除しました');renderCoverEditor();}).withFailureHandler(showCoverError).setCoverProjectShared({userId:getUniverseUserId(),projectId:coverState.editor.projectId,isShared:!!isShared});}

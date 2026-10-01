@@ -45,10 +45,8 @@
   .cover-dialog-panel{width:min(430px,100%);background:#fff;border:1px solid rgba(21,24,32,.12);border-radius:18px;padding:20px;box-shadow:0 20px 60px rgba(8,12,18,.16)}
   .cover-dialog-message{margin:0 0 18px;line-height:1.7;font-size:14px}
   .cover-dialog-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-  .cover-saving{z-index:120}
-  .cover-saving-panel{display:grid;justify-items:center;gap:10px;text-align:center}
-  .cover-saving-panel .universe-loading{min-height:34px}
-  .cover-saving-panel>span{font-size:12px;line-height:1.6;color:rgba(21,24,32,.62)}
+  .cover-saving{position:fixed;inset:0;z-index:120;display:grid;place-items:center;background:#fff}
+  .cover-saving[hidden]{display:none!important}
   .cover-ratio-list{display:grid;gap:12px}
   .cover-ratio-row{display:grid;grid-template-columns:minmax(76px,1fr) 2fr auto;gap:10px;align-items:center;font-size:13px}
   .cover-ratio-track{height:7px;border-radius:999px;background:rgba(21,24,32,.08);overflow:hidden}

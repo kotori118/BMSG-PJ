@@ -233,8 +233,9 @@ function saveCoverProject(payload) {
       parts = snapshot.lyrics.filter(function(row){ return asId_(row.SongID) === songId; });
     }
 
+    const existingMemberRows = existing && isCoverAllStarsGroup_(groupId) ? getCoverProjectMemberRows_(memberSheet, projectIdInput) : [];
     const selectedMemberIds = isCoverAllStarsGroup_(groupId)
-      ? (existing ? getCoverProjectMemberIds_(memberSheet, projectIdInput) : payload.allStarMemberIds)
+      ? (existing ? existingMemberRows.map(function(row){return asId_(row.MemberID);}).filter(Boolean) : payload.allStarMemberIds)
       : [];
     const members = getCoverDestinationMembers_(snapshot, groupId, selectedMemberIds);
     const allowed = {};
@@ -262,7 +263,7 @@ function saveCoverProject(payload) {
       if (!validOrders[key] || seenOrders[key]) throw new Error('歌割りOrderが正しくありません。');
       seenOrders[key] = true;
       if (!memberId) throw new Error('未設定のパートがあります。');
-      if (!allowed[memberId] && !(isExternal && memberId === originalsByOrder[key])) {
+      if (!allowed[memberId] && memberId !== originalsByOrder[key]) {
         throw new Error('選択したグループに所属しないメンバーが含まれています。');
       }
       return {order:order,memberId:memberId};
@@ -283,8 +284,8 @@ function saveCoverProject(payload) {
     const beforeAssignments = existing ? readSheetObjects_(assignmentSheet)
       .filter(function(row){ return asId_(row.CoverProjectID) === projectIdInput; })
       .map(function(row){ return {order:Number(row.Order || 0),memberId:asId_(row.MemberID)}; }) : [];
-    const beforeSourceRows = existing ? getCoverSourceSnapshotRows_(sourceSheet, projectIdInput) : [];
-    const beforeMemberRows = existing ? getCoverProjectMemberRows_(memberSheet, projectIdInput) : [];
+    const beforeSourceRows = existingSourceRows;
+    const beforeMemberRows = existingMemberRows;
     const wasComplete = existing ? isCoverComplete_(beforeAssignments, members, coverParts) : false;
     const nowComplete = isCoverComplete_(assignments, members, coverParts);
     const projectId = existing ? projectIdInput : Utilities.getUuid();
@@ -310,22 +311,31 @@ function saveCoverProject(payload) {
     let writeStarted = false;
     try {
       writeStarted = true;
+      let projectRowNumber;
+      let sourceWrite = null;
+      let memberWrite = null;
       if (!existing) {
-        appendByHeaders_(projectSheet, {CoverProjectID:projectId,CreatorUserID:uid,SourceSongID:isExternal?'':songId,CoverGroupID:groupId,Title:title,CreatedAt:createdAt,IsShared:false,SharedAt:''});
-        appendCoverRecordsByHeaders_(sourceSheet, sourceRecords);
-        appendCoverRecordsByHeaders_(memberSheet, memberRecords);
+        projectRowNumber = appendCoverRecordsByHeaders_(projectSheet, [{CoverProjectID:projectId,CreatorUserID:uid,SourceSongID:isExternal?'':songId,CoverGroupID:groupId,Title:title,CreatedAt:createdAt,IsShared:false,SharedAt:''}]).startRow;
+        sourceWrite = appendCoverRecordsByHeaders_(sourceSheet, sourceRecords);
+        memberWrite = appendCoverRecordsByHeaders_(memberSheet, memberRecords);
       } else {
-        updateCoverProjectRow_(projectSheet, projectId, {Title:title});
+        projectRowNumber = updateCoverProjectRow_(projectSheet, projectId, {Title:title});
       }
       deleteCoverAssignments_(assignmentSheet, projectId);
-      appendCoverRecordsByHeaders_(assignmentSheet, assignments.map(function(item){
+      const assignmentWrite = appendCoverRecordsByHeaders_(assignmentSheet, assignments.map(function(item){
         return {CoverProjectID:projectId,Order:item.order,MemberID:item.memberId};
       }));
       SpreadsheetApp.flush();
-      assertCoverSaved_(projectSheet, assignmentSheet, sourceSheet, memberSheet, projectId, uid, isExternal?'':songId, groupId, title, assignments, sourceRecords, memberRecords);
+      assertCoverSaved_(projectSheet, assignmentSheet, sourceSheet, memberSheet, projectRowNumber, assignmentWrite, sourceWrite, memberWrite, projectId, uid, isExternal?'':songId, groupId, title, assignments, sourceRecords, memberRecords);
 
       if (nowComplete && !wasComplete) try { appendCoverActivity_(uid, 'CREATE_COVER', projectId); } catch (error) { console.error(error); }
-      return {ok:true,projectId:projectId,title:title,isComplete:nowComplete,requiresConfirm:false};
+      return {ok:true,projectId:projectId,title:title,isComplete:nowComplete,requiresConfirm:false,project:{
+        projectId:projectId,creatorUserId:uid,creatorDisplayName:coverUserDisplayName_(uid),sourceSongId:isExternal?'':songId,
+        sourceTitle:String(song.Title||''),sourceArtist:String(song.Artist||''),coverGroupId:groupId,
+        coverGroupName:String(group.GroupName||''),coverGroupColor:normalizeHex_(group.ColorHex,'#9cecff'),title:title,
+        createdAt:toCoverIso_(createdAt),isShared:existing?asCoverBoolean_(existing.IsShared):false,
+        sharedAt:existing?toCoverIso_(existing.SharedAt):'',isComplete:nowComplete
+      }};
     } catch (error) {
       if (!writeStarted) throw error;
       const rollbackErrors = [];
@@ -729,7 +739,7 @@ function updateCoverProjectRow_(sheet, projectId, patch) {
   const values=sheet.getDataRange().getValues(); if(values.length<2)return;
   const headers=values[0].map(String), idCol=headers.indexOf('CoverProjectID');
   for(let r=1;r<values.length;r++) if(asId_(values[r][idCol])===projectId){
-    Object.keys(patch).forEach(function(key){const col=headers.indexOf(key);if(col>=0)sheet.getRange(r+1,col+1).setValue(patch[key]);}); return;
+    Object.keys(patch).forEach(function(key){const col=headers.indexOf(key);if(col>=0)sheet.getRange(r+1,col+1).setValue(patch[key]);}); return r+1;
   }
 }
 
@@ -752,44 +762,55 @@ function deleteCoverProjectRows_(sheet, projectId) {
 }
 
 function appendCoverRecordsByHeaders_(sheet, records) {
-  if(!records||!records.length)return;
+  if(!records||!records.length)return null;
   const lastColumn=sheet.getLastColumn();
   if(lastColumn<1)throw new Error('保存先のヘッダーが見つかりません。');
   const headers=sheet.getRange(1,1,1,lastColumn).getValues()[0].map(String);
   const rows=records.map(function(record){
     return headers.map(function(header){return record[header]===undefined?'':record[header];});
   });
-  sheet.getRange(sheet.getLastRow()+1,1,rows.length,headers.length).setValues(rows);
+  const startRow=sheet.getLastRow()+1;
+  sheet.getRange(startRow,1,rows.length,headers.length).setValues(rows);
+  return {startRow:startRow,rowCount:rows.length};
 }
 
-function assertCoverSaved_(projectSheet, assignmentSheet, sourceSheet, memberSheet, projectId, userId, songId, groupId, title, assignments, sourceRecords, memberRecords) {
-  const projects=readSheetObjects_(projectSheet).filter(function(row){return asId_(row.CoverProjectID)===projectId;});
-  if(projects.length!==1 || asId_(projects[0].CreatorUserID)!==userId || asId_(projects[0].SourceSongID)!==songId ||
+function readCoverWrittenRecords_(sheet, write) {
+  if(!write||!write.rowCount)return [];
+  const lastColumn=sheet.getLastColumn();
+  const headers=sheet.getRange(1,1,1,lastColumn).getValues()[0].map(String);
+  return sheet.getRange(write.startRow,1,write.rowCount,lastColumn).getValues().map(function(row){
+    const record={};headers.forEach(function(header,index){if(header)record[header]=row[index];});return record;
+  });
+}
+
+function assertCoverSaved_(projectSheet, assignmentSheet, sourceSheet, memberSheet, projectRowNumber, assignmentWrite, sourceWrite, memberWrite, projectId, userId, songId, groupId, title, assignments, sourceRecords, memberRecords) {
+  const projects=readCoverWrittenRecords_(projectSheet,{startRow:projectRowNumber,rowCount:1});
+  if(projects.length!==1 || asId_(projects[0].CoverProjectID)!==projectId || asId_(projects[0].CreatorUserID)!==userId || asId_(projects[0].SourceSongID)!==songId ||
       asId_(projects[0].CoverGroupID)!==groupId || String(projects[0].Title||'')!==title) {
     throw new Error('カバープロジェクトの保存後照合に失敗しました。');
   }
-  const actual=readSheetObjects_(assignmentSheet).filter(function(row){return asId_(row.CoverProjectID)===projectId;})
+  const actual=readCoverWrittenRecords_(assignmentSheet,assignmentWrite)
     .map(function(row){return Number(row.Order||0)+'|'+asId_(row.MemberID);}).sort();
   const expected=assignments.map(function(row){return Number(row.order||0)+'|'+asId_(row.memberId);}).sort();
   if(actual.length!==expected.length || actual.some(function(value,index){return value!==expected[index];})) {
     throw new Error('カバー担当の保存後照合に失敗しました。');
   }
 
-  const actualSource=getCoverSourceSnapshotRows_(sourceSheet,projectId).map(function(row){
+  const actualSource=readCoverWrittenRecords_(sourceSheet,sourceWrite).map(function(row){
     return [String(row.SourceTitle||''),String(row.SourceArtist||''),Number(row.Order||0),asId_(row.OriginalSingerKey),String(row.OriginalSingerLabel||''),String(row.Lyrics||'')].join('|');
   }).sort();
   const expectedSource=(sourceRecords||[]).map(function(row){
     return [String(row.SourceTitle||''),String(row.SourceArtist||''),Number(row.Order||0),asId_(row.OriginalSingerKey),String(row.OriginalSingerLabel||''),String(row.Lyrics||'')].join('|');
   }).sort();
-  if(actualSource.length!==expectedSource.length || actualSource.some(function(value,index){return value!==expectedSource[index];})) {
+  if(sourceWrite && (actualSource.length!==expectedSource.length || actualSource.some(function(value,index){return value!==expectedSource[index];}))) {
     throw new Error('外部曲Snapshotの保存後照合に失敗しました。');
   }
 
-  const actualMembers=getCoverProjectMemberRows_(memberSheet,projectId)
+  const actualMembers=readCoverWrittenRecords_(memberSheet,memberWrite)
     .map(function(row){return Number(row.DisplayOrder||0)+'|'+asId_(row.MemberID);}).sort();
   const expectedMembers=(memberRecords||[])
     .map(function(row){return Number(row.DisplayOrder||0)+'|'+asId_(row.MemberID);}).sort();
-  if(actualMembers.length!==expectedMembers.length || actualMembers.some(function(value,index){return value!==expectedMembers[index];})) {
+  if(memberWrite && (actualMembers.length!==expectedMembers.length || actualMembers.some(function(value,index){return value!==expectedMembers[index];}))) {
     throw new Error('BMSG ALLSTARS参加メンバーの保存後照合に失敗しました。');
   }
 }
