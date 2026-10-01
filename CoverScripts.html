@@ -26,7 +26,7 @@
     app.innerHTML=typeof renderUniverseLoading==='function'?renderUniverseLoading('LOADING...','#9cecff'):'<div class="cover-empty">LOADING...</div>';
   }
   function renderCoverMessage(message){const app=document.getElementById('coverApp');if(app)app.innerHTML='<div class="cover-empty">'+escapeHtml(message)+'</div>';}
-  function showCoverError(error){coverState.busy=false;const msg=error&&error.message?error.message:String(error||'エラーが発生しました。');if(typeof showToast==='function')showToast(msg);else renderCoverMessage(msg);}
+  function showCoverError(error){coverState.busy=false;setCoverSavingState(false);const msg=error&&error.message?error.message:String(error||'エラーが発生しました。');if(typeof showToast==='function')showToast(msg);else renderCoverMessage(msg);}
   function selectCoverGroup(groupId){
     const groups=coverState.bootstrap.groups||[];
     coverState.coverGroup=groups.find(function(g){return String(g.groupId)===String(groupId);})||null;
@@ -63,7 +63,17 @@
   function openSavedCover(projectId,returnScreen){coverState.returnScreen=returnScreen||coverState.returnScreen||'projects';renderCoverLoading();google.script.run.withSuccessHandler(function(data){coverState.editor=data;coverState.coverGroup=data.coverGroup;coverState.viewMode='cover';coverState.dirty=false;coverState.screen='view';renderCoverEditor();}).withFailureHandler(showCoverError).getCoverProject({userId:getUniverseUserId(),projectId:projectId});}
   function editSavedCover(){if(!coverState.editor||!coverState.editor.isCreator)return;coverState.screen='editor';coverState.dirty=false;renderCoverEditor();}
 
-  function coverOverlayMarkup(){return '<div id="coverSheet" class="cover-sheet" hidden onclick="closeCoverSheetOnBackdrop(event)"><div id="coverSheetPanel" class="cover-sheet-panel"></div></div><div id="coverDialog" class="cover-dialog" hidden onclick="closeCoverDialogOnBackdrop(event)"><div class="cover-dialog-panel"><p id="coverDialogMessage" class="cover-dialog-message"></p><div class="cover-dialog-actions"><button id="coverDialogCancel" type="button" class="u-btn" onclick="closeCoverDialog()">キャンセル</button><button id="coverDialogConfirm" type="button" class="u-btn" onclick="confirmCoverDialog()">OK</button></div></div></div>';}
+  function coverSavingIndicatorMarkup(label){return typeof renderUniverseLoading==='function'?renderUniverseLoading(label||'保存しています…','#9cecff'):'<div class="universe-loading" role="status" aria-live="polite"><span>'+escapeHtml(label||'保存しています…')+'</span></div>';}
+  function coverOverlayMarkup(){return '<div id="coverSheet" class="cover-sheet" hidden onclick="closeCoverSheetOnBackdrop(event)"><div id="coverSheetPanel" class="cover-sheet-panel"></div></div><div id="coverDialog" class="cover-dialog" hidden onclick="closeCoverDialogOnBackdrop(event)"><div class="cover-dialog-panel"><p id="coverDialogMessage" class="cover-dialog-message"></p><div class="cover-dialog-actions"><button id="coverDialogCancel" type="button" class="u-btn" onclick="closeCoverDialog()">キャンセル</button><button id="coverDialogConfirm" type="button" class="u-btn" onclick="confirmCoverDialog()">OK</button></div></div></div><div id="coverSaving" class="cover-dialog cover-saving" hidden aria-busy="true"><div class="cover-dialog-panel cover-saving-panel"><div id="coverSavingIndicator">'+coverSavingIndicatorMarkup('保存しています…')+'</div><span id="coverSavingDetail">歌割りを安全に記録しています。</span></div></div>';}
+  function setCoverSavingState(isSaving,title,detail){
+    const overlay=document.getElementById('coverSaving'),button=document.querySelector('.cover-save-button');
+    if(button){button.disabled=!!isSaving;button.textContent=isSaving?'保存中…':'保存';}
+    if(!overlay)return;
+    const indicator=document.getElementById('coverSavingIndicator'),detailNode=document.getElementById('coverSavingDetail');
+    if(indicator)indicator.innerHTML=coverSavingIndicatorMarkup(title||'保存しています…');
+    if(detailNode)detailNode.textContent=detail||'歌割りを安全に記録しています。';
+    overlay.hidden=!isSaving;
+  }
   function setCoverViewMode(mode){coverState.viewMode=mode==='original'?'original':'cover';renderCoverEditor();}
   function coverAssignmentMap(){const map={};(coverState.editor&&coverState.editor.assignments||[]).forEach(function(a){map[String(a.order)]=String(a.memberId||'');});return map;}
   function coverMemberMap(){const map={};(coverState.editor&&coverState.editor.members||[]).forEach(function(m){map[String(m.memberId)]=m;});return map;}
@@ -81,6 +91,7 @@
   function saveCurrentCover(confirmIncomplete){
     if(coverState.busy||!coverState.editor||!coverState.editor.isCreator)return;
     coverState.busy=true;
+    setCoverSavingState(true,'保存しています…','歌割りを安全に記録しています。');
     const data=coverState.editor;
     const payload={
       userId:getUniverseUserId(),
@@ -93,20 +104,24 @@
       confirmIncomplete:!!confirmIncomplete
     };
     google.script.run.withSuccessHandler(function(result){
-      coverState.busy=false;
       if(result&&result.requiresConfirm){
+        coverState.busy=false;
+        setCoverSavingState(false);
         openCoverDialog(result.message||'原曲担当のまま残っているパートがあります。','編集に戻る','このまま保存',function(){saveCurrentCover(true);});
         return;
       }
       if(result&&result.ok){
         coverState.dirty=false;
-        if(typeof showToast==='function')showToast('保存しました');
+        setCoverSavingState(true,'保存しました','画面を更新しています…');
         refreshCoverHomeAfterSave();
+        return;
       }
+      showCoverError(new Error('保存結果を確認できませんでした。'));
     }).withFailureHandler(showCoverError).saveCoverProject(payload);
   }
   function refreshCoverHomeAfterSave(){
     google.script.run.withSuccessHandler(function(data){
+      coverState.busy=false;
       coverState.bootstrap=data||coverState.bootstrap;
       coverState.editor=null;
       coverState.coverGroup=null;
@@ -118,6 +133,7 @@
       coverState.externalDraft=null;
       coverState.externalParts=[];
       renderCoverHome();
+      if(typeof showToast==='function')showToast('保存しました');
     }).withFailureHandler(showCoverError).getCoverMakerBootstrap(getUniverseUserId());
   }
 
@@ -358,7 +374,7 @@
     if(editing)html+='<div class="cover-tools"><button type="button" class="u-btn" onclick="openCoverBulkChange()">パート変更</button><button type="button" class="u-btn" onclick="openCoverRatio()">割合確認</button></div>';html+='</div>';
     if(data.isSaved&&coverState.screen==='view'&&data.isCreator){html+='<div class="cover-view-actions" style="display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px"><button type="button" class="u-btn" style="width:100%!important;min-width:0!important" onclick="editSavedCover()">編集</button><button type="button" class="u-btn" style="width:100%!important;min-width:0!important" onclick="requestDeleteCover()">削除</button><button type="button" class="u-btn" style="width:100%!important;min-width:0!important" onclick="setCurrentCoverSharing('+(!data.isShared)+')">'+(data.isShared?'共有解除':'共有')+'</button></div>';}
     html+='<div class="cover-lyrics">'+data.parts.map(function(part){if(coverState.viewMode==='original')return '<div class="cover-lyric-row"><div class="cover-original-label">'+escapeHtml(part.originalSingerLabel)+'</div><div class="cover-lyric-text">'+escapeHtml(part.lyrics)+'</div></div>';const memberId=assignmentMap[String(part.order)]||'';const member=memberMap[memberId];const label=member?member.name:(memberId===part.originalMemberId?part.originalSingerLabel:(memberId||'未設定'));const color=member?member.color:'#777777';return '<div class="cover-lyric-row"><button type="button" class="cover-assignee" style="--cover-member-color:'+escapeHtml(color)+'" '+(editing?'onclick="openCoverMemberSheet('+Number(part.order)+')"':'disabled')+'><span class="cover-assignee-dot"></span>'+escapeHtml(label)+'</button><div class="cover-lyric-text">'+escapeHtml(part.lyrics)+'</div></div>';}).join('')+'</div>';
-    if(editing)html+='<div class="cover-save-bar"><div class="cover-save-inner"><button type="button" class="u-btn" onclick="saveCurrentCover(false)" '+(coverState.busy?'disabled':'')+'>保存</button></div></div>';html+=coverOverlayMarkup();app.innerHTML=html;
+    if(editing)html+='<div class="cover-save-bar"><div class="cover-save-inner"><button type="button" class="u-btn cover-save-button" onclick="saveCurrentCover(false)" '+(coverState.busy?'disabled':'')+'>'+(coverState.busy?'保存中…':'保存')+'</button></div></div>';html+=coverOverlayMarkup();app.innerHTML=html;
     setCanonicalCoverVisualMode('editor');const page=coverCanonicalPage();if(page){page.classList.toggle('is-cover-saved-view',isSavedView);page.classList.toggle('is-cover-live-editor',!isSavedView);}
   }
 </script>

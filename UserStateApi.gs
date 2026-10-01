@@ -2,7 +2,6 @@
  * User-scoped HOME state: favorites, recent activity, and deterministic daily picks.
  * Uses existing Core / Log repositories; no new sheets are created here.
  */
-const UNIVERSE_STATE_USERS_ = Object.freeze(['U001', 'U002', 'U003']);
 const UNIVERSE_HOME_PREVIEW_LIMIT_ = 5;
 const UNIVERSE_STATE_LOOKUP_CACHE_KEY_ = 'universe-state-lookup-v2';
 const UNIVERSE_PAGE_FAVORITES_ = Object.freeze({
@@ -92,7 +91,7 @@ function recordUniverseActivity(payload) {
 
 function normalizeUniverseStateUserId_(userId) {
   const uid = String(userId || '').trim().toUpperCase();
-  if (UNIVERSE_STATE_USERS_.indexOf(uid) < 0) throw new Error('Invalid UserID.');
+  if (UNIVERSE_CONFIG.USER_IDS.indexOf(uid) < 0) throw new Error('Invalid UserID.');
   return uid;
 }
 

@@ -43,7 +43,7 @@ function saveKaraokeFavoriteSet(payload) {
   const core = getKaraokeFavoriteCoreSnapshot_();
   const group = getKaraokeFavoriteEligibleGroup_(payload.groupId, core);
   const members = getKaraokeFavoriteMembersForGroup_(group.groupId, core);
-  const allowedUsers = KARAOKE_USERS_.slice();
+  const allowedUsers = UNIVERSE_CONFIG.USER_IDS.slice();
   const allowedMembers = members.reduce(function(map, member) {
     map[member.memberId] = true;
     return map;
@@ -168,5 +168,5 @@ function getKaraokeFavoriteMembersForGroup_(groupId, core) {
 
 function validateKaraokeFavoriteUserLoose_(userId) {
   const uid = asId_(userId);
-  return KARAOKE_USERS_.indexOf(uid) >= 0 ? uid : '';
+  return UNIVERSE_CONFIG.USER_IDS.indexOf(uid) >= 0 ? uid : '';
 }

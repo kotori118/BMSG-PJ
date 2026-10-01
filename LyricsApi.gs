@@ -1,4 +1,3 @@
-const LYRICS_USERS_ = Object.freeze(['U001', 'U002', 'U003']);
 const LYRICS_CATEGORIES_ = Object.freeze(['ALL', 'BE:FIRST', 'MAZZEL', 'STARGLOW', 'HANA', 'UNIT']);
 const LYRICS_SINGER_ROLES_ = Object.freeze(['MAIN','UP','DOWN','SUB']);
 
@@ -56,7 +55,7 @@ function saveLyricsSongParts(payload) {
 
 function lyricsRequireUser_(userId) {
   const id=asId_(userId);
-  if(LYRICS_USERS_.indexOf(id)<0)throw new Error('利用ユーザーを選択してください。');
+  if(UNIVERSE_CONFIG.USER_IDS.indexOf(id)<0)throw new Error('利用ユーザーを選択してください。');
   return id;
 }
 

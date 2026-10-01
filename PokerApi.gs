@@ -1,4 +1,3 @@
-const POKER_USERS_ = Object.freeze(['U001','U002','U003']);
 const POKER_RULES_ = Object.freeze(['A','B']);
 const POKER_ROOM_MS_ = 24 * 60 * 60 * 1000;
 const POKER_MAX_PLAYERS_ = 3;
@@ -336,13 +335,13 @@ function deletePokerGameRows_(gameId,includeRoom){[UNIVERSE_CONFIG.SHEETS.POKER_
 
 function cleanupExpiredPoker_(){return withPokerLock_(cleanupExpiredPokerUnsafe_);}
 function cleanupExpiredPokerUnsafe_(){const sheet=getLogSheet_(UNIVERSE_CONFIG.SHEETS.POKER_ROOMS);const expired=readSheetObjectsWithRows_(sheet).filter(function(row){const d=new Date(row.ExpiresAt);return !Number.isFinite(d.getTime())||d.getTime()<=Date.now();});expired.forEach(function(row){deletePokerGameRows_(asId_(row.PokerGameID),false);});expired.sort(function(a,b){return b.__rowNumber-a.__rowNumber;}).forEach(function(row){sheet.deleteRow(row.__rowNumber);});}
-function getPokerUsers_(){const rows=readSheetObjects_(getLogSheet_(UNIVERSE_CONFIG.SHEETS.USERS));const map={};rows.forEach(function(row){map[asId_(row.UserID)]=String(row.DisplayName||row.UserID);});return POKER_USERS_.map(function(id){return {userId:id,displayName:map[id]||id};});}
+function getPokerUsers_(){const rows=readSheetObjects_(getLogSheet_(UNIVERSE_CONFIG.SHEETS.USERS));const map={};rows.forEach(function(row){map[asId_(row.UserID)]=String(row.DisplayName||row.UserID);});return UNIVERSE_CONFIG.USER_IDS.map(function(id){return {userId:id,displayName:map[id]||id};});}
 function getPokerUserMap_(){return getPokerUsers_().reduce(function(map,user){map[user.userId]=user.displayName;return map;},{});}
 function pokerCardMap_(cards){return cards.reduce(function(map,card){map[asId_(card.imageId)]=card;return map;},{});}
 function uniquePokerMemberCount_(cards){return Object.keys(cards.reduce(function(map,card){map[card.memberId]=true;return map;},{})).length;}
 function parseJson_(value,fallback){try{const parsed=JSON.parse(String(value||''));return parsed===null?fallback:parsed;}catch(error){return fallback;}}
 function pokerIso_(value){const date=new Date(value);return Number.isFinite(date.getTime())?date.toISOString():'';}
-function validatePokerUser_(value){const id=asId_(value);if(POKER_USERS_.indexOf(id)<0)throw new Error('利用ユーザーを選択してください。');return id;}
+function validatePokerUser_(value){const id=asId_(value);if(UNIVERSE_CONFIG.USER_IDS.indexOf(id)<0)throw new Error('利用ユーザーを選択してください。');return id;}
 function validatePokerRule_(value){const rule=String(value||'').toUpperCase();if(POKER_RULES_.indexOf(rule)<0)throw new Error('RULEを選択してください。');return rule;}
 function withPokerLock_(callback){const lock=LockService.getScriptLock();lock.waitLock(20000);try{return callback();}finally{lock.releaseLock();}}
 function pokerPropertyKey_(uid){return 'POKER_ACTIVE_ROOM_'+uid;}

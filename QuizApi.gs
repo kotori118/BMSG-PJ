@@ -1,4 +1,3 @@
-const QUIZ_USERS_ = Object.freeze(['U001', 'U002', 'U003']);
 const QUIZ_MODES_ = Object.freeze(['ONLINE', 'OFFLINE']);
 const QUIZ_GENRES_ = Object.freeze(['LYRICS', 'PROFILE']);
 const QUIZ_COURSES_ = Object.freeze(['BE:FIRST', 'MAZZEL', 'STARGLOW', 'HANA', 'UNIT', 'ALL']);
@@ -335,7 +334,7 @@ function validateQuizPlayers_(mode, uid, values) {
   return players;
 }
 
-function validateQuizUser_(value) { const id = asId_(value); if (QUIZ_USERS_.indexOf(id) < 0) throw new Error('利用ユーザーを選択してください。'); return id; }
+function validateQuizUser_(value) { const id = asId_(value); if (UNIVERSE_CONFIG.USER_IDS.indexOf(id) < 0) throw new Error('利用ユーザーを選択してください。'); return id; }
 function validateQuizEnum_(value, allowed, label) { const normalized = String(value || '').trim().toUpperCase(); if (allowed.indexOf(normalized) < 0) throw new Error(label + 'を選択してください。'); return normalized; }
 function quizGenreStorage_(value) { return value === 'LYRICS' ? '歌詞' : 'プロフィール'; }
 function quizCourseStorage_(value) { return value === 'UNIT' ? 'ユニット' : value === 'ALL' ? '全部' : value; }
@@ -343,7 +342,7 @@ function quizDifficultyStorage_(value) { return value === 'NORMAL' ? '普通' : 
 function normalizeQuizGenre_(value) { const text = String(value || '').trim(); return text === '歌詞' ? 'LYRICS' : text === 'プロフィール' ? 'PROFILE' : text.toUpperCase(); }
 function normalizeQuizCourse_(value) { const text = String(value || '').trim(); return text === 'ユニット' ? 'UNIT' : text === '全部' ? 'ALL' : text.toUpperCase(); }
 function normalizeQuizDifficulty_(value) { const text = String(value || '').trim(); return text === '普通' ? 'NORMAL' : text === '上級' ? 'ADVANCED' : text.toUpperCase(); }
-function getQuizUsers_() { const map = {}; readSheetObjects_(getLogSheet_(UNIVERSE_CONFIG.SHEETS.USERS)).forEach(function(row) { map[asId_(row.UserID)] = String(row.DisplayName || row.UserID); }); return QUIZ_USERS_.map(function(id) { return { userId: id, displayName: map[id] || id }; }); }
+function getQuizUsers_() { const map = {}; readSheetObjects_(getLogSheet_(UNIVERSE_CONFIG.SHEETS.USERS)).forEach(function(row) { map[asId_(row.UserID)] = String(row.DisplayName || row.UserID); }); return UNIVERSE_CONFIG.USER_IDS.map(function(id) { return { userId: id, displayName: map[id] || id }; }); }
 function getQuizCourses_() { return [{ value: 'BE:FIRST', label: 'BE:FIRST' }, { value: 'MAZZEL', label: 'MAZZEL' }, { value: 'STARGLOW', label: 'STARGLOW' }, { value: 'HANA', label: 'HANA' }, { value: 'UNIT', label: 'ユニット' }, { value: 'ALL', label: '全部' }]; }
 function quizParseJson_(value, fallback) { try { const parsed = JSON.parse(String(value || '')); return parsed === null ? fallback : parsed; } catch (error) { return fallback; } }
 function quizIso_(value) { const date = new Date(value); return Number.isFinite(date.getTime()) ? date.toISOString() : ''; }

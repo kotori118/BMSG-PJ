@@ -6,6 +6,10 @@ const UNIVERSE_CONFIG = Object.freeze({
   LOG_DB_ID: '10vDKc_Q431iMDTTqB2A16i-Yp28oXSInoKiJXZtonRQ',
   CARD_IMAGE_FOLDER_ID: '1ayh-EAbV585JqRofClrTHjBxNTQlfQBK',
   PROFILE_CACHE_SECONDS: 300,
+  USER_IDS: Object.freeze(['U001', 'U002', 'U003']),
+  USER_DISPLAY_NAMES: Object.freeze({
+    U001: 'ももたん', U002: 'みおたん', U003: 'りおたん'
+  }),
   SHEETS: Object.freeze({
     GROUPS: '01_Groups', MEMBERS: '02_Members', GUESTS: '03_Guests',
     GROUP_MEMBERS: '04_GroupMembers', PROFILES: '05_Profiles', SONGS: '06_Songs', SONG_CREDITS: '07_SongCredits',

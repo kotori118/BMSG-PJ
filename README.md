@@ -4,6 +4,10 @@ BMSG Universe Apps Script source.
 
 Song / Lyrics / Guest writes are centralized in BMSG-DB via the pinned Apps Script library. Image management remains owned by BMSG-PJ. Runtime spreadsheet Config counters are no longer used by the new management paths.
 
+Server側の共通利用ユーザーID／表示名は `Config.gs` の `UNIVERSE_CONFIG.USER_IDS`／`USER_DISPLAY_NAMES` を唯一の定義元とする。各Serviceへ同じ値を再定義しない。Client側の初期選択UIは現行構成を維持する。
+BMSG-DB更新時は同Repositoryのworkflow summaryで作成版を確認し、`appsscript.json`のBMSGDB固定versionを更新してBMSG-PJをdeployする。Library作成だけでは本番PJへの反映完了と扱わない。
+deploy前に `node scripts/validate-gas-sources.mjs` と `node --test tests/config-contract.test.mjs` を実行し、GAS／Client script構文・Runtime関数名重複・BMSGDB固定参照・利用ユーザー定義重複を確認する。
+
 このRepositoryは BMSG Universe サイト本体の現行実装を管理する。
 
 【現行Authority】

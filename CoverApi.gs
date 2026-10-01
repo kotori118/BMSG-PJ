@@ -1,5 +1,4 @@
 /** BMSG Universe COVER MAKER */
-const COVER_USERS_ = Object.freeze(['U001','U002','U003']);
 const COVER_SOURCE_ARTISTS_ = Object.freeze(['BE:FIRST','MAZZEL','STARGLOW','HANA','ShowMinorSavage']);
 const COVER_DESTINATION_GROUPS_ = Object.freeze(['BE:FIRST','MAZZEL','STARGLOW','HANA','ShowMinorSavage','BMSG ALLSTARS']);
 const COVER_ALL_ID_ = '99';
@@ -313,13 +312,15 @@ function saveCoverProject(payload) {
       writeStarted = true;
       if (!existing) {
         appendByHeaders_(projectSheet, {CoverProjectID:projectId,CreatorUserID:uid,SourceSongID:isExternal?'':songId,CoverGroupID:groupId,Title:title,CreatedAt:createdAt,IsShared:false,SharedAt:''});
-        sourceRecords.forEach(function(record){ appendByHeaders_(sourceSheet, record); });
-        memberRecords.forEach(function(record){ appendByHeaders_(memberSheet, record); });
+        appendCoverRecordsByHeaders_(sourceSheet, sourceRecords);
+        appendCoverRecordsByHeaders_(memberSheet, memberRecords);
       } else {
         updateCoverProjectRow_(projectSheet, projectId, {Title:title});
       }
       deleteCoverAssignments_(assignmentSheet, projectId);
-      assignments.forEach(function(item){ appendByHeaders_(assignmentSheet,{CoverProjectID:projectId,Order:item.order,MemberID:item.memberId}); });
+      appendCoverRecordsByHeaders_(assignmentSheet, assignments.map(function(item){
+        return {CoverProjectID:projectId,Order:item.order,MemberID:item.memberId};
+      }));
       SpreadsheetApp.flush();
       assertCoverSaved_(projectSheet, assignmentSheet, sourceSheet, memberSheet, projectId, uid, isExternal?'':songId, groupId, title, assignments, sourceRecords, memberRecords);
 
@@ -704,12 +705,12 @@ function buildCoverProjectSummaries_(snapshot, predicate) {
 }
 
 function getCoverUsers_() {
-  return COVER_USERS_.map(function(id){return {userId:id,displayName:coverUserDisplayName_(id)};});
+  return UNIVERSE_CONFIG.USER_IDS.map(function(id){return {userId:id,displayName:coverUserDisplayName_(id)};});
 }
 
 function coverUserDisplayName_(userId) {
-  const names={U001:'ももたん',U002:'みおたん',U003:'りおたん'};
-  return names[asId_(userId)] || asId_(userId);
+  const id = asId_(userId);
+  return UNIVERSE_CONFIG.USER_DISPLAY_NAMES[id] || id;
 }
 
 function asCoverBoolean_(value) {
@@ -718,7 +719,7 @@ function asCoverBoolean_(value) {
   return text === 'true' || text === '1' || text === 'yes';
 }
 
-function validateCoverUser_(userId) { const id=asId_(userId); if(COVER_USERS_.indexOf(id)<0)throw new Error('利用ユーザーを選択してください。'); return id; }
+function validateCoverUser_(userId) { const id=asId_(userId); if(UNIVERSE_CONFIG.USER_IDS.indexOf(id)<0)throw new Error('利用ユーザーを選択してください。'); return id; }
 function getCoverLogSheet_(name) { const sheet=SpreadsheetApp.openById(UNIVERSE_CONFIG.LOG_DB_ID).getSheetByName(name); if(!sheet)throw new Error('Log sheet not found: '+name); return sheet; }
 function withCoverLock_(callback){const lock=LockService.getScriptLock();lock.waitLock(20000);try{return callback();}finally{lock.releaseLock();}}
 function normalizeHex_(value,fallback){const s=String(value||'').trim();return /^#[0-9a-f]{6}$/i.test(s)?s:fallback;}
@@ -733,15 +734,32 @@ function updateCoverProjectRow_(sheet, projectId, patch) {
 }
 
 function deleteCoverAssignments_(sheet, projectId) {
-  const values=sheet.getDataRange().getValues(); if(values.length<2)return;
-  const headers=values[0].map(String), idCol=headers.indexOf('CoverProjectID');
-  for(let r=values.length-1;r>=1;r--) if(asId_(values[r][idCol])===projectId) sheet.deleteRow(r+1);
+  deleteCoverProjectRows_(sheet, projectId);
 }
 
 function deleteCoverProjectRows_(sheet, projectId) {
   const values=sheet.getDataRange().getValues(); if(values.length<2)return;
   const headers=values[0].map(String), idCol=headers.indexOf('CoverProjectID');
-  for(let r=values.length-1;r>=1;r--) if(asId_(values[r][idCol])===projectId) sheet.deleteRow(r+1);
+  const rows=[];
+  for(let r=1;r<values.length;r++) if(asId_(values[r][idCol])===projectId) rows.push(r+1);
+  const groups=[];
+  rows.forEach(function(row){
+    const last=groups[groups.length-1];
+    if(last&&last.start+last.count===row) last.count++;
+    else groups.push({start:row,count:1});
+  });
+  groups.reverse().forEach(function(group){sheet.deleteRows(group.start,group.count);});
+}
+
+function appendCoverRecordsByHeaders_(sheet, records) {
+  if(!records||!records.length)return;
+  const lastColumn=sheet.getLastColumn();
+  if(lastColumn<1)throw new Error('保存先のヘッダーが見つかりません。');
+  const headers=sheet.getRange(1,1,1,lastColumn).getValues()[0].map(String);
+  const rows=records.map(function(record){
+    return headers.map(function(header){return record[header]===undefined?'':record[header];});
+  });
+  sheet.getRange(sheet.getLastRow()+1,1,rows.length,headers.length).setValues(rows);
 }
 
 function assertCoverSaved_(projectSheet, assignmentSheet, sourceSheet, memberSheet, projectId, userId, songId, groupId, title, assignments, sourceRecords, memberRecords) {
@@ -782,11 +800,11 @@ function restoreCoverSnapshot_(projectSheet, assignmentSheet, sourceSheet, membe
   deleteCoverProjectRows_(memberSheet, projectId);
   deleteCoverProjectRows_(projectSheet, projectId);
   if(project) appendByHeaders_(projectSheet, project);
-  (assignments||[]).forEach(function(item){
-    appendByHeaders_(assignmentSheet,{CoverProjectID:projectId,Order:item.order,MemberID:item.memberId});
-  });
-  (sourceRows||[]).forEach(function(row){appendByHeaders_(sourceSheet,row);});
-  (memberRows||[]).forEach(function(row){appendByHeaders_(memberSheet,row);});
+  appendCoverRecordsByHeaders_(assignmentSheet,(assignments||[]).map(function(item){
+    return {CoverProjectID:projectId,Order:item.order,MemberID:item.memberId};
+  }));
+  appendCoverRecordsByHeaders_(sourceSheet,sourceRows||[]);
+  appendCoverRecordsByHeaders_(memberSheet,memberRows||[]);
   SpreadsheetApp.flush();
 }
 

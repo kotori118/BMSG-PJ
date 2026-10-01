@@ -1,4 +1,3 @@
-const KARAOKE_USERS_ = Object.freeze(['U001','U002','U003']);
 const KARAOKE_TZ_ = 'Asia/Tokyo';
 const KARAOKE_ROOM_MS_ = 24 * 60 * 60 * 1000;
 
@@ -106,9 +105,8 @@ function saveKaraokeAssignment(payload) {
 }
 
 function getKaraokeUsers_() {
-  const names = { U001: 'ももたん', U002: 'みおたん', U003: 'りおたん' };
-  return KARAOKE_USERS_.map(function(id) {
-    return { userId: id, displayName: names[id] || id };
+  return UNIVERSE_CONFIG.USER_IDS.map(function(id) {
+    return { userId: id, displayName: UNIVERSE_CONFIG.USER_DISPLAY_NAMES[id] || id };
   });
 }
 
@@ -150,7 +148,7 @@ function withKaraokeLock_(callback) {
   finally{lock.releaseLock();}
 }
 
-function validateKaraokeUser_(userId){const id=asId_(userId);if(KARAOKE_USERS_.indexOf(id)<0)throw new Error('利用ユーザーを選択してください。');return id;}
+function validateKaraokeUser_(userId){const id=asId_(userId);if(UNIVERSE_CONFIG.USER_IDS.indexOf(id)<0)throw new Error('利用ユーザーを選択してください。');return id;}
 function karaokePropertyKey_(uid){return 'KARAOKE_ACTIVE_ROOM_'+uid;}
 function setKaraokeRoomProperty_(uid,roomId){PropertiesService.getScriptProperties().setProperty(karaokePropertyKey_(uid),roomId);}
 function getKaraokeRoomProperty_(uid){return PropertiesService.getScriptProperties().getProperty(karaokePropertyKey_(uid));}

@@ -3,7 +3,6 @@
  * version-pinned BMSG-DB library so both Universe and the old spreadsheet route
  * use the same writer, lock, validation and IDRegistry allocation.
  */
-const SLM_USERS_ = Object.freeze(['U001','U002','U003']);
 const SLM_FORMS_ = Object.freeze(['シングル','アルバム','デジタルリリース','その他']);
 
 function getSongLyricsManagementBootstrap(userId) {
@@ -88,7 +87,7 @@ function saveSongLyricsManagementLyrics(payload) {
   try{return BMSGDB.saveSongPartsForUniverse(payload);}finally{clearUniverseSongMutationCaches_();}
 }
 
-function slmRequireUser_(userId){if(SLM_USERS_.indexOf(String(userId||'').trim())<0)throw new Error('利用ユーザーを選択してください。');}
+function slmRequireUser_(userId){if(UNIVERSE_CONFIG.USER_IDS.indexOf(String(userId||'').trim())<0)throw new Error('利用ユーザーを選択してください。');}
 function slmId_(value){return value==null?'':String(value).trim().replace(/\.0+$/,'');}
 function slmGuestCandidateKey_(value){const text=String(value==null?'':value).trim();return typeof text.normalize==='function'?text.normalize('NFKC'):text;}
 function slmIgnoredGuestCandidateMap_(values){const out=Object.create(null);(Array.isArray(values)?values:[]).forEach(function(value){const key=slmGuestCandidateKey_(value);if(key)out[key]=true;});return out;}
