@@ -6,7 +6,7 @@ const COVER_ALLSTARS_GROUP_ID_ = '8';
 
 function getCoverMakerBootstrap(userId) {
   const uid = validateCoverUser_(userId);
-  const snapshot = getCoverCoreSnapshot_();
+  const snapshot = getCoverBootstrapSnapshot_();
   const groups = buildCoverGroups_(snapshot);
   return {
     currentUserId: uid,
@@ -14,8 +14,14 @@ function getCoverMakerBootstrap(userId) {
     groups: groups,
     sourceArtists: COVER_SOURCE_ARTISTS_.slice(),
     allStarMembers: getCoverAllStarMembers_(snapshot),
-    projects: listCoverProjects_(snapshot, uid)
+    projects: []
   };
+}
+
+function getCoverProjects(userId) {
+  const uid = validateCoverUser_(userId);
+  const snapshot = getCoverCoreSnapshot_();
+  return listCoverProjects_(snapshot, uid);
 }
 
 function getCoverLibrary(userId) {
@@ -27,8 +33,8 @@ function getCoverLibrary(userId) {
 function getCoverSourceSongs(artist) {
   const selected = String(artist || '').trim();
   if (COVER_SOURCE_ARTISTS_.indexOf(selected) < 0) throw new Error('カバーする原曲のアーティストが正しくありません。');
-  const songs = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.SONGS)
-    .filter(function(row){ return String(row.Artist || '').trim() === selected; })
+  const ss = SpreadsheetApp.openById(UNIVERSE_CONFIG.CORE_DB_ID);
+  const songs = readCoverSheetMatchesFromSpreadsheet_(ss, UNIVERSE_CONFIG.SHEETS.SONGS, 'Artist', selected, false)
     .map(normalizeCoverSong_)
     .sort(compareCoverSongs_);
   return songs;
@@ -39,7 +45,7 @@ function getCoverEditorData(payload) {
   const userId = validateCoverUser_(payload.userId);
   const coverGroupId = asId_(payload.coverGroupId);
   const songId = asId_(payload.songId);
-  const snapshot = getCoverCoreSnapshot_();
+  const snapshot = getCoverScopedSnapshot_(coverGroupId, songId);
   const group = requireCoverGroup_(snapshot, coverGroupId);
   const song = snapshot.songs.find(function(row){ return asId_(row.SongID) === songId; });
   if (!song || COVER_SOURCE_ARTISTS_.indexOf(String(song.Artist || '').trim()) < 0) throw new Error('原曲が見つかりません。');
@@ -84,7 +90,7 @@ function getCoverExternalEditorData(payload) {
   payload = payload || {};
   const userId = validateCoverUser_(payload.userId);
   const coverGroupId = asId_(payload.coverGroupId);
-  const snapshot = getCoverCoreSnapshot_();
+  const snapshot = getCoverScopedSnapshot_(coverGroupId, '');
   const group = requireCoverGroup_(snapshot, coverGroupId);
   const members = getCoverDestinationMembers_(snapshot, coverGroupId, payload.allStarMemberIds);
   if (!members.length) throw new Error('カバー担当メンバーが見つかりません。');
@@ -120,7 +126,6 @@ function getCoverProject(payload) {
   payload = payload || {};
   const uid = validateCoverUser_(payload.userId);
   const projectId = asId_(payload.projectId);
-  const snapshot = getCoverCoreSnapshot_();
   const projectSheet = getCoverLogSheet_(UNIVERSE_CONFIG.SHEETS.COVER_PROJECTS);
   const sourceSheet = getCoverLogSheet_(UNIVERSE_CONFIG.SHEETS.COVER_SOURCE_SNAPSHOTS);
   const memberSheet = getCoverLogSheet_(UNIVERSE_CONFIG.SHEETS.COVER_PROJECT_MEMBERS);
@@ -131,9 +136,10 @@ function getCoverProject(payload) {
   if (!project || (!isCreator && !isShared)) throw new Error('カバーが見つかりません。');
 
   const groupId = asId_(project.CoverGroupID);
-  const group = requireCoverGroup_(snapshot, groupId);
   const sourceRows = getCoverSourceSnapshotRows_(sourceSheet, projectId);
   const isExternal = sourceRows.length > 0 || !asId_(project.SourceSongID);
+  const snapshot = getCoverScopedSnapshot_(groupId, isExternal ? '' : asId_(project.SourceSongID));
+  const group = requireCoverGroup_(snapshot, groupId);
   let sourceSong;
   let sourceSnapshot = null;
   let parts;
@@ -430,6 +436,65 @@ function getCoverCoreSnapshot_() {
     songs: readCoverSheetFromSpreadsheet_(ss, UNIVERSE_CONFIG.SHEETS.SONGS),
     lyrics: readCoverSheetFromSpreadsheet_(ss, UNIVERSE_CONFIG.SHEETS.LYRICS_PARTS)
   };
+}
+
+function getCoverBootstrapSnapshot_() {
+  const ss = SpreadsheetApp.openById(UNIVERSE_CONFIG.CORE_DB_ID);
+  return {
+    groups: readCoverSheetFromSpreadsheet_(ss, UNIVERSE_CONFIG.SHEETS.GROUPS),
+    members: readCoverSheetFromSpreadsheet_(ss, UNIVERSE_CONFIG.SHEETS.MEMBERS),
+    guests: [],
+    groupMembers: [],
+    songs: [],
+    lyrics: []
+  };
+}
+
+function getCoverScopedSnapshot_(groupId, songId) {
+  const ss = SpreadsheetApp.openById(UNIVERSE_CONFIG.CORE_DB_ID);
+  const sid = asId_(songId);
+  return {
+    groups: readCoverSheetMatchesFromSpreadsheet_(ss, UNIVERSE_CONFIG.SHEETS.GROUPS, 'GroupID', groupId, true),
+    members: readCoverSheetFromSpreadsheet_(ss, UNIVERSE_CONFIG.SHEETS.MEMBERS),
+    guests: sid ? readCoverSheetFromSpreadsheet_(ss, UNIVERSE_CONFIG.SHEETS.GUESTS) : [],
+    groupMembers: isCoverAllStarsGroup_(groupId) ? [] : readCoverSheetMatchesFromSpreadsheet_(ss, UNIVERSE_CONFIG.SHEETS.GROUP_MEMBERS, 'GroupID', groupId, true),
+    songs: sid ? readCoverSheetMatchesFromSpreadsheet_(ss, UNIVERSE_CONFIG.SHEETS.SONGS, 'SongID', sid, true) : [],
+    lyrics: sid ? readCoverSheetMatchesFromSpreadsheet_(ss, UNIVERSE_CONFIG.SHEETS.LYRICS_PARTS, 'SongID', sid, true) : []
+  };
+}
+
+function readCoverSheetMatchesFromSpreadsheet_(ss, name, field, expected, compareAsId) {
+  const sheet = ss.getSheetByName(name);
+  if (!sheet) throw new Error('Core DB sheet not found: ' + name);
+  const lastRow = sheet.getLastRow();
+  const lastColumn = sheet.getLastColumn();
+  if (lastRow < 2 || lastColumn < 1) return [];
+  const headers = sheet.getRange(1, 1, 1, lastColumn).getValues()[0].map(function(value){return String(value || '').trim();});
+  const fieldColumn = headers.indexOf(field);
+  if (fieldColumn < 0) throw new Error(name + ' sheet field not found: ' + field);
+  const target = compareAsId ? asId_(expected) : String(expected == null ? '' : expected).trim();
+  const keys = sheet.getRange(2, fieldColumn + 1, lastRow - 1, 1).getValues();
+  const rowNumbers = [];
+  keys.forEach(function(row, index){
+    const value = compareAsId ? asId_(row[0]) : String(row[0] == null ? '' : row[0]).trim();
+    if (value === target) rowNumbers.push(index + 2);
+  });
+  if (!rowNumbers.length) return [];
+  const groups = [];
+  rowNumbers.forEach(function(rowNumber){
+    const previous = groups[groups.length - 1];
+    if (previous && previous.start + previous.count === rowNumber) previous.count += 1;
+    else groups.push({start:rowNumber,count:1});
+  });
+  const records = [];
+  groups.forEach(function(group){
+    sheet.getRange(group.start, 1, group.count, lastColumn).getValues().forEach(function(row){
+      const record = {};
+      headers.forEach(function(header,index){if(header)record[header]=row[index];});
+      records.push(record);
+    });
+  });
+  return records;
 }
 
 function readCoverSheetFromSpreadsheet_(ss, name) {

@@ -58,3 +58,15 @@ test('cover save shows progress and batches spreadsheet row writes', () => {
   assert.match(server, /!allowed\[memberId\] && memberId !== originalsByOrder\[key\]/);
   assert.match(server, /function readCoverWrittenRecords_/);
 });
+
+test('cover opening and editor reads are scoped to the requested screen', () => {
+  const client = fs.readFileSync(path.join(root, 'CoverScripts.html'), 'utf8');
+  const server = fs.readFileSync(path.join(root, 'CoverApi.gs'), 'utf8');
+
+  assert.match(server, /function getCoverBootstrapSnapshot_/);
+  assert.match(server, /function getCoverScopedSnapshot_/);
+  assert.match(server, /function readCoverSheetMatchesFromSpreadsheet_/);
+  assert.match(server, /getCoverScopedSnapshot_\(coverGroupId, songId\)/);
+  assert.match(server, /SHEETS\.SONGS, 'Artist', selected, false/);
+  assert.match(client, /getCoverProjects\(getUniverseUserId\(\)\)/);
+});

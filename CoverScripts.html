@@ -152,7 +152,7 @@
 
   function setCurrentCoverSharing(isShared){if(coverState.busy||!coverState.editor||!coverState.editor.isCreator||!coverState.editor.isSaved)return;coverState.busy=true;google.script.run.withSuccessHandler(function(result){coverState.busy=false;if(!result||!result.ok)return;coverState.editor.isShared=!!result.isShared;coverState.editor.sharedAt=result.sharedAt||'';if(typeof showToast==='function')showToast(result.isShared?'共有しました':'共有を解除しました');renderCoverEditor();}).withFailureHandler(showCoverError).setCoverProjectShared({userId:getUniverseUserId(),projectId:coverState.editor.projectId,isShared:!!isShared});}
   function requestDeleteCover(){if(!coverState.editor||!coverState.editor.isCreator)return;openCoverDialog('このカバーを削除しますか？','キャンセル','削除',function(){deleteCurrentCover();});}
-  function deleteCurrentCover(){const id=coverState.editor.projectId,returnScreen=coverState.returnScreen;renderCoverLoading();google.script.run.withSuccessHandler(function(){if(typeof showToast==='function')showToast('削除しました');google.script.run.withSuccessHandler(function(data){coverState.bootstrap=data||{};coverState.editor=null;coverState.dirty=false;if(returnScreen==='library')openCoverLibrary();else openCoverProjects();}).withFailureHandler(showCoverError).getCoverMakerBootstrap(getUniverseUserId());}).withFailureHandler(showCoverError).deleteCoverProject({userId:getUniverseUserId(),projectId:id});}
+  function deleteCurrentCover(){const id=coverState.editor.projectId,returnScreen=coverState.returnScreen;renderCoverLoading();google.script.run.withSuccessHandler(function(){if(typeof showToast==='function')showToast('削除しました');coverState.editor=null;coverState.dirty=false;if(returnScreen==='library')openCoverLibrary();else openCoverProjects();}).withFailureHandler(showCoverError).deleteCoverProject({userId:getUniverseUserId(),projectId:id});}
 
   function openCoverDialog(message,cancelLabel,confirmLabel,onConfirm){const dialog=document.getElementById('coverDialog');if(!dialog){if(onConfirm)onConfirm();return;}document.getElementById('coverDialogMessage').textContent=message;document.getElementById('coverDialogCancel').textContent=cancelLabel||'キャンセル';document.getElementById('coverDialogConfirm').textContent=confirmLabel||'OK';coverState.dialogAction=onConfirm||null;dialog.hidden=false;document.body.style.overflow='hidden';}
   function closeCoverDialog(){const d=document.getElementById('coverDialog');if(d)d.hidden=true;coverState.dialogAction=null;document.body.style.overflow='';}
@@ -367,8 +367,9 @@
   }
 
   function openCoverProjects(){
-    coverState.screen='projects';coverState.returnScreen='projects';const app=document.getElementById('coverApp');if(!app)return;const projects=ownCanonicalCoverProjects(coverState.bootstrap&&coverState.bootstrap.projects||[]);
-    app.innerHTML='<h2 class="cover-section-title">作ったカバー</h2>'+renderCoverProjectRows(projects,false,false);setCanonicalCoverVisualMode('projects');
+    coverState.screen='projects';coverState.returnScreen='projects';const app=document.getElementById('coverApp');if(!app)return;
+    app.innerHTML=typeof renderUniverseLoading==='function'?renderUniverseLoading('LOADING...','#9cecff'):'<div class="cover-empty">LOADING...</div>';setCanonicalCoverVisualMode('projects');
+    google.script.run.withSuccessHandler(function(projects){if(coverState.screen!=='projects')return;coverState.bootstrap.projects=projects||[];app.innerHTML='<h2 class="cover-section-title">作ったカバー</h2>'+renderCoverProjectRows(ownCanonicalCoverProjects(projects||[]),false,false);}).withFailureHandler(showCoverError).getCoverProjects(getUniverseUserId());
   }
 
   function openCoverLibrary(){
