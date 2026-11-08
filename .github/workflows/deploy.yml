@@ -23,7 +23,7 @@ jobs:
         run: node scripts/validate-gas-sources.mjs
 
       - name: Run source contract tests
-        run: node --test tests/config-contract.test.mjs
+        run: node --test tests/*.test.mjs
 
       - name: Install clasp
         run: npm install -g @google/clasp
