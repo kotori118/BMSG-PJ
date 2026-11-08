@@ -1,0 +1,48 @@
+<script>
+  const appearanceAnalysisState={data:null,request:0,memberId:'101',sort:'rate',pair:''};
+  function appearanceRenderAnalysis(){
+    const p=document.getElementById('analysisPanel');if(!p)return;
+    p.innerHTML='<div class="analysis-section"><div class="analysis-card"><h2>映像出演分析</h2><p class="analysis-muted">保存済みの計測データを集計します。動画の登録・計測・編集は「設定 → ツール」から行えます。</p><div class="ap-filters"><label>期間<select class="management-input" id="apPeriod" onchange="appearancePeriodChanged()"><option value="all">全期間</option><option value="year">年別</option><option value="month">月別</option><option value="custom">自由期間</option></select></label><div id="apPeriodFields"></div><button class="u-btn" onclick="appearanceFetchStats()">集計する</button></div></div><div id="apStatsResult"></div></div>';
+    appearanceFetchStats();
+  }
+  function appearancePeriodChanged(){
+    const mode=document.getElementById('apPeriod').value,host=document.getElementById('apPeriodFields'),year=new Date().getFullYear();
+    host.innerHTML=mode==='year'?'<label>年<input class="management-input" id="apYear" type="number" min="1900" max="9999" value="'+year+'"></label>':mode==='month'?'<label>月<input class="management-input" id="apMonth" type="month" value="'+year+'-'+String(new Date().getMonth()+1).padStart(2,'0')+'"></label>':mode==='custom'?'<div class="ap-grid"><label>開始日<input class="management-input" id="apFrom" type="date"></label><label>終了日<input class="management-input" id="apTo" type="date"></label></div>':'';
+  }
+  function appearanceReadFilter_(){
+    const mode=document.getElementById('apPeriod').value;
+    if(mode==='all')return {from:'',to:''};
+    if(mode==='year'){const year=document.getElementById('apYear').value;if(!/^\d{4}$/.test(year))throw new Error('年を4桁で入力してください。');return {from:year+'-01-01',to:year+'-12-31'};}
+    if(mode==='month'){const month=document.getElementById('apMonth').value;if(!/^\d{4}-\d{2}$/.test(month))throw new Error('月を選択してください。');const end=new Date(Number(month.slice(0,4)),Number(month.slice(5)),0).getDate();return {from:month+'-01',to:month+'-'+end};}
+    const from=document.getElementById('apFrom').value,to=document.getElementById('apTo').value;if(!from||!to||from>to)throw new Error('開始日・終了日を正しい順序で選択してください。');return {from:from,to:to};
+  }
+  async function appearanceFetchStats(){
+    const s=appearanceAnalysisState,host=document.getElementById('apStatsResult');if(!host)return;
+    let filter;try{filter=appearanceReadFilter_();}catch(error){showToast(error.message);return;}
+    const request=++s.request;host.innerHTML=renderUniverseLoading('LOADING...','#9cecff');
+    try{const result=await appearanceCall_('getAppearanceStats',filter);if(request!==s.request||analysisView!=='appearance'||!host.isConnected)return;s.data=result;appearanceRenderStats_();}
+    catch(error){if(request!==s.request||!host.isConnected)return;host.innerHTML='<div class="analysis-card"><p role="alert">'+appearanceEscape_(error.message)+'</p><button class="u-btn" onclick="appearanceFetchStats()">再試行</button></div>';}
+  }
+  function appearanceSeconds_(ms){return (Number(ms)/1000).toLocaleString('ja-JP',{maximumFractionDigits:3})+'秒';}
+  function appearanceRenderStats_(){
+    const s=appearanceAnalysisState,d=s.data;if(!d)return;destroyAnalysisCharts();
+    const provisional=d.provisional?' · 暫定値（未計測区間あり）':'';
+    document.getElementById('apStatsResult').innerHTML='<div class="ap-stats-list"><div class="analysis-card"><h3>計測状況</h3><p>'+d.videoCount+'本 · '+appearanceSeconds_(d.measuredMs)+'</p><p class="ap-stats-note">'+(d.coverageUnavailable?'カバー率：算出不可（動画長未取得あり）':'カバー率：'+appearancePercent_(d.coverage))+provisional+'</p>'+(d.missingDateCount?'<p class="analysis-muted">公開日未登録 '+d.missingDateCount+'本。期間指定時は対象外です。</p>':'')+'</div><div class="analysis-card"><h3>総合出演率ランキング</h3>'+genericTable(['順位','メンバー','出演率','出演時間','動画別単純平均'],d.ranking.map(function(r,i){return [d.measuredMs?i+1:'—',r.name,appearancePercent_(r.rate),appearanceSeconds_(r.appearanceMs),appearancePercent_(r.meanRate)];}))+'<p class="analysis-muted">順位は総出演時間 ÷ 総計測済み時間。NONEを分母に含み、ALLを個人出演時間に含みます。</p></div><div class="analysis-card"><h3>動画別・個人詳細</h3><div class="ap-filters"><label>メンバー<select class="management-input" id="apStatsMember" onchange="appearanceAnalysisState.memberId=this.value;appearanceRenderMemberStats_()">'+d.members.map(function(m){return '<option value="'+m.memberId+'" '+(s.memberId===m.memberId?'selected':'')+'>'+appearanceEscape_(m.name)+'</option>';}).join('')+'</select></label><label>並び順<select class="management-input" id="apStatsSort" onchange="appearanceAnalysisState.sort=this.value;appearanceRenderMemberStats_()"><option value="rate">出演率順</option><option value="seconds">出演秒数順</option></select></label></div><div id="apMemberStats"></div></div><div class="analysis-card"><h3>ALL</h3><p>'+appearanceSeconds_(d.allMs)+' · '+appearancePercent_(d.allRate)+'</p>'+genericTable(['動画','公開日','ALL時間','ALL率','計測状態'],d.videos.filter(function(v){return v.measuredMs>0;}).sort(function(a,b){return b.allMs/b.measuredMs-a.allMs/a.measuredMs;}).map(function(v){return [v.title,v.publishedAt,appearanceSeconds_(v.allMs),appearancePercent_(v.allMs/v.measuredMs),v.provisional?'暫定':'全区間計測済み'];}))+'</div><div class="analysis-card"><h3>ペア共演ランキング（ALL除外）</h3>'+genericTable(['順位','ペア','共演時間','共演率'],d.pairs.map(function(r,i){return [d.measuredMs?i+1:'—',r.name,appearanceSeconds_(r.appearanceMs),appearancePercent_(r.rate)];}))+'<p class="analysis-muted">3〜5人の同時出演は各ペアへ加算。6人全員が映る区間は除外します。</p><label>ペアの動画別内訳<select class="management-input"  id="apStatsPair" onchange="appearanceAnalysisState.pair=this.value;appearanceRenderPairStats_()">'+d.pairs.map(function(r){return '<option value="'+r.memberIds+'">'+appearanceEscape_(r.name)+'</option>';}).join('')+'</select></label><div id="apPairStats"></div></div><div class="analysis-card"><h3>月別出演率の推移</h3><p class="analysis-muted">動画公開日を基準に集計。データのない月は線をつなぎません。グラフの凡例で各メンバーを切り替えられます。</p><div class="analysis-chart"><canvas id="apMonthlyChart"></canvas></div><div id="apMonthlyTable"></div></div></div>';
+    document.getElementById('apStatsSort').value=s.sort;
+    const pairSelect=document.getElementById('apStatsPair');if(d.pairs.some(function(p){return p.memberIds===s.pair;}))pairSelect.value=s.pair;else s.pair=pairSelect.value;
+    appearanceRenderMemberStats_();appearanceRenderPairStats_();appearanceDrawMonthly_();
+  }
+  function appearanceRenderMemberStats_(){
+    const s=appearanceAnalysisState,d=s.data,id=s.memberId,row=d.ranking.find(function(r){return r.memberId===id;}),list=d.videos.filter(function(v){return v.measuredMs>0;});
+    list.sort(function(a,b){return s.sort==='seconds'?b.individual[id]-a.individual[id]:b.individual[id]/b.measuredMs-a.individual[id]/a.measuredMs;});
+    document.getElementById('apMemberStats').innerHTML='<p>'+appearanceEscape_(row.name)+' · '+appearanceSeconds_(row.appearanceMs)+' · '+appearancePercent_(row.rate)+'</p>'+genericTable(['順位','動画','公開日','出演率','出演時間','計測状態'],list.map(function(v,i){return [i+1,v.title,v.publishedAt,appearancePercent_(v.individual[id]/v.measuredMs),appearanceSeconds_(v.individual[id]),v.provisional?'暫定':'全区間計測済み'];}));
+  }
+  function appearanceRenderPairStats_(){const s=appearanceAnalysisState,rows=s.data.videos.filter(function(v){return v.measuredMs>0;}).sort(function(a,b){return (b.pairs[s.pair]||0)-(a.pairs[s.pair]||0);});document.getElementById('apPairStats').innerHTML=genericTable(['動画','共演時間','共演率','計測状態'],rows.map(function(v){return [v.title,appearanceSeconds_(v.pairs[s.pair]||0),appearancePercent_((v.pairs[s.pair]||0)/v.measuredMs),v.provisional?'暫定':'全区間計測済み'];}));}
+  function appearanceDrawMonthly_(){
+    const s=appearanceAnalysisState,d=s.data;
+    document.getElementById('apMonthlyTable').innerHTML=genericTable(['月',...d.members.map(function(m){return m.name;}),'計測状態'],d.months.map(function(row){return [row.month,...d.members.map(function(m){return appearancePercent_(row.rates[m.memberId]);}),!row.measuredMs?'データなし':row.provisional?'暫定':'全区間計測済み'];}));
+    if(typeof Chart==='undefined')return;
+    const options=chartOptions();options.scales.y.max=100;options.animation=!window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    analysisCharts.push(new Chart(document.getElementById('apMonthlyChart'),{type:'line',data:{labels:d.months.map(function(r){return r.month;}),datasets:d.members.map(function(m){return analysisLineDataset(m.name,d.months.map(function(r){return r.rates[m.memberId]==null?null:r.rates[m.memberId]*100;}),m.color);})},options:options}));
+  }
+</script>

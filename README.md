@@ -6,7 +6,7 @@ Song / Lyrics / Guest writes are centralized in BMSG-DB via the pinned Apps Scri
 
 Server側の共通利用ユーザーID／表示名は `Config.gs` の `UNIVERSE_CONFIG.USER_IDS`／`USER_DISPLAY_NAMES` を唯一の定義元とする。各Serviceへ同じ値を再定義しない。Client側の初期選択UIは現行構成を維持する。
 BMSG-DB更新時は同Repositoryのworkflow summaryで作成版を確認し、`appsscript.json`のBMSGDB固定versionを更新してBMSG-PJをdeployする。Library作成だけでは本番PJへの反映完了と扱わない。
-deploy前に `node scripts/validate-gas-sources.mjs` と `node --test tests/config-contract.test.mjs` を実行し、GAS／Client script構文・Runtime関数名重複・BMSGDB固定参照・利用ユーザー定義重複を確認する。
+deploy前に `node scripts/validate-gas-sources.mjs` と `node --test tests/*.test.mjs` を実行し、GAS／Client script構文・Runtime関数名重複・BMSGDB固定参照・利用ユーザー定義重複を確認する。
 
 このRepositoryは BMSG Universe サイト本体の現行実装を管理する。
 
@@ -64,3 +64,35 @@ deploy前に `node scripts/validate-gas-sources.mjs` と `node --test tests/conf
 - 共通Motionと機能固有Effectを分離し、prefers-reduced-motionを尊重する。
 
 ※ 過去のPrototype ZIP名・個別Fix手順はGit履歴およびDrive変更履歴を参照し、このREADMEを現行実装Authorityの代替にはしない。
+
+
+## 映像出演分析（実装済み・未デプロイ）
+
+- 閲覧入口：ANALYSIS の「映像出演」。管理入口：SETTINGS → ツール → 映像出演計測。
+- Server owners：AppearanceRepository.gs（2シート読取・列名対応・ロック・原子的書込）、AppearanceApi.gs（動画CRUD・YouTube情報取得・保存）、AppearanceStats.gs（純粋集計）。既存Song/Lyrics/GuestのBMSGDB Writer責務は変更しない。
+- Client owners：AppearancePage / AppearanceStyles / AppearanceScripts（管理・計測）、AppearanceAnalysis（分析表示）。Router / Settings / AnalysisScriptsの既存Ownerへ入口・離脱保護を統合する。
+- データ正本：Core DB既存12_Videos（9列）／13_VideoSegments（4列）。追加シート・ID・ログテーブル・端末永続下書きは作らない。
+- 区間は半開区間。NONEを分母に含み、ALLは個人へ加算、ペアから除外。作業中の保存済み区間も集計対象。0秒はデータなし、未計測残ありは暫定。
+- 保存・動画情報変更・削除はScriptLock＋Revision照合。区間置換と動画更新はSheets REST APIの単一batchUpdateで行う。保存結果不明の場合は編集中データを保持し、再取得で照合してから再試行する。
+- YouTube情報はサーバーからvideos.listで取得。ライブ配信中／配信予定・埋め込み不可は計測を停止。自動取得失敗時は手入力可能。既存動画のタイトル／公開日は自動上書きしない。
+
+### 公開前の設定・確認
+
+1. Google Cloudの対象プロジェクトでYouTube Data API v3を有効にし、APIキーを作成する。API制限はYouTube Data API v3に限定する。
+2. BMSG-PJ側Apps Scriptの「プロジェクトの設定 → スクリプト プロパティ」に `YOUTUBE_API_KEY` を設定する。キーをGit、HTML、チャット、スプレッドシートへ記載しない。GASのサーバー呼出しのためブラウザー向けHTTPリファラー制限は使用しない。
+3. Sheets REST APIで書込できるよう対象CloudプロジェクトのGoogle Sheets APIを確認し、GASの外部通信／スプレッドシート権限を再承認する。Advanced Sheets Serviceの追加は不要。
+4. `node scripts/validate-gas-sources.mjs` と `node --test tests/*.test.mjs` を実行する。
+5. 利用者のデプロイ許可後にのみmainへmergeする。現行workflowはmain／メインpushでGAS転送・deployを自動実行するため、許可前のmerge、main push、workflow_dispatchは禁止。
+6. 許可後の検証環境でYouTube自動情報取得、iPhoneのinline再生・シーク・動画終了、埋め込み不可、実スプシ保存・競合・削除を確認する。ローカルテストはこれらの実機確認の代替ではない。
+
+設計書： https://docs.google.com/document/d/1CrqluzGyTAqVhLxduTmyJN4EvFyOaZNGVU9nQ32Y8Sw/edit
+
+### 2026-11-08 追加監査（未デプロイ）
+
+- 更新・保存・削除APIは期待Revisionを必須とし、省略による競合検出の迂回を拒否する。
+- 結果不明の保存を照合する間は区間の追加・変更・削除・取り消し・選択解除を停止。buffering中の選択を拒否し、再生位置取得に失敗した場合は選択状態を変更しない。
+- 既存分析Bootstrapの遅延応答で映像出演分析の期間指定をリセットしない。共通グラフ破棄時はTooltipの遅延タイマーも解除する。
+- 計測済み動画のURL訂正は、同じ動画であることの明示確認後、既存区間を保持して許可する。動画長以内・ID重複・Revision検証は維持する。
+- 管理カード・入力・エラーはManagementSystem、ボタンのサイズ・選択・危険操作の外観はButtonSystem、分析表・グラフは既存AnalysisScriptsを再利用。機能側の独自表ラッパー、未使用状態、未使用API戻り値とCSSを削除した。
+- 静的検査はasync functionの重複も検出する。実Indexの67 include／44 script blockは結合してコンパイル確認済み。
+- Node26テスト成功。現在のスプレッドシートの読み取りスナップショットをローカル再生し、83動画／URL未登録29／6メンバーの読込を確認。実スプレッドシートへの書込・外部API実通信・実機Visual QAは未実施。
