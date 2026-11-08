@@ -29,7 +29,7 @@ gasFiles.forEach((file) => {
     errors.push(`${relative}: ${error.message}`);
   }
 
-  for (const match of source.matchAll(/^function\s+([A-Za-z_$][\w$]*)\s*\(/gm)) {
+  for (const match of source.matchAll(/^(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(/gm)) {
     const name = match[1];
     if (serverFunctionOwners.has(name)) {
       errors.push(`${relative}: function ${name} は ${serverFunctionOwners.get(name)} と重複しています。`);
@@ -52,7 +52,7 @@ htmlFiles.forEach((file) => {
       errors.push(`${relative}#script-${scriptIndex}: ${error.message}`);
     }
 
-    for (const functionMatch of source.matchAll(/^\s*function\s+([A-Za-z_$][\w$]*)\s*\(/gm)) {
+    for (const functionMatch of source.matchAll(/^\s*(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(/gm)) {
       const name = functionMatch[1];
       const owner = `${relative}#script-${scriptIndex}`;
       if (clientFunctionOwners.has(name)) {

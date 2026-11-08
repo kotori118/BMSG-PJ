@@ -11,19 +11,19 @@
     const state=appearanceToolState,epoch=++state.epoch;
     document.getElementById('appearanceToolApp').innerHTML=renderUniverseLoading('LOADING...','#9cecff');
     try{const data=await appearanceCall_('listVideos');if(epoch!==state.epoch)return;state.catalog=data;appearanceRenderList_();}
-    catch(error){if(epoch!==state.epoch)return;document.getElementById('appearanceToolApp').innerHTML='<div class="ap-error">'+appearanceEscape_(error.message)+'</div><button class="u-btn" onclick="initAppearanceTool()">再試行</button>';}
+    catch(error){if(epoch!==state.epoch)return;document.getElementById('appearanceToolApp').innerHTML='<div class="management-error">'+appearanceEscape_(error.message)+'</div><button class="u-btn" onclick="initAppearanceTool()">再試行</button>';}
   }
-  function appearanceMessages_(){const s=appearanceToolState;return (s.error?'<p class="ap-error" role="alert">'+appearanceEscape_(s.error)+'</p>':'')+(s.notice?'<p class="ap-notice">'+appearanceEscape_(s.notice)+'</p>':'');}
+  function appearanceMessages_(){const s=appearanceToolState;return (s.error?'<p class="management-error" role="alert">'+appearanceEscape_(s.error)+'</p>':'')+(s.notice?'<p class="ap-notice">'+appearanceEscape_(s.notice)+'</p>':'');}
   function appearanceRenderList_(){
     const s=appearanceToolState,app=document.getElementById('appearanceToolApp');if(!app)return;
-    app.innerHTML=appearanceMessages_()+'<div class="ap-card"><div class="ap-row"><h2 class="ap-grow">動画一覧</h2><button class="u-btn" onclick="appearanceOpenMetadata(-1)">動画を登録</button></div><div class="ap-grid"><input id="apVideoSearch" type="search" placeholder="タイトルを検索" aria-label="動画タイトルを検索" oninput="appearanceFilterList_()"><select id="apVideoFilter" aria-label="動画を絞り込み" onchange="appearanceFilterList_()"><option value="all">すべて</option><option value="not_started">未着手</option><option value="in_progress">作業中</option><option value="completed">分析完了</option><option value="missing">YouTube ID未登録</option></select></div></div><div id="apVideoList" class="ap-video-list"></div>';
+    app.innerHTML=appearanceMessages_()+'<div class="management-card ap-card"><div class="ap-row"><h2 class="ap-grow">動画一覧</h2><button class="u-btn" onclick="appearanceOpenMetadata(-1)">動画を登録</button></div><div class="ap-grid"><input class="management-input" id="apVideoSearch" type="search" placeholder="タイトルを検索" aria-label="動画タイトルを検索" oninput="appearanceFilterList_()"><select class="management-input" id="apVideoFilter" aria-label="動画を絞り込み" onchange="appearanceFilterList_()"><option value="all">すべて</option><option value="not_started">未着手</option><option value="in_progress">作業中</option><option value="completed">分析完了</option><option value="missing">YouTube ID未登録</option></select></div></div><div id="apVideoList" class="ap-video-list"></div>';
     appearanceFilterList_();
   }
   function appearanceFilterList_(){
     const s=appearanceToolState,q=document.getElementById('apVideoSearch').value.toLowerCase(),f=document.getElementById('apVideoFilter').value;
     const html=s.catalog.videos.map(function(v,i){
       if(!v.title.toLowerCase().includes(q)||(f==='missing'?!!v.youtubeVideoId:f!=='all'&&v.status!==f))return '';
-      return '<article class="ap-card ap-video">'+(v.youtubeVideoId?'<img loading="lazy" alt="" src="https://i.ytimg.com/vi/'+encodeURIComponent(v.youtubeVideoId)+'/mqdefault.jpg">':'<span class="ap-muted">URL未登録</span>')+'<div><strong>'+appearanceEscape_(v.title)+'</strong><p class="ap-muted">'+appearanceEscape_(v.publishedAt||'公開日未登録')+' · '+appearanceStatus_(v.status)+' · 計測 '+(v.measuredMs?appearancePercent_(v.coverage):'データなし')+'</p><div class="ap-row"><button class="u-btn" onclick="appearanceOpenVideo('+i+')" '+(!v.youtubeVideoId?'disabled':'')+'>計測する</button><button class="u-btn" onclick="appearanceOpenMetadata('+i+')">動画情報を編集</button></div></div></article>';
+      return '<article class="management-card ap-card ap-video">'+(v.youtubeVideoId?'<img loading="lazy" alt="" src="https://i.ytimg.com/vi/'+encodeURIComponent(v.youtubeVideoId)+'/mqdefault.jpg">':'<span class="ap-muted">URL未登録</span>')+'<div><strong>'+appearanceEscape_(v.title)+'</strong><p class="ap-muted">'+appearanceEscape_(v.publishedAt||'公開日未登録')+' · '+appearanceStatus_(v.status)+' · 計測 '+(v.measuredMs?appearancePercent_(v.coverage):'データなし')+'</p><div class="ap-row"><button class="u-btn" onclick="appearanceOpenVideo('+i+')" '+(!v.youtubeVideoId?'disabled':'')+'>計測する</button><button class="u-btn" onclick="appearanceOpenMetadata('+i+')">動画情報を編集</button></div></div></article>';
     }).join('');document.getElementById('apVideoList').innerHTML=html||'<p class="ap-muted">該当する動画がありません。</p>';
   }
   function appearanceCanLeave_(){
@@ -32,7 +32,7 @@
   }
   function appearanceCleanup_(){
     const s=appearanceToolState;++s.epoch;clearInterval(s.tick);s.tick=null;
-    if(s.player){try{s.player.destroy();}catch(error){}}s.player=null;s.ready=false;s.video=null;s.open=null;s.dirty=false;s.uncertain=false;s.form=null;s.formDirty=false;s.segmentDirty=false;s.attempt=null;s.selected=[];s.undo=null;s.error='';s.notice='';
+    if(s.player){try{s.player.destroy();}catch(error){}}s.player=null;s.ready=false;s.busy=false;s.metadataChecked=false;s.video=null;s.open=null;s.dirty=false;s.uncertain=false;s.form=null;s.formDirty=false;s.segmentDirty=false;s.attempt=null;s.selected=[];s.undo=null;s.error='';s.notice='';
   }
   async function appearanceBackToList(){if(!appearanceCanLeave_())return;appearanceCleanup_();await initAppearanceTool();}
   function appearanceReadForm_(){
@@ -47,7 +47,7 @@
   }
   function appearanceRenderMetadata_(){
     const s=appearanceToolState,f=s.form;
-    document.getElementById('appearanceToolApp').innerHTML='<div class="ap-card"><button class="u-btn" onclick="appearanceBackToList()">動画一覧に戻る</button><h2>'+(f.videoId?'動画情報を編集':'動画を登録')+'</h2>'+appearanceMessages_()+'<div class="ap-fields" oninput="appearanceToolState.formDirty=true"><label>YouTube URLまたは動画ID<input id="apMeta_youtubeVideoId" value="'+appearanceEscape_(f.youtubeVideoId)+'"></label><button class="u-btn" onclick="appearanceLookupMetadata()">YouTubeから情報を取得</button><label>タイトル<input id="apMeta_title" value="'+appearanceEscape_(f.title)+'"></label><div class="ap-grid"><label>公開日<input id="apMeta_publishedAt" type="date" value="'+appearanceEscape_(f.publishedAt)+'"></label><label>動画長（ミリ秒）<input id="apMeta_durationMs" type="number" min="1" step="1" value="'+appearanceEscape_(f.durationMs)+'"></label></div></div><p class="ap-muted">情報取得だけでは保存されません。既存動画のタイトル・公開日は確認してから変更してください。</p><div id="apMetadataCandidates"></div><div class="ap-actions"><button class="u-btn" onclick="appearanceSaveMetadata()">動画情報を保存</button>'+(f.videoId?'<button class="u-btn ap-danger" onclick="appearanceDeleteVideo()">動画を削除</button>':'')+'</div></div>';
+    document.getElementById('appearanceToolApp').innerHTML='<div class="management-card ap-card"><button class="u-btn" onclick="appearanceBackToList()">動画一覧に戻る</button><h2>'+(f.videoId?'動画情報を編集':'動画を登録')+'</h2>'+appearanceMessages_()+'<div class="ap-fields" oninput="appearanceToolState.formDirty=true"><label>YouTube URLまたは動画ID<input class="management-input" id="apMeta_youtubeVideoId" value="'+appearanceEscape_(f.youtubeVideoId)+'"></label><button class="u-btn" onclick="appearanceLookupMetadata()">YouTubeから情報を取得</button><label>タイトル<input class="management-input" id="apMeta_title" value="'+appearanceEscape_(f.title)+'"></label><div class="ap-grid"><label>公開日<input class="management-input" id="apMeta_publishedAt" type="date" value="'+appearanceEscape_(f.publishedAt)+'"></label><label>動画長（ミリ秒）<input class="management-input" id="apMeta_durationMs" type="number" min="1" step="1" value="'+appearanceEscape_(f.durationMs)+'"></label></div></div><p class="ap-muted">情報取得だけでは保存されません。既存動画のタイトル・公開日は確認してから変更してください。</p><div id="apMetadataCandidates"></div><div class="ap-actions"><button class="u-btn" onclick="appearanceSaveMetadata()">動画情報を保存</button>'+(f.videoId?'<button class="u-btn ap-danger" onclick="appearanceDeleteVideo()">動画を削除</button>':'')+'</div></div>';
   }
   function appearanceBusy_(busy){appearanceToolState.busy=busy;const app=document.getElementById('appearanceToolApp');if(app)app.querySelectorAll('button,input,select').forEach(function(el){if(busy){el.dataset.apBusyDisabled=el.disabled?'1':'0';el.disabled=true;}else if(el.dataset.apBusyDisabled!==undefined){el.disabled=el.dataset.apBusyDisabled==='1';delete el.dataset.apBusyDisabled;}});}
   async function appearanceLookupMetadata(){
@@ -59,7 +59,7 @@
       const duplicate=s.catalog.videos.find(function(v){return v.youtubeVideoId===meta.youtubeVideoId&&v.videoId!==f.videoId;});
       const candidates=s.catalog.videos.map(function(v,i){return {video:v,index:i};}).filter(function(x){return !x.video.youtubeVideoId&&((meta.title&&x.video.title===meta.title)||(meta.publishedAt&&x.video.publishedAt===meta.publishedAt));});
       const host=document.getElementById('apMetadataCandidates');
-      if(duplicate)host.innerHTML='<p class="ap-error">登録済みの動画です：'+appearanceEscape_(duplicate.title)+'。一覧からその動画を開いてください。</p>';
+      if(duplicate)host.innerHTML='<p class="management-error">登録済みの動画です：'+appearanceEscape_(duplicate.title)+'。一覧からその動画を開いてください。</p>';
       else if(!f.videoId&&candidates.length)host.innerHTML='<p class="ap-notice">URL未登録の候補があります。同じ動画なら既存データを選択してください。別の動画ならそのまま新規保存できます。</p>'+candidates.map(function(x){return '<button class="u-btn ap-segment" onclick="appearanceLinkCandidate('+x.index+')">'+appearanceEscape_(x.video.title)+' · '+appearanceEscape_(x.video.publishedAt)+'</button>';}).join('');
     }catch(error){s.error=String(error.message||error);appearanceRenderMetadata_();}finally{appearanceBusy_(false);}
   }
@@ -68,7 +68,10 @@
     s.form=Object.assign({},v,{youtubeVideoId:meta.youtubeVideoId,durationMs:meta.durationMs||v.durationMs,livePending:meta.livePending,embeddable:meta.embeddable});s.notice='既存動画へのURL補完を選択しました。確認して保存してください。';s.formDirty=true;appearanceRenderMetadata_();
   }
   async function appearanceSaveMetadata(){
-    const s=appearanceToolState,payload=appearanceReadForm_();appearanceBusy_(true);
+    const s=appearanceToolState,payload=appearanceReadForm_();
+    const current=s.catalog.videos.find(function(v){return v.videoId===payload.videoId;});
+    if(current&&current.measuredMs>0&&payload.youtubeVideoId!==current.youtubeVideoId){if(!window.confirm('YouTube動画を変更します。計測済み区間はそのまま残ります。同じ動画のURL訂正であることを確認しましたか？'))return;payload.youtubeChangeConfirmed=true;}
+    appearanceBusy_(true);
     try{const result=await appearanceCall_(payload.videoId?'updateVideoMetadata':'registerVideo',payload);s.formDirty=false;s.form=null;s.notice='動画情報を保存しました。';s.error='';await initAppearanceTool();return result;}
     catch(error){s.error=String(error.message||error);appearanceRenderMetadata_();}finally{appearanceBusy_(false);}
   }
@@ -111,27 +114,28 @@
   }
   function appearanceRenderEditor_(){
     const s=appearanceToolState,v=s.video;
-    document.getElementById('appearanceToolApp').innerHTML='<div class="ap-row"><button class="u-btn" onclick="appearanceBackToList()">動画一覧に戻る</button><span id="apDirty" class="ap-dirty"></span></div><div class="ap-card"><h2>'+appearanceEscape_(v.title)+'</h2><div class="ap-player"><div id="apYouTubePlayer"></div></div><p id="apPlayerMessage" class="ap-muted"></p><div id="apCurrentTime" class="ap-time">00:00.000</div><div class="ap-seek">'+[-5,-1,1,5].map(function(n){return '<button class="u-btn" data-ap-player onclick="appearanceSeek('+n+')">'+(n>0?'+':'')+n+'秒</button>';}).join('')+'</div><div class="ap-members">'+s.catalog.members.map(function(m){return '<button class="u-btn" data-ap-select="'+m.memberId+'" aria-pressed="false" onclick="appearanceSelect(\''+m.memberId+'\')">'+appearanceEscape_(m.name)+'</button>';}).join('')+'<button class="u-btn" data-ap-select="ALL" onclick="appearanceSelect(\'ALL\')">ALL</button><button class="u-btn" data-ap-select="NONE" aria-pressed="false" onclick="appearanceSelect(\'NONE\')">出演者なし</button><button class="u-btn" data-ap-player onclick="appearanceClearSelection()">選択解除</button></div><div class="ap-row"><button class="u-btn" data-ap-player onclick="appearancePlayPause()">再生／一時停止</button><button id="apConfirm" class="u-btn" onclick="appearanceConfirmSegment(false)">区間確定</button><button id="apUndo" class="u-btn" onclick="appearanceUndo()">取り消し</button></div></div><div id="apEditSegment" oninput="appearanceToolState.segmentDirty=true"></div><div class="ap-savebar"><div class="ap-grid"><label>分析状態<select id="apStatus" onchange="appearanceToolState.video.status=this.value;appearanceToolState.dirty=true;appearanceUpdateControls_()"><option value="in_progress">作業中</option><option value="completed">分析完了</option></select></label><label>動画長（ミリ秒）<input id="apDuration" type="number" min="1" step="1" value="'+appearanceEscape_(v.durationMs)+'" onchange="appearanceSetDuration(this.value)"></label></div><p class="ap-muted">動画長が読み込めない場合は再取得するか手動で補完してください。区間確定と保存は別の操作です。</p><div class="ap-row"><button class="u-btn" onclick="appearanceRefreshDuration()">尺を再取得</button><button id="apSave" class="u-btn" onclick="appearanceSaveAnalysis()">保存</button><button id="apReload" class="u-btn" onclick="appearanceReconcile()" hidden>保存済みデータを再取得</button></div><p id="apSaveHint" class="ap-muted"></p></div><div id="apEditorMessages"></div><details class="ap-card"><summary>確定済み区間 <span id="apSegmentCount"></span></summary><div id="apSegments" class="ap-segments"></div></details>';
+    document.getElementById('appearanceToolApp').innerHTML='<div class="ap-row"><button class="u-btn" onclick="appearanceBackToList()">動画一覧に戻る</button><span id="apDirty" class="ap-dirty"></span></div><div class="management-card ap-card"><h2>'+appearanceEscape_(v.title)+'</h2><div class="ap-player"><div id="apYouTubePlayer"></div></div><p id="apPlayerMessage" class="ap-muted"></p><div id="apCurrentTime" class="ap-time">00:00.000</div><div class="ap-seek">'+[-5,-1,1,5].map(function(n){return '<button class="u-btn" data-ap-player onclick="appearanceSeek('+n+')">'+(n>0?'+':'')+n+'秒</button>';}).join('')+'</div><div class="ap-members">'+s.catalog.members.map(function(m){return '<button class="u-btn" data-ap-select="'+m.memberId+'" aria-pressed="false" onclick="appearanceSelect(\''+m.memberId+'\')">'+appearanceEscape_(m.name)+'</button>';}).join('')+'<button class="u-btn" data-ap-select="ALL" onclick="appearanceSelect(\'ALL\')">ALL</button><button class="u-btn" data-ap-select="NONE" aria-pressed="false" onclick="appearanceSelect(\'NONE\')">出演者なし</button><button class="u-btn" data-ap-player onclick="appearanceClearSelection()">選択解除</button></div><div class="ap-row"><button class="u-btn" data-ap-player onclick="appearancePlayPause()">再生／一時停止</button><button id="apConfirm" class="u-btn" onclick="appearanceConfirmSegment(false)">区間確定</button><button id="apUndo" class="u-btn" onclick="appearanceUndo()">取り消し</button></div></div><div id="apEditSegment" oninput="appearanceToolState.segmentDirty=true"></div><div class="management-card ap-savebar"><div class="ap-grid"><label>分析状態<select class="management-input" id="apStatus" onchange="appearanceToolState.video.status=this.value;appearanceToolState.dirty=true;appearanceUpdateControls_()"><option value="in_progress">作業中</option><option value="completed">分析完了</option></select></label><label>動画長（ミリ秒）<input class="management-input" id="apDuration" type="number" min="1" step="1" value="'+appearanceEscape_(v.durationMs)+'" oninput="appearanceToolState.dirty=true" onchange="appearanceSetDuration(this.value)"></label></div><p class="ap-muted">動画長が読み込めない場合は再取得するか手動で補完してください。区間確定と保存は別の操作です。</p><div class="ap-row"><button class="u-btn" onclick="appearanceRefreshDuration()">尺を再取得</button><button id="apSave" class="u-btn" onclick="appearanceSaveAnalysis()">保存</button><button id="apReload" class="u-btn" onclick="appearanceReconcile()" hidden>保存済みデータを再取得</button></div><p id="apSaveHint" class="ap-muted"></p></div><div id="apEditorMessages"></div><details class="management-card ap-card"><summary>確定済み区間 <span id="apSegmentCount"></span></summary><div id="apSegments" class="ap-segments"></div></details>';
     document.getElementById('apStatus').value=v.status==='completed'?'completed':'in_progress';appearanceRenderSegments_();appearanceUpdateControls_();
   }
   function appearancePosition_(){const s=appearanceToolState;if(!s.ready||!s.player||s.blocked)throw new Error('プレーヤーの読み込みを待ってください。');const seconds=s.player.getCurrentTime();if(!Number.isFinite(seconds)||seconds<0)throw new Error('再生位置を取得できません。');return Math.round(seconds*1000);}
   function appearanceValidDuration_(){const s=appearanceToolState;return Number.isSafeInteger(s.video&&s.video.durationMs)&&s.video.durationMs>0&&!s.livePending&&!s.blocked;}
-  function appearanceSetDuration(value){const s=appearanceToolState;if(s.busy||s.open)return;const n=Number(value);if(!Number.isSafeInteger(n)||n<=0||s.segments.some(function(r){return r.endMs>n;})){showToast('有効な動画長を入力してください。区間の終端より短くできません。');document.getElementById('apDuration').value=s.video.durationMs||'';return;}s.video.durationMs=n;s.dirty=true;appearanceUpdateControls_();}
+  function appearanceSetDuration(value){const s=appearanceToolState;if(s.busy||s.uncertain||s.open)return;const n=Number(value);if(!Number.isSafeInteger(n)||n<=0||s.segments.some(function(r){return r.endMs>n;})){showToast('有効な動画長を入力してください。区間の終端より短くできません。');document.getElementById('apDuration').value=s.video.durationMs||'';return;}s.video.durationMs=n;s.dirty=true;s.error='';appearanceUpdateControls_();}
   function appearanceRefreshDuration(){const s=appearanceToolState;try{const ms=Math.round(s.player.getDuration()*1000);if(!Number.isSafeInteger(ms)||ms<=0)throw new Error('動画長を取得できません。読み込み後に再試行してください。');appearanceSetDuration(ms);document.getElementById('apDuration').value=s.video.durationMs;}catch(error){showToast(error.message);}}
   function appearanceSelect(id){
     const s=appearanceToolState;if(s.busy||s.uncertain||!s.ready||!appearanceValidDuration_())return;
-    if(s.player.getPlayerState()===YT.PlayerState.PLAYING){showToast('一時停止してから出演者を選んでください。');return;}
+    if([-1,0,2,5].indexOf(s.player.getPlayerState())<0){showToast('一時停止してから出演者を選んでください。');return;}
     if(document.getElementById('apEditSegment').innerHTML){showToast('区間の編集を確定またはキャンセルしてください。');return;}
     try{
-      if(id==='NONE')s.selected=s.selected.length===1&&s.selected[0]==='NONE'?[]:['NONE'];
-      else if(id==='ALL')s.selected=s.catalog.members.map(function(m){return m.memberId;});
-      else{s.selected=s.selected.filter(function(x){return x!=='NONE';});const i=s.selected.indexOf(id);if(i<0)s.selected.push(id);else s.selected.splice(i,1);}
-      if(!s.selected.length)s.open=null;
-      else if(!s.open)s.open={startMs:appearancePosition_()};
+      let selected=s.selected.slice();
+      if(id==='NONE')selected=selected.length===1&&selected[0]==='NONE'?[]:['NONE'];
+      else if(id==='ALL')selected=s.catalog.members.map(function(m){return m.memberId;});
+      else{selected=selected.filter(function(x){return x!=='NONE';});const i=selected.indexOf(id);if(i<0)selected.push(id);else selected.splice(i,1);}
+      const open=selected.length?(s.open||{startMs:appearancePosition_()}):null;
+      s.selected=selected;s.open=open;
       appearanceUpdateControls_();
     }catch(error){showToast(error.message);}
   }
-  function appearanceClearSelection(){const s=appearanceToolState;if(s.busy)return;if(s.open&&!window.confirm('未確定の区間を破棄しますか？'))return;s.open=null;s.selected=[];appearanceUpdateControls_();}
+  function appearanceClearSelection(){const s=appearanceToolState;if(s.busy||s.uncertain)return;if(s.open&&!window.confirm('未確定の区間を破棄しますか？'))return;s.open=null;s.selected=[];appearanceUpdateControls_();}
   function appearanceSeek(delta){const s=appearanceToolState;if(s.busy||!s.ready||s.blocked)return;try{s.player.seekTo(Math.max(0,Math.min((s.video.durationMs||Infinity)/1000,appearancePosition_()/1000+delta)),true);}catch(error){showToast(error.message);}}
   function appearancePlayPause(){const s=appearanceToolState;if(s.busy||!s.ready||s.blocked)return;if(s.player.getPlayerState()===YT.PlayerState.PLAYING)s.player.pauseVideo();else s.player.playVideo();}
   function appearanceValidateClientSegments_(list){const s=appearanceToolState,sorted=list.slice().sort(function(a,b){return a.startMs-b.startMs;});sorted.forEach(function(r,i){if(!Number.isSafeInteger(r.startMs)||!Number.isSafeInteger(r.endMs)||r.startMs<0||r.startMs>=r.endMs||!appearanceValidDuration_()||r.endMs>s.video.durationMs)throw new Error('区間は開始＜終了、動画長以内で入力してください。');if(i&&sorted[i-1].endMs>r.startMs)throw new Error('既存区間と重複します。区間一覧から修正してください。');});return sorted;}
@@ -141,7 +145,7 @@
       let end=appearancePosition_();
       if(atEnd){const actual=Math.round(s.player.getDuration()*1000);if(!Number.isSafeInteger(actual)||actual<=0||!appearanceValidDuration_()||Math.abs(actual-s.video.durationMs)>1000)throw new Error('動画の終了位置を確認できません。動画長を確認して区間を確定してください。');end=s.video.durationMs;}
       const segment={startMs:s.open.startMs,endMs:end,memberIds:s.selected.slice().sort().join(',')};
-      const result=appearanceValidateClientSegments_(s.segments.concat([segment]));s.undo=s.segments.slice();s.segments=result;s.open=null;s.selected=[];s.dirty=true;s.player.pauseVideo();appearanceRenderSegments_();appearanceUpdateControls_();
+      const result=appearanceValidateClientSegments_(s.segments.concat([segment]));s.undo=s.segments.slice();s.segments=result;s.open=null;s.selected=[];s.dirty=true;s.error='';s.player.pauseVideo();appearanceRenderSegments_();appearanceUpdateControls_();
     }catch(error){s.error=error.message;appearanceUpdateControls_();}
   }
   function appearanceRenderSegments_(){const s=appearanceToolState,host=document.getElementById('apSegments');if(!host)return;document.getElementById('apSegmentCount').textContent=s.segments.length+'件';host.innerHTML=s.segments.map(function(r,i){return {row:r,index:i};}).reverse().map(function(x){const r=x.row;return '<button class="u-btn ap-segment" onclick="appearanceEditSegment('+x.index+')">'+appearanceTime_(r.startMs)+' → '+appearanceTime_(r.endMs)+'<br>'+appearanceEscape_(appearanceMemberNames_(r.memberIds))+'</button>';}).join('')||'<p class="ap-muted">確定済み区間はありません。</p>';}
@@ -150,12 +154,13 @@
     const s=appearanceToolState;if(s.busy||s.uncertain)return;if(s.open){showToast('先に未確定の区間を確定または解除してください。');return;}
     if(s.segmentDirty&&!window.confirm('編集中の区間の変更を破棄しますか？'))return;
     const r=s.segments[index];if(s.ready){s.player.pauseVideo();s.player.seekTo(r.startMs/1000,true);}
-    s.segmentDirty=false;document.getElementById('apEditSegment').innerHTML='<div class="ap-card"><h2>区間を編集</h2><div class="ap-fields"><div class="ap-grid"><label>開始（ミリ秒）<input id="apSegmentStart" type="number" min="0" step="1" value="'+r.startMs+'"></label><label>終了（ミリ秒）<input id="apSegmentEnd" type="number" min="1" step="1" value="'+r.endMs+'"></label></div><div class="ap-row">'+s.catalog.members.concat([{memberId:'NONE',name:'出演者なし'}]).map(function(m){return '<label><input type="checkbox" data-ap-edit-member value="'+m.memberId+'" '+(r.memberIds.split(',').includes(m.memberId)?'checked':'')+' onchange="appearanceEditMemberToggle(this)">'+appearanceEscape_(m.name)+'</label>';}).join('')+'</div><div class="ap-actions"><button class="u-btn" onclick="appearanceApplySegment('+index+')">編集を確定</button><button class="u-btn" onclick="appearanceCancelSegmentEdit()">キャンセル</button><button class="u-btn ap-danger" onclick="appearanceRemoveSegment('+index+')">この区間を削除</button></div></div></div>';appearanceUpdateControls_();
+    s.segmentDirty=false;document.getElementById('apEditSegment').innerHTML='<div class="management-card ap-card"><h2>区間を編集</h2><div class="ap-fields"><div class="ap-grid"><label>開始（ミリ秒）<input class="management-input" id="apSegmentStart" type="number" min="0" step="1" value="'+r.startMs+'"></label><label>終了（ミリ秒）<input class="management-input" id="apSegmentEnd" type="number" min="1" step="1" value="'+r.endMs+'"></label></div><div class="ap-row">'+s.catalog.members.concat([{memberId:'NONE',name:'出演者なし'}]).map(function(m){return '<label><input type="checkbox" data-ap-edit-member value="'+m.memberId+'" '+(r.memberIds.split(',').includes(m.memberId)?'checked':'')+' onchange="appearanceEditMemberToggle(this)">'+appearanceEscape_(m.name)+'</label>';}).join('')+'</div><div class="ap-actions"><button class="u-btn" onclick="appearanceApplySegment('+index+')">編集を確定</button><button class="u-btn" onclick="appearanceCancelSegmentEdit()">キャンセル</button><button class="u-btn ap-danger" onclick="appearanceRemoveSegment('+index+')">この区間を削除</button></div></div></div>';appearanceUpdateControls_();
   }
   function appearanceEditMemberToggle(input){appearanceToolState.segmentDirty=true;if(!input.checked)return;document.querySelectorAll('[data-ap-edit-member]').forEach(function(el){if(input.value==='NONE'?el.value!=='NONE':el.value==='NONE')el.checked=false;});}
   function appearanceCancelSegmentEdit(){appearanceToolState.segmentDirty=false;document.getElementById('apEditSegment').innerHTML='';appearanceUpdateControls_();}
   function appearanceApplySegment(index){
-    const s=appearanceToolState,ids=Array.from(document.querySelectorAll('[data-ap-edit-member]:checked')).map(function(el){return el.value;}).sort();if(!ids.length){showToast('出演者または出演者なしを選択してください。');return;}
+    const s=appearanceToolState;if(s.busy||s.uncertain)return;
+    const ids=Array.from(document.querySelectorAll('[data-ap-edit-member]:checked')).map(function(el){return el.value;}).sort();if(!ids.length){showToast('出演者または出演者なしを選択してください。');return;}
     const startValue=document.getElementById('apSegmentStart').value,endValue=document.getElementById('apSegmentEnd').value;
     if(startValue===''||endValue===''){showToast('開始・終了位置を入力してください。');return;}
     const next={startMs:Number(startValue),endMs:Number(endValue),memberIds:ids.join(',')};
@@ -167,8 +172,8 @@
       list=appearanceValidateClientSegments_(list.concat([next]));s.undo=s.segments.slice();s.segments=list;s.dirty=true;appearanceCancelSegmentEdit();appearanceRenderSegments_();appearanceUpdateControls_();
     }catch(error){showToast(error.message);}
   }
-  function appearanceRemoveSegment(index){const s=appearanceToolState;if(s.busy||!window.confirm('この区間を削除しますか？'))return;s.undo=s.segments.slice();s.segments=s.segments.filter(function(r,i){return i!==index;});s.dirty=true;appearanceCancelSegmentEdit();appearanceRenderSegments_();appearanceUpdateControls_();}
-  function appearanceUndo(){const s=appearanceToolState;if(s.busy||s.open||!s.undo)return;s.segments=s.undo;s.undo=null;s.dirty=true;appearanceCancelSegmentEdit();appearanceRenderSegments_();appearanceUpdateControls_();}
+  function appearanceRemoveSegment(index){const s=appearanceToolState;if(s.busy||s.uncertain||!window.confirm('この区間を削除しますか？'))return;s.undo=s.segments.slice();s.segments=s.segments.filter(function(r,i){return i!==index;});s.dirty=true;appearanceCancelSegmentEdit();appearanceRenderSegments_();appearanceUpdateControls_();}
+  function appearanceUndo(){const s=appearanceToolState;if(s.busy||s.uncertain||s.open||!s.undo)return;s.segments=s.undo;s.undo=null;s.dirty=true;appearanceCancelSegmentEdit();appearanceRenderSegments_();appearanceUpdateControls_();}
   function appearanceUpdateControls_(){
     const s=appearanceToolState;if(!s.video||!document.getElementById('apSave'))return;
     if(!s.video.durationMs&&s.metadataChecked&&s.ready&&!s.livePending&&!s.blocked){const actual=Math.round(s.player.getDuration()*1000);if(Number.isSafeInteger(actual)&&actual>0){s.video.durationMs=actual;s.dirty=true;document.getElementById('apDuration').value=actual;}}
@@ -187,7 +192,7 @@
     document.getElementById('apDirty').textContent=s.busy?'処理中…':s.dirty||s.open?'未保存':'';
     document.getElementById('apSaveHint').textContent=s.open?'区間確定が必要です。':s.uncertain?'保存結果を再取得して確認してください。':s.busy?'保存しています…':'確定済み区間と現在の再生位置を保存します。';
     document.getElementById('apPlayerMessage').textContent=s.livePending?'配信中・配信予定のため計測不可':s.blocked?'埋め込み再生不可・計測不可':s.open?'区間開始：'+appearanceTime_(s.open.startMs):'一時停止中に出演者を選択してください。';
-    document.getElementById('apEditorMessages').innerHTML=appearanceMessages_();
+    const messages=document.getElementById('apEditorMessages'),markup=appearanceMessages_();if(messages.innerHTML!==markup)messages.innerHTML=markup;
   }
   function appearanceSavePayload_(){const s=appearanceToolState;return {videoId:s.video.videoId,revision:s.video.revision,userId:getUniverseUserId(),durationMs:s.video.durationMs,status:s.video.status==='completed'?'completed':'in_progress',resumePositionMs:Math.min(appearancePosition_(),s.video.durationMs),segments:s.segments};}
   async function appearanceSaveAnalysis(){

@@ -56,3 +56,31 @@ test('route, analysis entry and includes wire into canonical owners without chan
  assert.match(read('AppOverlays.html'),/openAppearanceTool\(\)/);assert.match(read('AnalysisScripts.html'),/appearanceRenderAnalysis\(\)/);
  for(const name of ['AppearanceStyles','AppearancePage','AppearanceScripts','AppearanceAnalysis'])assert.match(read('Index.html'),new RegExp("include\\('"+name+"'\\)"));
 });
+
+
+test('buffering cannot start a measurement and unresolved saves freeze every segment mutation',()=>{
+ const {api,s,el}=client();api.playState=3;api.appearanceSelect('101');assert.equal(s.open,null);
+ s.segments=[{startMs:0,endMs:100000,memberIds:'101'}];s.undo=[];s.uncertain=true;api.appearanceUndo();assert.equal(s.segments.length,1);
+ api.appearanceRemoveSegment(0);assert.equal(s.segments.length,1);
+ el('apSegmentStart').value='0';el('apSegmentEnd').value='120000';api.document.querySelectorAll=q=>q==='[data-ap-edit-member]:checked'?[{value:'102'}]:[];
+ api.appearanceApplySegment(0);assert.equal(s.segments[0].endMs,100000);
+});
+
+test('invalid player position does not leave a selected performer without an open interval',()=>{
+ const {api,s}=client();api.time=NaN;api.appearanceSelect('101');assert.deepEqual(plain(s.selected),[]);assert.equal(s.open,null);
+});
+
+test('late legacy analysis bootstrap cannot reset the appearance filters',()=>{
+ const elements={analysisPanel:{innerHTML:'',isConnected:true}};let success;
+ const api={document:{getElementById:id=>elements[id]},google:{script:{run:{withSuccessHandler(fn){success=fn;return this;},withFailureHandler(){return this;},getAnalysisBootstrap(){}}}},currentRoute:'analysis',renderUniverseLoading:()=>'',escapeHtml:String,window:{__analysisCanonicalRuntimeState:{}},result:null};
+ vm.createContext(api);vm.runInContext(fs.readFileSync(path.join(root,'AnalysisScripts.html'),'utf8').replace(/^<script>/,'').replace(/<\/script>\s*$/,''),api);
+ api.initAnalysisPage();vm.runInContext("analysisView='appearance';",api);let renders=0;api.renderAnalysisView=()=>{renders++;};success({});assert.equal(renders,0);
+ api.currentRoute='home';vm.runInContext("analysisView='top';",api);success({});assert.equal(renders,0);
+});
+
+test('all client scripts compile together in the actual Index include order',()=>{
+ const index=fs.readFileSync(path.join(root,'Index.html'),'utf8');
+ const includes=[...index.matchAll(/include\('([^']+)'\)/g)].map(m=>m[1]+'.html');
+ const scripts=includes.flatMap(file=>[...fs.readFileSync(path.join(root,file),'utf8').matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]));
+ assert.doesNotThrow(()=>new vm.Script(scripts.join('\n;\n')));
+});

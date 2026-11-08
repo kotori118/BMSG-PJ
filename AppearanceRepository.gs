@@ -62,7 +62,7 @@ function appearanceVideo_(row) {
 function appearanceFind_(snapshot, id, revision) {
   const row=snapshot.videos.rows.find(function(r){return String(r.VideoID)===String(id);});
   if(!row)throw new Error('動画が見つかりません。削除された可能性があります。');
-  if(revision!==undefined && appearanceInteger_(revision,'Revision',0)!==Number(row.Revision))throw new Error('CONFLICT: 別の端末で変更されています。保存済みデータを再取得してください。');
+  if(arguments.length>=3 && appearanceInteger_(revision,'Revision',0)!==Number(row.Revision))throw new Error('CONFLICT: 別の端末で変更されています。保存済みデータを再取得してください。');
   return row;
 }
 function appearanceNormalizeSegments_(rows,duration) {

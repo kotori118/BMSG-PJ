@@ -270,11 +270,15 @@
   }
 
   /* Existing .u-btn actions inside management screens share the same size/radius. */
-  :is(.profile-management-panel,.image-management-panel,.image-replace-panel,.slm-panel,.slm-confirm-panel) .u-btn{
+  :is(.profile-management-panel,.image-management-panel,.image-replace-panel,.slm-panel,.slm-confirm-panel,.appearance-tool,.ap-filters) .u-btn{
     min-height:50px!important;
     border-radius:15px!important;
     padding:0 18px!important;
   }
+  /* Appearance selection/action semantics share the button owner. */
+  .appearance-tool .ap-members .u-btn{padding-inline:6px!important}
+  .appearance-tool .ap-members .u-btn[aria-pressed="true"]{background:var(--btn-bg-karaoke-active)!important;border-color:var(--btn-line-light-hover)!important;color:var(--cyan-ink)!important}
+  .appearance-tool .ap-danger{color:#a5233e!important}
   :is(.slm-back){width:46px!important;height:46px!important;min-width:46px!important;min-height:46px!important;padding:0!important;border-radius:14px!important;display:grid!important;place-items:center!important;font-size:28px!important;line-height:1!important}
 
   @media(prefers-reduced-motion:reduce){

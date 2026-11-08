@@ -8,7 +8,7 @@ function listVideos() {
       video.coverage=video.durationMs?video.measuredMs/video.durationMs:null;
       return video;
     }).sort(function(a,b){return b.publishedAt.localeCompare(a.publishedAt)||a.title.localeCompare(b.title);});
-    return {videos:videos,members:appearanceMembers_(s.ss),apiConfigured:!!PropertiesService.getScriptProperties().getProperty('YOUTUBE_API_KEY')};
+    return {videos:videos,members:appearanceMembers_(s.ss)};
   });
 }
 function getVideoAnalysis(videoId) {
@@ -83,7 +83,7 @@ function updateVideoMetadata(payload) {
     const s=appearanceSnapshot_(),row=appearanceFind_(s,payload.videoId,payload.revision);
     appearanceUniqueYouTube_(s,metadata.YouTubeVideoID,String(row.VideoID));
     const existing=appearanceSegments_(s,row.VideoID,Number(row.DurationMs)||null);
-    if(existing.length&&metadata.YouTubeVideoID!==String(row.YouTubeVideoID||''))throw new Error('計測済み動画のYouTube IDは変更できません。先に区間を確認・削除して保存してください。');
+    if(existing.length&&metadata.YouTubeVideoID!==String(row.YouTubeVideoID||'')&&payload.youtubeChangeConfirmed!==true)throw new Error('動画URLの変更には、計測済み区間を保持することの確認が必要です。動画一覧を再取得してから確認してください。');
     if(existing.length&&!metadata.DurationMs)throw new Error('計測済み動画の動画長は空欄にできません。');
     appearanceNormalizeSegments_(existing,metadata.DurationMs||null);
     const updated=Object.assign({},row,metadata,{Revision:Number(row.Revision)+1,SavedAt:new Date().toISOString()});

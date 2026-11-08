@@ -49,7 +49,7 @@ test('save replaces only target rows atomically, normalizes IDs and increments r
   assert.ok(state.requests[0].some(r=>r.updateCells?.start.sheetId===12));
 });
 test('stale revision, invalid intervals, pending segments, unknown member and incomplete completion cannot write',()=>{
-  for(const patch of [{revision:1},{segments:[{startMs:10,endMs:5,memberIds:'101'}]},{openSegment:{}},{segments:[{startMs:0,endMs:5,memberIds:'107'}]},{segments:[{startMs:0,endMs:5,memberIds:'101,101'}]},{segments:[{startMs:0,endMs:5,memberIds:'101'},{startMs:4,endMs:6,memberIds:'102'}]},{status:'completed'},{durationMs:0},{resumePositionMs:300001}]){
+  for(const patch of [{revision:undefined},{revision:1},{segments:[{startMs:10,endMs:5,memberIds:'101'}]},{openSegment:{}},{segments:[{startMs:0,endMs:5,memberIds:'107'}]},{segments:[{startMs:0,endMs:5,memberIds:'101,101'}]},{segments:[{startMs:0,endMs:5,memberIds:'101'},{startMs:4,endMs:6,memberIds:'102'}]},{status:'completed'},{durationMs:0},{resumePositionMs:300001}]){
     const {api,state}=runtime();assert.throws(()=>api.saveVideoAnalysis({...payload,...patch}));assert.equal(state.requests.length,0);assert.equal(state.locks,0);
   }
 });
@@ -90,4 +90,24 @@ test('aggregation includes ALL individually, excludes ALL from pairs, includes N
   assert.equal(api.appearanceAggregate_(videos,members,{from:'2026-03-10',to:'2026-03-10'}).measuredMs,10000);
   const missing=api.appearanceAggregate_([{...videos[0],durationMs:null}],members,{});assert.equal(missing.coverage,null);assert.equal(missing.coverageUnavailable,true);
   const empty=api.appearanceAggregate_([{...videos[0],segments:[]}],members,{});assert.equal(empty.ranking[0].rate,null);assert.equal(empty.coverage,null);
+});
+
+test('metadata and delete require a revision, and confirmed URL correction preserves measured intervals',()=>{
+ const {api,state}=runtime();const p={userId:'U001',videoId:'VID000001',title:'one',publishedAt:'2026-01-01',durationMs:300000,youtubeVideoId:'abcdefghijk'};
+ assert.throws(()=>api.updateVideoMetadata(p),/Revision/);assert.throws(()=>api.deleteVideo({userId:'U001',videoId:'VID000001',confirmed:true,confirmTitle:'one',segmentCount:2}),/Revision/);assert.equal(state.requests.length,0);
+ assert.throws(()=>api.updateVideoMetadata({...p,revision:2,youtubeVideoId:'short'}));
+ // A different valid 11-character ID is a metadata correction after explicit confirmation.
+ assert.throws(()=>api.updateVideoMetadata({...p,revision:2,youtubeVideoId:'newvideo123'}),/確認/);
+ const result=api.updateVideoMetadata({...p,revision:2,youtubeVideoId:'newvideo123',youtubeChangeConfirmed:true});assert.equal(result.video.youtubeVideoId,'newvideo123');assert.equal(result.segments.length,2);
+});
+
+test('header mapping survives column reordering and interleaved replacement preserves other videos',()=>{
+ for(let count=1;count<=16;count++){
+  const {api,sheets}=runtime();
+  sheets['13_VideoSegments'].values=[['VideoID','StartMs','EndMs','MemberIDs'],...Array.from({length:count},(_,i)=>[i%2?'VID000001':'VID000002',i*100,(i+1)*100,i%2?'101':'NONE'])];sheets['13_VideoSegments'].max=count+1;
+  for(const name of ['12_Videos','13_VideoSegments'])sheets[name].values=sheets[name].values.map(row=>row.slice().reverse());
+  const before=plain(api.getVideoAnalysis('VID000002').segments);
+  api.saveVideoAnalysis(payload);
+  assert.deepEqual(plain(api.getVideoAnalysis('VID000002').segments),before);assert.equal(api.getVideoAnalysis('VID000001').video.revision,3);assert.equal(api.getVideoAnalysis('VID000001').segments.length,1);
+ }
 });

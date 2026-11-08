@@ -86,3 +86,13 @@ deploy前に `node scripts/validate-gas-sources.mjs` と `node --test tests/*.te
 6. 許可後の検証環境でYouTube自動情報取得、iPhoneのinline再生・シーク・動画終了、埋め込み不可、実スプシ保存・競合・削除を確認する。ローカルテストはこれらの実機確認の代替ではない。
 
 設計書： https://docs.google.com/document/d/1CrqluzGyTAqVhLxduTmyJN4EvFyOaZNGVU9nQ32Y8Sw/edit
+
+### 2026-11-08 追加監査（未デプロイ）
+
+- 更新・保存・削除APIは期待Revisionを必須とし、省略による競合検出の迂回を拒否する。
+- 結果不明の保存を照合する間は区間の追加・変更・削除・取り消し・選択解除を停止。buffering中の選択を拒否し、再生位置取得に失敗した場合は選択状態を変更しない。
+- 既存分析Bootstrapの遅延応答で映像出演分析の期間指定をリセットしない。共通グラフ破棄時はTooltipの遅延タイマーも解除する。
+- 計測済み動画のURL訂正は、同じ動画であることの明示確認後、既存区間を保持して許可する。動画長以内・ID重複・Revision検証は維持する。
+- 管理カード・入力・エラーはManagementSystem、ボタンのサイズ・選択・危険操作の外観はButtonSystem、分析表・グラフは既存AnalysisScriptsを再利用。機能側の独自表ラッパー、未使用状態、未使用API戻り値とCSSを削除した。
+- 静的検査はasync functionの重複も検出する。実Indexの67 include／44 script blockは結合してコンパイル確認済み。
+- Node26テスト成功。現在のスプレッドシートの読み取りスナップショットをローカル再生し、83動画／URL未登録29／6メンバーの読込を確認。実スプレッドシートへの書込・外部API実通信・実機Visual QAは未実施。
