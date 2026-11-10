@@ -1,0 +1,30 @@
+name: Validate LIVE ARCHIVE
+on:
+  pull_request:
+    paths: ['apps/live-archive/**', '.github/workflows/live-archive.yml']
+  push:
+    branches: ['feature/live-archive-*']
+    paths: ['apps/live-archive/**', '.github/workflows/live-archive.yml']
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/live-archive
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: apps/live-archive/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npm ci --no-audit --no-fund
+      - run: npm --prefix functions ci --no-audit --no-fund
+      - run: npm test
+      - run: npm run test:rules
+      - run: npm run build
+      - run: npm run build:functions

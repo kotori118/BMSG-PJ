@@ -1,0 +1,16 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function owner(uid) {
+      return request.auth != null && request.auth.uid == uid
+        && exists(/databases/$(database)/documents/config/owner)
+        && get(/databases/$(database)/documents/config/owner).data.uid == request.auth.uid;
+    }
+    match /users/{uid}/{document=**} {
+      allow read: if owner(uid);
+      // All mutations go through authenticated Functions: validation, revisions and dataset switch.
+      allow write: if false;
+    }
+    match /{document=**} { allow read, write: if false; }
+  }
+}
