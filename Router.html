@@ -1,7 +1,6 @@
 <script>
   function renderRoute(route, routeParams) {
     if(typeof resetUniverseCrossLinks==='function')resetUniverseCrossLinks();
-    if(currentRoute==='metrics'&&route!=='metrics'&&typeof cleanupPerformanceTimerPage==='function')cleanupPerformanceTimerPage();
     const meta = ROUTES[route]; currentRoute = route; setPageAtmosphere(route);
     if (!meta) { setTheme('dark'); setActiveNav(null); pageContent.innerHTML=render404(route); document.title='404 | BMSG UNIVERSE'; scrollAppToTop('smooth'); syncCurrentFavoriteButton(); return; }
     setTheme(meta.theme); setActiveNav(meta.parent);
@@ -10,7 +9,6 @@
       if(playIntro){document.body.classList.add('home-intro-running');homeIntroPlayed=true;setTimeout(function(){document.body.classList.remove('home-intro-running');},800);}
     } else if(route==='data'){pageContent.innerHTML=renderData();}
     else if(route==='lab'){pageContent.innerHTML=renderLab();}
-    else if(route==='metrics'){pageContent.innerHTML=renderPerformanceTimer();initPerformanceTimerPage(routeParams||{});}
     else if(route==='profile'){pageContent.innerHTML=renderProfile();initProfilePage();}
     else if(route==='lyrics'){pageContent.innerHTML=renderLyrics();initLyricsPage(routeParams||{});}
     else if(route==='karaoke'){pageContent.innerHTML=renderKaraoke();initKaraokePage(routeParams||{});}
@@ -44,7 +42,6 @@
     if(hasLyricsEditSession&&typeof confirmDiscardLyricsChanges_==='function'&&!confirmDiscardLyricsChanges_())return false;
     if(currentRoute==='cover'&&typeof coverConfirmExternalNavigation==='function'&&coverConfirmExternalNavigation(route))return false;
     if(currentRoute==='quiz'&&typeof quizCanLeave_==='function'&&!quizCanLeave_())return false;
-    if(currentRoute==='metrics'&&route!=='metrics'&&typeof performanceTimerCanLeave_==='function'&&!performanceTimerCanLeave_())return false;
     if(!hasLyricsEditSession&&route==='home'&&(currentRoute==='lyrics'||currentRoute==='karaoke')&&!window.confirm('この画面を離れてHOMEへ戻りますか？'))return false;
     if(!hasLyricsEditSession&&route==='data'&&currentRoute==='lyrics'&&!window.confirm('この画面を離れてDATAへ戻りますか？'))return false;
     return true;
