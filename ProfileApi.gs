@@ -184,7 +184,7 @@ function getProfileSearchData() {
 
 function buildProfileSearchPayload_() {
   const profiles = readCoreSheetDisplayObjects_(UNIVERSE_CONFIG.SHEETS.PROFILES);
-  const settings = readLogSheetDisplayObjects_(UNIVERSE_CONFIG.SHEETS.PROFILE_SETTINGS)
+  const settings = readCoreSheetDisplayObjects_(UNIVERSE_CONFIG.SHEETS.PROFILE_SETTINGS)
     .filter(function(setting) {
       return asBoolean_(setting.IsActive) && asBoolean_(setting.IsCompareTarget) && asId_(setting.ProfileID);
     })
@@ -243,7 +243,7 @@ function normalizeProfileSearchValues_(value, isMultiValue) {
 
 function buildProfileMemberDetailPayload_(memberId) {
   const profiles = readCoreSheetDisplayObjects_(UNIVERSE_CONFIG.SHEETS.PROFILES);
-  const settings = readLogSheetDisplayObjects_(UNIVERSE_CONFIG.SHEETS.PROFILE_SETTINGS);
+  const settings = readCoreSheetDisplayObjects_(UNIVERSE_CONFIG.SHEETS.PROFILE_SETTINGS);
   const profile = profiles.find(function(row) {
     return asId_(row.MemberID) === memberId;
   });

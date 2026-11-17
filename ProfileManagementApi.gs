@@ -8,7 +8,7 @@ function getProfileManagementBootstrap() {
   const core = SpreadsheetApp.openById(UNIVERSE_CONFIG.CORE_DB_ID);
   const members = profileMgmtReadObjects_(core.getSheetByName(UNIVERSE_CONFIG.SHEETS.MEMBERS));
   const groups = profileMgmtReadObjects_(core.getSheetByName(UNIVERSE_CONFIG.SHEETS.GROUPS));
-  const settings = profileMgmtReadObjects_(SpreadsheetApp.openById(UNIVERSE_CONFIG.LOG_DB_ID).getSheetByName(UNIVERSE_CONFIG.SHEETS.PROFILE_SETTINGS))
+  const settings = profileMgmtReadObjects_(core.getSheetByName(UNIVERSE_CONFIG.SHEETS.PROFILE_SETTINGS))
     .filter(function(row){ return asBoolean_(row.IsActive) && asId_(row.ProfileID); })
     .sort(function(a,b){ return asNumber_(a.DisplayOrder,9999)-asNumber_(b.DisplayOrder,9999); });
 
@@ -49,7 +49,7 @@ function getProfileManagementMember(memberId) {
   const row = profileTable.rows.find(function(item){ return asId_(item.record.MemberID) === id; });
   if (!row) throw new Error('プロフィールが見つかりません。');
 
-  const settings = profileMgmtReadObjects_(SpreadsheetApp.openById(UNIVERSE_CONFIG.LOG_DB_ID).getSheetByName(UNIVERSE_CONFIG.SHEETS.PROFILE_SETTINGS))
+  const settings = profileMgmtReadObjects_(core.getSheetByName(UNIVERSE_CONFIG.SHEETS.PROFILE_SETTINGS))
     .filter(function(item){ return asBoolean_(item.IsActive) && asId_(item.ProfileID); })
     .sort(function(a,b){ return asNumber_(a.DisplayOrder,9999)-asNumber_(b.DisplayOrder,9999); });
 
@@ -77,7 +77,7 @@ function saveProfileManagementMember(payload) {
     const context = profileMgmtResolveMember_(core, memberId);
     if (context.groupName !== groupName) throw new Error('グループとメンバーの組み合わせが一致しません。');
 
-    const settings = profileMgmtReadObjects_(SpreadsheetApp.openById(UNIVERSE_CONFIG.LOG_DB_ID).getSheetByName(UNIVERSE_CONFIG.SHEETS.PROFILE_SETTINGS))
+    const settings = profileMgmtReadObjects_(core.getSheetByName(UNIVERSE_CONFIG.SHEETS.PROFILE_SETTINGS))
       .filter(function(item){ return asBoolean_(item.IsActive) && asId_(item.ProfileID); })
       .sort(function(a,b){ return asNumber_(a.DisplayOrder,9999)-asNumber_(b.DisplayOrder,9999); });
 

@@ -10,10 +10,10 @@ function fixture({failOnColumn=0}={}){
     Groups:[['GroupID','GroupName'],['1','BE:FIRST']],
     Members:[['MemberID','GroupID','DisplayName','DisplayOrder'],['101','1','SOTA',1]],
     Profiles:[['MemberID','P000','P001','P002'],['101',1,'Before','Must stay hidden']],
-    Settings:[['ProfileID','FieldName','DataType','IsMultiValue','DisplayGroup','IsCompareTarget','QuizDifficulty','DisplayOrder','IsActive'],
-      ['P000','呼ばれ順','NUMBER',false,'基本',false,'普通',0,true],
-      ['P001','好きな色','TEXT',false,'基本',false,'普通',1,true],
-      ['P002','非表示の過去値','TEXT',false,'基本',false,'普通',2,false]]
+    Settings:[['ProfileID','FieldName','DataType','IsMultiValue','DisplayGroup','IsCompareTarget','DisplayOrder','IsActive'],
+      ['P000','呼ばれ順','NUMBER',false,'基本',false,0,true],
+      ['P001','好きな色','TEXT',false,'基本',false,1,true],
+      ['P002','非表示の過去値','TEXT',false,'基本',false,2,false]]
   };
   const errors=[],cache=[];
   const getSheet=(name)=>({
@@ -31,7 +31,7 @@ function fixture({failOnColumn=0}={}){
       }
     })
   });
-  const core={getSheetByName:(name)=>getSheet(name)},log={getSheetByName:(name)=>getSheet(name)};
+  const core={getSheetByName:(name)=>getSheet(name)},log={getSheetByName:()=>{throw new Error('ProfileSettings must live in Core');}};
   let locks=0,unlocks=0;
   const env={
     UNIVERSE_CONFIG:{USER_IDS:['U001','U002','U003'],CORE_DB_ID:'core',LOG_DB_ID:'log',SHEETS:{
@@ -93,7 +93,7 @@ test('new ProfileSettings fields appear in site bootstrap and value saving witho
   const x=fixture();
   x.data.Profiles[0].push('P016');
   x.data.Profiles[1].push('');
-  x.data.Settings.push(['P016','好きな映画','TEXT',false,'好み',false,'普通',16,true]);
+  x.data.Settings.push(['P016','好きな映画','TEXT',false,'好み',false,16,true]);
   const boot=x.call('getProfileManagementBootstrap',undefined);
   assert.equal(boot.fields.find(f=>f.profileId==='P016')?.label,'好きな映画');
   const saved=x.call('saveProfileManagementMember',{userId:'U001',memberId:'101',groupName:'BE:FIRST',
