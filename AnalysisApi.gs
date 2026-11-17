@@ -4,14 +4,13 @@
  * from BMSG_Universe_DB. The legacy ANALYSIS spreadsheet remains read-only.
  */
 
-const ANALYSIS_CACHE_KEY = 'analysis_bootstrap_v1';
 const ANALYSIS_CACHE_SECONDS = 300;
 const ANALYSIS_GROUP_ID = '1';
 const ANALYSIS_KEYWORDS = ['夢','愛','涙','君','僕','未来','世界','時代','頂点','光','明日','Amazing','Crazy'];
 
 function getAnalysisBootstrap() {
   const cache = CacheService.getScriptCache();
-  const cached = cache.get(ANALYSIS_CACHE_KEY);
+  const cached = cache.get(UNIVERSE_CACHE_KEYS_.ANALYSIS);
   if (cached) {
     try { return JSON.parse(cached); } catch (error) {}
   }
@@ -19,7 +18,7 @@ function getAnalysisBootstrap() {
   const data = buildAnalysisDataset_();
   try {
     const serialized = JSON.stringify(data);
-    if (serialized.length < 95000) cache.put(ANALYSIS_CACHE_KEY, serialized, ANALYSIS_CACHE_SECONDS);
+    if (serialized.length < 95000) cache.put(UNIVERSE_CACHE_KEYS_.ANALYSIS, serialized, ANALYSIS_CACHE_SECONDS);
   } catch (error) {}
   return data;
 }
@@ -32,7 +31,6 @@ function buildAnalysisDataset_() {
   const lyricsRows = readCoreSheetObjectsFromSpreadsheet_(spreadsheet, sheets.LYRICS_PARTS);
   const membersRows = readCoreSheetObjectsFromSpreadsheet_(spreadsheet, sheets.MEMBERS);
   const groupMembersRows = readCoreSheetObjectsFromSpreadsheet_(spreadsheet, sheets.GROUP_MEMBERS);
-  const transfersRows = readCoreSheetObjectsFromSpreadsheet_(spreadsheet, sheets.PART_TRANSFERS);
   const metrics = readAnalysisMetrics_(spreadsheet);
 
   const groupMemberIds = new Set(groupMembersRows
@@ -88,7 +86,6 @@ function buildAnalysisDataset_() {
   songs.forEach(function(song){ songById[song.id] = song; });
 
   const lyricsBySong = {};
-  const lyricTextByKey = {};
   lyricsRows.forEach(function(row){
     const songId = asId_(row.SongID);
     if (!songById[songId]) return;
@@ -98,7 +95,6 @@ function buildAnalysisDataset_() {
     const singerNames = singerIds.map(function(id){ return id === '99' ? 'ALL' : (memberById[id] ? memberById[id].name : id); });
     if (!lyricsBySong[songId]) lyricsBySong[songId] = [];
     lyricsBySong[songId].push({ order: order, singerIds: singerIds, members: singerNames.join(', '), membersArr: singerNames, text: text });
-    lyricTextByKey[songId + '_' + order] = text;
   });
   Object.keys(lyricsBySong).forEach(function(songId){ lyricsBySong[songId].sort(function(a,b){ return a.order - b.order; }); });
 
@@ -166,7 +162,6 @@ function buildAnalysisDataset_() {
 
   const sequence = buildAnalysisSequence_(songs, lyricsBySong);
   const phrase = buildAnalysisPhrase_(songs, lyricsBySong, memberNames);
-  const partTransfer = buildAnalysisPartTransfer_(transfersRows, songById, memberById, lyricTextByKey, memberNames);
 
   return {
     members: members,
@@ -176,7 +171,6 @@ function buildAnalysisDataset_() {
     otherAllSongsData: otherSongs,
     sequenceData: sequence,
     phraseData: phrase,
-    partTransferData: partTransfer,
     songDetails: songDetails
   };
 }
@@ -294,26 +288,3 @@ function buildAnalysisPhrase_(songs, lyricsBySong, memberNames) {
   return ANALYSIS_KEYWORDS.map(function(keyword){ return {keyword:keyword,stats:stats[keyword]}; }).filter(function(item){ return item.stats.total>0; }).sort(function(a,b){ return b.stats.total-a.stats.total; });
 }
 
-function buildAnalysisPartTransfer_(rows, songById, memberById, lyricTextByKey, memberNames) {
-  const countMap = {}; memberNames.forEach(function(name){ countMap[name]=0; });
-  const grouped = {}; let unique=0;
-  rows.forEach(function(row){
-    const songId=asId_(row.SongID), order=asNumber_(row.PartOrder,0), toId=asId_(row.ToMemberID), group=String(row.TransferGroup||'').trim();
-    if (!songById[songId] || !toId) return;
-    const memberName=memberById[toId] ? memberById[toId].name : toId;
-    const key=group ? songId+'_grp_'+group : 'row_'+(unique++);
-    if(!grouped[key]) grouped[key]={songId:songId,songName:songById[songId].name,timeValue:songById[songId].timeValue,order:order,members:new Set(),texts:[]};
-    grouped[key].members.add(memberName);
-    const text=lyricTextByKey[songId+'_'+order]||''; if(text) grouped[key].texts.push(text);
-  });
-  const transferList=[];
-  Object.keys(grouped).forEach(function(key){ const part=grouped[key]; part.members.forEach(function(name){
-    if(typeof countMap[name] !== 'undefined') countMap[name]++;
-    transferList.push({songId:part.songId,songName:part.songName,timeValue:part.timeValue,order:part.order,member:name,text:part.texts.join(' / ')});
-  }); });
-  transferList.sort(function(a,b){ return a.timeValue-b.timeValue || a.order-b.order; });
-  const groupedSongs=[]; let currentId='', current=null;
-  transferList.forEach(function(item){ if(item.songId!==currentId){currentId=item.songId;current={songId:item.songId,songName:item.songName,parts:[]};groupedSongs.push(current);} current.parts.push({member:item.member,text:item.text,order:item.order}); });
-  const ranking=memberNames.map(function(name){ return {name:name,count:countMap[name]}; }).sort(function(a,b){ return b.count-a.count; });
-  return { ranking:ranking, songs:groupedSongs };
-}

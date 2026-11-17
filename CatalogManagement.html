@@ -1,0 +1,451 @@
+<div id="catalogManagementOverlay" class="management-editor" hidden>
+  <section class="management-editor-panel catalog-panel">
+
+    <div id="catalogManagementBody" aria-live="polite"></div>
+  </section>
+</div>
+<style>
+  .cm-forms{display:grid;gap:12px}
+  .cm-note{font-size:12px;line-height:1.65;opacity:.72}
+  .cm-section{margin:0 0 8px;font-size:14px}
+  .cm-busy{opacity:.65;pointer-events:none}
+  .cm-forms .management-card{margin:0}
+  .cm-message{margin:10px 0;padding:10px 12px;border:1px solid rgba(156,236,255,.23);border-radius:12px;font-size:12px}
+  .cm-danger{border-color:rgba(255,120,120,.34)}
+  .cm-actions{display:flex;gap:8px;flex-wrap:wrap}
+  .cm-actions .u-btn{min-height:44px}
+  .cm-field input[type=color]{min-height:48px;padding:4px 8px}
+  .cm-unit-list{margin:8px 0;padding-left:25px;font-size:13px;line-height:1.9}
+  .cm-unit-list li{padding:2px 0}
+  @media(max-width:390px){.cm-tabs .u-btn{font-size:10px}}
+</style>
+<script>
+  const cmState={bootstrap:null,tab:'groups',busy:false,message:'',audit:null,profileFields:null,activeUnitId:''};
+  function cmEscape_(v){
+    return String(v==null?'':v).replace(/[&<>"']/g,function(ch){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];
+    });
+  }
+  function cmSelected_(a,b){return String(a)===String(b)?' selected':'';}
+  function cmOption_(id,label,selected){return '<option value="'+cmEscape_(id)+'"'+cmSelected_(id,selected)+'>'+cmEscape_(label)+'</option>';}
+  function cmOptions_(rows,idKey,labelKey,selected){
+    return '<option value="">選択してください</option>'+rows.map(function(r){return cmOption_(r[idKey],r[labelKey],selected);}).join('');
+  }
+  function cmField_(id,label,control){
+    return '<label class="management-field cm-field" for="'+id+'"><span>'+cmEscape_(label)+'</span>'+control+'</label>';
+  }
+  function cmInput_(id,type,value,placeholder){
+    return '<input class="management-input" type="'+type+'" id="'+id+'" value="'+cmEscape_(value||'')+'" placeholder="'+cmEscape_(placeholder||'')+'">';
+  }
+  function cmSelect_(id,html){
+    return '<select id="'+id+'">'+html+'</select>';
+  }
+  function cmValue_(id){const e=document.getElementById(id);return e?e.value:'';}
+  function cmChecked_(id){const e=document.getElementById(id);return !!(e&&e.checked);}
+  function cmNotify_(msg){cmState.message=msg;if(typeof moHost_==='function'&&moHost_()){moError_(msg);return;}if(managementState.params.section==='songs'){renderSlmInlineError_(msg);return;}cmCaptureForm_();cmRender_();}
+  function cmReload_(){
+    const uid=typeof getUniverseUserId==='function'?getUniverseUserId():'';
+    if(!uid){cmNotify_('利用ユーザーを選択してください。');return;}
+    cmState.busy=true;cmState.message='読み込み中...';cmRender_();
+    managementRunner_().withSuccessHandler(function(v){
+      cmState.bootstrap=v;cmState.busy=false;cmState.message='';
+      if(cmState.tab==='fields'&&v.schema&&v.schema.ready){cmState.profileFields=null;cmLoadProfileFields_();}
+      else cmRender_();
+    }).withFailureHandler(function(e){
+      cmState.busy=false;cmState.message='読み込み失敗: '+(e.message||e);cmRender_();
+    }).getCatalogManagementBootstrap(uid);
+  }
+  function cmCall_(name,payload){
+    if(cmState.busy)return;
+    cmCaptureForm_();
+    const runner=managementRunner_();
+    cmState.busy=true;cmState.message='保存中...';if(typeof moHost_==='function'&&moHost_())moSetBusy_(true);else if(managementState.params.section==='songs')setSlmBusy_(true);else cmRender_();
+    runner.withSuccessHandler(function(result){
+      cmState.busy=false;if(typeof moHost_==='function'&&moHost_())moSetBusy_(false);
+      if(!result||!result.ok){setSlmBusy_(false);cmNotify_('保存結果を確認してください。');return;}
+      cmState.form={};managementState.dirty=false;managementMutationDone_();
+      if(typeof moHost_==='function'&&moHost_()){moInit_();return;}
+      if(name==='catalogManagementCreateMember'&&result.memberId){managementState.initialMemberId=String(result.memberId);managementGo_('members','profile');}
+      else if(managementState.params.section==='songs'){setSlmBusy_(false);startSlmExisting();}else cmReload_();
+      if(typeof showToast==='function')showToast('保存しました。');
+    }).withFailureHandler(function(e){
+      cmState.busy=false;if(typeof moHost_==='function'&&moHost_())moSetBusy_(false);setSlmBusy_(false);cmNotify_('保存できませんでした: '+(e.message||e));
+    })[name](Object.assign({userId:getUniverseUserId()},payload||{}));
+  }
+  function cmLoadProfileFields_(){
+    if(cmState.busy)return;
+    const uid=typeof getUniverseUserId==='function'?getUniverseUserId():'';
+    if(!uid){cmNotify_('利用ユーザーを選択してください。');return;}
+    cmState.busy=true;cmState.message='プロフィール項目を読み込み中...';cmRender_();
+    managementRunner_().withSuccessHandler(function(result){
+      cmState.busy=false;cmState.message='';
+      cmState.profileFields=result&&result.ok?(result.fields||[]):null;
+      if(!cmState.profileFields)cmState.message='項目情報の読み込み結果を確認できません。';
+      cmRender_();
+    }).withFailureHandler(function(error){
+      cmState.busy=false;cmState.message='項目の読込失敗: '+(error.message||error);cmRender_();
+    }).getCatalogManagementProfileFields(uid);
+  }
+  function cmAuditDatabase_(){
+    if(cmState.busy)return;
+    const uid=typeof getUniverseUserId==='function'?getUniverseUserId():'';
+    if(!uid){cmNotify_('利用ユーザーを選択してください。');return;}
+    cmState.busy=true;cmState.message='データ構造を読み取り診断中...';cmRender_();
+    managementRunner_().withSuccessHandler(function(result){
+      cmState.busy=false;cmState.audit=result;cmState.message='DB診断が完了しました（変更なし）。';cmRender_();
+    }).withFailureHandler(function(e){
+      cmState.busy=false;cmState.message='DB診断に失敗: '+(e.message||e);cmRender_();
+    }).auditCatalogManagementDatabase(uid);
+  }
+  function cmConfirmTargetChange_(select){
+    if(managementState.dirty&&!window.confirm('未保存の変更を破棄して対象を切り替えますか？')){select.value=select.dataset.loaded||'';return false;}
+    select.dataset.loaded=select.value;managementState.dirty=false;cmState.form={};return true;
+  }
+  function cmCaptureForm_(){
+    const root=document.getElementById('catalogManagementBody');
+    if(!root)return;
+    cmState.form={};root.querySelectorAll('input,select,textarea').forEach(function(el){if(el.id)cmState.form[el.id]={value:el.value,checked:el.checked};});
+  }
+  function cmRestoreForm_(){
+    Object.keys(cmState.form||{}).forEach(function(id){const el=document.getElementById(id),v=cmState.form[id];if(el){el.value=v.value;el.checked=v.checked;}});
+  }
+  function cmCardsHtml_(html,indices){
+    const template=document.createElement('template');template.innerHTML=html;
+    const cards=template.content.querySelectorAll('.cm-forms > .management-card');
+    return '<div class="cm-forms">'+indices.map(function(i){return cards[i]?cards[i].outerHTML:'';}).join('')+'</div>';
+  }
+  function cmRender_(){
+    const root=document.getElementById('catalogManagementBody');if(!root)return;
+    const d=cmState.bootstrap,p=managementState.params;
+    if(!d){root.innerHTML=cmState.busy?renderUniverseLoading(cmState.message):'<p class="management-error">'+cmEscape_(cmState.message)+'</p><button class="u-btn" onclick="cmReload_()">再読み込み</button>';return;}
+    let html=cmState.message?'<p class="cm-message" role="status">'+cmEscape_(cmState.message)+'</p>':'';
+    if(cmState.tab==='audit'){
+      html+='<button class="u-btn" type="button" onclick="cmAuditDatabase_()">データを点検（読み取りのみ）</button>';
+      if(cmState.audit){const a=cmState.audit;html+='<section class="management-card"><h3>点検結果</h3><p>注意 '+(a.warnings||[]).length+'件'+(a.warningsTruncated?'（一部表示）':'')+'</p><ul>'+(a.warnings||[]).map(function(w){return '<li>'+cmEscape_(w.code+'：'+w.detail)+'</li>';}).join('')+'</ul></section>';}
+    }else if(d.schema&&!d.schema.ready){html+='<p class="management-error">管理データ構造の準備が必要です。移行は別作業で実施してください。</p>';}
+    else if(cmState.tab==='groups')html+=cmCardsHtml_(cmGroupsHtml_(d),p.action==='add'?[0]:[1]);
+    else if(cmState.tab==='members')html+=cmCardsHtml_(cmMembersHtml_(d),p.action==='add'?[0]:[1,2,3]);
+    else if(cmState.tab==='units')html+=cmUnitsHtml_(d);
+    else if(cmState.tab==='fields')html+=cmProfileFieldsHtml_();
+    root.innerHTML=html;cmRestoreForm_();
+    if(cmState.tab==='units')cmRenderUnitRoster_();
+    if(d.schema&&!d.schema.ready)return;
+    if(cmState.tab==='groups'&&p.action==='edit'){const target=document.getElementById('cmEditGroup');target.dataset.loaded=target.value;target.onchange=function(){if(!cmConfirmTargetChange_(target))return;cmFillGroup_();};}
+    if(cmState.tab==='members'&&p.action==='edit'){
+      const selected=document.getElementById('cmEditMember');
+      ['cmMaintenanceMember','cmDeleteMember'].forEach(function(id){const el=document.getElementById(id);el.value=selected.value;el.closest('label').hidden=true;});
+      const cards=root.querySelectorAll('.management-card');
+      [cards[1],cards[2]].forEach(function(card){if(card)card.hidden=!selected.value;});
+      selected.dataset.loaded=selected.value;selected.onchange=function(){
+        if(!cmConfirmTargetChange_(selected))return;
+        cmFillMember_();['cmMaintenanceMember','cmDeleteMember'].forEach(function(id){document.getElementById(id).value=selected.value;});
+        [cards[1],cards[2]].forEach(function(card){if(card)card.hidden=!selected.value;});
+      };
+    }
+    root.querySelectorAll('button,input,select,textarea').forEach(function(el){if(cmState.busy)el.disabled=true;});
+  }
+  function cmGroupActive_(g){return String(g.RecordStatus||'ACTIVE').toUpperCase()!=='ARCHIVED';}
+  function cmGroupKind_(g){return String(g.GroupKind||(Number(g.GroupID)<=4?'GROUP':'UNIT'));}
+  function cmMemberActive_(m){return String(m.RecordStatus||'ACTIVE').toUpperCase()!=='ARCHIVED';}
+  function cmProfileFieldsHtml_(){
+    if(!cmState.profileFields){
+      return '<section class="management-card"><h3 class="cm-section">プロフィール項目</h3>'+
+        '<p class="cm-note">プロフィールの項目定義を読み込んでください。値の編集は既存の「プロフィール管理」で行います。</p>'+
+        '<button class="u-btn" type="button" onclick="cmLoadProfileFields_()">項目を再読み込み</button></section>';
+    }
+    const fields=cmState.profileFields;
+    const options=fields.map(function(f){
+      return {value:f.profileId,caption:f.label+'（'+f.profileId+'）'+(f.isActive?'':' [非表示]')};
+    });
+    const opts='<option value="">項目を選択してください</option>'+
+      options.map(function(o){return cmOption_(o.value,o.caption);}).join('');
+    const active=fields.filter(function(f){return f.isActive;}).length;
+    return '<div class="cm-forms"><section class="management-card">'+
+      '<h3 class="cm-section">新しいプロフィール項目を追加</h3>'+
+      cmField_('cmProfileFieldName','項目名',cmInput_('cmProfileFieldName','text','','例：好きな映画'))+
+      cmField_('cmProfileFieldType','値の形式',cmSelect_('cmProfileFieldType',
+        cmOption_('TEXT','文字列')+cmOption_('NUMBER','数値')+cmOption_('DATE','日付')))+
+      cmField_('cmProfileFieldGroup','表示分類',cmInput_('cmProfileFieldGroup','text','基本','例：基本・好み・活動'))+
+      '<label class="management-field cm-field"><span>複数入力</span><span>'+
+        '<input id="cmProfileFieldMulti" type="checkbox"> 文字列を複数登録できるようにする</span></label>'+
+      '<p class="cm-note">ProfileIDは自動採番。既存メンバーの新項目は空欄のまま作成し、プロフィール編集画面から入力できます。</p>'+
+      '<div class="cm-actions"><button class="u-btn" type="button" onclick="cmCreateProfileField_()">項目を追加</button></div>'+
+      '</section><section class="management-card">'+
+      '<h3 class="cm-section">既存項目の非表示・再表示</h3>'+
+      '<p class="cm-note">項目'+fields.length+'件（表示中 '+active+'件）。非表示にしてもプロフィール値、列、ProfileIDは消えません。</p>'+
+      cmField_('cmProfileFieldTarget','項目','<select id="cmProfileFieldTarget" onchange="cmShowProfileField_()">'+opts+'</select>')+
+      '<p id="cmProfileFieldInfo" class="cm-note" role="status">項目を選択すると現在の設定を確認できます。</p>'+
+      '<div class="cm-actions">'+
+        '<button class="u-btn" type="button" onclick="cmSetProfileFieldActive_(false)">非表示にする</button>'+
+        '<button class="u-btn" type="button" onclick="cmSetProfileFieldActive_(true)">再表示する</button>'+
+      '</div><p class="cm-note">「呼ばれ順（P000）」は基礎項目のため非表示にできません。</p>'+
+      '</section></div>';
+  }
+  function cmSelectedProfileField_(){
+    return (cmState.profileFields||[]).find(function(x){
+      return x.profileId===cmValue_('cmProfileFieldTarget');
+    });
+  }
+  function cmShowProfileField_(){
+    const p=cmSelectedProfileField_(),target=document.getElementById('cmProfileFieldInfo');
+    if(!target)return;
+    target.textContent=p?
+      p.profileId+'｜'+p.displayGroup+'｜'+p.dataType+
+      (p.isMultiValue?'・複数入力':'')+'｜'+(p.isActive?'表示中':'非表示中'):
+      '項目を選択すると現在の設定を確認できます。';
+  }
+  function cmCreateProfileField_(){
+    const name=cmValue_('cmProfileFieldName').trim();
+    const type=cmValue_('cmProfileFieldType');
+    const isMulti=cmChecked_('cmProfileFieldMulti');
+    if(!name){cmNotify_('項目名を入力してください。');return;}
+    if(isMulti&&type!=='TEXT'){cmNotify_('複数入力にできるのは文字列のみです。');return;}
+    if(!window.confirm('新しいプロフィール項目「'+name+'」を追加します。既存データの値は変更しません。続けますか？'))return;
+    cmCall_('catalogManagementCreateProfileField',{
+      name:name,dataType:type,isMultiValue:isMulti,
+      displayGroup:cmValue_('cmProfileFieldGroup')
+    });
+  }
+  function cmSetProfileFieldActive_(isActive){
+    const field=cmSelectedProfileField_();
+    if(!field){cmNotify_('対象項目を選択してください。');return;}
+    if(field.isActive===isActive){cmNotify_('すでに'+(isActive?'表示中':'非表示中')+'です。');return;}
+    if(!isActive&&field.profileId==='P000'){cmNotify_('呼ばれ順は非表示にできません。');return;}
+    const action=isActive?'再表示':'非表示';
+    if(!window.confirm('「'+field.label+'」を'+action+'にしますか？\nプロフィールの値は消しません。'))return;
+    cmCall_('catalogManagementSetProfileFieldActive',{
+      profileId:field.profileId,isActive:isActive,expectedActive:field.isActive
+    });
+  }
+
+  function cmGroupsHtml_(d){
+    const g=d.groups.filter(cmGroupActive_);
+    return '<div class="cm-forms"><section class="management-card"><h3 class="cm-section">グループ・ユニットを追加</h3>'+
+      cmField_('cmGroupName','名称',cmInput_('cmGroupName','text','','グループ名'))+
+      cmField_('cmGroupKind','種類',cmSelect_('cmGroupKind',cmOption_('GROUP','グループ')+cmOption_('UNIT','ユニット')))+
+      cmField_('cmGroupColor','カラー',cmInput_('cmGroupColor','color','#777777'))+
+      '<div class="cm-actions"><button class="u-btn" type="button" onclick="cmCreateGroup_()">登録</button></div></section>'+
+      '<section class="management-card"><h3 class="cm-section">既存グループの編集</h3>'+
+      cmField_('cmEditGroup','対象',cmSelect_('cmEditGroup',cmOptions_(g,'GroupID','GroupName')))+
+      cmField_('cmEditGroupName','名称',cmInput_('cmEditGroupName','text',''))+
+      cmField_('cmEditGroupColor','カラー',cmInput_('cmEditGroupColor','color','#777777'))+
+      '<div class="cm-actions"><button class="u-btn" onclick="cmFillGroup_()" type="button">読込</button><button class="u-btn" onclick="cmSaveGroup_()" type="button">保存</button></div><p class="cm-note">曲などで使用中のグループ名は変更できません。カラーは更新可能です。同じカラーコードを持つ別のグループ・メンバーがいる場合は登録できません。</p></section></div>';
+  }
+  /** Fast feedback only. BMSG-DB performs authoritative validation under lock. */
+  function cmColorAvailable_(hex,kind,id){
+    const normalized=String(hex||'').trim().toUpperCase();
+    if(!/^#[0-9A-F]{6}$/.test(normalized)){cmNotify_('カラーは #RRGGBB 形式で指定してください。');return false;}
+    const d=cmState.bootstrap||{},g=d.groups||[],m=d.members||[];
+    const own=(kind==='GROUP'?g:m).find(function(x){
+      return String(kind==='GROUP'?x.GroupID:x.MemberID)===String(id);
+    });
+    if(own&&String(own.ColorHex||'').toUpperCase()===normalized)return true;
+    const conflicts=g.map(function(x){return {kind:'GROUP',id:x.GroupID,name:x.GroupName,hex:x.ColorHex};})
+      .concat(m.map(function(x){return {kind:'MEMBER',id:x.MemberID,name:x.DisplayName,hex:x.ColorHex};}))
+      .filter(function(x){
+        return String(x.hex||'').toUpperCase()===normalized&&
+          !(x.kind===kind&&String(x.id)===String(id));
+      });
+    if(conflicts.length){
+      cmNotify_('カラー '+normalized+' はすでに '+conflicts.map(function(x){return x.name;}).join('・')+' が使用しています。別の色を選んでください。');
+      return false;
+    }
+    return true;
+  }
+  function cmCreateGroup_(){
+    const color=cmValue_('cmGroupColor');
+    if(!cmColorAvailable_(color,'GROUP',''))return;
+    cmCall_('catalogManagementCreateGroup',{name:cmValue_('cmGroupName'),kind:cmValue_('cmGroupKind'),color:color});
+  }
+  function cmFillGroup_(){
+    const g=cmState.bootstrap.groups.find(x=>String(x.GroupID)===cmValue_('cmEditGroup'));if(!g)return;
+    document.getElementById('cmEditGroupName').value=g.GroupName||'';
+    document.getElementById('cmEditGroupColor').value=g.ColorHex||'#777777';
+  }
+  function cmSaveGroup_(){const id=cmValue_('cmEditGroup');if(!id){cmNotify_('グループを選択してください。');return;}
+    const color=cmValue_('cmEditGroupColor');if(!cmColorAvailable_(color,'GROUP',id))return;
+    cmCall_('catalogManagementUpdateGroup',{groupId:id,name:cmValue_('cmEditGroupName'),color:color});}
+  function cmMembersHtml_(d){
+    const main=d.groups.filter(x=>cmGroupActive_(x)&&cmGroupKind_(x)==='GROUP');
+    const members=d.members.filter(cmMemberActive_);
+    return '<div class="cm-forms"><section class="management-card"><h3 class="cm-section">メンバー追加</h3>'+
+      cmField_('cmMemberName','表示名',cmInput_('cmMemberName','text','','名前'))+
+      cmField_('cmMemberMain','主所属グループ',cmSelect_('cmMemberMain',cmOptions_(main,'GroupID','GroupName')))+
+      cmField_('cmMemberColor','カラー',cmInput_('cmMemberColor','color','#777777'))+
+      '<p class="cm-note">カラーコードは既存グループ・ユニット・メンバーと重複できません。</p>'+
+      '<p class="cm-note">表示順は末尾に追加します。登録後に初期プロフィールを入力できます。並び順はメンバー情報の編集から変更できます。</p><div class="cm-actions"><button class="u-btn" onclick="cmCreateMember_()" type="button">登録してプロフィールへ</button></div></section>'+
+      '<section class="management-card"><h3 class="cm-section">既存メンバーを編集</h3>'+
+      cmField_('cmEditMember','対象',cmSelect_('cmEditMember',cmOptions_(members,'MemberID','DisplayName')))+
+      cmField_('cmEditMemberName','名前',cmInput_('cmEditMemberName','text',''))+
+      cmField_('cmEditMemberColor','カラー',cmInput_('cmEditMemberColor','color','#777777'))+
+      '<div class="cm-actions"><button class="u-btn" onclick="cmFillMember_()" type="button">読込</button><button class="u-btn" onclick="cmSaveMember_()" type="button">保存</button></div></section>'+
+      '<section class="management-card"><h3 class="cm-section">主所属・表示順の変更</h3>'+
+      cmField_('cmMaintenanceMember','メンバー',cmSelect_('cmMaintenanceMember',cmOptions_(members,'MemberID','DisplayName')))+
+      cmField_('cmMaintenanceGroup','新しい主所属',cmSelect_('cmMaintenanceGroup',cmOptions_(main,'GroupID','GroupName')))+
+      '<p class="cm-note">MemberIDは変更しません。主所属の変更時は04_GroupMembersも同時に整合させます。表示順は同じ主所属グループ内の上下入替です。</p>'+
+      '<div class="cm-actions"><button class="u-btn" type="button" onclick="cmChangePrimaryGroup_()">主所属を変更</button>'+
+      '<button class="u-btn" type="button" onclick="cmMoveMember_(\'UP\')">上へ移動</button>'+
+      '<button class="u-btn" type="button" onclick="cmMoveMember_(\'DOWN\')">下へ移動</button></div></section>'+
+      '<section class="management-card"><h3 class="cm-section">メンバーを削除</h3>'+
+      '<p class="cm-note">プロフィールや歌詞、ゲーム等に参照が残る場合は削除を拒否。参照のないメンバーだけ、バックアップ確認後に完全削除できます。MemberIDは再利用しません。</p>'+
+      cmField_('cmDeleteMember','削除対象',cmSelect_('cmDeleteMember',cmOptions_(members,'MemberID','DisplayName')))+
+      '<div class="cm-actions"><button class="u-btn cm-danger" type="button" onclick="cmDeleteMember_()">参照を確認して削除</button></div></section></div>';
+  }
+  function cmCreateMember_(){const color=cmValue_('cmMemberColor');if(!cmColorAvailable_(color,'MEMBER',''))return;
+    cmCall_('catalogManagementCreateMember',{name:cmValue_('cmMemberName'),primaryGroupId:cmValue_('cmMemberMain'),color:color});}
+  function cmFillMember_(){const m=cmState.bootstrap.members.find(x=>String(x.MemberID)===cmValue_('cmEditMember'));if(!m)return;
+    document.getElementById('cmEditMemberName').value=m.DisplayName||'';
+    document.getElementById('cmEditMemberColor').value=m.ColorHex||'#777777';
+  }
+  function cmSaveMember_(){const id=cmValue_('cmEditMember');if(!id){cmNotify_('メンバーを選択してください。');return;}
+    const color=cmValue_('cmEditMemberColor');if(!cmColorAvailable_(color,'MEMBER',id))return;
+    cmCall_('catalogManagementUpdateMember',{memberId:id,name:cmValue_('cmEditMemberName'),color:color});}
+  function cmMoveMember_(direction){
+    const memberId=cmValue_('cmMaintenanceMember');
+    if(!memberId){cmNotify_('並べ替えるメンバーを選択してください。');return;}
+    cmCall_('catalogManagementMoveMemberOrder',{memberId:memberId,direction:direction});
+  }
+  function cmChangePrimaryGroup_(){
+    const memberId=cmValue_('cmMaintenanceMember'),groupId=cmValue_('cmMaintenanceGroup');
+    if(!memberId||!groupId){cmNotify_('メンバーと主所属グループを選んでください。');return;}
+    const m=(cmState.bootstrap.members||[]).find(function(x){return String(x.MemberID)===memberId;});
+    const g=(cmState.bootstrap.groups||[]).find(function(x){return String(x.GroupID)===groupId;});
+    if(!m||!g)return;
+    if(String(m.GroupID)===groupId){cmNotify_('すでにこの主所属です。');return;}
+    if(!window.confirm('「'+m.DisplayName+'」の主所属を「'+g.GroupName+'」に変更しますか？\nMemberIDは変更しません。'))return;
+    cmCall_('catalogManagementChangePrimaryGroup',{memberId:memberId,primaryGroupId:groupId});
+  }
+  function cmDeleteMember_(){
+    const id=cmValue_('cmDeleteMember');
+    const m=(cmState.bootstrap.members||[]).find(function(x){return String(x.MemberID)===id;});
+    if(!m){cmNotify_('削除するメンバーを選択してください。');return;}
+    if(cmState.busy)return;
+    cmCaptureForm_();cmState.busy=true;cmState.message='メンバーの関連データを確認中...';cmRender_();
+    managementRunner_().withSuccessHandler(function(preview){
+      cmState.busy=false;cmRender_();
+      if(!preview||!preview.ok){cmNotify_('参照状況を確認できないため削除は中止しました。');return;}
+      if(!preview.canDelete){
+        cmNotify_('削除できません: '+(preview.blockers||[]).join(' / '));return;
+      }
+      if(!window.confirm('「'+m.DisplayName+'」（MemberID '+id+'）を完全削除します。\n元には戻せません。続けますか？'))return;
+      const typed=window.prompt('確定するにはMemberID「'+id+'」を入力してください。');
+      if(typed!==id)return;
+      if(!window.confirm('Universe外部のシート・サービスにこのMemberIDの参照が残っていないことを確認しましたか？'))return;
+      cmCall_('catalogManagementDeleteMember',{memberId:id,confirm:id,confirmName:m.DisplayName,externalReferencesChecked:true});
+    }).withFailureHandler(function(e){
+      cmState.busy=false;cmNotify_('参照状況の確認に失敗しました: '+(e.message||e));
+    }).getCatalogManagementMemberDeletePreview({userId:getUniverseUserId(),memberId:id});
+  }
+
+  function cmUnitsHtml_(d){
+    const units=d.groups.filter(x=>cmGroupActive_(x)&&cmGroupKind_(x)==='UNIT');
+    const members=d.members.filter(cmMemberActive_);
+    if(!units.length)return '<section class="management-card"><p class="cm-note">登録済みユニットがありません。先にグループ管理からユニットを作成してください。</p></section>';
+    if(!units.some(function(g){return String(g.GroupID)===String(cmState.activeUnitId);}))
+      cmState.activeUnitId=String(units[0].GroupID);
+    return '<div class="cm-forms"><section class="management-card">'+
+      '<h3 class="cm-section">ユニットの所属を管理</h3>'+
+      cmField_('cmUnitTarget','対象ユニット',
+        '<select id="cmUnitTarget" onchange="cmRenderUnitRoster_()">'+
+        cmOptions_(units,'GroupID','GroupName',cmState.activeUnitId)+'</select>')+
+      '<div id="cmUnitRoster" aria-live="polite"></div></section>'+
+      '<section class="management-card"><h3 class="cm-section">メンバーを追加</h3>'+
+      cmField_('cmUnitMember','追加するメンバー',
+        cmSelect_('cmUnitMember',cmOptions_(members,'MemberID','DisplayName')))+
+      '<p class="cm-note">追加・除外・並べ替えは、選択中ユニットの所属情報だけを変更します。メンバーの主所属・他ユニットの所属は変わりません。</p>'+
+      '<div class="cm-actions"><button class="u-btn" onclick="cmAddUnitMember_()" type="button">所属を追加</button></div></section></div>';
+  }
+  function cmUnitRows_(){
+    const d=cmState.bootstrap||{},groupId=cmValue_('cmUnitTarget');
+    return (d.memberships||[]).filter(function(r){
+      return String(r.GroupID)===String(groupId)&&String(r.MemberID||'')!=='';
+    }).slice().sort(function(a,b){
+      return Number(a.DisplayOrder)-Number(b.DisplayOrder);
+    });
+  }
+  function cmRenderUnitRoster_(){
+    const container=document.getElementById('cmUnitRoster');
+    if(!container)return;
+    const groupId=cmValue_('cmUnitTarget');
+    cmState.activeUnitId=groupId;
+    const d=cmState.bootstrap||{},rows=cmUnitRows_();
+    if(!rows.length){
+      container.innerHTML='<p class="cm-note">現在、このユニットの所属メンバーはいません。</p>';
+      return;
+    }
+    const byId={};
+    (d.members||[]).forEach(function(m){byId[String(m.MemberID)]=m;});
+    const list='<ol class="cm-unit-list">'+rows.map(function(r){
+      const m=byId[String(r.MemberID)],name=m?m.DisplayName:'不明なメンバー ('+r.MemberID+')';
+      return '<li>'+cmEscape_(name)+' <span class="cm-note">#'+cmEscape_(r.MemberID)+'</span></li>';
+    }).join('')+'</ol>';
+    const selected=rows.map(function(r){
+      const m=byId[String(r.MemberID)];
+      return cmOption_(r.MemberID,(m?m.DisplayName:'不明')+'（'+r.DisplayOrder+'番）');
+    }).join('');
+    container.innerHTML='<p class="cm-note">現在の所属順（'+rows.length+'人）</p>'+list+
+      cmField_('cmUnitManageMember','並べ替え・除外するメンバー',
+        cmSelect_('cmUnitManageMember',selected))+
+      '<div class="cm-actions">'+
+        '<button class="u-btn" type="button" onclick="cmMoveUnitMember_(\'UP\')">上へ</button>'+
+        '<button class="u-btn" type="button" onclick="cmMoveUnitMember_(\'DOWN\')">下へ</button>'+
+        '<button class="u-btn cm-danger" type="button" onclick="cmRemoveUnitMember_()">所属を除外</button>'+
+      '</div>'+
+      '<p class="cm-note">「所属を除外」はユニットから外す操作です。メンバー自体やプロフィール・歌詞データは削除されません。</p>';
+  }
+  function cmSelectedUnitMembership_(){
+    const memberId=cmValue_('cmUnitManageMember');
+    return cmUnitRows_().find(function(r){return String(r.MemberID)===String(memberId);});
+  }
+  function cmAddUnitMember_(){
+    const groupId=cmValue_('cmUnitTarget'),memberId=cmValue_('cmUnitMember');
+    if(!groupId||!memberId){cmNotify_('ユニットとメンバーを選択してください。');return;}
+    cmCall_('catalogManagementAddUnitMember',{groupId:groupId,memberId:memberId});
+  }
+  function cmMoveUnitMember_(direction){
+    const groupId=cmValue_('cmUnitTarget'),r=cmSelectedUnitMembership_();
+    if(!groupId||!r){cmNotify_('並べ替える所属メンバーを選択してください。');return;}
+    cmCall_('catalogManagementMoveUnitMember',{
+      groupId:groupId,memberId:r.MemberID,direction:direction,
+      expectedOrder:Number(r.DisplayOrder)
+    });
+  }
+  function cmRemoveUnitMember_(){
+    const groupId=cmValue_('cmUnitTarget'),r=cmSelectedUnitMembership_();
+    if(!groupId||!r){cmNotify_('除外する所属メンバーを選択してください。');return;}
+    const d=cmState.bootstrap||{};
+    const g=(d.groups||[]).find(function(x){return String(x.GroupID)===String(groupId);});
+    const m=(d.members||[]).find(function(x){return String(x.MemberID)===String(r.MemberID);});
+    const groupName=g?g.GroupName:'このユニット',memberName=m?m.DisplayName:r.MemberID;
+    if(!window.confirm('「'+memberName+'」を「'+groupName+'」の所属から除外しますか？\nメンバー本体・主所属・他ユニットの所属は残ります。'))return;
+    cmCall_('catalogManagementRemoveUnitMember',{
+      groupId:groupId,memberId:r.MemberID,expectedOrder:Number(r.DisplayOrder)
+    });
+  }
+  function cmDeleteSong_(){
+    const songId=String(songLyricsManagementState.existingSongId||'');
+    const song=(cmState.bootstrap&&cmState.bootstrap.songs||[]).find(function(x){return String(x.SongID)===songId;});
+    if(!song){cmNotify_('削除する曲を選択してください。');return;}
+    if(cmState.busy)return;
+    cmState.busy=true;setSlmBusy_(true);
+    managementRunner_().withSuccessHandler(function(preview){
+      cmState.busy=false;setSlmBusy_(false);
+      if(!preview||!preview.ok){cmNotify_('依存関係を確認できません。削除は中止します。');return;}
+      if(!preview.canDelete){
+        cmNotify_('削除できません。先に参照関係を整理してください: '+(preview.blockers||[]).join(' / '));
+        return;
+      }
+      const parts=preview.counts||{};
+      const detail=Object.keys(parts).map(function(k){return k+'：'+parts[k]+'件';}).join('\n');
+      if(!window.confirm('「'+song.Title+'」(SongID '+songId+')を完全削除します。\n'+detail+'\n関連データも消え、サイトから復元できません。続けますか？'))return;
+      const typed=window.prompt('完全削除を確定するにはSongID「'+songId+'」を入力してください。');
+      if(typed!==songId)return;
+      if(!window.confirm('YouTube・セットリスト等の外部連携先にこのSongIDが残っていないことを確認しましたか？\n未確認ならキャンセルしてください。'))return;
+      cmCall_('catalogManagementDeleteSong',{
+        songId:songId,confirm:songId,confirmTitle:song.Title,externalReferencesChecked:true
+      });
+    }).withFailureHandler(function(e){
+      cmState.busy=false;setSlmBusy_(false);cmNotify_('関連データの確認に失敗しました: '+(e.message||e));
+    }).getCatalogManagementDeletePreview({userId:getUniverseUserId(),songId:songId});
+  }
+</script>

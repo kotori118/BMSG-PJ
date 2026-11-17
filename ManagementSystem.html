@@ -94,3 +94,35 @@
     .management-actions>*{width:100%}
   }
 </style>
+<style>
+  /* Routed management layout. Surfaces and states remain in the shared owners. */
+  .management-page{max-width:1000px;margin:0 auto;padding-bottom:calc(24px + env(safe-area-inset-bottom))}
+  .management-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--mgmt-gap)}
+  .management-choice{display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%;padding:20px;text-align:left;min-height:72px}
+  .management-choice>span{display:grid;gap:8px;min-width:0}
+  .management-choice strong{font-size:17px;line-height:1.5}
+  .management-choice small{font-size:12px;line-height:1.7;opacity:.65;white-space:normal}
+  .management-choice b{color:var(--cyan);font-size:26px}
+  .management-maintenance{margin-top:32px}
+  .management-breadcrumb{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:24px;font-size:12px}
+  .management-breadcrumb .u-btn{min-height:44px;padding:8px 12px;font-size:12px}
+  .management-operation-list{display:grid;gap:12px;margin-top:20px}
+  .management-editor[hidden],#managementSettingsGroup[hidden]{display:none!important}
+  .management-editor-panel{width:100%;max-width:none;max-height:none;overflow:visible;padding:0;margin-top:20px}
+  .management-page .management-field input,.management-page .management-field select,.management-page .management-field textarea{font-size:16px}
+  .management-page .slm-icon-btn{min-width:44px;min-height:44px}
+  .management-page .management-actions{flex-wrap:wrap}
+  .management-page .cm-busy{pointer-events:none}
+  body.theme-light .management-error{color:#9d3030}
+  @media(max-width:600px){.management-grid{grid-template-columns:1fr}.management-choice{padding:16px}.management-breadcrumb{gap:4px}.management-breadcrumb .u-btn{padding:8px}.management-actions{grid-template-columns:repeat(auto-fit,minmax(120px,1fr))}}
+</style>
+<style>
+  body.theme-light .management-page .slm-note,
+  body.theme-light .management-page .slm-step{color:var(--ink);opacity:.65}
+  body.theme-light .management-page .slm-step.is-active{color:var(--cyan-ink,#2f7382);opacity:1}
+</style>
+<style>
+  .management-json{white-space:pre-wrap;overflow-wrap:anywhere;max-width:100%;font-size:12px;line-height:1.7}
+  #managementOperationsHost{display:grid;gap:var(--mgmt-gap);margin-top:20px}
+  #moHistory{display:grid;gap:var(--mgmt-gap);margin-top:20px}
+</style>

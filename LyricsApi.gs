@@ -5,6 +5,8 @@ function getLyricsCatalog() {
   const songs = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.SONGS);
   const parts = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.LYRICS_PARTS);
   const singerMap = buildLyricsSingerMap_();
+  const groups=readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.GROUPS);
+  const mainGroups=groups.filter(function(g){return (g.GroupKind==='GROUP'||!g.GroupKind&&['BE:FIRST','MAZZEL','STARGLOW','HANA','ShowMinorSavage'].includes(g.GroupName))&&String(g.RecordStatus||'ACTIVE')!=='ARCHIVED';}).sort(function(a,b){return Number(a.DisplayOrder||9999)-Number(b.DisplayOrder||9999);}).map(function(g){return String(g.GroupName);});
   const groupColors = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.GROUPS).reduce(function(map,row){
     const name=String(row.GroupName||'').trim();
     const color=String(row.ColorHex||'').trim();
@@ -21,10 +23,10 @@ function getLyricsCatalog() {
   Object.keys(partsBySong).forEach(function(id){partsBySong[id].sort(function(a,b){return a.partOrder-b.partOrder;});});
   const counts = parts.reduce(function(map,row){const id=asId_(row.SongID);if(id)map[id]=(map[id]||0)+1;return map;},{});
   return {
-    categories:LYRICS_CATEGORIES_.slice(),groupColors:groupColors,partsBySong:partsBySong,
+    categories:['ALL'].concat(mainGroups,['UNIT']),mainGroups:mainGroups,groupColors:groupColors,partsBySong:partsBySong,
     songs:songs.filter(function(row){return counts[asId_(row.SongID)]>0;}).map(function(row){
       const artist=String(row.Artist||'').trim();
-      return {songId:asId_(row.SongID),title:String(row.Title||'').trim(),artist:artist,releaseDate:row.ReleaseDate instanceof Date?row.ReleaseDate.toISOString():String(row.ReleaseDate||''),category:lyricsCategory_(artist),unitCategory:lyricsUnitCategory_(String(row.Title||'').trim(),artist),partCount:counts[asId_(row.SongID)]||0};
+      return {songId:asId_(row.SongID),title:String(row.Title||'').trim(),artist:artist,releaseDate:row.ReleaseDate instanceof Date?row.ReleaseDate.toISOString():String(row.ReleaseDate||''),category:mainGroups.includes(artist)?artist:'UNIT',unitCategory:groups.some(function(g){return g.GroupName===artist;})?artist:lyricsUnitCategory_(String(row.Title||'').trim(),artist),partCount:counts[asId_(row.SongID)]||0};
     })
   };
 }

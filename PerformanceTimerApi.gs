@@ -124,7 +124,7 @@ function savePerformanceTimer(payload) {
       }
     });
 
-    try { CacheService.getScriptCache().remove('analysis_bootstrap_v1'); } catch (error) {}
+    clearUniverseAnalysisMutationCaches_();
 
     return {
       ok: true,

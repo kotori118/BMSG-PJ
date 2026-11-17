@@ -12,7 +12,6 @@ function getPokerBootstrap(userId, requestedRoomId) {
   return {
     users: getPokerUsers_(),
     cards: catalog.cards,
-    brandLogoDriveFileId: catalog.brandLogoDriveFileId,
     room: room ? buildPokerRoomState_(room, uid) : null
   };
 }

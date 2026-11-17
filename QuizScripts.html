@@ -59,7 +59,7 @@
   function quizFailure_(error){quizState.busy=false;const message=String(error&&error.message||error||'クイズの処理に失敗しました。');const host=quizHost_();if(host)host.innerHTML='<section class="quiz-panel"><p class="quiz-kicker">ERROR</p><h2 class="quiz-panel-title">読み込みに失敗しました</h2><p class="quiz-muted">'+quizEscape_(message)+'</p><div class="quiz-actions"><button class="quiz-action is-primary" onclick="initQuizPage({})">再試行</button><button class="quiz-action audit-local-back" aria-label="戻る" onclick="navigateTo(\'lab\')">‹</button></div></section>';quizNotify_(message);}
   function quizNotify_(message){if(typeof showToast==='function')showToast(message);}
   function quizUserName_(id){const user=quizState.users.find(function(item){return item.userId===id;});if(user)return user.displayName;const fallback=typeof UNIVERSE_USERS!=='undefined'?UNIVERSE_USERS.find(function(item){return item.id===id;}):null;return fallback?fallback.name:'';}
-  function quizGenreLabel_(value){return value==='LYRICS'?'歌詞':'プロフィール';}
+  function quizGenreLabel_(){return '歌詞';}
   function quizDifficultyLabel_(value){return value==='NORMAL'?'普通':'上級';}
   function quizArg_(value){return encodeURIComponent(String(value==null?'':value));}
   function quizEscape_(value){return typeof escapeHtml==='function'?escapeHtml(value):String(value);}

@@ -19,7 +19,7 @@ function getProfileManagementBootstrap() {
   });
 
   const grouped = {};
-  PROFILE_MGMT_GROUPS_.forEach(function(name){ grouped[name] = []; });
+  PROFILE_MGMT_GROUPS_.concat(Object.values(groupNameById)).filter(Boolean).forEach(function(name){ grouped[name] = []; });
   members.forEach(function(row){
     const memberId = asId_(row.MemberID);
     if (!memberId) return;
@@ -33,7 +33,7 @@ function getProfileManagementBootstrap() {
   });
 
   return {
-    groups: PROFILE_MGMT_GROUPS_.map(function(name){
+    groups: Object.keys(grouped).map(function(name){
       return { name:name, members:grouped[name].sort(function(a,b){ return a.displayOrder-b.displayOrder; }) };
     }),
     fields: settings.map(profileMgmtSettingPayload_)
@@ -64,10 +64,11 @@ function getProfileManagementMember(memberId) {
 
 function saveProfileManagementMember(payload) {
   payload = payload || {};
+  normalizeUniverseStateUserId_(payload.userId);
   const memberId = asId_(payload.memberId);
   const groupName = String(payload.groupName || '').trim();
   if (!memberId) throw new Error('メンバーを選択してください。');
-  if (PROFILE_MGMT_GROUPS_.indexOf(groupName) < 0) throw new Error('グループを選択してください。');
+  if (!groupName) throw new Error('グループを選択してください。');
 
   const lock = LockService.getScriptLock();
   lock.waitLock(20000);
@@ -202,14 +203,16 @@ function profileMgmtResolveMember_(core, memberId) {
   const member = members.find(function(row){ return asId_(row.MemberID) === memberId; });
   if (!member) throw new Error('メンバーが見つかりません。');
   const groupName = profileMgmtCategoryForMember_(memberId, member.GroupID, groupNameById);
-  if (PROFILE_MGMT_GROUPS_.indexOf(groupName) < 0) throw new Error('プロフィール管理の対象外メンバーです。');
+  if (!groupName) throw new Error('プロフィール管理の対象外メンバーです。');
   return { memberId:memberId, groupName:groupName };
 }
 
 function profileMgmtCategoryForMember_(memberId, groupId, groupNameById) {
-  if (/^5/.test(String(memberId || ''))) return 'BMSG POSSE';
   const name = groupNameById[asId_(groupId)] || '';
-  return PROFILE_MGMT_GROUPS_.slice(0,4).indexOf(name) >= 0 ? name : '';
+  if (name) return name;
+  // A 5xx MemberID is historically a solo member, but an explicit main
+  // GroupID now takes precedence when moving a member through site admin.
+  return /^5/.test(String(memberId || '')) ? 'BMSG POSSE' : '';
 }
 
 function profileMgmtReadObjects_(sheet) {

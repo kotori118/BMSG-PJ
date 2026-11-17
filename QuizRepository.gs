@@ -16,7 +16,7 @@ function getRecentQuizRooms_(uid) {
   return readSheetObjectsWithRows_(getLogSheet_(UNIVERSE_CONFIG.SHEETS.QUIZ_ROOMS))
     .map(normalizeQuizGame_)
     .filter(function(game) {
-      return game.mode === 'ONLINE' &&
+      return game.mode === 'ONLINE' && game.genre === 'LYRICS' &&
         /^\d{4}$/.test(game.roomId) &&
         Number.isFinite(game.createdAt.getTime()) &&
         Number.isFinite(game.expiresAt.getTime()) &&

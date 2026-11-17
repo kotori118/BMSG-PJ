@@ -45,7 +45,7 @@
       if (cached) {
         profileMembersState.status = 'ready';
         profileMembersState.groups = cached.groups;
-        profileMembersState.members = cached.members;
+        profileMembersState.members = cached.members;syncProfileGroupChoices_();
         profileMembersState.error = '';
         renderProfileMembersPanel();
         return;
@@ -67,7 +67,7 @@
     profileMembersState.groups = Array.isArray(response.data.groups) ? response.data.groups : [];
     profileMembersState.members = Array.isArray(response.data.members) ? response.data.members : [];
     profileMembersState.error = '';
-    writeProfileMembersSessionCache();
+    syncProfileGroupChoices_();writeProfileMembersSessionCache();
     renderProfilePanel();
     if (typeof syncUniverseCrossLinks === 'function') syncUniverseCrossLinks();
   }
@@ -213,6 +213,13 @@
 
   function renderProfileMemberSkeletons() {
     return `<div class="profile-members-head profile-members-head-loading"><div><span class="profile-member-skeleton profile-member-skeleton-label"></span><span class="profile-member-skeleton profile-member-skeleton-heading"></span></div></div><div class="profile-member-grid">${Array.from({ length: 6 }, () => `<div class="profile-member-card profile-member-card-loading"><div class="profile-member-skeleton profile-member-skeleton-image"></div><div class="profile-member-body"><span class="profile-member-skeleton profile-member-skeleton-copy"></span><span class="profile-member-skeleton profile-member-skeleton-name"></span></div></div>`).join('')}</div>`;
+  }
+  function syncProfileGroupChoices_(){
+    const host=document.querySelector('.profile-group-scroll');if(!host)return;
+    Object.keys(PROFILE_GROUPS).forEach(function(key){if(key!=='all')delete PROFILE_GROUPS[key];});
+    profileMembersState.groups.forEach(function(g){PROFILE_GROUPS[g.key]=g.name;});
+    host.innerHTML='<button class="profile-group-chip" data-profile-group="all" onclick="selectProfileGroup(\'all\')">ALL</button>'+profileMembersState.groups.map(function(g){return '<button class="profile-group-chip" data-profile-group="'+escapeHtml(g.key)+'" onclick="selectProfileGroup(this.dataset.profileGroup)">'+escapeHtml(g.name)+'</button>';}).join('');
+    if(!PROFILE_GROUPS[profileCurrentGroup])profileCurrentGroup='all';updateProfileControls();
   }
 </script>
 

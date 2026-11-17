@@ -5,6 +5,8 @@
   function renderLyrics(){return document.getElementById('lyricsPageTemplate').innerHTML.replace('__LYRICS_LOADING__',renderUniverseLoading('LOADING...','#9cecff'));}
   function applyLyricsData(data){
     lyricsState.catalog=data.songs||[];
+    if(Array.isArray(data.mainGroups)){LYRICS_GROUPS.splice(0,LYRICS_GROUPS.length,...data.mainGroups.filter(function(n){return n!=='BMSG ALLSTARS';}),'BMSG ALLSTARS');}
+    const units=[...new Set(lyricsState.catalog.filter(function(s){return s.category==='UNIT';}).map(function(s){return s.unitCategory;}))];units.forEach(function(n){if(n&&!LYRICS_UNITS.includes(n))LYRICS_UNITS.push(n);});
     lyricsState.partsBySong=data.partsBySong||{};
     lyricsState.groupColors=data.groupColors||{};
     const params=lyricsState.initialParams||{};
@@ -244,7 +246,7 @@
       const savedParts=ensureLyricsEditDraft_().map(function(part,index){return{partOrder:index+1,singer:(part.singers||[]).map(function(s){const role=String(s.role||(s.harmony?s.harmony.toUpperCase():'MAIN')).toUpperCase();return String(s.id||'')+(role==='MAIN'?'':'_'+role.toLowerCase());}).filter(Boolean).join(','),singers:(part.singers||[]).map(function(s){return Object.assign({},s);}),lyrics:String(part.lyrics||'').trim()};});
       lyricsState.editSaving=false;lyricsState.editDirty=false;lyricsState.editDraft=null;lyricsState.song.parts=savedParts;lyricsState.partsBySong[lyricsState.song.songId]=savedParts;
       const meta=lyricsState.catalog.find(function(item){return item.songId===lyricsState.song.songId;});if(meta)meta.partCount=savedParts.length;
-      try{sessionStorage.setItem('bmsgLyricsDataV4',JSON.stringify({songs:lyricsState.catalog,partsBySong:lyricsState.partsBySong,groupColors:lyricsState.groupColors}));}catch(error){}
+      try{sessionStorage.setItem('bmsgLyricsDataV4',JSON.stringify({mainGroups:LYRICS_GROUPS.filter(function(n){return n!=='BMSG ALLSTARS';}),songs:lyricsState.catalog,partsBySong:lyricsState.partsBySong,groupColors:lyricsState.groupColors}));}catch(error){}
       renderLyricsSong();if(typeof showToast==='function')showToast('変更を保存しました');
     }).withFailureHandler(function(error){lyricsState.editSaving=false;renderLyricsSong();showLyricsError(error);}).saveLyricsSongParts({userId:userId,songId:lyricsState.song.songId,parts:parts});
   }
