@@ -33,7 +33,11 @@ function readCoreSheetObjectsFromSpreadsheet_(spreadsheet, sheetName) {
 function readCoreSheetDisplayObjects_(sheetName) {
   const sheet = getCoreSheetFromSpreadsheet_(getCoreSpreadsheet_(), sheetName);
   const values = sheet.getDataRange().getDisplayValues();
-  return coreRowsToObjects_(values);
+  const records = coreRowsToObjects_(values);
+  if (sheetName === UNIVERSE_CONFIG.SHEETS.SONGS) return records.filter(function(row){
+    return String(row.RecordStatus || 'ACTIVE').trim().toUpperCase() !== 'ARCHIVED';
+  });
+  return records;
 }
 
 function coreRowsToObjects_(values) {
