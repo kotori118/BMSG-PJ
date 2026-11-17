@@ -63,6 +63,41 @@ function getCatalogManagementBootstrap(userId){
   const uid=catalogManagementSiteAccess_(userId);
   return BMSGDB.getCatalogManagementBootstrapForUniverse({userId:uid});
 }
+/**
+ * Profile field metadata is managed by BMSG-DB, never directly by the UI.
+ * Site ProfileManagement continues to edit member values independently.
+ */
+function getCatalogManagementProfileFields(userId) {
+  const uid=catalogManagementSiteAccess_(userId);
+  return BMSGDB.getCatalogProfileFieldsForUniverse({userId:uid});
+}
+function catalogManagementRefreshProfileFieldCaches_(){
+  const keys=[
+    UNIVERSE_CACHE_KEYS_.PROFILE_MEMBERS,
+    UNIVERSE_CACHE_KEYS_.PROFILE_MAP,
+    UNIVERSE_CACHE_KEYS_.PROFILE_SEARCH,
+    UNIVERSE_CACHE_KEYS_.SEARCH,
+    UNIVERSE_CACHE_KEYS_.HOME_LOOKUP
+  ];
+  try{
+    readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.MEMBERS).forEach(function(member){
+      const id=asId_(member.MemberID);
+      if(id)keys.push(UNIVERSE_CACHE_KEYS_.PROFILE_DETAIL_PREFIX+id);
+    });
+  }catch(e){console.error('Profile field cache enumeration:',e);}
+  clearUniverseCacheKeys_(keys);
+}
+function catalogManagementCreateProfileField(payload){
+  const result=catalogManagementCallWriter_('createCatalogProfileFieldForUniverse',payload);
+  if(result&&result.ok)catalogManagementRefreshProfileFieldCaches_();
+  return result;
+}
+function catalogManagementSetProfileFieldActive(payload){
+  const result=catalogManagementCallWriter_('setCatalogProfileFieldActiveForUniverse',payload);
+  if(result&&result.ok)catalogManagementRefreshProfileFieldCaches_();
+  return result;
+}
+
 function catalogManagementCreateGroup(payload){
   return catalogManagementCallWriter_('createCatalogGroupForUniverse',payload);
 }
