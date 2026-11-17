@@ -5,7 +5,7 @@
  * UI label "ダンス" writes to the existing 10_PerformanceMetrics
  * "センター秒数" block. No event / interval logs are persisted.
  */
-const PERFORMANCE_TIMER_MEMBER_IDS = Object.freeze(['101','102','103','104','105','106']);
+const PERFORMANCE_TIMER_MEMBER_IDS = Object.freeze(['M101','M102','M103','M104','M105','M106']);
 const PERFORMANCE_TIMER_TYPES = Object.freeze({
   SING: '歌唱秒数',
   DANCE: 'センター秒数'
