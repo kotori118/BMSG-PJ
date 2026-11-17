@@ -237,3 +237,12 @@ schema照合、採番、revision照合、共有Writer lock、Audit、rollback、
 PJ58件＋監査7件、DB75件が成功。3ユーザーすべてでメール／propertyなしの管理入口・Guest編集・グループ編集・readiness確認を追加検証。未知UserIDの拒否、依存関係／バックアップ要件、既存の途中失敗rollbackを維持。公開版・library版と描画CI結果はPR／Actions最新記録へ追記する。
 
 DB PR #4のmain反映後、deploy run44084160731が成功しBMSGDB version16を発行した。PJの固定参照と固定版テストを15→16へ更新。直前の公開版27／library15と両repo backup/pre-shared-management-20261117を切り戻し基準として保存。公開成否はPR #66／後続Actionsに記録する。
+
+
+## 14. 旧シート撤去前の入力経路停止（2026-11-17）
+
+利用者の不要シート一括整理指示を受け、旧入力3シートと旧ガイドの撤去に先立ってDBのsiteOnlyDbWritesEnabled_を常時trueへ変更。古いproperty値でもSheet入力経路を再開できず、onOpenは構成検証だけを表示し、入力レイアウトの再作成はしない。validatorは正本01〜10を要求し、旧入力／旧ガイドを要求しない。既存のlegacy wrapperは廃止エラーで停止し、サイトのparser／正本Writer等の共通helperは保持する。
+
+PJの「旧入力シートの設定」導線・checkbox・保存handlerとconfigure dispatcher、DBの不要runtime設定Writerを参照確認後に撤去する。管理機能の共有アクセス・バックアップ・初期整備・復元・LYRICS直接編集・metricsは維持。DB74件、PJ58件＋監査7件成功。削除予定7シートと11_PartTransfers・Topicsを含む実データ照合の詳細はDB既存47_TAB_AUDIT追記。
+
+本番の物理削除は、互換コード公開と指定フォルダへのCore／Log全体コピー・直前再検査が済んでから実行する。元データ・個人履歴を公開repoへ転記しない。旧資料の独自値はバックアップに保持し、現行正本を旧資料で上書きしない。実施結果とbackup IDsはPR／Drive正本へ追記する。
