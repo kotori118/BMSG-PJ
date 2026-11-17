@@ -187,12 +187,12 @@
       cmField_('cmNewSoloMember','ソロ担当',cmSelect_('cmNewSoloMember',cmOptions_(singers,'MemberID','DisplayName')))+
       '<p class="cm-note">ソロ曲はArtistにBE:FIRSTを選び、担当メンバーを指定。歌詞は後から楽曲・歌詞管理で入力できます。</p>'+
       '<div class="cm-actions"><button class="u-btn" onclick="cmCreateSong_()" type="button">楽曲を登録</button></div></section>'+
-      '<section class="management-card"><h3 class="cm-section">既存曲の分類・アーカイブ・復元</h3>'+
+      '<section class="management-card"><h3 class="cm-section">既存曲の分類・削除</h3>'+
       cmField_('cmSongSearch','曲名を検索',cmInput_('cmSongSearch','search','','曲名で絞り込み'))+
       cmField_('cmSelectSong','対象曲',cmSelect_('cmSelectSong',opts))+
       cmField_('cmSongType','曲区分',cmSelect_('cmSongType',cmOption_('NORMAL','通常曲')+cmOption_('SOLO','ソロ曲')))+
       cmField_('cmSoloMember','ソロ担当',cmSelect_('cmSoloMember',cmOptions_(singers,'MemberID','DisplayName')))+
-      '<div class="cm-actions"><button class="u-btn" onclick="cmSaveSongClass_()" type="button">分類を保存</button><button class="u-btn cm-danger" onclick="cmToggleSongArchive_(true)" type="button">アーカイブ</button><button class="u-btn" onclick="cmToggleSongArchive_(false)" type="button">復元</button></div><p class="cm-note">削除は物理削除せず、参照IDと履歴を残したアーカイブにします。</p></section></div>';
+      '<div class="cm-actions"><button class="u-btn" onclick="cmSaveSongClass_()" type="button">分類を保存</button><button class="u-btn cm-danger" onclick="cmDeleteSong_()" type="button">楽曲を削除</button></div><p class="cm-note">削除すると曲と紐付いた歌詞・クレジット・秒数等のデータも消え、サイトから復元はできません。事前に依存関係を検査し、他機能から参照される曲は削除を止めます。SongIDは再利用しません。YouTube・セットリスト等の外部参照は事前に別途確認してください。</p></section></div>';
   }
   function cmCreateSong_(){
     cmCall_('catalogManagementCreateSongDraft',{
@@ -205,13 +205,31 @@
     const songId=cmValue_('cmSelectSong');if(!songId){cmNotify_('曲を選択してください。');return;}
     cmCall_('catalogManagementSaveSongClass',{songId:songId,songType:cmValue_('cmSongType'),soloMemberId:cmValue_('cmSoloMember')});
   }
-  function cmToggleSongArchive_(archive){
+  function cmDeleteSong_(){
     const songId=cmValue_('cmSelectSong');
-    const song=cmState.bootstrap.songs.find(x=>String(x.SongID)===songId);
-    if(!song){cmNotify_('曲を選択してください。');return;}
-    const action=archive?'アーカイブ':'復元';
-    if(!window.confirm('「'+song.Title+'」を'+action+'しますか？ SongIDは維持されます。'))return;
-    cmCall_('catalogManagementSetSongStatus',{songId,status:archive?'ARCHIVED':'ACTIVE',confirm:songId});
+    const song=(cmState.bootstrap&&cmState.bootstrap.songs||[]).find(function(x){return String(x.SongID)===songId;});
+    if(!song){cmNotify_('削除する曲を選択してください。');return;}
+    if(cmState.busy)return;
+    cmState.busy=true;cmState.message='関連データを確認中...';cmRender_();
+    google.script.run.withSuccessHandler(function(preview){
+      cmState.busy=false;
+      if(!preview||!preview.ok){cmNotify_('依存関係を確認できません。削除は中止します。');return;}
+      if(!preview.canDelete){
+        cmNotify_('削除できません。先に参照関係を整理してください: '+(preview.blockers||[]).join(' / '));
+        return;
+      }
+      const parts=preview.counts||{};
+      const detail=Object.keys(parts).map(function(k){return k+'：'+parts[k]+'件';}).join('\n');
+      if(!window.confirm('「'+song.Title+'」(SongID '+songId+')を完全削除します。\n'+detail+'\n関連データも消え、サイトから復元できません。続けますか？'))return;
+      const typed=window.prompt('完全削除を確定するにはSongID「'+songId+'」を入力してください。');
+      if(typed!==songId)return;
+      if(!window.confirm('YouTube・セットリスト等の外部連携先にこのSongIDが残っていないことを確認しましたか？\n未確認ならキャンセルしてください。'))return;
+      cmCall_('catalogManagementDeleteSong',{
+        songId:songId,confirm:songId,confirmTitle:song.Title,externalReferencesChecked:true
+      });
+    }).withFailureHandler(function(e){
+      cmState.busy=false;cmNotify_('関連データの確認に失敗しました: '+(e.message||e));
+    }).getCatalogManagementDeletePreview({userId:getUniverseUserId(),songId:songId});
   }
   // Dedicated event delegation, scoped to the catalog overlay.
   document.addEventListener('input',function(ev){
