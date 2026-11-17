@@ -1,10 +1,9 @@
 const QUIZ_MODES_ = Object.freeze(['ONLINE', 'OFFLINE']);
-const QUIZ_GENRES_ = Object.freeze(['LYRICS', 'PROFILE']);
+const QUIZ_GENRES_ = Object.freeze(['LYRICS']);
 const QUIZ_COURSES_ = Object.freeze(['BE:FIRST', 'MAZZEL', 'STARGLOW', 'HANA', 'UNIT', 'ALL']);
 const QUIZ_DIFFICULTIES_ = Object.freeze(['NORMAL', 'ADVANCED']);
 const QUIZ_QUESTION_COUNT_ = 10;
 const QUIZ_LYRICS_LIMIT_MS_ = 30000;
-const QUIZ_PROFILE_LIMIT_MS_ = 20000;
 const QUIZ_MAJOR_ARTISTS_ = Object.freeze(['BE:FIRST', 'MAZZEL', 'STARGLOW', 'HANA']);
 
 function getQuizBootstrap(userId, requestedRoomId) {
@@ -17,7 +16,7 @@ function getQuizBootstrap(userId, requestedRoomId) {
   const roomId = String(requestedRoomId || '').replace(/\D/g, '');
   if (roomId) {
     const game = findQuizGameByRoomId_(roomId);
-    if (game) {
+    if (game && game.genre === 'LYRICS') {
       const expiresAt = new Date(game.expiresAt);
       if (!Number.isFinite(expiresAt.getTime()) || expiresAt.getTime() > Date.now()) {
         response.room = buildQuizGameState_(game, uid);
@@ -33,14 +32,12 @@ function createQuizGame(payload) {
   const mode = validateQuizEnum_(payload.mode, QUIZ_MODES_, 'MODE');
   const genre = validateQuizEnum_(payload.genre, QUIZ_GENRES_, 'GENRE');
   const difficulty = validateQuizEnum_(payload.difficulty, QUIZ_DIFFICULTIES_, 'DIFFICULTY');
-  const course = genre === 'PROFILE' ? 'ALL' : validateQuizEnum_(payload.course, QUIZ_COURSES_, 'COURSE');
+  const course = validateQuizEnum_(payload.course, QUIZ_COURSES_, 'COURSE');
   const players = validateQuizPlayers_(mode, uid, payload.playerUserIds);
 
   return withQuizLock_(function() {
     cleanupExpiredQuizGamesUnsafe_();
-    const generated = genre === 'LYRICS'
-      ? buildLyricsQuizQuestions_(course, difficulty)
-      : buildProfileQuizQuestions_(difficulty);
+    const generated = buildLyricsQuizQuestions_(course, difficulty);
     if (!generated || generated.questions.length < QUIZ_QUESTION_COUNT_) {
       throw new Error('この条件では10問作れません。難易度を変えてください。');
     }
@@ -86,15 +83,14 @@ function submitQuizResult(payload) {
   return withQuizLock_(function() {
     const game = findQuizGameById_(asId_(payload.quizGameId));
     if (!game) throw new Error('クイズが見つかりません。');
+    if (game.genre !== 'LYRICS') throw new Error('このクイズ形式は終了しました。過去の成績は保存されています。');
     if (game.expiresAt.getTime() <= Date.now()) throw new Error('このクイズの保存期間は終了しました。');
     const questions = getQuizQuestionRows_(game.gameId);
     if (questions.length !== QUIZ_QUESTION_COUNT_) throw new Error('問題データが揃っていません。');
 
     if (game.mode === 'OFFLINE') {
       payload.totalAnswerTimeMs = 0;
-      return game.genre === 'LYRICS'
-        ? saveOfflineLyricsQuizResults_(game, questions, payload)
-        : saveOfflineProfileQuizResults_(game, questions, payload);
+      return saveOfflineLyricsQuizResults_(game, questions, payload);
     }
 
     const existing = findQuizResult_(game.gameId, uid);
@@ -106,7 +102,7 @@ function submitQuizResult(payload) {
       ok: true,
       alreadySaved: false,
       score: checked.score,
-      maxScore: game.genre === 'LYRICS' ? 20 : 10,
+      maxScore: 20,
       scoreboard: buildQuizScoreboard_(game)
     };
   });
@@ -124,6 +120,7 @@ function abandonQuizGame(userId, quizGameId) {
 
 function buildQuizGameState_(game, uid) {
   if (!game) throw new Error('クイズが見つかりません。');
+  if (game.genre !== 'LYRICS') throw new Error('プロフィールクイズは終了しました。');
   const result = findQuizResult_(game.gameId, uid);
   const state = {
     gameId: game.gameId,
@@ -142,9 +139,9 @@ function buildQuizGameState_(game, uid) {
     scoreboard: buildQuizScoreboard_(game)
   };
   state.ready = !state.hasAnswered;
-  state.timeLimitMs = state.genre === 'LYRICS' ? QUIZ_LYRICS_LIMIT_MS_ : QUIZ_PROFILE_LIMIT_MS_;
-  state.songCatalog = state.genre === 'LYRICS' ? getQuizSongCatalog_(game.course) : [];
-  state.memberCatalog = state.genre === 'LYRICS' ? getQuizMemberCatalog_(game.course) : [];
+  state.timeLimitMs = QUIZ_LYRICS_LIMIT_MS_;
+  state.songCatalog = getQuizSongCatalog_(game.course);
+  state.memberCatalog = getQuizMemberCatalog_(game.course);
   return state;
 }
 
@@ -164,15 +161,6 @@ function scoreQuizAnswers_(game, questions, answers) {
 
   questions.forEach(function(question, index) {
     const answer = submitted[index] || {};
-    if (game.genre === 'PROFILE') {
-      const expected = String(question.correct && question.correct.value != null ? question.correct.value : '');
-      const actual = String(answer.value != null ? answer.value : '');
-      const correct = !!expected && actual === expected;
-      if (correct) score += 1;
-      details.push({ questionNo: question.number, type: question.type, value: actual, correct: correct, timedOut: !!answer.timedOut });
-      return;
-    }
-
     const expectedSongId = String(question.correct && question.correct.songId || question.source && question.source.songId || '');
     const actualSongId = String(answer.songId || '');
     const songCorrect = !answer.timedOut && !!expectedSongId && actualSongId === expectedSongId;
@@ -214,36 +202,6 @@ function saveOfflineLyricsQuizResults_(game, questions, payload) {
   });
   players.forEach(function(id) { saveQuizUserResult_(game, id, playerMap[id], 0, detailsByUser[id]); });
   return { ok: true, alreadySaved: false, scoreboard: buildQuizScoreboard_(game) };
-}
-
-function saveOfflineProfileQuizResults_(game, questions, payload) {
-  const players = Array.isArray(game.players) ? game.players.map(String) : [];
-  if (players.length < 2 || players.length > 3) throw new Error('プレイヤー情報が正しくありません。');
-  if (getQuizResultRows_(game.gameId).length) return { ok: true, alreadySaved: true, scoreboard: buildQuizScoreboard_(game) };
-  const awards = Array.isArray(payload.awards) ? payload.awards : [];
-  if (awards.length !== questions.length) throw new Error('10問すべて採点してください。');
-
-  const scores = {};
-  const detailsByPlayer = {};
-  players.forEach(function(id) { scores[id] = 0; detailsByPlayer[id] = []; });
-  questions.forEach(function(question, index) {
-    const award = awards[index] || {};
-    const winner = asId_(award.profileWinner);
-    if (winner && players.indexOf(winner) < 0) throw new Error('正解者が参加プレイヤーに含まれていません。');
-    if (winner) scores[winner] += 1;
-    players.forEach(function(id) {
-      detailsByPlayer[id].push({
-        questionNo: question.number,
-        type: question.type,
-        winnerUserId: winner,
-        awarded: winner === id,
-        correctValue: question.correct && question.correct.value != null ? String(question.correct.value) : '',
-        correctLabel: question.correct && question.correct.label != null ? String(question.correct.label) : ''
-      });
-    });
-  });
-  players.forEach(function(id) { saveQuizUserResult_(game, id, scores[id], 0, detailsByPlayer[id]); });
-  return { ok: true, alreadySaved: false, maxScore: QUIZ_QUESTION_COUNT_, scoreboard: buildQuizScoreboard_(game) };
 }
 
 function buildQuizScoreboard_(game) {
@@ -293,15 +251,6 @@ function makeQuizSnippet_(lyrics, difficulty) {
 }
 
 function stripQuizWhitespace_(value) { return String(value || '').replace(/[\s　]+/g, ''); }
-function formatQuizProfileValue_(value, setting) {
-  if (value === '' || value === null || typeof value === 'undefined') return '';
-  if (String(setting.DataType || '').toUpperCase() === 'DATE') {
-    const date = value instanceof Date ? value : new Date(value);
-    if (Number.isFinite(date.getTime())) return Utilities.formatDate(date, 'Asia/Tokyo', 'yyyy年M月d日');
-  }
-  return String(value).trim().replace(/[\r\n]+/g, '・');
-}
-
 function buildQuizChoices_(pool, correctValue) {
   const unique = uniqueQuizOptions_(pool);
   const correct = unique.find(function(option) { return String(option.value) === String(correctValue); });
@@ -336,7 +285,7 @@ function validateQuizPlayers_(mode, uid, values) {
 
 function validateQuizUser_(value) { const id = asId_(value); if (UNIVERSE_CONFIG.USER_IDS.indexOf(id) < 0) throw new Error('利用ユーザーを選択してください。'); return id; }
 function validateQuizEnum_(value, allowed, label) { const normalized = String(value || '').trim().toUpperCase(); if (allowed.indexOf(normalized) < 0) throw new Error(label + 'を選択してください。'); return normalized; }
-function quizGenreStorage_(value) { return value === 'LYRICS' ? '歌詞' : 'プロフィール'; }
+function quizGenreStorage_(value) { if(value!=='LYRICS')throw new Error('未対応のジャンルです。');return '歌詞'; }
 function quizCourseStorage_(value) { return value === 'UNIT' ? 'ユニット' : value === 'ALL' ? '全部' : value; }
 function quizDifficultyStorage_(value) { return value === 'NORMAL' ? '普通' : '上級'; }
 function normalizeQuizGenre_(value) { const text = String(value || '').trim(); return text === '歌詞' ? 'LYRICS' : text === 'プロフィール' ? 'PROFILE' : text.toUpperCase(); }
