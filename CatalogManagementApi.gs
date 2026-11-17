@@ -110,6 +110,31 @@ function catalogManagementCreateMember(payload){
 function catalogManagementUpdateMember(payload){
   return catalogManagementCallWriter_('updateCatalogMemberForUniverse',payload);
 }
+/**
+ * Member maintenance is explicitly feature gated on BMSG-DB. Keep these calls
+ * separate from profile value editing and invalidate member/profile caches.
+ */
+function catalogManagementMoveMemberOrder(payload){
+  const result=catalogManagementCallWriter_('moveCatalogMemberDisplayOrderForUniverse',payload);
+  if(result&&result.ok)catalogManagementRefreshProfileFieldCaches_();
+  return result;
+}
+function catalogManagementChangePrimaryGroup(payload){
+  const result=catalogManagementCallWriter_('changeCatalogMemberPrimaryGroupForUniverse',payload);
+  if(result&&result.ok)catalogManagementRefreshProfileFieldCaches_();
+  return result;
+}
+function getCatalogManagementMemberDeletePreview(payload){
+  payload=payload||{};
+  catalogManagementSiteAccess_(payload.userId);
+  return BMSGDB.getCatalogMemberDeletePreviewForUniverse(payload);
+}
+function catalogManagementDeleteMember(payload){
+  const result=catalogManagementCallWriter_('deleteCatalogMemberForUniverse',payload);
+  if(result&&result.ok)catalogManagementRefreshProfileFieldCaches_();
+  return result;
+}
+
 function catalogManagementAddUnitMember(payload){
   return catalogManagementCallWriter_('addCatalogUnitMemberForUniverse',payload);
 }
