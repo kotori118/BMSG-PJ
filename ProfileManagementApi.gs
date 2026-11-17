@@ -210,9 +210,9 @@ function profileMgmtResolveMember_(core, memberId) {
 function profileMgmtCategoryForMember_(memberId, groupId, groupNameById) {
   const name = groupNameById[asId_(groupId)] || '';
   if (name) return name;
-  // A 5xx MemberID is historically a solo member, but an explicit main
-  // GroupID now takes precedence when moving a member through site admin.
-  return /^5/.test(String(memberId || '')) ? 'BMSG POSSE' : '';
+  // Primary group is explicit; remaining existing solo profiles use the BMSG POSSE bucket.
+  // MemberID ranges no longer imply identity after global M allocation.
+  return !asId_(groupId) ? 'BMSG POSSE' : '';
 }
 
 function profileMgmtReadObjects_(sheet) {

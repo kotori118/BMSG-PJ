@@ -6,7 +6,7 @@ function getLyricsCatalog() {
   const parts = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.LYRICS_PARTS);
   const singerMap = buildLyricsSingerMap_();
   const groups=readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.GROUPS);
-  const mainGroups=groups.filter(function(g){return (g.GroupKind==='GROUP'||!g.GroupKind&&['BE:FIRST','MAZZEL','STARGLOW','HANA','ShowMinorSavage'].includes(g.GroupName))&&String(g.RecordStatus||'ACTIVE')!=='ARCHIVED';}).sort(function(a,b){return Number(a.DisplayOrder||9999)-Number(b.DisplayOrder||9999);}).map(function(g){return String(g.GroupName);});
+  const mainGroups=groups.filter(function(g){return String(g.GroupID||'').startsWith('G')&&String(g.RecordStatus||'ACTIVE')!=='ARCHIVED';}).sort(function(a,b){return Number(a.DisplayOrder||9999)-Number(b.DisplayOrder||9999);}).map(function(g){return String(g.GroupName);});
   const groupColors = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.GROUPS).reduce(function(map,row){
     const name=String(row.GroupName||'').trim();
     const color=String(row.ColorHex||'').trim();

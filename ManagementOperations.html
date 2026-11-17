@@ -33,7 +33,7 @@
     else if(p.section==='members'&&p.action==='fields'){
       cmState.profileFields=d.fields;html='<div class="management-field-operations">'+cmProfileFieldsHtml_()+'</div><section class="management-card"><h3 class="management-section-title">項目名・分類・表示順を編集</h3>'+moSelectHtml_(d.fields,'profileId','label')+'<div id="moEditor"></div></section>';
     }else if(p.section==='images'){
-      const options=d.images.map(function(image){const m=d.members.find(function(member){return String(member.MemberID)===String(image.TargetID);});return Object.assign({},image,{label:(m?m.DisplayName:image.TargetID)+' / '+image.Rarity});});
+      const options=d.images.map(function(image){const m=d.members.find(function(member){return String(member.MemberID)===String(image.MemberID);});return Object.assign({},image,{label:(m?m.DisplayName:image.MemberID)+' / '+image.Rarity});});
       html=moSelectHtml_(options,'ImageID','label')+'<div id="moEditor"></div>';
     }
     host.innerHTML=html;if(moState.selected)moSelect_();
@@ -49,13 +49,13 @@
       html=cmField_('moName','ゲスト名',cmInput_('moName','text',row.DisplayName))+'<button class="u-btn" onclick="moSaveGuest_()">名前を保存</button>'+cmField_('moMergeGuest','統合先ゲスト',cmSelect_('moMergeGuest',cmOptions_(d.guests.filter(function(g){return String(g.GuestID)!==next;}),'GuestID','DisplayName')))+'<button class="u-btn" onclick="moMergeGuest_()">歌詞の参照を統合</button>'+moDeleteButton_('guest');
     }else if(p.section==='groups'){
       row=d.groups.find(function(r){return String(r.GroupID)===next;});moState.revision=row.revision;
-      html=cmField_('moName','名前',cmInput_('moName','text',row.GroupName))+cmField_('moKind','種別',cmSelect_('moKind',cmOption_('GROUP','グループ',row.GroupKind)+cmOption_('UNIT','ユニット',row.GroupKind)))+cmField_('moColor','カラー',cmInput_('moColor','color',row.ColorHex))+cmField_('moOrder','表示順',cmInput_('moOrder','number',row.DisplayOrder))+'<p class="management-lead">名前を変更すると、このグループをArtistに持つ曲も同時に更新します。IDは維持します。</p><button class="u-btn" onclick="moSaveGroup_()">変更を保存</button>'+moDeleteButton_('group');
+      html=cmField_('moName','名前',cmInput_('moName','text',row.GroupName))+'<p class="management-lead">種別：'+(String(row.GroupID).startsWith('G')?'グループ':'ユニット')+'（登録後は変更できません）</p>'+cmField_('moColor','カラー',cmInput_('moColor','color',row.ColorHex))+cmField_('moOrder','表示順',cmInput_('moOrder','number',row.DisplayOrder))+'<p class="management-lead">名前を変更すると、このグループをArtistに持つ曲も同時に更新します。IDは維持します。</p><button class="u-btn" onclick="moSaveGroup_()">変更を保存</button>'+moDeleteButton_('group');
     }else if(p.section==='members'){
       row=d.fields.find(function(r){return String(r.profileId)===next;});moState.revision=JSON.stringify(row);
       html=cmField_('moName','項目名',cmInput_('moName','text',row.label))+cmField_('moDisplayGroup','分類',cmInput_('moDisplayGroup','text',row.displayGroup))+cmField_('moOrder','表示順',cmInput_('moOrder','number',row.displayOrder))+'<p class="management-lead">既存値と項目ID・型は維持します。</p><button class="u-btn" onclick="moSaveField_()">項目を保存</button>';
     }else{
       row=d.images.find(function(r){return String(r.ImageID)===next;});moState.revision=row.revision;
-      html=cmField_('moOrder','表示順',cmInput_('moOrder','number',row.DisplayOrder))+'<label class="management-field"><span>プロフィールのメイン画像</span><span><input id="moMain" type="checkbox" '+(row.IsProfileMain===true||String(row.IsProfileMain)==='TRUE'?'checked':'')+'> この画像をメインにする</span></label><button class="u-btn" onclick="moSaveImage_()">表示設定を保存</button>'+moDeleteButton_('image');
+      html='<label class="management-field"><span>プロフィールのメイン画像</span><span><input id="moMain" type="checkbox" '+(row.IsProfileMain===true||String(row.IsProfileMain)==='TRUE'?'checked':'')+'> この画像をメインにする</span></label><button class="u-btn" onclick="moSaveImage_()">表示設定を保存</button>'+moDeleteButton_('image');
     }
     host.innerHTML='<section class="management-card management-operation-list">'+html+'</section>';
   }
@@ -63,9 +63,9 @@
   function moAddGuest_(){if(!cmValue_('moNewGuest').trim()){moError_('ゲスト名を入力してください。');return;}moRun_({operation:'guestCreate',name:cmValue_('moNewGuest').trim()});}
   function moMergeGuest_(){const target=cmValue_('moMergeGuest');if(!target)return;if(window.confirm('統合元ゲストの歌詞・歌唱者の参照を統合先にまとめ、統合元を削除します。続けますか？')&&window.prompt('統合元GuestID「'+moState.selected+'」を入力してください。')===moState.selected)moRun_({operation:'guest',action:'MERGE',guestId:moState.selected,targetGuestId:target,confirm:moState.selected,expectedRevision:moState.revision});}
   function moSaveGuest_(){moRun_({operation:'guest',guestId:moState.selected,name:cmValue_('moName'),expectedRevision:moState.revision});}
-  function moSaveGroup_(){moRun_({operation:'group',groupId:moState.selected,name:cmValue_('moName'),kind:cmValue_('moKind'),color:cmValue_('moColor'),displayOrder:Number(cmValue_('moOrder')),expectedRevision:moState.revision});}
+  function moSaveGroup_(){moRun_({operation:'group',groupId:moState.selected,name:cmValue_('moName'),color:cmValue_('moColor'),displayOrder:Number(cmValue_('moOrder')),expectedRevision:moState.revision});}
   function moSaveField_(){moRun_({operation:'field',profileId:moState.selected,name:cmValue_('moName'),displayGroup:cmValue_('moDisplayGroup'),displayOrder:Number(cmValue_('moOrder')),expectedRevision:moState.revision});}
-  function moSaveImage_(){moRun_({operation:'image',imageId:moState.selected,displayOrder:Number(cmValue_('moOrder')),isProfileMain:cmChecked_('moMain'),expectedRevision:moState.revision});}
+  function moSaveImage_(){moRun_({operation:'image',imageId:moState.selected,isProfileMain:cmChecked_('moMain'),expectedRevision:moState.revision});}
   function moDelete_(kind){
     if(moState.busy||!window.confirm('選択したデータを削除します。参照が残っている場合は中止します。続けますか？'))return;
     if(window.prompt('削除を確定するにはID「'+moState.selected+'」を入力してください。')!==moState.selected)return;
