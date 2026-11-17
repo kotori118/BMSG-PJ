@@ -46,3 +46,18 @@ test('production library remains version-pinned and feature-flagged',()=>{
   assert.equal(library.version,'14');
   assert.match(read('CatalogManagementEntry.html'),/button\.hidden=true/);
 });
+
+test('PartTransfers analysis is absent but singing/center metrics and timer remain',()=>{
+  const api=read('AnalysisApi.gs'),ui=read('AnalysisScripts.html'),cfg=read('Config.gs');
+  const timer=read('PerformanceTimerApi.gs'),router=read('Router.html'),index=read('Index.html');
+  assert.doesNotMatch(api,/PART_TRANSFERS|transfersRows|buildAnalysisPartTransfer_|partTransferData/);
+  assert.doesNotMatch(ui,/パート継承分析|renderOtherTransfer|renderTransferSongs|partTransferData/);
+  assert.doesNotMatch(cfg,/PART_TRANSFERS/);
+  assert.match(api,/readAnalysisMetrics_\(spreadsheet\)/);
+  assert.match(api,/singTotal|centerTotal/);
+  assert.match(ui,/歌唱割合推移|センター割合推移/);
+  assert.match(timer,/function savePerformanceTimer\(/);
+  assert.match(router,/renderPerformanceTimer\(/);
+  assert.match(index,/include\('PerformanceTimerScripts'\)/);
+  assert.match(cfg,/PERFORMANCE_METRICS: '10_PerformanceMetrics'/);
+});
