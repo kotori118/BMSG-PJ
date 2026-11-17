@@ -36,9 +36,9 @@ test('card catalog accepts 09_Images without DisplayOrder and retains member/rar
   assert.equal(model.groups.find(g=>g.name==='BE:FIRST').memberIds.length,2);
 });
 test('profile selects exactly the same designated member image without 09_Images.DisplayOrder',()=>{
-  const table={GROUPS:groups,MEMBERS:members,GROUP_MEMBERS:memberships,IMAGES:images};
+  const table={Groups:groups,Members:members,GroupMembers:memberships,Images:images};
   const env=context(['ProfileApi.gs'],{
-    UNIVERSE_CONFIG:{SHEETS:table},
+    UNIVERSE_CONFIG:{SHEETS:{GROUPS:'Groups',MEMBERS:'Members',GROUP_MEMBERS:'GroupMembers',IMAGES:'Images'}},
     getCoreSpreadsheet_:()=>({}),
     readCoreSheetObjectsFromSpreadsheet_:(_,key)=>table[key]
   });
@@ -50,7 +50,7 @@ test('profile selects exactly the same designated member image without 09_Images
   }
   const other=images.map(r=>({...r,IsProfileMain:false}));
   other.find(r=>r.TargetID==='101'&&r.Rarity==='R').IsProfileMain=true;
-  table.IMAGES=other;
+  table.Images=other;
   const out2=env.buildProfileMembersPayload_();
   assert.match(out2.members.find(m=>m.memberId==='101').imageUrl,/file_101_R=/);
   assert.match(out2.members.find(m=>m.memberId==='102').imageUrl,/file_102_SSR=/);
