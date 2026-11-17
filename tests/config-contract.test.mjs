@@ -123,9 +123,11 @@ test('LYRICS keeps その他UNIT last even after dynamic unit registration', () 
   assert.ok(newUnit >= 0 && other > newUnit, 'new units must appear before その他UNIT');
 });
 
-test('LYRICS has a persistent route to MANAGEMENT', () => {
+test('LYRICS uses the global SETTINGS route to MANAGEMENT without a duplicate shortcut', () => {
   const page = fs.readFileSync(path.join(root, 'LyricsPage.html'), 'utf8');
   const css = fs.readFileSync(path.join(root, 'LyricsStyles.html'), 'utf8');
-  assert.match(page, /class="u-btn lyrics-management-access-button"[^>]*onclick="navigateTo\('manage'\)"/);
-  assert.match(css, /\.lyrics-management-access\{position:sticky;/);
+  const overlays = fs.readFileSync(path.join(root, 'AppOverlays.html'), 'utf8');
+  assert.doesNotMatch(page, /lyrics-management-access|navigateTo\('manage'\)/);
+  assert.doesNotMatch(css, /lyrics-management-access/);
+  assert.match(overlays, /管理ページを開く/);
 });
