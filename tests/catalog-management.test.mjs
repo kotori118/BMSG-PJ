@@ -91,3 +91,40 @@ test('new management panel JavaScript parses and keeps existing management handl
   }
   assert.match(ui,/grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
 });
+
+test('color collision checks run for every catalog create/update and explain the conflict',()=>{
+  const ui=read('CatalogManagement.html');
+  const api=read('CatalogManagementApi.gs');
+  assert.match(ui,/function cmColorAvailable_\(/);
+  assert.match(ui,/String\(x\.hex\|\|''\)\.toUpperCase\(\)===normalized/);
+  assert.match(ui,/cmColorAvailable_\(color,'GROUP',''\)/);
+  assert.match(ui,/cmColorAvailable_\(color,'GROUP',id\)/);
+  assert.match(ui,/cmColorAvailable_\(color,'MEMBER',''\)/);
+  assert.match(ui,/cmColorAvailable_\(color,'MEMBER',id\)/);
+  assert.match(api,/catalogManagementCreateMember/);
+});
+test('member maintenance is gated by the shared Writer and UI does not write Sheets',()=>{
+  const ui=read('CatalogManagement.html'),api=read('CatalogManagementApi.gs');
+  for(const fn of ['cmMoveMember_','cmChangePrimaryGroup_','cmDeleteMember_']){
+    assert.match(ui,new RegExp('function '+fn+'\\('));
+  }
+  for(const fn of ['catalogManagementMoveMemberOrder','catalogManagementChangePrimaryGroup','catalogManagementDeleteMember']){
+    assert.match(api,new RegExp('function '+fn+'\\('));
+  }
+  assert.match(api,/getCatalogMemberDeletePreviewForUniverse/);
+  assert.match(ui,/externalReferencesChecked:true/);
+  assert.doesNotMatch(ui,/SpreadsheetApp/);
+});
+test('explicit main group is respected for a 5xx legacy member in profile editor',()=>{
+  const source=read('ProfileManagementApi.gs');
+  const fn=source.slice(source.indexOf('function profileMgmtCategoryForMember_('),
+    source.indexOf('function profileMgmtReadObjects_('));
+  const context={
+    PROFILE_MGMT_GROUPS_:['BE:FIRST','MAZZEL','STARGLOW','HANA','BMSG POSSE'],
+    asId_:(v)=>String(v??'')
+  };
+  vm.createContext(context);
+  vm.runInContext(fn,context);
+  assert.equal(vm.runInContext("profileMgmtCategoryForMember_('501','1',{'1':'BE:FIRST'})",context),'BE:FIRST');
+  assert.equal(vm.runInContext("profileMgmtCategoryForMember_('501','',{})",context),'BMSG POSSE');
+});
