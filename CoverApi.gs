@@ -35,7 +35,6 @@ function getCoverSourceSongs(artist) {
   if (COVER_SOURCE_ARTISTS_.indexOf(selected) < 0) throw new Error('カバーする原曲のアーティストが正しくありません。');
   const ss = SpreadsheetApp.openById(UNIVERSE_CONFIG.CORE_DB_ID);
   const songs = readCoverSheetMatchesFromSpreadsheet_(ss, UNIVERSE_CONFIG.SHEETS.SONGS, 'Artist', selected, false)
-    .filter(function(row){return String(row.RecordStatus||'ACTIVE').trim().toUpperCase()!=='ARCHIVED';})
     .map(normalizeCoverSong_)
     .sort(compareCoverSongs_);
   return songs;
