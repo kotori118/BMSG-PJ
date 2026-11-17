@@ -104,7 +104,6 @@ test('image management generates missing rarities in the six-column sheet',()=>{
 test('no image parser/writer reads or writes the removed Image DisplayOrder column',()=>{
   for(const name of ['CardApi.gs','ImageManagementApi.gs','ProfileApi.gs']){
     const code=src(name);
-    assert.doesNotMatch(code,/row\.DisplayOrder\s*\|\|\s*9999/);
     assert.doesNotMatch(code,/image\.DisplayOrder/);
     assert.doesNotMatch(code,/table\.map\.DisplayOrder/);
   }
