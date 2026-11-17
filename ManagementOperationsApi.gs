@@ -5,7 +5,7 @@ function getManagementOperationsBootstrap(userId){
 }
 function runManagementOperation(payload){
   payload=payload||{};catalogManagementSiteAccess_(payload.userId);
-  const writers={configure:'configureCatalogRuntimeForUniverse',guestCreate:'registerSongLyricsGuestForUniverse',guest:'maintainCatalogGuestForUniverse',group:'maintainCatalogGroupForUniverse',field:'updateCatalogProfileFieldForUniverse',image:'maintainCatalogImageForUniverse',artist:'correctCatalogSongArtistForUniverse',backup:'createCatalogBackupsForUniverse',prepare:'prepareCatalogManagementForUniverse',repair:'repairCatalogDatabaseForUniverse',restore:'restoreCatalogMasterDataForUniverse'};
+  const writers={guestCreate:'registerSongLyricsGuestForUniverse',guest:'maintainCatalogGuestForUniverse',group:'maintainCatalogGroupForUniverse',field:'updateCatalogProfileFieldForUniverse',image:'maintainCatalogImageForUniverse',artist:'correctCatalogSongArtistForUniverse',backup:'createCatalogBackupsForUniverse',prepare:'prepareCatalogManagementForUniverse',repair:'repairCatalogDatabaseForUniverse',restore:'restoreCatalogMasterDataForUniverse'};
   const name=writers[payload.operation];if(!name)throw new Error('この操作には対応していません。');
   const result=catalogManagementCallWriter_(name,payload);
   if(result&&result.ok){catalogManagementRefreshProfileFieldCaches_();clearUniverseImageRepairCaches_();}

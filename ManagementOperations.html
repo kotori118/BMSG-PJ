@@ -26,7 +26,6 @@
       if(p.action==='history'){html='<button class="u-btn" onclick="moLoadHistory_(true)">変更履歴を読み込む</button><div id="moHistory"></div>';}
       else if(p.action==='backup'){html='<section class="management-card"><h3 class="management-section-title">バックアップ</h3><p class="management-lead">CoreとLogを指定バックアップフォルダに複製します。作成済みファイルは削除しません。</p><button class="u-btn" onclick="moBackup_()">バックアップを作成</button><div>'+d.backups.map(function(b){return '<p>'+cmEscape_(b.createdAt)+' <a class="u-btn" target="_blank" rel="noopener" href="https://docs.google.com/spreadsheets/d/'+encodeURIComponent(b.coreId)+'/edit">Core</a> <a class="u-btn" target="_blank" rel="noopener" href="https://docs.google.com/spreadsheets/d/'+encodeURIComponent(b.logId)+'/edit">Log</a></p>';}).join('')+'</div></section>'+moRestoreHtml_();}
       else if(p.action==='prepare'){html='<section class="management-card"><h3 class="management-section-title">初期整備・移行</h3><p class="management-lead">バックアップを作成し、管理用の列と監査ログを準備します。廃止したロゴの登録データも取り除きます。</p><p>'+cmEscape_(d.schema.ready?'管理用データ構造は準備済みです。':(d.schema.missing||[]).join(' / '))+'</p><button class="u-btn" onclick="moPrepare_()">内容を確認して初期整備する</button></section>';}
-      else if(p.action==='options'){html=moOptionsHtml_();}
       else if(p.action==='repair'){html='<section class="management-card"><p class="management-lead">不足プロフィール行・主所属行の補完を、変更計画の確認後に実行します。重複IDや参照不明のデータは自動削除しません。</p><button class="u-btn" onclick="moPreviewRepair_()">修復計画を確認</button><div id="moRepairPlan"></div></section>';}
     }else if(!d.schema.ready){html='<p class="management-error">管理用データの初期整備が必要です。</p><button class="u-btn" onclick="managementGo_(\'maintenance\',\'prepare\')">初期整備へ</button>';}
     else if(p.section==='songs'&&p.action==='guests')html='<section class="management-card"><h3 class="management-section-title">ゲストを追加</h3>'+cmField_('moNewGuest','ゲスト名',cmInput_('moNewGuest','text',''))+'<button class="u-btn" onclick="moAddGuest_()">ゲストを登録</button></section>'+moSelectHtml_(d.guests,'GuestID','DisplayName')+'<div id="moEditor"></div>';
@@ -72,11 +71,6 @@
     if(window.prompt('削除を確定するにはID「'+moState.selected+'」を入力してください。')!==moState.selected)return;
     const payload={operation:kind,action:'DELETE',confirm:moState.selected,expectedRevision:moState.revision};payload[{guest:'guestId',group:'groupId',image:'imageId'}[kind]]=moState.selected;moRun_(payload);
   }
-  function moOptionsHtml_(){
-    const labels={UNIVERSE_SITE_ONLY_WRITES:'旧入力シートからの更新を停止'};
-    return '<section class="management-card"><p class="management-lead">管理用データの初期整備とバックアップ後に変更できます。サイトの登録・編集機能は全ユーザーが利用できます。</p>'+Object.keys(labels).map(function(key){return '<label class="management-field"><span><input id="moFlag_'+key+'" type="checkbox" '+(moState.data.flags&&moState.data.flags[key]?'checked':'')+'> '+labels[key]+'</span></label>';}).join('')+'<button class="u-btn" onclick="moSaveOptions_()">設定を確認して保存</button></section>';
-  }
-  function moSaveOptions_(){const flags={};Object.keys(moState.data.flags||{}).forEach(function(key){flags[key]=cmChecked_('moFlag_'+key);});if(window.confirm('旧入力シートからの更新設定を変更しますか？')&&window.prompt('CONFIGURE_MANAGEMENT と入力してください。')==='CONFIGURE_MANAGEMENT')moRun_({operation:'configure',flags:flags,confirm:'CONFIGURE_MANAGEMENT'});}
   function moBackup_(){if(window.confirm('CoreとLogのバックアップを作成しますか？'))moRun_({operation:'backup',confirm:'CREATE_BACKUP'});}
   function moPrepare_(){if(window.confirm('バックアップを作成し、管理用の列・監査ログを準備して、廃止ロゴの登録データを取り除きます。実行しますか？')&&window.prompt('実行する場合は PREPARE_MANAGEMENT と入力してください。')==='PREPARE_MANAGEMENT')moRun_({operation:'prepare',confirm:'PREPARE_MANAGEMENT'});}
   function moLoadHistory_(reset){

@@ -15,7 +15,7 @@ function populate(f){
 }
 test('every management operation is routed for every selected user',async()=>{
   const f=fixture();populate(f);
-  for(const [s,a] of [['songs','guests'],['groups','edit'],['members','fields'],['images','settings'],['maintenance','history'],['maintenance','backup'],['maintenance','prepare'],['maintenance','repair'],['maintenance','options']]){
+  for(const [s,a] of [['songs','guests'],['groups','edit'],['members','fields'],['images','settings'],['maintenance','history'],['maintenance','backup'],['maintenance','prepare'],['maintenance','repair']]){
     await f.go(s,a);assert.ok(f.dom.window.document.getElementById('managementOperationsHost'),`${s}/${a}`);assert.equal(f.run('managementBusy_()'),false);
     const ids=[...f.dom.window.document.querySelectorAll('[id]')].map(x=>x.id);assert.equal(ids.length,new Set(ids).size,`${s}/${a} duplicate IDs`);
   }f.dom.window.close();
@@ -54,11 +54,9 @@ test('backup and repair/restore preview are explicit; commit requires a second c
   f.ctx.window.prompt=()=> 'WRONG';f.run('moConfirmRestore_()');assert.equal(f.calls.filter(x=>x.key==='runManagementOperation').length,2);
   f.ctx.window.prompt=()=> 'RESTORE_MASTER_DATA';f.run('moConfirmRestore_()');await f.settle();assert.equal(f.calls.filter(x=>x.key==='runManagementOperation').at(-1).args[0].expectedRevision,'restore-plan');f.dom.window.close();
 });
-test('initial setup and runtime configuration keep explicit confirmation tokens',async()=>{
+test('initial setup keeps its explicit confirmation token',async()=>{
   const f=fixture();populate(f);await f.go('maintenance','prepare');f.ctx.window.prompt=()=> 'PREPARE_MANAGEMENT';f.run('moPrepare_()');await f.settle();
-  assert.equal(f.calls.find(x=>x.key==='runManagementOperation').args[0].operation,'prepare');
-  await f.go('maintenance','options');f.ctx.window.prompt=()=> 'CONFIGURE_MANAGEMENT';f.run("document.getElementById('moFlag_UNIVERSE_SITE_ONLY_WRITES').checked=true;moSaveOptions_()");await f.settle();
-  const payload=f.calls.filter(x=>x.key==='runManagementOperation').at(-1).args[0];assert.equal(payload.flags.UNIVERSE_SITE_ONLY_WRITES,true);f.dom.window.close();
+  assert.equal(f.calls.find(x=>x.key==='runManagementOperation').args[0].operation,'prepare');f.dom.window.close();
 });
 test('server dispatcher rejects arbitrary functions and unknown Universe users',()=>{
   const calls=[];const env={catalogManagementSiteAccess_:uid=>{if(!['U001','U002','U003'].includes(uid))throw Error('user');},catalogManagementCallWriter_:(fn,p)=>{calls.push(fn);return {ok:true};},catalogManagementRefreshProfileFieldCaches_:()=>{},clearUniverseImageRepairCaches_:()=>{},BMSGDB:{}};
