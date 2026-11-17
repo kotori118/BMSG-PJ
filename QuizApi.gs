@@ -236,7 +236,7 @@ function quizCourseMemberIds_(course, members, groups, memberships) {
 }
 
 function parseQuizSingerIds_(value, memberById) {
-  return String(value || '').split(/[^0-9]+/).map(function(id) { return id.trim(); }).filter(function(id, index, all) { return id && memberById[id] && all.indexOf(id) === index; });
+  return (String(value || '').match(/M\d+|\d+/g) || []).map(function(id) { return memberById[id] ? id : (memberById['M' + id] ? 'M' + id : id); }).filter(function(id, index, all) { return !!memberById[id] && all.indexOf(id) === index; });
 }
 
 function makeQuizSnippet_(lyrics, difficulty) {
