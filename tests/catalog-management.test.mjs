@@ -128,3 +128,35 @@ test('explicit main group is respected for a 5xx legacy member in profile editor
   assert.equal(vm.runInContext("profileMgmtCategoryForMember_('501','1',{'1':'BE:FIRST'})",context),'BE:FIRST');
   assert.equal(vm.runInContext("profileMgmtCategoryForMember_('501','',{})",context),'BMSG POSSE');
 });
+
+test('catalog UI rejects duplicate group/member colors when executed, but allows unchanged historical color',()=>{
+  const source=read('CatalogManagement.html');
+  const script=source.match(/<script>([\s\S]*?)<\/script>/);
+  assert.ok(script);
+  const sandbox={
+    document:{getElementById:()=>null,addEventListener:()=>{}},
+    google:{script:{run:{}}},
+    getUniverseUserId:()=> 'U001'
+  };
+  vm.createContext(sandbox);
+  vm.runInContext(script[1],sandbox);
+  vm.runInContext('cmState.bootstrap='+JSON.stringify({
+    groups:[{GroupID:'2',GroupName:'MAZZEL',ColorHex:'#FF0000'}],
+    members:[
+      {MemberID:'401',DisplayName:'CHIKA',ColorHex:'#ff0000'},
+      {MemberID:'101',DisplayName:'SOTA',ColorHex:'#00AFCC'}
+    ]
+  }),sandbox);
+  const check=(code,kind,id)=>vm.runInContext(
+    'cmColorAvailable_('+JSON.stringify(code)+','+JSON.stringify(kind)+','+JSON.stringify(id)+')',
+    sandbox
+  );
+  assert.equal(check('#ff0000','GROUP',''),false);
+  const message=vm.runInContext('cmState.message',sandbox);
+  assert.match(message,/MAZZEL/);
+  assert.match(message,/CHIKA/);
+  assert.equal(check('#FF0000','GROUP','2'),true);
+  assert.equal(check('#00afcc','MEMBER','401'),false);
+  assert.match(vm.runInContext('cmState.message',sandbox),/SOTA/);
+  assert.equal(check('#ABCDEF','MEMBER',''),true);
+});
