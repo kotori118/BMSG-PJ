@@ -3,8 +3,8 @@
  * BMSG Universe shared configuration.
  */
 const UNIVERSE_CONFIG = Object.freeze({
-  CORE_DB_ID: '1VANjD182-JPIYkYJ6J-6FdqQ5d8nZXsX9iyIhIlfyPk',
-  LOG_DB_ID: '1-j0QqCQKvSyMFSFifZ0hdNIuQ8cmfkRTuop1eGlj1Kk',
+  CORE_DB_ID: '1-1AY6-BACOaGW3HIgYS0UjFMPSh-cjvYMMnJ_UYoRFY',
+  LOG_DB_ID: '10vDKc_Q431iMDTTqB2A16i-Yp28oXSInoKiJXZtonRQ',
   CARD_IMAGE_FOLDER_ID: '1ayh-EAbV585JqRofClrTHjBxNTQlfQBK',
   PROFILE_CACHE_SECONDS: 300,
   USER_IDS: Object.freeze(['U001', 'U002', 'U003']),
