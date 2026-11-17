@@ -203,7 +203,7 @@ function imageMgmtResolveMember_(core, memberId) {
 
 function imageMgmtCategoryForMember_(memberId, groupId, groupNameById) {
   const name = groupNameById[asId_(groupId)] || '';
-  return name || (/^5/.test(String(memberId || '')) ? 'BMSG POSSE' : '');
+  return name || (!asId_(groupId) ? 'BMSG POSSE' : '');
 }
 
 function imageMgmtNormalizeRarity_(rarity) {
