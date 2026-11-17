@@ -308,8 +308,7 @@ function buildProfileMembersPayload_() {
   }, {});
 
   const imagesByMemberId = images.reduce(function(map, image) {
-    if (String(image.TargetType || '').trim().toLowerCase() !== 'member') return map;
-    const memberId = asId_(image.TargetID);
+    const memberId = asId_(image.MemberID);
     if (!memberId) return map;
 
     const candidate = {
