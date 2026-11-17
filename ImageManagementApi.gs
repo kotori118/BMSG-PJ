@@ -81,7 +81,7 @@ function saveImageManagementImage(payload) {
     const blob = Utilities.newBlob(Utilities.base64Decode(base64), mimeType, fileName);
     newFile = folder.createFile(blob);
 
-    imageMgmtEnsureMemberRows_(core, context.memberId, context.displayOrder);
+    imageMgmtEnsureMemberRows_(core, context.memberId);
     const target = imageMgmtFindImageRow_(core, context.memberId, rarity);
     if (!target) throw new Error('画像データの登録行を作成できませんでした。');
     targetCell = target.sheet.getRange(target.rowNumber, target.map.DriveFileID + 1);
@@ -136,7 +136,7 @@ function repairImageManagementData(userId) {
       if (!name) return;
       if (!memberByName[name]) memberByName[name] = [];
       memberByName[name].push(row);
-      imageMgmtEnsureMemberRows_(core, asId_(row.MemberID), Number(row.DisplayOrder || 9999));
+      imageMgmtEnsureMemberRows_(core, asId_(row.MemberID));
     });
 
     const retiredIds=new Set(BMSGDB.getRetiredCatalogImageFileIdsForUniverse({userId:userId}));
@@ -239,10 +239,10 @@ function imageMgmtFindImageRow_(core, memberId, rarity) {
   return match;
 }
 
-function imageMgmtEnsureMemberRows_(core, memberId, displayOrder) {
+function imageMgmtEnsureMemberRows_(core, memberId) {
   const sheet = core.getSheetByName(UNIVERSE_CONFIG.SHEETS.IMAGES);
   const table = imageMgmtReadTable_(sheet);
-  ['ImageID','TargetType','TargetID','Rarity','DriveFileID','DisplayOrder','IsProfileMain'].forEach(function(name){
+  ['ImageID','TargetType','TargetID','Rarity','DriveFileID','IsProfileMain'].forEach(function(name){
     if (table.map[name] == null) throw new Error('09_Images に必要な列「' + name + '」がありません。');
   });
   const existing = {};
@@ -270,7 +270,6 @@ function imageMgmtEnsureMemberRows_(core, memberId, displayOrder) {
       values[table.map.TargetID] = String(memberId);
       values[table.map.Rarity] = rarity;
       values[table.map.DriveFileID] = '';
-      values[table.map.DisplayOrder] = (Number(displayOrder) - 1) * 4 + IMAGE_MGMT_RARITIES_.indexOf(rarity) + 1;
       values[table.map.IsProfileMain] = rarity === 'SSR';
       return values;
     });
