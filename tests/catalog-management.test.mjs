@@ -181,7 +181,7 @@ test('unit membership site controls preserve selected unit and send stale-write 
   };
   const calls=[];
   const sandbox={
-    document:{getElementById:(id)=>values[id]||null},
+    document:{getElementById:(id)=>values[id]||null,addEventListener:()=>{}},
     window:{confirm:()=>true},
     google:{script:{run:{}}},
     getUniverseUserId:()=> 'U001',
