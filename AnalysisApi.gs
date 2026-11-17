@@ -4,14 +4,13 @@
  * from BMSG_Universe_DB. The legacy ANALYSIS spreadsheet remains read-only.
  */
 
-const ANALYSIS_CACHE_KEY = 'analysis_bootstrap_v2_without_part_transfers';
 const ANALYSIS_CACHE_SECONDS = 300;
 const ANALYSIS_GROUP_ID = '1';
 const ANALYSIS_KEYWORDS = ['夢','愛','涙','君','僕','未来','世界','時代','頂点','光','明日','Amazing','Crazy'];
 
 function getAnalysisBootstrap() {
   const cache = CacheService.getScriptCache();
-  const cached = cache.get(ANALYSIS_CACHE_KEY);
+  const cached = cache.get(UNIVERSE_CACHE_KEYS_.ANALYSIS);
   if (cached) {
     try { return JSON.parse(cached); } catch (error) {}
   }
@@ -19,7 +18,7 @@ function getAnalysisBootstrap() {
   const data = buildAnalysisDataset_();
   try {
     const serialized = JSON.stringify(data);
-    if (serialized.length < 95000) cache.put(ANALYSIS_CACHE_KEY, serialized, ANALYSIS_CACHE_SECONDS);
+    if (serialized.length < 95000) cache.put(UNIVERSE_CACHE_KEYS_.ANALYSIS, serialized, ANALYSIS_CACHE_SECONDS);
   } catch (error) {}
   return data;
 }
