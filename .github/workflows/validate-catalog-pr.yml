@@ -21,3 +21,5 @@ jobs:
         run: node scripts/validate-gas-sources.mjs
       - name: Run source contracts
         run: node --test tests/*.test.mjs
+      - name: Run predeployment audit (release blockers)
+        run: node --test audit/*.test.mjs

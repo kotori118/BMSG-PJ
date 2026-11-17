@@ -78,3 +78,64 @@ HOME／DATA／LAB下部ナビ、metrics独立ツール、LYRICS直接編集の�
 3. **改めて公開承認を受けた別作業でのみ**、DBの確定版発行→PJライブラリ固定版更新→PJ公開版更新を行う。現ブランチをそのまま本番へpushしない。
 4. ロールバックは直前のPJ deployment／BMSGDB固定版に戻し、追加管理flagをOFFにする。今回のUI変更自体にはDB移行なし。将来移行・データ書込を行った場合は、その別作業のバックアップと復旧手順で扱う。
 5. Draft PR #64／#3は未mergeのまま保持する。
+
+## 8. デプロイ直前の全体監査（2026-11-17・公開停止）
+
+**判定：現段階ではデプロイ不可。管理画面だけで全ての日常マスター管理を完結する状態には達していない。**
+
+対象HEAD：PJ `92d3eed808348726d07e6e55bd8a86270f4d7f80`／DB `149d3dc1e222fbbe4b087eb2b145699bb09d8c31`。両リポジトリをfetchし最新HEADが一致することを確認した。旧節の「実装済み」は各記載範囲の実装状態であり、公開可・全操作網羅を意味しない。本節の公開停止判定を優先する。
+
+### 8.1 再現した問題
+
+追加した `audit/management-predeploy.test.mjs` は期待する正常動作を検証する試験。**7件中1件成功・6件失敗**。失敗は既知の公開阻害事項として残し、PR検証workflowに監査試験を追加した。実装の修正は本監査では行っていない。
+
+| ID | 問題・再現手順 | 影響・該当箇所 |
+|---|---|---|
+| A1 | メンバー編集でAを選択→名前を編集→Bへ切替。破棄確認が呼ばれず入力がBの値に置換される | 未保存内容の消失。CatalogManagement.html `cmRender_` の対象変更処理。グループ切替も同様の保護がない |
+| A2 | 既存曲を開いた後、曲の選択画面へ直接戻るボタンがない | 一度カテゴリへ戻り編集操作へ入り直す必要がある。`backSlmExistingSelect` は定義のみでUI参照がない |
+| A3 | 楽曲追加で歌詞なしを選択し最終工程へ進むと、楽曲情報へ戻って訂正する操作がない | カテゴリに戻ると未保存フォーム破棄を伴う。SongLyricsManagement.html `slmLyricsInputHtml_` |
+| A4 | 未登録Guestの確認で登録を2回押すと `registerSongLyricsGuest` 要求が2回送られる | 確認ボタンがbusy制御の対象外かつhandlerにbusy guardなし。DBの共有Writer・同名確認は維持されており、実DBで2行できるとまでは断定しない |
+| A5 | 管理用schema未準備でメンバー編集を描画すると、存在しないselectのvalue参照でTypeError | 移行案内を安全に表示できない。CatalogManagement.html `cmRender_`。グループ編集にも同じ未準備時のイベント設定問題がある |
+| A6 | 合成データで新規GROUPを追加してCard／Coverの実ビルダーへ渡しても選択肢に出ない | CardApi.gsのCARD_GROUP_NAMES_、CoverApi.gsのCOVER_DESTINATION_GROUPS_が固定。PROFILEもProfileApi.gsの主要4グループとProfileScripts.htmlの固定タブに依存。ALL表示で一部データが見えてもグループ別管理が完成したことにはならない |
+
+成功した追加試験：ソロ分類の未保存入力は、基本情報の保存・再読込後にも保持されることを確認。
+
+### 8.2 本番の読取専用確認と公開前準備
+
+Google Sheets connectorでCore／Logのmetadataと必要なヘッダー行だけを読み取った。**書込なし**。
+
+- Core `01_Groups`：現在は GroupID / GroupName / ColorHex / DisplayOrder。必要なGroupKind／RecordStatusがない。
+- Core `02_Members`：現在は MemberID / GroupID / DisplayName / ColorHex / DisplayOrder。必要なRecordStatusがない。
+- Core `06_Songs`：現在は SongID / Title / Artist / ReleaseDate / Form / CDTitle / IsTitleTrack。SongType／SoloMemberIDがない。
+- Logの現存22タブに `CATALOG_Audit` がない。`catalogSchemaStatus_`／`catalogRequireReady_` により新管理の書込は拒否される。
+- PJのBMSGDB参照は固定version14のまま。新Writer版の発行・固定版接続・schema移行・管理者／操作別flagの実設定確認が必要。単にPJをdeployしても新機能は完成しない。
+- **schema不足の確認は、今回の監査でschemaを変更する許可とは扱わない。** 本番の列追加・シート追加・flag変更・version発行・deploy・mergeは行っていない。
+- `10_PerformanceMetrics`、旧入力3シート、`11_PartTransfers`の存在をmetadataで確認。12／13は現存一覧にない。削除は行っていない。
+
+### 8.3 スプレッドシートを開かずにできる範囲／残る操作
+
+ここでいう「直接操作不要」は利用者がSheetsを開いて手入力しないこと。保存先のSheetsそのものを廃止する話ではない。以下はコード上の導線であり、実Apps Scriptでの成功は未保証。
+
+| 対象 | 画面の既存操作 | 完結していない点 |
+|---|---|---|
+| 楽曲・歌詞 | 登録、タイトル等、歌詞・歌割り・歌唱者・ハモリ、BE:FIRSTの制作クレジット、ソロ分類、依存確認付き削除 | 登録後Artistの訂正はUI／Writerとも禁止。Artist誤登録の修正経路がない。BE:FIRST以外の制作クレジットは現行仕様上の対象外 |
+| メンバー | 登録、名前・色、主所属変更、同じ主所属内の上下移動、参照ゼロ時の削除、プロフィール値編集 | 初期順は末尾自動のみ。Member.DisplayOrderと所属内DisplayOrderは別。メンバー並べ替えWriterは02_Membersのみ更新し、PROFILEのグループ別一覧は04_GroupMembers順を優先するため表示順の整合を追加検証する必要あり |
+| グループ・ユニット | 登録、名前・色、ユニットの所属追加・除外・上下移動 | 表示順変更、GROUP／UNIT種別訂正、安全な削除なし。曲Artistに使用中のグループ名変更は拒否。新グループの既存画面反映にA6あり |
+| プロフィール項目 | 追加、非表示、再表示。非表示値を保持 | 項目名・分類・順番の修正なし。型変更は元の設計どおり対象外 |
+| ゲスト | 新曲の歌詞解析中に新規登録 | 名前訂正、統合、未使用ゲスト削除、単独管理画面なし。既存曲編集内で新Guestを作る専用導線もない |
+| メンバー画像 | レアリティ別登録・差し替え・欠落画像修復 | メイン画像指定、表示順変更、不要画像削除なし |
+| グループ／ブランド画像 | 09_Imagesの既存ロゴを各機能が読む | 登録・差し替えの管理UIなし。Core09_ImagesにはMember以外のTargetTypeもあるが現フォームはMember専用 |
+| 秒数 | 独立metricsツールを維持 | MANAGEMENTへ統合しない確定仕様。日常作業はこの独立ツールを使う |
+| 点検・保守 | 読み取り専用点検 | 異常の修復、操作履歴閲覧、バックアップ、移行・復旧のUIなし。IDRegistryは自動管理であり手動編集の追加は不要 |
+
+上表の将来機能は前回指示で非表示とした項目であり、すべてが実装バグという意味ではない。ただし「Sheetsに一切手を入れず全項目を管理」の達成条件には不足する。
+
+### 8.4 全体検査の実行結果と未確認
+
+- 既存PJ44／DB49試験は再実行して全件成功。静的検査もPJ27 GAS／63 HTML、DB13 GASが成功。
+- 追加監査は上記6件失敗。既存CI成功を理由に公開してよい状態とは判定しない。
+- Runtime同名関数・構文、既存のカラー重複拒否、ユニット参照保護、プロフィール値保持、LYRICS直接編集・metrics・クイズ廃止契約は既存自動試験の範囲で維持。
+- 実Apps Script・Google権限・ライブラリ版接続・実DB保存・Safari／iPhone・描画されたDark／Light・全機能実機一巡は未実施。DOM試験はこれらの代替にはならない。
+- 修正順：A1／A4／A5→A2／A3／A6→日常管理に必要な未実装範囲の確定→独立GAS・複製DBで実保存／権限／回帰確認→必要な移行手順の別途確認→公開可否の再判定。
+
+**今回の結論は「問題があるため公開保留」。条件付きのデプロイ依頼は実行していない。**

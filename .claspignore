@@ -4,3 +4,4 @@ scripts/**
 docs/**
 package.json
 package-lock.json
+audit/**
