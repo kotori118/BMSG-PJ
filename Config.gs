@@ -1,4 +1,3 @@
-/** TEST-ONLY BRANCH: Never merge or deploy. BMSGDB library requires independent staging binding. */
 /**
  * BMSG Universe shared configuration.
  */
