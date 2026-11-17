@@ -35,7 +35,7 @@
     coverState.songs=[];
     coverState.externalDraft=null;
     coverState.externalParts=[];
-    if(String(coverState.coverGroup.groupId)==='8'||String(coverState.coverGroup.groupName)==='BMSG ALLSTARS'){
+    if(String(coverState.coverGroup.groupId)==='U8'||String(coverState.coverGroup.groupName)==='BMSG ALLSTARS'){
       coverState.allStarMemberIds=[];
       openCoverAllStarsMemberSelect();
       return;
@@ -176,7 +176,7 @@
     if(coverState.screen==='group')return renderCoverHome();
     if(coverState.screen==='allstars')return openCoverGroupSelect();
     if(coverState.screen==='artist'){
-      if(coverState.coverGroup&&(String(coverState.coverGroup.groupId)==='8'||String(coverState.coverGroup.groupName)==='BMSG ALLSTARS'))return openCoverAllStarsMemberSelect();
+      if(coverState.coverGroup&&(String(coverState.coverGroup.groupId)==='U8'||String(coverState.coverGroup.groupName)==='BMSG ALLSTARS'))return openCoverAllStarsMemberSelect();
       return openCoverGroupSelect();
     }
     if(coverState.screen==='songs')return openCoverArtistSelect();
