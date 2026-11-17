@@ -160,3 +160,64 @@ test('catalog UI rejects duplicate group/member colors when executed, but allows
   assert.match(vm.runInContext('cmState.message',sandbox),/SOTA/);
   assert.equal(check('#ABCDEF','MEMBER',''),true);
 });
+
+test('unit membership site controls preserve selected unit and send stale-write guards',()=>{
+  const source=read('CatalogManagement.html');
+  const api=read('CatalogManagementApi.gs');
+  assert.match(api,/function catalogManagementRemoveUnitMember\(payload\)/);
+  assert.match(api,/function catalogManagementMoveUnitMember\(payload\)/);
+  assert.match(api,/catalogManagementCallWriter_\('removeCatalogUnitMemberForUniverse'/);
+  assert.match(api,/catalogManagementCallWriter_\('moveCatalogUnitMemberForUniverse'/);
+  assert.match(source,/function cmRenderUnitRoster_\(/);
+  assert.match(source,/function cmMoveUnitMember_\(/);
+  assert.match(source,/function cmRemoveUnitMember_\(/);
+  assert.match(source,/expectedOrder:Number\(r\.DisplayOrder\)/);
+  const script=source.match(/<script>([\s\S]*?)<\/script>/);
+  assert.ok(script);
+  const values={
+    cmUnitTarget:{value:'6'},
+    cmUnitManageMember:{value:'102'},
+    cmUnitRoster:{innerHTML:''}
+  };
+  const calls=[];
+  const sandbox={
+    document:{getElementById:(id)=>values[id]||null},
+    window:{confirm:()=>true},
+    google:{script:{run:{}}},
+    getUniverseUserId:()=> 'U001',
+    calls
+  };
+  vm.createContext(sandbox);
+  vm.runInContext(script[1],sandbox);
+  vm.runInContext('cmState.bootstrap='+JSON.stringify({
+    groups:[{GroupID:'6',GroupName:'ShowMinorSavage',GroupKind:'UNIT',RecordStatus:'ACTIVE'}],
+    members:[
+      {MemberID:'101',DisplayName:'SOTA'},
+      {MemberID:'102',DisplayName:'SHUNTO'},
+      {MemberID:'201',DisplayName:'KAIRYU'}
+    ],
+    memberships:[
+      {GroupID:'1',MemberID:'101',DisplayOrder:1},
+      {GroupID:'9',MemberID:'102',DisplayOrder:1},
+      {GroupID:'6',MemberID:'102',DisplayOrder:2},
+      {GroupID:'6',MemberID:'101',DisplayOrder:1}
+    ]
+  })+'; cmCall_=function(name,payload){calls.push({name,payload});}',sandbox);
+  vm.runInContext('cmRenderUnitRoster_()',sandbox);
+  assert.match(values.cmUnitRoster.innerHTML,/SOTA/);
+  assert.match(values.cmUnitRoster.innerHTML,/SHUNTO/);
+  assert.doesNotMatch(values.cmUnitRoster.innerHTML,/KAIRYU/);
+  assert.ok(values.cmUnitRoster.innerHTML.indexOf('SOTA')<values.cmUnitRoster.innerHTML.indexOf('SHUNTO'));
+  vm.runInContext("cmMoveUnitMember_('UP');cmRemoveUnitMember_();",sandbox);
+  assert.equal(calls.length,2);
+  assert.deepEqual(JSON.parse(JSON.stringify(calls[0])),{
+    name:'catalogManagementMoveUnitMember',payload:{
+      groupId:'6',memberId:'102',direction:'UP',expectedOrder:2
+    }
+  });
+  assert.deepEqual(JSON.parse(JSON.stringify(calls[1])),{
+    name:'catalogManagementRemoveUnitMember',payload:{
+      groupId:'6',memberId:'102',expectedOrder:2
+    }
+  });
+});
