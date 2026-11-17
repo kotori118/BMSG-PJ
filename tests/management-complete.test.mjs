@@ -9,7 +9,7 @@ function populate(f){
   d.guests=[{GuestID:'901',DisplayName:'Old guest',revision:'guest-before'},{GuestID:'902',DisplayName:'Target guest',revision:'target-before'}];
   d.groups[1].revision='group-before';d.groups[1].DisplayOrder=2;
   d.fields=[{profileId:'P001',label:'好きな色',displayGroup:'好み',dataType:'TEXT',displayOrder:1,isMultiValue:false,isActive:true}];
-  d.images=[{ImageID:'100',TargetType:'Member',TargetID:'101',Rarity:'SSR',DisplayOrder:1,IsProfileMain:true,revision:'image-before'}];
+  d.images=[{ImageID:'100',MemberID:'M101',Rarity:'SSR',IsProfileMain:true,revision:'image-before'}];
   d.backups=[{coreId:'backup-core',logId:'backup-log',createdAt:'2026-11-17'}];
   d.flags={UNIVERSE_SITE_ONLY_WRITES:false};
 }
@@ -40,7 +40,7 @@ test('field creation reuses the existing endpoint and stays in the operations ed
 });
 test('image display settings and field metadata submit only their own data',async()=>{
   const f=fixture();populate(f);await f.go('images','settings');
-  f.run("document.getElementById('moTarget').value='100';moSelect_();document.getElementById('moOrder').value='2';moSaveImage_()");await f.settle();
+  f.run("document.getElementById('moTarget').value='100';moSelect_();moSaveImage_()");await f.settle();
   let payload=f.calls.find(x=>x.key==='runManagementOperation').args[0];assert.equal(payload.operation,'image');assert.equal(payload.imageId,'100');assert.equal(payload.expectedRevision,'image-before');
   await f.go('members','fields');f.run("document.getElementById('moTarget').value='P001';moSelect_();document.getElementById('moName').value='色';moSaveField_()");await f.settle();
   payload=f.calls.filter(x=>x.key==='runManagementOperation').at(-1).args[0];assert.equal(payload.operation,'field');assert.equal(payload.profileId,'P001');assert.equal(payload.name,'色');f.dom.window.close();
@@ -66,11 +66,11 @@ test('server dispatcher rejects arbitrary functions and unknown Universe users',
   env.runManagementOperation({userId:'U001',operation:'guest'});assert.deepEqual(calls,['maintainCatalogGuestForUniverse']);
 });
 test('group data drives cards, cover and quiz; logo references are absent from runtime payloads',()=>{
-  const groups=[{GroupID:'7',GroupName:'NEW GROUP',GroupKind:'GROUP',DisplayOrder:1}];
+  const groups=[{GroupID:'G7',GroupName:'NEW GROUP',DisplayOrder:1}];
   const env={asId_:x=>String(x??''),asBoolean_:x=>x===true,normalizeHex_:x=>x,UNIVERSE_CONFIG:{SHEETS:{GROUPS:'Groups'}},readCoreSheetObjects_:()=>groups};
   vm.createContext(env);vm.runInContext(read('CardApi.gs')+'\n'+read('CoverApi.gs')+'\n'+read('QuizApi.gs'),env);
   assert.ok(env.getQuizCourses_().some(c=>c.value==='NEW GROUP'));
-  const cards=env.buildCardCatalog_(groups,[],[],[{TargetType:'Brand',DriveFileID:'legacy-logo'}]);assert.doesNotMatch(JSON.stringify(cards),/logo|legacy-logo/i);
+  const cards=env.buildCardCatalog_(groups,[],[],[{MemberID:'missing',DriveFileID:'legacy-logo'}]);assert.doesNotMatch(JSON.stringify(cards),/logo|legacy-logo/i);
   assert.ok(env.buildCoverGroups_({groups}).some(g=>g.groupName==='NEW GROUP'));
   assert.doesNotMatch(read('PokerApi.gs')+read('PokerScripts.html'),/brandLogoDriveFileId/);
 });
