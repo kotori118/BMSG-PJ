@@ -211,3 +211,14 @@ DB：CatalogMaintenance.gs新設、CatalogManagement.gsのShowMinorSavage GROUP�
 利用者がGitHub認証情報とApps Script APIを更新した後、DB Deploy to GAS run44041105303 attempt3が成功。GAS pushとlibrary version15発行をログで確認した。PJ固定参照を14→15へ更新し、対応する固定版テストを15へ整合。認証方式・公開範囲・DB IDは変更しない。直前PJ公開版25／DB参照版14とbackup/pre-management-production-20261117を切り戻し基準に保持する。
 
 同時に追加されていたANALYSIS／PerformanceTimerのキャッシュ整合修正を失わず取り込んだ最新PJはNode55件＋監査7件成功。PJ公開の成否は後続の本番導入記録・GitHub Actionsで確認する。DB schema移行、管理flag設定、09_Imagesロゴ登録行整理はコード公開と別であり、この時点では未実行。実GAS経由の登録・保存・iPhone実機確認も未実施。
+
+
+## 12. 公開後スマホ指摘の修正（2026-11-17）
+
+利用者のiPhoneスクリーンショットで、MANAGEMENTタイトル見切れ・上部utility重複、戻る／パンくずの窮屈な配置、楽曲フォームの過剰な内側余白を確認。公開版26の自動DOM検証は実レイアウトの確認を含んでおらず、公開成功と利用開始完了を区別する必要があった。
+
+修正は管理ページに限定：上部操作用の空きを確保、タイトルサイズを幅に応じ調整、戻るボタンと階層表示を分離し操作名の重複を撤去。既存slm-panelのモバイルpaddingを管理ページ内で解除し、楽曲情報・編集sectionの囲いとpaddingをなくしてページ幅を利用する。全体の下部ナビ・他ページの共通CSSは維持。
+
+追加機能が出ない条件は、UNIVERSE_CATALOG_ENABLED、管理者allowlist、Sessionメール認識による既存gate。実環境の設定値は未取得なので、未設定の断定や権限の自動拡張は行わない。getManagementPageAccessに既存拒否理由を返し、非管理者の管理トップで追加機能の利用設定が必要と表示する。allowlistの値・メールは返さない。保護された操作リンクは引き続き非表示。DBの管理者設定・schema初期整備と実保存は未実施のまま。
+
+GitHub CIにPlaywright/Chromiumで32レイアウト（4幅×2テーマ×管理トップ／楽曲追加／プロフィール／グループ追加）の実寸検証を追加。実際のCSSと、既存関数で合成fixtureを描画したDOMを使用する。外部の実データやユーザーログは使わず、本番保存も行わない。390pxの各画面スクリーンショットをworkflow artifactに残す。これはデスクトップChromiumによる合成表示であり、iPhone Safari実機・本番API認証の証明ではない。テストの実行結果・公開版はPR／Actionsの最新記録を参照。

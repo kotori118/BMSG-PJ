@@ -16,7 +16,7 @@ function catalogManagementSiteAccess_(userId) {
     throw new Error('利用ユーザーの選択が必要です。');
   const props=PropertiesService.getScriptProperties();
   if(props.getProperty('UNIVERSE_CATALOG_ENABLED')!=='true')
-    throw new Error('新しいデータ管理画面はまだ公開されていません。');
+    throw new Error('管理機能の利用設定が完了していません。');
   const email=String(Session.getActiveUser().getEmail()||'').trim().toLowerCase();
   const allow=String(props.getProperty('UNIVERSE_CATALOG_ADMIN_EMAILS')||'')
     .split(',').map(function(s){return s.trim().toLowerCase();}).filter(Boolean);
@@ -55,7 +55,7 @@ function getCatalogManagementAccess(userId) {
     catalogManagementSiteAccess_(userId);
     return {enabled:true};
   }catch(error){
-    return {enabled:false};
+    return {enabled:false,message:String(error.message||'管理者の利用設定を確認してください。')};
   }
 }
 

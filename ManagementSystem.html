@@ -96,7 +96,14 @@
 </style>
 <style>
   /* Routed management layout. Surfaces and states remain in the shared owners. */
-  .management-page{max-width:1000px;margin:0 auto;padding-bottom:calc(24px + env(safe-area-inset-bottom))}
+  .management-page{max-width:1000px;min-width:0;margin:0 auto;padding-top:76px;padding-bottom:calc(24px + env(safe-area-inset-bottom))}
+  .management-page .category-header{gap:8px;margin-bottom:24px}
+  .management-page .category-title{font-size:clamp(24px,6.8vw,42px);line-height:1.2;overflow-wrap:anywhere}
+  .management-local-navigation{display:grid;gap:8px;margin-bottom:24px;min-width:0}
+  .management-back{justify-self:start;min-height:44px;padding:8px 14px;font-size:14px}
+  .management-access-note{margin-bottom:20px}
+  .management-access-note strong{font-size:14px;line-height:1.6}
+  .management-access-note .management-lead{font-size:13px;line-height:1.7}
   .management-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--mgmt-gap)}
   .management-choice{display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%;padding:20px;text-align:left;min-height:72px}
   .management-choice>span{display:grid;gap:8px;min-width:0}
@@ -104,16 +111,23 @@
   .management-choice small{font-size:12px;line-height:1.7;opacity:.65;white-space:normal}
   .management-choice b{color:var(--cyan);font-size:26px}
   .management-maintenance{margin-top:32px}
-  .management-breadcrumb{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:24px;font-size:12px}
-  .management-breadcrumb .u-btn{min-height:44px;padding:8px 12px;font-size:12px}
+  .management-breadcrumb{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:0;font-size:12px;min-width:0;line-height:1.7}
+  .management-breadcrumb .u-btn{min-height:44px;max-width:100%;padding:6px 10px;font-size:12px;white-space:normal;overflow-wrap:anywhere;text-align:left}
   .management-operation-list{display:grid;gap:12px;margin-top:20px}
   .management-editor[hidden],#managementSettingsGroup[hidden]{display:none!important}
-  .management-editor-panel{width:100%;max-width:none;max-height:none;overflow:visible;padding:0;margin-top:20px}
+  .management-page .management-editor-panel{box-sizing:border-box;min-width:0;width:100%;max-width:none;max-height:none;overflow:visible;padding:0;margin-top:20px}
   .management-page .management-field input,.management-page .management-field select,.management-page .management-field textarea{font-size:16px}
   .management-page .slm-icon-btn{min-width:44px;min-height:44px}
   .management-page .management-actions{flex-wrap:wrap}
+  .management-page .slm-panel{padding:0}
+  .management-page .slm-card,.management-page .slm-edit-section{padding:16px 0;border:0;border-radius:0;background:transparent}
+  .management-page .slm-grid{gap:18px}
+  .management-page #managementEditorHost,.management-page #slmBody{min-width:0;max-width:100%}
+  .management-page .management-section-title{font-size:16px;line-height:1.6}
+  .management-page .management-field>span,.management-page .management-label{font-size:13px;line-height:1.6}
   .management-page .cm-busy{pointer-events:none}
   body.theme-light .management-error{color:#9d3030}
+  body.theme-light .management-page .management-section-title,body.theme-light .management-page .management-choice b{color:var(--cyan-ink,#2f7382)}
   @media(max-width:600px){.management-grid{grid-template-columns:1fr}.management-choice{padding:16px}.management-breadcrumb{gap:4px}.management-breadcrumb .u-btn{padding:8px}.management-actions{grid-template-columns:repeat(auto-fit,minmax(120px,1fr))}}
 </style>
 <style>

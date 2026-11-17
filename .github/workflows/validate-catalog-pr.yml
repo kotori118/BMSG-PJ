@@ -23,3 +23,13 @@ jobs:
         run: node --test tests/*.test.mjs
       - name: Run predeployment audit (release blockers)
         run: node --test audit/*.test.mjs
+      - name: Install layout browser
+        run: npx playwright install --with-deps chromium
+      - name: Verify mobile and theme layout
+        run: node scripts/verify-management-layout.mjs
+      - name: Keep management layout screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: management-layout
+          path: layout-results/
