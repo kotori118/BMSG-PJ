@@ -165,10 +165,9 @@ function repairImageManagementData(userId) {
     let updated = 0;
     let warnings = 0;
     table.rows.forEach(function(row){
-      const type = String(row.record.TargetType || '').trim().toLowerCase();
       const rarity = String(row.record.Rarity || '').trim().toUpperCase();
-      if (type !== 'member' || IMAGE_MGMT_RARITIES_.indexOf(rarity) < 0) return;
-      const key = asId_(row.record.TargetID) + '|' + rarity;
+      if (IMAGE_MGMT_RARITIES_.indexOf(rarity) < 0) return;
+      const key = asId_(row.record.MemberID) + '|' + rarity;
       const ids = filesByKey[key] || [];
       const current = String(row.record.DriveFileID || '').trim();
       let next = current;
@@ -229,8 +228,7 @@ function imageMgmtFindImageRow_(core, memberId, rarity) {
   const sheet = core.getSheetByName(UNIVERSE_CONFIG.SHEETS.IMAGES);
   const table = imageMgmtReadTable_(sheet);
   const matches = table.rows.filter(function(row){
-    return String(row.record.TargetType || '').trim().toLowerCase() === 'member' &&
-      asId_(row.record.TargetID) === String(memberId) &&
+    return asId_(row.record.MemberID) === String(memberId) &&
       String(row.record.Rarity || '').trim().toUpperCase() === rarity;
   });
   if (matches.length > 1) throw new Error('同じメンバー・レア度の画像データが重複しています。修復してください。');
@@ -242,7 +240,7 @@ function imageMgmtFindImageRow_(core, memberId, rarity) {
 function imageMgmtEnsureMemberRows_(core, memberId) {
   const sheet = core.getSheetByName(UNIVERSE_CONFIG.SHEETS.IMAGES);
   const table = imageMgmtReadTable_(sheet);
-  ['ImageID','TargetType','TargetID','Rarity','DriveFileID','IsProfileMain'].forEach(function(name){
+  ['ImageID','MemberID','Rarity','DriveFileID','IsProfileMain'].forEach(function(name){
     if (table.map[name] == null) throw new Error('09_Images に必要な列「' + name + '」がありません。');
   });
   const existing = {};
@@ -250,7 +248,7 @@ function imageMgmtEnsureMemberRows_(core, memberId) {
   table.rows.forEach(function(row){
     const imageNo = Number(asId_(row.record.ImageID));
     if (Number.isFinite(imageNo)) liveMax = Math.max(liveMax, imageNo);
-    if (String(row.record.TargetType || '').trim().toLowerCase() === 'member' && asId_(row.record.TargetID) === String(memberId)) {
+    if (asId_(row.record.MemberID) === String(memberId)) {
       existing[String(row.record.Rarity || '').trim().toUpperCase()] = true;
     }
   });
@@ -266,8 +264,7 @@ function imageMgmtEnsureMemberRows_(core, memberId) {
       liveMax = Math.max(liveMax, reservation.numericValue);
       const values = new Array(table.headers.length).fill('');
       values[table.map.ImageID] = reservation.issuedId;
-      values[table.map.TargetType] = 'Member';
-      values[table.map.TargetID] = String(memberId);
+      values[table.map.MemberID] = String(memberId);
       values[table.map.Rarity] = rarity;
       values[table.map.DriveFileID] = '';
       values[table.map.IsProfileMain] = rarity === 'SSR';
