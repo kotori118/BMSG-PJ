@@ -3,7 +3,7 @@
  * Uses existing Core / Log repositories; no new sheets are created here.
  */
 const UNIVERSE_HOME_PREVIEW_LIMIT_ = 5;
-const UNIVERSE_STATE_LOOKUP_CACHE_KEY_ = 'universe-state-lookup-v2';
+const UNIVERSE_STATE_LOOKUP_CACHE_KEY_ = 'universe-state-lookup-v3';
 const UNIVERSE_PAGE_FAVORITES_ = Object.freeze({
   analysis: 'ANALYSIS',
   karaoke: 'KARAOKE',
@@ -167,7 +167,7 @@ function buildUniverseStateLookup_() {
     members[id].birthdayDay=birthday.day;
   });
   const songs = {};
-  readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.SONGS).forEach(function(row){
+  readUniverseSongs_().forEach(function(row){
     const id=String(row.SongID||'').trim();
     if(id)songs[id]={songId:id,title:String(row.Title||id),artist:String(row.Artist||'')};
   });

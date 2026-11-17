@@ -2,7 +2,7 @@
  * READ ONLY cross-content search for BMSG Universe.
  * Sources remain the existing Core DB / Log DB masters; no search index sheet is persisted.
  */
-const UNIVERSE_SEARCH_CACHE_KEY_ = 'UNIVERSE_SEARCH_INDEX_V2';
+const UNIVERSE_SEARCH_CACHE_KEY_ = 'UNIVERSE_SEARCH_INDEX_V3';
 const UNIVERSE_SEARCH_CACHE_SECONDS_ = 300;
 const UNIVERSE_SEARCH_CARD_RARITIES_ = Object.freeze({N:true,R:true,SR:true,SSR:true});
 const UNIVERSE_SEARCH_TYPE_ORDER_ = Object.freeze({MEMBER:0,ANALYSIS:1,SONG:2,CARD:3,LYRICS:4});
@@ -127,7 +127,7 @@ function getUniverseSearchIndex_() {
   const members = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.MEMBERS);
   const memberships = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.GROUP_MEMBERS);
   const profiles = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.PROFILES);
-  const songs = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.SONGS);
+  const songs = readUniverseSongs_();
   const credits = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.SONG_CREDITS);
   const lyricParts = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.LYRICS_PARTS);
   const images = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.IMAGES);

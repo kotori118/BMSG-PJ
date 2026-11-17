@@ -60,7 +60,7 @@ function saveKaraokeAssignment(payload) {
   return withKaraokeLock_(function() {
     cleanupExpiredKaraokeUnsafe_();
     if (!findActiveKaraokeRoom_(roomId)) throw new Error('ルームの有効期限が切れています。');
-    const song=readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.SONGS).find(function(row){return asId_(row.SongID)===songId;});
+    const song=readUniverseSongs_().find(function(row){return asId_(row.SongID)===songId;});
     if (!song) throw new Error('曲が見つかりません。');
 
     const parts=readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.LYRICS_PARTS).filter(function(row){return asId_(row.SongID)===songId;});

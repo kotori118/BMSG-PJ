@@ -1,6 +1,6 @@
 function getQuizSongCatalog_(course) {
   const mainArtists=quizMainGroupNames_(readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.GROUPS));
-  return readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.SONGS)
+  return readUniverseSongs_()
     .filter(function(row) { return quizCourseMatchesSong_(row, course, mainArtists); })
     .map(function(row) {
       return { value: asId_(row.SongID), label: String(row.Title || row.SongID), artist: String(row.Artist || '') };
@@ -20,7 +20,7 @@ function getQuizMemberCatalog_(course) {
 }
 
 function buildLyricsQuizQuestions_(course, difficulty) {
-  const songs = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.SONGS);
+  const songs = readUniverseSongs_();
   const members = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.MEMBERS);
   const parts = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.LYRICS_PARTS);
   const mainArtists=quizMainGroupNames_(readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.GROUPS));

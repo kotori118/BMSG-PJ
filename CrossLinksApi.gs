@@ -9,7 +9,7 @@ function getUniverseMemberCreativeCredits(memberId) {
     if (!id) throw new Error('MemberID is required.');
 
     const cache = CacheService.getScriptCache();
-    const cacheKey = 'UNIVERSE_CROSSLINK_CREDITS_V1_' + id;
+    const cacheKey = 'UNIVERSE_CROSSLINK_CREDITS_V2_' + id;
     const cached = cache.get(cacheKey);
     if (cached) return JSON.parse(cached);
 
@@ -19,7 +19,7 @@ function getUniverseMemberCreativeCredits(memberId) {
     const memberName = String(member.DisplayName || '').trim();
     if (!memberName) throw new Error('Member name is empty: ' + id);
 
-    const songs = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.SONGS);
+    const songs = readUniverseSongs_();
     const credits = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.SONG_CREDITS);
     const creditsBySong = {};
     credits.forEach(function(row) { creditsBySong[asId_(row.SongID)] = row; });

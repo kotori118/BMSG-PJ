@@ -78,7 +78,7 @@
   function managementMutationDone_(){
     if(typeof profileMembersState!=='undefined'){profileMembersState.status='idle';profileMembersState.detailStatus='idle';}
     if(typeof universePreferencesClient!=='undefined')universePreferencesClient.loaded=false;
-    try{['bmsgLyricsDataV4','bmsgProfileMembersV1'].forEach(function(key){sessionStorage.removeItem(key);});}catch(e){}
+    try{['bmsgLyricsDataV5','bmsgProfileMembersV1'].forEach(function(key){sessionStorage.removeItem(key);});}catch(e){}
   }
   function restoreManagementHistory_(){google.script.history.replace(managementState.params,managementState.params,'');}
   // Drop responses from an editor that has been unmounted or whose user context changed.

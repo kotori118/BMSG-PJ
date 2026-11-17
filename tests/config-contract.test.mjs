@@ -78,7 +78,7 @@ test('ANALYSIS uses its shared cache key for reads, song writes, and timer write
   assert.doesNotMatch(analysis, /const\s+ANALYSIS_CACHE_KEY\s*=/);
   assert.match(analysis, /cache\.get\(UNIVERSE_CACHE_KEYS_\.ANALYSIS\)/);
   assert.match(analysis, /cache\.put\(UNIVERSE_CACHE_KEYS_\.ANALYSIS,/);
-  assert.match(cache, /ANALYSIS:\s*'analysis_bootstrap_v2_without_part_transfers'/);
+  assert.match(cache, /ANALYSIS:\s*'analysis_bootstrap_v3_artist_id'/);
   assert.match(timer, /clearUniverseAnalysisMutationCaches_\(\)/);
   assert.doesNotMatch(timer, /analysis_bootstrap_v1/);
 
@@ -90,7 +90,7 @@ test('ANALYSIS uses its shared cache key for reads, song writes, and timer write
   };
   vm.runInNewContext(cache + '\nclearUniverseAnalysisMutationCaches_(); clearUniverseSongMutationCaches_();', sandbox);
   assert.equal(evicted.length, 2);
-  for (const keys of evicted) assert.ok(keys.includes('analysis_bootstrap_v2_without_part_transfers'));
+  for (const keys of evicted) assert.ok(keys.includes('analysis_bootstrap_v3_artist_id'));
 });
 
 test('retired part-transfer analysis has no remaining UI, API, CSS, or config references', () => {
@@ -101,14 +101,14 @@ test('retired part-transfer analysis has no remaining UI, API, CSS, or config re
 });
 
 
-test('LYRICS keeps その他UNIT last even after dynamic unit registration', () => {
+test('LYRICS keeps その他ユニット last even after dynamic unit registration', () => {
   const source = fs.readFileSync(path.join(root, 'LyricsScripts.html'), 'utf8');
   const match = source.match(/  function renderLyricsAllStars\(\)\{[\s\S]*?\n  \}/);
   assert.ok(match, 'renderLyricsAllStars must exist');
   const target = { innerHTML: '' };
   const sandbox = {
     lyricsState: { unit: '' },
-    LYRICS_UNITS: ['ALL', 'BMSG ALLSTARS', 'その他UNIT', 'BMSG NINE'],
+    LYRICS_UNITS: ['ALL', 'BMSG ALLSTARS', 'その他ユニット', 'BMSG NINE'],
     unitSongs: (unit) => unit === 'ALL' ? [] : [{ songId: '5029', title: 'My Story', releaseDate: '2026-01-01' }],
     document: { getElementById: () => target },
     lyricsGroupHeader_: () => '',
@@ -119,8 +119,8 @@ test('LYRICS keeps その他UNIT last even after dynamic unit registration', () 
   };
   vm.runInNewContext(match[0] + '\nrenderLyricsAllStars();', sandbox);
   const newUnit = target.innerHTML.indexOf('BMSG NINE</h3>');
-  const other = target.innerHTML.indexOf('その他UNIT</h3>');
-  assert.ok(newUnit >= 0 && other > newUnit, 'new units must appear before その他UNIT');
+  const other = target.innerHTML.indexOf('その他ユニット</h3>');
+  assert.ok(newUnit >= 0 && other > newUnit, 'new units must appear before その他ユニット');
 });
 
 test('LYRICS uses the global SETTINGS route to MANAGEMENT without a duplicate shortcut', () => {
@@ -130,4 +130,18 @@ test('LYRICS uses the global SETTINGS route to MANAGEMENT without a duplicate sh
   assert.doesNotMatch(page, /lyrics-management-access|navigateTo\('manage'\)/);
   assert.doesNotMatch(css, /lyrics-management-access/);
   assert.match(overlays, /管理ページを開く/);
+});
+
+test('song readers resolve typed artists and exclude personal songs in either schema',()=>{
+  const source=fs.readFileSync(path.join(root,'CoreRepository.gs'),'utf8');
+  const masters={groups:[{GroupID:'G1',GroupName:'BE:FIRST'},{GroupID:'U17',GroupName:'その他ユニット'}],members:[{MemberID:'M102',DisplayName:'SHUNTO'}]};
+  const sandbox={UNIVERSE_CONFIG:{SHEETS:{GROUPS:'groups',MEMBERS:'members'}}};
+  vm.createContext(sandbox);
+  vm.runInContext(source,sandbox);
+  sandbox.readCoreSheetObjectsFromSpreadsheet_=(_,name)=>masters[name];
+  const songs=[{SongID:'1001',ArtistID:'G1'},{SongID:'1068',ArtistID:'M102'},{SongID:'5001',ArtistID:'U17'},{SongID:'5030',ArtistID:''}];
+  const resolved=sandbox.resolveUniverseSongs_({},songs,false);
+  assert.equal(JSON.stringify(resolved.map(song=>[song.SongID,song.Artist])),JSON.stringify([['1001','BE:FIRST'],['5001','その他ユニット'],['5030','']]));
+  assert.equal(sandbox.resolveUniverseSongs_({},songs,true)[1].Artist,'SHUNTO');
+  assert.equal(sandbox.resolveUniverseSongs_({},[{SongID:'1068',SongType:'SOLO',ArtistRef:'G1'}],false).length,0);
 });

@@ -13,7 +13,7 @@ const PERFORMANCE_TIMER_TYPES = Object.freeze({
 
 function getPerformanceTimerBootstrap() {
   const ss = SpreadsheetApp.openById(UNIVERSE_CONFIG.CORE_DB_ID);
-  const songs = readPerformanceTimerObjects_(ss, UNIVERSE_CONFIG.SHEETS.SONGS)
+  const songs = resolveUniverseSongs_(ss, readPerformanceTimerObjects_(ss, UNIVERSE_CONFIG.SHEETS.SONGS))
     .filter(function(row){ return String(row.Artist || '').trim() === 'BE:FIRST'; })
     .map(function(row){
       const rawDate = row.ReleaseDate;
@@ -197,7 +197,7 @@ function readPerformanceTimerBlock_(sheet, rowNumber, columns) {
 }
 
 function assertPerformanceTimerSong_(ss, songId) {
-  const matches = readPerformanceTimerObjects_(ss, UNIVERSE_CONFIG.SHEETS.SONGS).filter(function(row){
+  const matches = resolveUniverseSongs_(ss, readPerformanceTimerObjects_(ss, UNIVERSE_CONFIG.SHEETS.SONGS)).filter(function(row){
     return performanceTimerId_(row.SongID) === songId;
   });
   if (matches.length !== 1) throw new Error('06_SongsでSongIDを一意に確認できません: ' + songId);

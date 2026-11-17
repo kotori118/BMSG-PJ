@@ -10,7 +10,7 @@ function getCoverMakerBootstrap(userId) {
     currentUserId: uid,
     users: getCoverUsers_(),
     groups: groups,
-    sourceArtists: Array.from(new Set(snapshot.groups.map(function(g){return String(g.GroupName||'').trim();}).concat(snapshot.members.map(function(m){return String(m.DisplayName||'').trim();})).filter(Boolean))),
+    sourceArtists: Array.from(new Set(snapshot.groups.map(function(g){return String(g.GroupName||'').trim();}).filter(Boolean))),
     allStarMembers: getCoverAllStarMembers_(snapshot),
     projects: []
   };
@@ -30,12 +30,18 @@ function getCoverLibrary(userId) {
 
 function getCoverSourceSongs(artist) {
   const selected = String(artist || '').trim();
-  if(!readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.GROUPS).some(function(g){return g.GroupName===selected;})&&!readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.MEMBERS).some(function(m){return m.DisplayName===selected;}))throw new Error('原曲のアーティストが正しくありません。');
-  const ss = SpreadsheetApp.openById(UNIVERSE_CONFIG.CORE_DB_ID);
-  const songs = readCoverSheetMatchesFromSpreadsheet_(ss, UNIVERSE_CONFIG.SHEETS.SONGS, 'Artist', selected, false)
+  const ss = getCoreSpreadsheet_();
+  const groups = readCoreSheetObjectsFromSpreadsheet_(ss, UNIVERSE_CONFIG.SHEETS.GROUPS);
+  const group = groups.find(function(row){return row.GroupName === selected && row.RecordStatus !== 'ARCHIVED';});
+  if(!group)throw new Error('原曲のアーティストが正しくありません。');
+  const songSheet = getCoreSheetFromSpreadsheet_(ss,UNIVERSE_CONFIG.SHEETS.SONGS);
+  const typed = String(songSheet.getRange(1,3).getValue()) === 'ArtistID';
+  const rows = typed
+    ? readCoverSheetMatchesFromSpreadsheet_(ss, UNIVERSE_CONFIG.SHEETS.SONGS, 'ArtistID', asId_(group.GroupID), true)
+    : readCoverSheetMatchesFromSpreadsheet_(ss, UNIVERSE_CONFIG.SHEETS.SONGS, 'Artist', selected, false);
+  return resolveUniverseSongs_(ss, rows)
     .map(normalizeCoverSong_)
     .sort(compareCoverSongs_);
-  return songs;
 }
 
 function getCoverEditorData(payload) {
@@ -431,7 +437,7 @@ function getCoverCoreSnapshot_() {
     members: readCoverSheetFromSpreadsheet_(ss, UNIVERSE_CONFIG.SHEETS.MEMBERS),
     guests: readCoverSheetFromSpreadsheet_(ss, UNIVERSE_CONFIG.SHEETS.GUESTS),
     groupMembers: readCoverSheetFromSpreadsheet_(ss, UNIVERSE_CONFIG.SHEETS.GROUP_MEMBERS),
-    songs: readCoverSheetFromSpreadsheet_(ss, UNIVERSE_CONFIG.SHEETS.SONGS),
+    songs: resolveUniverseSongs_(ss, readCoverSheetFromSpreadsheet_(ss, UNIVERSE_CONFIG.SHEETS.SONGS)),
     lyrics: readCoverSheetFromSpreadsheet_(ss, UNIVERSE_CONFIG.SHEETS.LYRICS_PARTS)
   };
 }
@@ -456,7 +462,7 @@ function getCoverScopedSnapshot_(groupId, songId) {
     members: readCoverSheetFromSpreadsheet_(ss, UNIVERSE_CONFIG.SHEETS.MEMBERS),
     guests: sid ? readCoverSheetFromSpreadsheet_(ss, UNIVERSE_CONFIG.SHEETS.GUESTS) : [],
     groupMembers: isCoverAllStarsGroup_(groupId) ? [] : readCoverSheetMatchesFromSpreadsheet_(ss, UNIVERSE_CONFIG.SHEETS.GROUP_MEMBERS, 'GroupID', groupId, true),
-    songs: sid ? readCoverSheetMatchesFromSpreadsheet_(ss, UNIVERSE_CONFIG.SHEETS.SONGS, 'SongID', sid, true) : [],
+    songs: sid ? resolveUniverseSongs_(ss, readCoverSheetMatchesFromSpreadsheet_(ss, UNIVERSE_CONFIG.SHEETS.SONGS, 'SongID', sid, true)) : [],
     lyrics: sid ? readCoverSheetMatchesFromSpreadsheet_(ss, UNIVERSE_CONFIG.SHEETS.LYRICS_PARTS, 'SongID', sid, true) : []
   };
 }

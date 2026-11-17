@@ -38,10 +38,15 @@ test('guest registration has a busy guard when the confirmation button is presse
   try{assert.equal(count,1,'Guest request sent twice while saving');}finally{f.dom.window.close();}
 });
 
-test('song classification draft survives saving basic information',async()=>{
+test('a personal song exposes the artist correction without a lyrics editor or separate classification',async()=>{
   const f=fixture();await f.go('songs','edit');f.run("openSlmExistingSong_('1001')");await f.settle();
-  f.run("document.getElementById('slmEditSongType').value='SOLO';document.getElementById('slmEditSongType').dispatchEvent(new Event('change',{bubbles:true}));document.getElementById('slmEditSoloMember').value='101';document.getElementById('slmEditSoloMember').dispatchEvent(new Event('change',{bubbles:true}));saveSlmExistingInfo()");await f.settle();
-  try{assert.equal(f.dom.window.document.getElementById('slmEditSongType').value,'SOLO','Unsaved classification was lost on reload');}finally{f.dom.window.close();}
+  try{
+    f.run("songLyricsManagementState.existing.song.personal=true;renderSlm()");
+    const doc=f.dom.window.document;
+    assert.ok(doc.getElementById('slmCorrectArtist'));
+    assert.equal(doc.getElementById('slmEditParts'),null);
+    assert.equal(doc.getElementById('slmEditSongType'),null);
+  }finally{f.dom.window.close();}
 });
 
 test('missing live-schema shows a safe migration-required state without crashing edit screens',async()=>{
