@@ -195,3 +195,12 @@ DB：CatalogMaintenance.gs新設、CatalogManagement.gsのShowMinorSavage GROUP�
 
 独立した検証GAS＋複製Core／Logで新DB版とPJを接続→管理者allowlist等を確認→画面から初期整備・flag設定→保存・再読込・失敗復旧・権限・iPhoneを検証する。初回ライブラリ版接続・管理者認証の基盤設定はインフラ準備であり、Sheets直接編集とは別。未確認があるため条件付き公開の条件は未達。
 公開する場合の手順は、直前のdeployment／library版とCore／Logバックアップを記録→新DB固定版→PJ参照更新→PJ公開。データ移行は別途許可範囲の確認が必要。切り戻しは直前PJ deployment／固定DB版とfeature flag OFF。保存済みデータを戻す必要がある場合は履歴参照の影響をpreviewし、対象限定復元を用いる。旧DB版に戻すだけで新規データが元に戻るとは扱わない。
+
+
+## 10. 本番導入試行と認証ブロッカー
+
+## 本番導入試行（2026-11-17）
+利用者の本番導入指示を受け、GitHub Actions経由で実行。両repoに `backup/pre-management-production-20261117` を作成。DB PR #3をmainへmerge（fb677808eb4bbad6201da30f905711b1383d6506）したが、[Deploy to GAS #44041105303](https://github.com/kotori118/BMSG-DB/actions/runs/44041105303) はPush to GASで `invalid_grant` により失敗。保存済みGoogle OAuth認証が拒否され、新library版発行はskip。PJ PR #64はDraft・未merge、manifest v14維持、サイトdeployは未実行。本番Core／Log移行・flag設定・ロゴ登録行削除も未実行。
+
+再開条件：GitHub secret `CLASPRC_JSON_KEY` のGoogle認証情報を安全に更新し、DBの失敗ジョブ再実行→新library版確認→PJ固定版更新・CI→PJ公開の順。認証情報をチャットやログへ貼らない。今回のエラーをコード不具合／公開成功とは扱わない。直前PJ公開版は25、DB参照版14。元mainはrollback branchに保存済み。
+
