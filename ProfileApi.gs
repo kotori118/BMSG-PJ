@@ -316,7 +316,7 @@ function buildProfileMembersPayload_() {
       driveFileId: asId_(image.DriveFileID),
       rarity: String(image.Rarity || '').trim().toUpperCase(),
       isProfileMain: asBoolean_(image.IsProfileMain),
-      displayOrder: asNumber_(image.DisplayOrder, 9999)
+      displayOrder: ({SSR:1,SR:2,R:3,N:4})[String(image.Rarity||'').trim().toUpperCase()] || 9999
     };
     const current = map[memberId];
     const candidateRank = candidate.isProfileMain ? 0 : candidate.rarity === 'SSR' ? 1 : 2;
