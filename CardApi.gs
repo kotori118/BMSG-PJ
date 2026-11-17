@@ -1,7 +1,6 @@
-const CARD_GROUP_NAMES_ = Object.freeze(['ALL','BE:FIRST','MAZZEL','STARGLOW','HANA','BMSG POSSE']);
 const CARD_RARITY_WEIGHTS_ = Object.freeze({N:70,R:24,SR:5,SSR:1});
 const CARD_RARITY_ORDER_ = Object.freeze({N:0,R:1,SR:2,SSR:3});
-const CARD_CATALOG_CACHE_KEY_ = 'trading_card_catalog_v2';
+const CARD_CATALOG_CACHE_KEY_ = 'trading_card_catalog_v3';
 const CARD_COLLECTION_CACHE_PREFIX_ = 'trading_card_collection_v1_';
 const CARD_CACHE_SECONDS_ = 300;
 
@@ -13,7 +12,6 @@ function getTradingCardBootstrap(userId) {
   return {
     groups: model.groups,
     cards: model.cards.map(function(card){return Object.assign({}, card, {isDrawn: !!collected[card.imageId]});}),
-    brandLogoDriveFileId: model.brandLogoDriveFileId,
     totalCount: model.cards.length,
     collectedCount: model.cards.reduce(function(sum, card){return sum + (collected[card.imageId] ? 1 : 0);},0)
   };
@@ -21,7 +19,7 @@ function getTradingCardBootstrap(userId) {
 
 function drawTradingCard(userId, groupName) {
   const uid = validateCardUser_(userId);
-  const selectedGroup = CARD_GROUP_NAMES_.indexOf(String(groupName || '')) >= 0 ? String(groupName) : 'ALL';
+  const selectedGroup=String(groupName||'ALL');
   return withCardLock_(function(){
     const model = getCardCatalogModel_();
     const group = model.groups.find(function(item){return item.name === selectedGroup;});
@@ -84,16 +82,13 @@ function getCardCatalogModel_() {
 
 function buildCardCatalog_(groups, members, memberships, images) {
   const memberById={}; members.forEach(function(row){const id=asId_(row.MemberID);if(!id)return;memberById[id]={id:id,name:String(row.DisplayName||id),color:/^#[0-9a-f]{6}$/i.test(String(row.ColorHex||''))?String(row.ColorHex):'#9cecff',displayOrder:Number(row.DisplayOrder||9999)};});
-  const groupById={}; groups.forEach(function(row){const id=asId_(row.GroupID);if(!id)return;groupById[id]={id:id,name:String(row.GroupName||id),color:String(row.ColorHex||'#9cecff'),displayOrder:Number(row.DisplayOrder||9999),memberIds:[],logoDriveFileId:''};});
+  const groupById={}; groups.forEach(function(row){const id=asId_(row.GroupID);if(!id)return;groupById[id]={id:id,name:String(row.GroupName||id),color:String(row.ColorHex||'#9cecff'),displayOrder:Number(row.DisplayOrder||9999),memberIds:[]};});
   memberships.forEach(function(row){const gid=asId_(row.GroupID),mid=asId_(row.MemberID);if(groupById[gid]&&memberById[mid]&&groupById[gid].memberIds.indexOf(mid)<0)groupById[gid].memberIds.push(mid);});
   Object.keys(groupById).forEach(function(id){groupById[id].memberIds.sort(function(a,b){return memberById[a].displayOrder-memberById[b].displayOrder;});});
-  let brandColor='',brandWhite='';
-  images.forEach(function(row){const type=String(row.TargetType||'').trim().toLowerCase();const target=asId_(row.TargetID);const fileId=String(row.DriveFileID||'').trim();if(!fileId)return;if(type==='group'&&groupById[target])groupById[target].logoDriveFileId=fileId;if(type==='brand'){const key=String(row.TargetID||'').trim().toUpperCase();if(key==='BMSG_COLOR_BG')brandColor=fileId;if(key==='BMSG_WHITE_BG')brandWhite=fileId;}});
-  const brandLogoDriveFileId=brandWhite||brandColor||'';
   const cards=images.filter(function(row){const targetType=String(row.TargetType||'').trim().toLowerCase();const rarity=String(row.Rarity||'').trim().toUpperCase();return targetType==='member'&&memberById[asId_(row.TargetID)]&&CARD_RARITY_ORDER_[rarity]!=null&&String(row.DriveFileID||'').trim();}).map(function(row){const member=memberById[asId_(row.TargetID)];return {imageId:asId_(row.ImageID),memberId:member.id,memberName:member.name,memberColor:member.color,rarity:String(row.Rarity||'').trim().toUpperCase(),driveFileId:String(row.DriveFileID||'').trim(),displayOrder:Number(row.DisplayOrder||9999)};}).sort(function(a,b){const ma=memberById[a.memberId],mb=memberById[b.memberId];return ma.displayOrder-mb.displayOrder||CARD_RARITY_ORDER_[a.rarity]-CARD_RARITY_ORDER_[b.rarity]||a.displayOrder-b.displayOrder;});
   const cardMemberIds={};cards.forEach(function(card){cardMemberIds[card.memberId]=true;});
-  const uiGroups=CARD_GROUP_NAMES_.map(function(name,index){if(name==='ALL')return {name:'ALL',color:'#9cecff',displayOrder:0,logoDriveFileId:brandLogoDriveFileId,memberIds:Object.keys(cardMemberIds).sort(function(a,b){return memberById[a].displayOrder-memberById[b].displayOrder;})};const group=Object.keys(groupById).map(function(id){return groupById[id];}).find(function(item){return item.name===name;});return {name:name,color:group?group.color:'#9cecff',displayOrder:index,logoDriveFileId:group&&group.logoDriveFileId?group.logoDriveFileId:brandLogoDriveFileId,memberIds:group?group.memberIds.filter(function(id){return cardMemberIds[id];}):[]};});
-  return {groups:uiGroups,cards:cards,brandLogoDriveFileId:brandLogoDriveFileId};
+  const uiGroups=[{name:'ALL',color:'#9cecff',displayOrder:0,memberIds:Object.keys(cardMemberIds)}].concat(Object.values(groupById).sort(function(a,b){return a.displayOrder-b.displayOrder;}).map(function(g){return {name:g.name,color:g.color,displayOrder:g.displayOrder,memberIds:g.memberIds.filter(function(id){return cardMemberIds[id];})};}));
+  return {groups:uiGroups,cards:cards};
 }
 
 function getCachedCardCollectionIds_(uid){const raw=CacheService.getScriptCache().get(CARD_COLLECTION_CACHE_PREFIX_+uid);if(!raw)return null;try{const ids=JSON.parse(raw),map={};ids.forEach(function(id){map[String(id)]=true;});return map;}catch(e){return null;}}

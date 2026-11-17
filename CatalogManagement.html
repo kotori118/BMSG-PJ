@@ -42,7 +42,7 @@
   }
   function cmValue_(id){const e=document.getElementById(id);return e?e.value:'';}
   function cmChecked_(id){const e=document.getElementById(id);return !!(e&&e.checked);}
-  function cmNotify_(msg){cmState.message=msg;if(managementState.params.section==='songs'){renderSlmInlineError_(msg);return;}cmCaptureForm_();cmRender_();}
+  function cmNotify_(msg){cmState.message=msg;if(typeof moHost_==='function'&&moHost_()){moError_(msg);return;}if(managementState.params.section==='songs'){renderSlmInlineError_(msg);return;}cmCaptureForm_();cmRender_();}
   function cmReload_(){
     const uid=typeof getUniverseUserId==='function'?getUniverseUserId():'';
     if(!uid){cmNotify_('利用ユーザーを選択してください。');return;}
@@ -59,16 +59,17 @@
     if(cmState.busy)return;
     cmCaptureForm_();
     const runner=managementRunner_();
-    cmState.busy=true;cmState.message='保存中...';if(managementState.params.section==='songs')setSlmBusy_(true);else cmRender_();
+    cmState.busy=true;cmState.message='保存中...';if(typeof moHost_==='function'&&moHost_())moSetBusy_(true);else if(managementState.params.section==='songs')setSlmBusy_(true);else cmRender_();
     runner.withSuccessHandler(function(result){
-      cmState.busy=false;
+      cmState.busy=false;if(typeof moHost_==='function'&&moHost_())moSetBusy_(false);
       if(!result||!result.ok){setSlmBusy_(false);cmNotify_('保存結果を確認してください。');return;}
-      cmState.form={};managementState.dirty=false;
+      cmState.form={};managementState.dirty=false;managementMutationDone_();
+      if(typeof moHost_==='function'&&moHost_()){moInit_();return;}
       if(name==='catalogManagementCreateMember'&&result.memberId){managementState.initialMemberId=String(result.memberId);managementGo_('members','profile');}
       else if(managementState.params.section==='songs'){setSlmBusy_(false);startSlmExisting();}else cmReload_();
       if(typeof showToast==='function')showToast('保存しました。');
     }).withFailureHandler(function(e){
-      cmState.busy=false;setSlmBusy_(false);cmNotify_('保存できませんでした: '+(e.message||e));
+      cmState.busy=false;if(typeof moHost_==='function'&&moHost_())moSetBusy_(false);setSlmBusy_(false);cmNotify_('保存できませんでした: '+(e.message||e));
     })[name](Object.assign({userId:getUniverseUserId()},payload||{}));
   }
   function cmLoadProfileFields_(){
@@ -95,6 +96,10 @@
     }).withFailureHandler(function(e){
       cmState.busy=false;cmState.message='DB診断に失敗: '+(e.message||e);cmRender_();
     }).auditCatalogManagementDatabase(uid);
+  }
+  function cmConfirmTargetChange_(select){
+    if(managementState.dirty&&!window.confirm('未保存の変更を破棄して対象を切り替えますか？')){select.value=select.dataset.loaded||'';return false;}
+    select.dataset.loaded=select.value;managementState.dirty=false;cmState.form={};return true;
   }
   function cmCaptureForm_(){
     const root=document.getElementById('catalogManagementBody');
@@ -124,13 +129,15 @@
     else if(cmState.tab==='fields')html+=cmProfileFieldsHtml_();
     root.innerHTML=html;cmRestoreForm_();
     if(cmState.tab==='units')cmRenderUnitRoster_();
-    if(cmState.tab==='groups'&&p.action==='edit')document.getElementById('cmEditGroup').onchange=cmFillGroup_;
+    if(d.schema&&!d.schema.ready)return;
+    if(cmState.tab==='groups'&&p.action==='edit'){const target=document.getElementById('cmEditGroup');target.dataset.loaded=target.value;target.onchange=function(){if(!cmConfirmTargetChange_(target))return;cmFillGroup_();};}
     if(cmState.tab==='members'&&p.action==='edit'){
       const selected=document.getElementById('cmEditMember');
       ['cmMaintenanceMember','cmDeleteMember'].forEach(function(id){const el=document.getElementById(id);el.value=selected.value;el.closest('label').hidden=true;});
       const cards=root.querySelectorAll('.management-card');
       [cards[1],cards[2]].forEach(function(card){if(card)card.hidden=!selected.value;});
-      selected.onchange=function(){
+      selected.dataset.loaded=selected.value;selected.onchange=function(){
+        if(!cmConfirmTargetChange_(selected))return;
         cmFillMember_();['cmMaintenanceMember','cmDeleteMember'].forEach(function(id){document.getElementById(id).value=selected.value;});
         [cards[1],cards[2]].forEach(function(card){if(card)card.hidden=!selected.value;});
       };

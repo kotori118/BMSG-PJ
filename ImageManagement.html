@@ -223,7 +223,7 @@
     setImageManagementBusy_(true);const submit=document.getElementById('imageManagementSubmit');submit.disabled=true;
     managementRunner_().withSuccessHandler(function(result){
       setImageManagementBusy_(false);submit.disabled=false;if(done)done();
-      managementState.dirty=false;resetImageManagementForm();imageManagementState.bootstrap=null;openImageManagement();
+      managementMutationDone_();managementState.dirty=false;resetImageManagementForm();imageManagementState.bootstrap=null;openImageManagement();
       showImageManagementToast((result&&result.message)||'画像を登録しました。');
     }).withFailureHandler(function(error){
       setImageManagementBusy_(false);submit.disabled=false;if(done)done();

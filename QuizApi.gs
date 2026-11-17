@@ -1,10 +1,8 @@
 const QUIZ_MODES_ = Object.freeze(['ONLINE', 'OFFLINE']);
 const QUIZ_GENRES_ = Object.freeze(['LYRICS']);
-const QUIZ_COURSES_ = Object.freeze(['BE:FIRST', 'MAZZEL', 'STARGLOW', 'HANA', 'UNIT', 'ALL']);
 const QUIZ_DIFFICULTIES_ = Object.freeze(['NORMAL', 'ADVANCED']);
 const QUIZ_QUESTION_COUNT_ = 10;
 const QUIZ_LYRICS_LIMIT_MS_ = 30000;
-const QUIZ_MAJOR_ARTISTS_ = Object.freeze(['BE:FIRST', 'MAZZEL', 'STARGLOW', 'HANA']);
 
 function getQuizBootstrap(userId, requestedRoomId) {
   const uid = validateQuizUser_(userId);
@@ -32,7 +30,7 @@ function createQuizGame(payload) {
   const mode = validateQuizEnum_(payload.mode, QUIZ_MODES_, 'MODE');
   const genre = validateQuizEnum_(payload.genre, QUIZ_GENRES_, 'GENRE');
   const difficulty = validateQuizEnum_(payload.difficulty, QUIZ_DIFFICULTIES_, 'DIFFICULTY');
-  const course = validateQuizEnum_(payload.course, QUIZ_COURSES_, 'COURSE');
+  const course = validateQuizEnum_(payload.course, getQuizCourses_().map(function(c){return c.value;}), 'COURSE');
   const players = validateQuizPlayers_(mode, uid, payload.playerUserIds);
 
   return withQuizLock_(function() {
@@ -217,20 +215,20 @@ function buildQuizScoreboard_(game) {
   return rows;
 }
 
-function quizCourseMatchesSong_(row, course) {
+function quizCourseMatchesSong_(row, course, mainArtists) {
   const artist = String(row.Artist || '').trim();
   if (course === 'ALL') return true;
-  if (course === 'UNIT') return QUIZ_MAJOR_ARTISTS_.indexOf(artist) < 0;
+  if (course === 'UNIT') return (mainArtists||[]).indexOf(artist) < 0;
   return artist.toUpperCase() === course;
 }
 
 function quizCourseMemberIds_(course, members, groups, memberships) {
   const result = {};
   if (course === 'ALL') { members.forEach(function(row) { const id = asId_(row.MemberID); if (id) result[id] = true; }); return result; }
-  const groupIds = {};
+  const groupIds = {},mainArtists=quizMainGroupNames_(groups);
   groups.forEach(function(row) {
     const name = String(row.GroupName || '').trim();
-    if ((course === 'UNIT' && QUIZ_MAJOR_ARTISTS_.indexOf(name) < 0) || name.toUpperCase() === course) groupIds[asId_(row.GroupID)] = true;
+    if ((course === 'UNIT' && mainArtists.indexOf(name) < 0) || name.toUpperCase() === course) groupIds[asId_(row.GroupID)] = true;
   });
   memberships.forEach(function(row) { if (groupIds[asId_(row.GroupID)]) result[asId_(row.MemberID)] = true; });
   if (course === 'UNIT') members.forEach(function(row) { if (!asId_(row.GroupID)) result[asId_(row.MemberID)] = true; });
@@ -292,7 +290,10 @@ function normalizeQuizGenre_(value) { const text = String(value || '').trim(); r
 function normalizeQuizCourse_(value) { const text = String(value || '').trim(); return text === 'ユニット' ? 'UNIT' : text === '全部' ? 'ALL' : text.toUpperCase(); }
 function normalizeQuizDifficulty_(value) { const text = String(value || '').trim(); return text === '普通' ? 'NORMAL' : text === '上級' ? 'ADVANCED' : text.toUpperCase(); }
 function getQuizUsers_() { const map = {}; readSheetObjects_(getLogSheet_(UNIVERSE_CONFIG.SHEETS.USERS)).forEach(function(row) { map[asId_(row.UserID)] = String(row.DisplayName || row.UserID); }); return UNIVERSE_CONFIG.USER_IDS.map(function(id) { return { userId: id, displayName: map[id] || id }; }); }
-function getQuizCourses_() { return [{ value: 'BE:FIRST', label: 'BE:FIRST' }, { value: 'MAZZEL', label: 'MAZZEL' }, { value: 'STARGLOW', label: 'STARGLOW' }, { value: 'HANA', label: 'HANA' }, { value: 'UNIT', label: 'ユニット' }, { value: 'ALL', label: '全部' }]; }
+function quizMainGroupNames_(groups){return groups.filter(function(g){return g.GroupKind==='GROUP'||!g.GroupKind&&['BE:FIRST','MAZZEL','STARGLOW','HANA','ShowMinorSavage'].indexOf(g.GroupName)>=0;}).map(function(g){return String(g.GroupName||'').trim();});}
+function getQuizCourses_(){
+  const groups=readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.GROUPS);return groups.filter(function(g){return String(g.RecordStatus||'ACTIVE')!=='ARCHIVED';}).slice().sort(function(a,b){return Number(a.DisplayOrder||9999)-Number(b.DisplayOrder||9999);}).map(function(g){return {value:String(g.GroupName).toUpperCase(),label:String(g.GroupName)};}).filter(function(g){return g.value!=='ALL'&&g.value!=='UNIT';}).concat([{value:'UNIT',label:'ユニット'},{value:'ALL',label:'全部'}]);
+}
 function quizParseJson_(value, fallback) { try { const parsed = JSON.parse(String(value || '')); return parsed === null ? fallback : parsed; } catch (error) { return fallback; } }
 function quizIso_(value) { const date = new Date(value); return Number.isFinite(date.getTime()) ? date.toISOString() : ''; }
 function withQuizLock_(callback) { const lock = LockService.getScriptLock(); lock.waitLock(20000); try { return callback(); } finally { lock.releaseLock(); } }

@@ -37,7 +37,7 @@ test('song deletion uses guarded server preview and no archive/restore UI',()=>{
 });
 test('normal song reads do not rely on an archived RecordStatus column',()=>{
   assert.doesNotMatch(read('CoreRepository.gs'),/RecordStatus \|\| 'ACTIVE'/);
-  assert.doesNotMatch(read('CoverApi.gs'),/RecordStatus\|\|'ACTIVE'/);
+  assert.doesNotMatch(read('CoverApi.gs'),/snapshot\.songs\.filter\([^;]*RecordStatus/);
   assert.doesNotMatch(read('PerformanceTimerApi.gs'),/RecordStatus\|\|'ACTIVE'/);
 });
 

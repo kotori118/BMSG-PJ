@@ -329,15 +329,14 @@ function buildProfileMembersPayload_() {
     return map;
   }, {});
 
-  const mainGroupNames = ['BE:FIRST', 'MAZZEL', 'STARGLOW', 'HANA'];
   const mainGroups = groups.filter(function(group) {
-    return mainGroupNames.indexOf(String(group.GroupName || '').trim()) >= 0;
+    return String(group.RecordStatus||'ACTIVE')!=='ARCHIVED';
   }).sort(function(a, b) {
     return asNumber_(a.DisplayOrder, 9999) - asNumber_(b.DisplayOrder, 9999);
   }).map(function(group) {
     return {
       groupId: asId_(group.GroupID),
-      key: profileGroupKey_(group.GroupName),
+      key: ['BE:FIRST','MAZZEL','STARGLOW','HANA'].includes(String(group.GroupName)) ? profileGroupKey_(group.GroupName) : ('group'+asId_(group.GroupID)),
       name: String(group.GroupName || '').trim(),
       colorHex: String(group.ColorHex || '').trim()
     };

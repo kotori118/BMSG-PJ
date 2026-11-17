@@ -1,6 +1,7 @@
 function getQuizSongCatalog_(course) {
+  const mainArtists=quizMainGroupNames_(readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.GROUPS));
   return readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.SONGS)
-    .filter(function(row) { return quizCourseMatchesSong_(row, course); })
+    .filter(function(row) { return quizCourseMatchesSong_(row, course, mainArtists); })
     .map(function(row) {
       return { value: asId_(row.SongID), label: String(row.Title || row.SongID), artist: String(row.Artist || '') };
     })
@@ -22,9 +23,10 @@ function buildLyricsQuizQuestions_(course, difficulty) {
   const songs = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.SONGS);
   const members = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.MEMBERS);
   const parts = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.LYRICS_PARTS);
+  const mainArtists=quizMainGroupNames_(readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.GROUPS));
   const memberById = {};
   members.forEach(function(row) { memberById[asId_(row.MemberID)] = String(row.DisplayName || row.MemberID); });
-  const eligibleSongs = songs.filter(function(row) { return quizCourseMatchesSong_(row, course); });
+  const eligibleSongs = songs.filter(function(row) { return quizCourseMatchesSong_(row, course, mainArtists); });
   const songById = {};
   eligibleSongs.forEach(function(row) { songById[asId_(row.SongID)] = row; });
   const partsBySong = {};

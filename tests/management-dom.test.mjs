@@ -6,13 +6,14 @@ import vm from 'node:vm';
 import {JSDOM} from 'jsdom';
 const read=f=>fs.readFileSync(path.join(import.meta.dirname,'..',f),'utf8');
 function fixture({admin=true,uid='U001'}={}){
-  const files=['CatalogManagement.html','SongLyricsManagement.html','ProfileManagement.html','ImageManagement.html','ManagementPage.html'];
+  const files=['CatalogManagement.html','SongLyricsManagement.html','ProfileManagement.html','ImageManagement.html','ManagementOperations.html','ManagementPage.html'];
   const html='<div id="pageContent"></div><div id="searchOverlay"></div><div id="settingsOverlay"></div><div id="toastRegion"></div>'+files.map(f=>read(f).replace(/<script>[\s\S]*?<\/script>/g,'')).join('');
   const dom=new JSDOM(html,{runScripts:'outside-only',url:'https://example.test/'}),ctx=dom.getInternalVMContext(),calls=[],history=[];
   const groups=[{GroupID:'1',GroupName:'BE:FIRST',GroupKind:'GROUP',ColorHex:'#123456'},{GroupID:'6',GroupName:'ShowMinorSavage',GroupKind:'UNIT',ColorHex:'#654321'}];
   const members=[{MemberID:'101',GroupID:'1',DisplayName:'SOTA',ColorHex:'#00AFCC'}];
   const song={songId:'1001',title:'Test song',artist:'BE:FIRST',releaseDate:'2026-01-01',form:'シングル',cdTitle:'',isTitleTrack:false,songType:'NORMAL',soloMemberId:''};
   const data={getManagementPageAccess:{registered:true,catalog:admin},getCatalogManagementBootstrap:{groups,members,songs:[{SongID:'1001',Title:'Test song'}],schema:{ready:true},memberships:[]},getCatalogManagementProfileFields:{ok:true,fields:[]},getSongLyricsManagementBootstrap:{artists:['BE:FIRST'],existingArtists:['BE:FIRST'],songs:[song],forms:['シングル'],singerOptions:[],soloMembers:[{value:'101',label:'SOTA'}]},getSongLyricsManagementSong:{song,credits:{},parts:[{singers:[],lyrics:'example'}]},getProfileManagementBootstrap:{groups:[{name:'BE:FIRST',members:[{memberId:'101',name:'SOTA'}]}],fields:[]},getProfileManagementMember:{values:{}},getImageManagementBootstrap:{groups:[{name:'BE:FIRST',members:[{memberId:'101',name:'SOTA'}]}]},saveNewSongLyricsManagement:{ok:true,songId:'1001'},catalogManagementCreateSongDraft:{ok:true,songId:'1001'},auditCatalogManagementDatabase:{warnings:[]}};
+  data.getManagementOperationsBootstrap={ok:true,schema:{ready:true},groups:data.getCatalogManagementBootstrap.groups,guests:[],members:data.getCatalogManagementBootstrap.members,images:[],fields:[],backups:[],flags:{}};
   let change;
   function runner(success,failure){return new Proxy({}, {get(_,key){if(key==='withSuccessHandler')return f=>runner(f,failure);if(key==='withFailureHandler')return f=>runner(success,f);return(...args)=>{calls.push({key,args});queueMicrotask(()=>{try{if(data[key] instanceof Error){failure?.(data[key]);return;}success?.(structuredClone(data[key]??{ok:true}));}catch(e){throw e;}});};}});}
   Object.assign(ctx,{getUniverseUserId:()=>uid,closeSettings:()=>{},showToast:()=>{},renderUniverseLoading:()=>'<div role="status">LOADING</div>',setPageAtmosphere:()=>{},setTheme:()=>{},setActiveNav:()=>{},scrollAppToTop:()=>{},syncCurrentFavoriteButton:()=>{},renderHome:()=>'<h1>HOME</h1>',initHomePage:()=>{},renderData:()=>'',renderLab:()=>'',resetUniverseCrossLinks:()=>{},mountUniverseSingerEditor:()=>{},google:{script:{run:runner(),history:{push:s=>history.push(s),replace:s=>history.push(s),setChangeHandler:f=>change=f},url:{getLocation:f=>f({parameter:{page:'home'}})}}}});
@@ -28,7 +29,8 @@ test('all live operations mount exactly one full-page editor, without a manageme
   const f=fixture();
   for(const [s,a] of [['songs','add'],['songs','edit'],['members','add'],['members','edit'],['members','profile'],['members','fields'],['groups','add'],['groups','edit'],['groups','units'],['images','edit'],['maintenance','audit']]){
     await f.go(s,a);
-    assert.equal(f.dom.window.document.querySelectorAll('#managementEditorHost > .management-editor').length,1,`${s}/${a}`);
+    const isOperations=f.run('MANAGEMENT_SECTIONS['+JSON.stringify(s)+'].actions['+JSON.stringify(a)+'][1]')==='operations';
+    assert.equal(f.dom.window.document.querySelectorAll(isOperations?'#managementOperationsHost':'#managementEditorHost > .management-editor').length,1,`${s}/${a}`);
     assert.equal(f.dom.window.document.querySelectorAll('#managementEditorHost .modal-overlay.open').length,0);
     assert.equal(f.run('managementBusy_()'),false,`${s}/${a} busy`);
   }

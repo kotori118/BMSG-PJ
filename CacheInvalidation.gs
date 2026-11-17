@@ -6,7 +6,7 @@ const UNIVERSE_CACHE_KEYS_ = Object.freeze({
   ANALYSIS: 'analysis_bootstrap_v1',
   SEARCH: 'UNIVERSE_SEARCH_INDEX_V2',
   HOME_LOOKUP: 'universe-state-lookup-v2',
-  CARD_CATALOG: 'trading_card_catalog_v2',
+  CARD_CATALOG: 'trading_card_catalog_v3',
   PROFILE_MEMBERS: 'PROFILE_MEMBERS_V2_0_1',
   PROFILE_MAP: 'PROFILE_MAP_V1',
   PROFILE_SEARCH: 'PROFILE_SEARCH_V2',

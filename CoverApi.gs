@@ -1,6 +1,4 @@
 /** BMSG Universe COVER MAKER */
-const COVER_SOURCE_ARTISTS_ = Object.freeze(['BE:FIRST','MAZZEL','STARGLOW','HANA','ShowMinorSavage']);
-const COVER_DESTINATION_GROUPS_ = Object.freeze(['BE:FIRST','MAZZEL','STARGLOW','HANA','ShowMinorSavage','BMSG ALLSTARS']);
 const COVER_ALL_ID_ = '99';
 const COVER_ALLSTARS_GROUP_ID_ = '8';
 
@@ -12,7 +10,7 @@ function getCoverMakerBootstrap(userId) {
     currentUserId: uid,
     users: getCoverUsers_(),
     groups: groups,
-    sourceArtists: COVER_SOURCE_ARTISTS_.slice(),
+    sourceArtists: Array.from(new Set(snapshot.groups.map(function(g){return String(g.GroupName||'').trim();}).concat(snapshot.members.map(function(m){return String(m.DisplayName||'').trim();})).filter(Boolean))),
     allStarMembers: getCoverAllStarMembers_(snapshot),
     projects: []
   };
@@ -32,7 +30,7 @@ function getCoverLibrary(userId) {
 
 function getCoverSourceSongs(artist) {
   const selected = String(artist || '').trim();
-  if (COVER_SOURCE_ARTISTS_.indexOf(selected) < 0) throw new Error('カバーする原曲のアーティストが正しくありません。');
+  if(!readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.GROUPS).some(function(g){return g.GroupName===selected;})&&!readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.MEMBERS).some(function(m){return m.DisplayName===selected;}))throw new Error('原曲のアーティストが正しくありません。');
   const ss = SpreadsheetApp.openById(UNIVERSE_CONFIG.CORE_DB_ID);
   const songs = readCoverSheetMatchesFromSpreadsheet_(ss, UNIVERSE_CONFIG.SHEETS.SONGS, 'Artist', selected, false)
     .map(normalizeCoverSong_)
@@ -48,7 +46,7 @@ function getCoverEditorData(payload) {
   const snapshot = getCoverScopedSnapshot_(coverGroupId, songId);
   const group = requireCoverGroup_(snapshot, coverGroupId);
   const song = snapshot.songs.find(function(row){ return asId_(row.SongID) === songId; });
-  if (!song || COVER_SOURCE_ARTISTS_.indexOf(String(song.Artist || '').trim()) < 0) throw new Error('原曲が見つかりません。');
+  if (!song) throw new Error('原曲が見つかりません。');
   const members = getCoverDestinationMembers_(snapshot, coverGroupId, payload.allStarMemberIds);
   if (!members.length) throw new Error('カバー担当メンバーが見つかりません。');
   const nameMap = buildCoverSingerNameMap_(snapshot);
@@ -235,7 +233,7 @@ function saveCoverProject(payload) {
     } else {
       songId = asId_(existing ? existing.SourceSongID : payload.songId);
       song = snapshot.songs.find(function(row){ return asId_(row.SongID) === songId; });
-      if (!song || COVER_SOURCE_ARTISTS_.indexOf(String(song.Artist || '').trim()) < 0) throw new Error('原曲が正しくありません。');
+      if (!song) throw new Error('原曲が正しくありません。');
       parts = snapshot.lyrics.filter(function(row){ return asId_(row.SongID) === songId; });
     }
 
@@ -509,19 +507,11 @@ function readCoverSheetFromSpreadsheet_(ss, name) {
 }
 
 function buildCoverGroups_(snapshot) {
-  const byName = {};
-  snapshot.groups.forEach(function(row){byName[String(row.GroupName || '').trim()] = row;});
-  return COVER_DESTINATION_GROUPS_.map(function(name){
-    const row = byName[name];
-    if (!row) return null;
-    return {groupId:asId_(row.GroupID),groupName:name,color:normalizeHex_(row.ColorHex,'#9cecff')};
-  }).filter(Boolean);
+  return snapshot.groups.filter(function(g){return String(g.RecordStatus||'ACTIVE')!=='ARCHIVED';}).slice().sort(function(a,b){return Number(a.DisplayOrder||9999)-Number(b.DisplayOrder||9999);}).map(function(g){return {groupId:asId_(g.GroupID),groupName:String(g.GroupName||''),color:normalizeHex_(g.ColorHex,'#9cecff')};});
 }
-
 function requireCoverGroup_(snapshot, groupId) {
-  const row = snapshot.groups.find(function(item){return asId_(item.GroupID)===groupId;});
-  if (!row || COVER_DESTINATION_GROUPS_.indexOf(String(row.GroupName || '').trim()) < 0) throw new Error('歌うアーティストが正しくありません。');
-  return row;
+  const row=snapshot.groups.find(function(g){return asId_(g.GroupID)===groupId&&String(g.RecordStatus||'ACTIVE')!=='ARCHIVED';});
+  if(!row)throw new Error('歌うアーティストが正しくありません。');return row;
 }
 
 function getCoverGroupMembers_(snapshot, groupId) {

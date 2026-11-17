@@ -1,11 +1,11 @@
 <script>
   // Navigation and lifecycle only. Editors and their APIs retain ownership of data and saves.
   const MANAGEMENT_SECTIONS=Object.freeze({
-    songs:{title:'楽曲・歌詞',description:'曲の登録、クレジット、歌詞・歌割りを編集',actions:{add:['楽曲を追加','slm'],edit:['楽曲を編集','slm']}},
-    members:{title:'メンバー・プロフィール',description:'メンバーの登録とプロフィールを管理',actions:{add:['メンバーを追加','catalog'],edit:['メンバー情報を編集','catalog'],profile:['プロフィールを編集','profile'],fields:['プロフィール項目を管理','catalog']}},
-    groups:{title:'グループ・ユニット',description:'グループの基本情報とユニットの所属を管理',actions:{add:['グループ・ユニットを追加','catalog'],edit:['グループ・ユニットを編集','catalog'],units:['ユニットのメンバーを管理','catalog']}},
-    images:{title:'メンバー画像',description:'プロフィールやトレカで使う画像を設定',actions:{edit:['画像を登録・差し替え','image']}},
-    maintenance:{title:'データ点検・保守',description:'管理者向けのデータ整合性点検',actions:{audit:['データを点検','catalog']}}
+    songs:{title:'楽曲・歌詞',description:'曲の登録、クレジット、歌詞・歌割りを編集',actions:{add:['楽曲を追加','slm'],edit:['楽曲を編集','slm'],guests:['歌詞のゲストを管理','operations']}},
+    members:{title:'メンバー・プロフィール',description:'メンバーの登録とプロフィールを管理',actions:{add:['メンバーを追加','catalog'],edit:['メンバー情報を編集','catalog'],profile:['プロフィールを編集','profile'],fields:['プロフィール項目を管理','operations']}},
+    groups:{title:'グループ・ユニット',description:'グループの基本情報とユニットの所属を管理',actions:{add:['グループ・ユニットを追加','catalog'],edit:['グループ・ユニットを編集','operations'],units:['ユニットのメンバーを管理','catalog']}},
+    images:{title:'メンバー画像',description:'プロフィールやトレカで使う画像を設定',actions:{edit:['画像を登録・差し替え','image'],settings:['画像の表示設定','operations']}},
+    maintenance:{title:'データ点検・保守',description:'管理者向けのデータ整合性点検',actions:{audit:['データを点検','catalog'],history:['変更履歴を見る','operations'],backup:['バックアップ・復元','operations'],prepare:['初期整備・移行','operations'],repair:['不足データを修復','operations'],options:['管理機能の設定','operations']}}
   });
   const managementState={params:{page:'manage'},access:null,epoch:0,dirty:false,loading:false};
   const MANAGEMENT_EDITOR_IDS=['catalogManagementOverlay','songLyricsManagementOverlay','profileManagementOverlay','imageManagementOverlay'];
@@ -24,7 +24,7 @@
     if(!access||!access.registered)return false;
     if(section==='maintenance')return !!access.catalog;
     if(!MANAGEMENT_SECTIONS[section]||action&&!MANAGEMENT_SECTIONS[section].actions[action])return false;
-    if(action&&MANAGEMENT_SECTIONS[section].actions[action][1]==='catalog')return !!access.catalog;
+    if(action&&MANAGEMENT_SECTIONS[section].actions[action][1]!=='slm'&&MANAGEMENT_SECTIONS[section].actions[action][1]!=='profile'&&MANAGEMENT_SECTIONS[section].actions[action][1]!=='image')return !!access.catalog;
     return section!=='groups'||!!access.catalog;
   }
   function managementCard_(title,description,handler){return '<button class="u-btn management-choice" type="button" onclick="'+handler+'"><span><strong>'+cmEscape_(title)+'</strong>'+(description?'<small>'+cmEscape_(description)+'</small>':'')+'</span><b aria-hidden="true">›</b></button>';}
@@ -47,6 +47,7 @@
   function renderManagementNavigation_(){
     const p=managementState.params,section=MANAGEMENT_SECTIONS[p.section],action=section&&section.actions[p.action];
     const nav=document.getElementById('managementNavigation'),root=document.getElementById('managementContent');
+    if(p.section&&(!section||!managementAllowed_(p.section,p.action))||p.action&&!action){root.innerHTML='<p class="management-error">この操作は利用できません。</p>';nav.innerHTML='<button class="u-btn" onclick="managementGo_()">管理トップに戻る</button>';return;}
     const back=p.action?"managementGo_('"+p.section+"')":p.section?'managementGo_()':"navigateTo('home')";
     nav.innerHTML='<nav class="management-breadcrumb" aria-label="管理ページの階層"><button class="u-btn" onclick="'+back+'">‹ 戻る</button><button class="u-btn" onclick="managementGo_()">管理ページ</button>'+(section?'<span>›</span><button class="u-btn" onclick="managementGo_(\''+p.section+'\')">'+section.title+'</button>':'')+(action?'<span>›</span><span aria-current="page">'+action[0]+'</span>':'')+'</nav>';
     if(!managementState.access.registered){root.innerHTML='<p class="management-lead">利用ユーザーを選択してください。</p>';return;}
@@ -56,7 +57,9 @@
     }
     if(!p.action){root.innerHTML='<h2 class="management-section-title">'+section.title+'</h2><p class="management-lead">'+section.description+'</p><div class="management-operation-list">'+Object.keys(section.actions).filter(function(key){return managementAllowed_(p.section,key);}).map(function(key){return managementCard_(section.actions[key][0],'',"managementGo_('"+p.section+"','"+key+"')");}).join('')+'</div>';return;}
     root.innerHTML='<h2 class="management-section-title">'+action[0]+'</h2><div id="managementEditorHost"></div>';
-    const type=action[1],id={slm:'songLyricsManagementOverlay',catalog:'catalogManagementOverlay',profile:'profileManagementOverlay',image:'imageManagementOverlay'}[type];
+    const type=action[1];
+    if(type==='operations'){document.getElementById('managementEditorHost').innerHTML='<div id="managementOperationsHost"></div>';moInit_();return;}
+    const id={slm:'songLyricsManagementOverlay',catalog:'catalogManagementOverlay',profile:'profileManagementOverlay',image:'imageManagementOverlay'}[type];
     const editor=document.getElementById(id);document.getElementById('managementEditorHost').appendChild(editor);editor.hidden=false;
     if(type==='slm'){
       resetSlmNewState_();songLyricsManagementState.dirty={info:false,credits:false,lyrics:false};songLyricsManagementState.bootstrap=null;
@@ -65,13 +68,18 @@
     else if(type==='image'){resetImageManagementForm();imageManagementState.bootstrap=null;openImageManagement();}
     else{cmState.form={};cmState.bootstrap=null;cmState.profileFields=null;cmState.audit=null;cmState.message='';cmState.tab=p.section==='members'?(p.action==='fields'?'fields':'members'):p.section==='groups'?(p.action==='units'?'units':'groups'):'audit';cmReload_();}
   }
-  function managementBusy_(){return !!(managementState.loading||cmState.busy||songLyricsManagementState.busy||profileManagementState.busy||imageManagementState.busy);}
+  function managementBusy_(){return !!((typeof moState!=='undefined'&&moState.busy)||managementState.loading||cmState.busy||songLyricsManagementState.busy||profileManagementState.busy||imageManagementState.busy);}
   function managementDirty_(){return !!(managementState.dirty||hasSlmDirty_()||profileManagementState.dirty||imageManagementState.pendingFile);}
   function managementCanLeave_(){
     if(managementBusy_()){showToast('処理中です。完了までお待ちください。');return false;}
     if(managementDirty_()&&!window.confirm('保存していない変更があります。破棄して移動しますか？'))return false;
     managementState.dirty=false;songLyricsManagementState.dirty={info:false,credits:false,lyrics:false};profileManagementState.dirty=false;resetImageManagementForm();
     return true;
+  }
+  function managementMutationDone_(){
+    if(typeof profileMembersState!=='undefined'){profileMembersState.status='idle';profileMembersState.detailStatus='idle';}
+    if(typeof universePreferencesClient!=='undefined')universePreferencesClient.loaded=false;
+    try{['bmsgLyricsDataV4','bmsgProfileMembersV1'].forEach(function(key){sessionStorage.removeItem(key);});}catch(e){}
   }
   function restoreManagementHistory_(){google.script.history.replace(managementState.params,managementState.params,'');}
   // Drop responses from an editor that has been unmounted or whose user context changed.
@@ -81,6 +89,6 @@
     return wrap(google.script.run);
   }
   document.addEventListener('input',function(event){if(currentRoute==='manage'&&event.target.closest('#managementEditorHost')&&!['search','file','select-one'].includes(event.target.type))managementState.dirty=true;});
-  document.addEventListener('change',function(event){if(currentRoute==='manage'&&event.target.closest('#managementEditorHost')&&!['cmEditMember','cmEditGroup','cmUnitTarget','cmUnitManageMember','cmUnitMember','cmProfileFieldTarget','profileManagementGroup','profileManagementMember','imageManagementGroup','imageManagementMember','imageManagementRarity','slmExistingArtist','slmExistingSong'].includes(event.target.id))managementState.dirty=true;});
+  document.addEventListener('change',function(event){if(currentRoute==='manage'&&event.target.closest('#managementEditorHost')&&!['moTarget','moBackupTarget','cmEditMember','cmEditGroup','cmUnitTarget','cmUnitManageMember','cmUnitMember','cmProfileFieldTarget','profileManagementGroup','profileManagementMember','imageManagementGroup','imageManagementMember','imageManagementRarity','slmExistingArtist','slmExistingSong'].includes(event.target.id))managementState.dirty=true;});
   window.addEventListener('beforeunload',function(event){if(currentRoute==='manage'&&(managementBusy_()||managementDirty_())){event.preventDefault();event.returnValue='';}});
 </script>

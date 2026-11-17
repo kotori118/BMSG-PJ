@@ -205,7 +205,9 @@
 
   function getUniversePreferredProfileGroupKey() {
     const map = {'BE:FIRST':'befirst','MAZZEL':'mazzel','STARGLOW':'starglow','HANA':'hana'};
-    return map[getUniversePreferredGroupName()] || 'all';
+    const name=getUniversePreferredGroupName();
+    if(typeof profileMembersState!=='undefined'){const group=profileMembersState.groups.find(function(g){return g.name===name;});if(group)return group.key;}
+    return map[name] || 'all';
   }
 
   function applyUniverseMemberAccent_() {

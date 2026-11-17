@@ -167,7 +167,7 @@
       .withSuccessHandler(function(data){
         if(token!==profileManagementState.loadToken||memberId!==profileManagementState.memberId)return;
         profileManagementState.values=data&&data.values?data.values:{};
-        profileManagementState.busy=false;managementState.dirty=false;document.querySelectorAll('#profileManagementOverlay select').forEach(function(el){el.disabled=false;});setProfileManagementBaseline_();
+        managementMutationDone_();profileManagementState.busy=false;managementState.dirty=false;document.querySelectorAll('#profileManagementOverlay select').forEach(function(el){el.disabled=false;});setProfileManagementBaseline_();
         if(loading)loading.hidden=true;
         renderProfileManagementForm();
       })
@@ -286,7 +286,7 @@
     button.disabled=true;
     managementRunner_()
       .withSuccessHandler(function(result){
-        profileManagementState.busy=false;managementState.dirty=false;document.querySelectorAll('#profileManagementOverlay select').forEach(function(el){el.disabled=false;});setProfileManagementBaseline_();
+        managementMutationDone_();profileManagementState.busy=false;managementState.dirty=false;document.querySelectorAll('#profileManagementOverlay select').forEach(function(el){el.disabled=false;});setProfileManagementBaseline_();
         changeProfileManagementMember();
         showProfileManagementToast((result&&result.message)||'プロフィールを保存しました。');
       })

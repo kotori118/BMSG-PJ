@@ -1,0 +1,93 @@
+<script>
+  // Advanced management uses the same cards, inputs, loading, errors and API writer.
+  const moState={data:null,busy:false,selected:'',revision:'',repairPlan:null,history:[],nextOffset:null};
+  function moHost_(){return document.getElementById('managementOperationsHost');}
+  function moInit_(){
+    moState.data=null;moState.selected='';moState.revision='';moState.repairPlan=null;moState.history=[];moState.nextOffset=null;moState.busy=true;
+    moHost_().innerHTML=renderUniverseLoading('管理情報を読み込み中');
+    managementRunner_().withSuccessHandler(function(data){moState.busy=false;moState.data=data;moRender_();}).withFailureHandler(function(e){moState.busy=false;moError_(e.message||e);}).getManagementOperationsBootstrap(getUniverseUserId());
+  }
+  function moError_(message){
+    const host=moHost_();if(!host)return;let node=document.getElementById('moError');if(!node){node=document.createElement('p');node.id='moError';node.className='management-error';node.setAttribute('role','alert');host.prepend(node);}node.textContent=message;
+  }
+  function moSetBusy_(flag){moState.busy=!!flag;const host=moHost_();if(host){host.setAttribute('aria-busy',String(!!flag));host.querySelectorAll('button,input,select,textarea').forEach(function(el){el.disabled=!!flag;});}}
+  function moRun_(payload,done){
+    if(moState.busy)return;moSetBusy_(true);
+    managementRunner_().withSuccessHandler(function(result){
+      moSetBusy_(false);if(!result||!result.ok){moError_('結果を確認できません。再送せず、再読み込みしてください。');return;}
+      if(done){done(result);return;}managementState.dirty=false;managementMutationDone_();showToast('保存しました。');moInit_();
+    }).withFailureHandler(function(e){moSetBusy_(false);moError_(e.message||e);}).runManagementOperation(Object.assign({userId:getUniverseUserId()},payload));
+  }
+  function moSelectHtml_(rows,key,label){return cmField_('moTarget','対象を選択','<select id="moTarget" onchange="moSelect_()">'+cmOptions_(rows,key,label,moState.selected)+'</select>');}
+  function moRender_(){
+    const p=managementState.params,d=moState.data,host=moHost_();if(!host||!d)return;
+    let html='';
+    if(p.section==='maintenance'){
+      if(p.action==='history'){html='<button class="u-btn" onclick="moLoadHistory_(true)">変更履歴を読み込む</button><div id="moHistory"></div>';}
+      else if(p.action==='backup'){html='<section class="management-card"><h3 class="management-section-title">バックアップ</h3><p class="management-lead">CoreとLogを指定バックアップフォルダに複製します。作成済みファイルは削除しません。</p><button class="u-btn" onclick="moBackup_()">バックアップを作成</button><div>'+d.backups.map(function(b){return '<p>'+cmEscape_(b.createdAt)+' <a class="u-btn" target="_blank" rel="noopener" href="https://docs.google.com/spreadsheets/d/'+encodeURIComponent(b.coreId)+'/edit">Core</a> <a class="u-btn" target="_blank" rel="noopener" href="https://docs.google.com/spreadsheets/d/'+encodeURIComponent(b.logId)+'/edit">Log</a></p>';}).join('')+'</div></section>'+moRestoreHtml_();}
+      else if(p.action==='prepare'){html='<section class="management-card"><h3 class="management-section-title">初期整備・移行</h3><p class="management-lead">バックアップを作成し、管理用の列と監査ログを準備します。廃止したロゴの登録データも取り除きます。</p><p>'+cmEscape_(d.schema.ready?'管理用データ構造は準備済みです。':(d.schema.missing||[]).join(' / '))+'</p><button class="u-btn" onclick="moPrepare_()">内容を確認して初期整備する</button></section>';}
+      else if(p.action==='options'){html=moOptionsHtml_();}
+      else if(p.action==='repair'){html='<section class="management-card"><p class="management-lead">不足プロフィール行・主所属行の補完を、変更計画の確認後に実行します。重複IDや参照不明のデータは自動削除しません。</p><button class="u-btn" onclick="moPreviewRepair_()">修復計画を確認</button><div id="moRepairPlan"></div></section>';}
+    }else if(!d.schema.ready){html='<p class="management-error">管理用データの初期整備が必要です。</p><button class="u-btn" onclick="managementGo_(\'maintenance\',\'prepare\')">初期整備へ</button>';}
+    else if(p.section==='songs'&&p.action==='guests')html='<section class="management-card"><h3 class="management-section-title">ゲストを追加</h3>'+cmField_('moNewGuest','ゲスト名',cmInput_('moNewGuest','text',''))+'<button class="u-btn" onclick="moAddGuest_()">ゲストを登録</button></section>'+moSelectHtml_(d.guests,'GuestID','DisplayName')+'<div id="moEditor"></div>';
+    else if(p.section==='groups')html=moSelectHtml_(d.groups,'GroupID','GroupName')+'<div id="moEditor"></div>';
+    else if(p.section==='members'&&p.action==='fields'){
+      cmState.profileFields=d.fields;html='<div class="management-field-operations">'+cmProfileFieldsHtml_()+'</div><section class="management-card"><h3 class="management-section-title">項目名・分類・表示順を編集</h3>'+moSelectHtml_(d.fields,'profileId','label')+'<div id="moEditor"></div></section>';
+    }else if(p.section==='images'){
+      const options=d.images.map(function(image){const m=d.members.find(function(member){return String(member.MemberID)===String(image.TargetID);});return Object.assign({},image,{label:(m?m.DisplayName:image.TargetID)+' / '+image.Rarity});});
+      html=moSelectHtml_(options,'ImageID','label')+'<div id="moEditor"></div>';
+    }
+    host.innerHTML=html;if(moState.selected)moSelect_();
+  }
+  function moSelect_(){
+    const select=document.getElementById('moTarget'),next=select.value;
+    if(managementState.dirty&&!window.confirm('未保存の変更を破棄して対象を切り替えますか？')){select.value=moState.selected;return;}
+    managementState.dirty=false;moState.selected=next;const host=document.getElementById('moEditor');host.innerHTML='';if(!next)return;
+    const p=managementState.params,d=moState.data;
+    let row,html='';
+    if(p.section==='songs'){
+      row=d.guests.find(function(r){return String(r.GuestID)===next;});moState.revision=row.revision;
+      html=cmField_('moName','ゲスト名',cmInput_('moName','text',row.DisplayName))+'<button class="u-btn" onclick="moSaveGuest_()">名前を保存</button>'+cmField_('moMergeGuest','統合先ゲスト',cmSelect_('moMergeGuest',cmOptions_(d.guests.filter(function(g){return String(g.GuestID)!==next;}),'GuestID','DisplayName')))+'<button class="u-btn" onclick="moMergeGuest_()">歌詞の参照を統合</button>'+moDeleteButton_('guest');
+    }else if(p.section==='groups'){
+      row=d.groups.find(function(r){return String(r.GroupID)===next;});moState.revision=row.revision;
+      html=cmField_('moName','名前',cmInput_('moName','text',row.GroupName))+cmField_('moKind','種別',cmSelect_('moKind',cmOption_('GROUP','グループ',row.GroupKind)+cmOption_('UNIT','ユニット',row.GroupKind)))+cmField_('moColor','カラー',cmInput_('moColor','color',row.ColorHex))+cmField_('moOrder','表示順',cmInput_('moOrder','number',row.DisplayOrder))+'<p class="management-lead">名前を変更すると、このグループをArtistに持つ曲も同時に更新します。IDは維持します。</p><button class="u-btn" onclick="moSaveGroup_()">変更を保存</button>'+moDeleteButton_('group');
+    }else if(p.section==='members'){
+      row=d.fields.find(function(r){return String(r.profileId)===next;});moState.revision=JSON.stringify(row);
+      html=cmField_('moName','項目名',cmInput_('moName','text',row.label))+cmField_('moDisplayGroup','分類',cmInput_('moDisplayGroup','text',row.displayGroup))+cmField_('moOrder','表示順',cmInput_('moOrder','number',row.displayOrder))+'<p class="management-lead">既存値と項目ID・型は維持します。</p><button class="u-btn" onclick="moSaveField_()">項目を保存</button>';
+    }else{
+      row=d.images.find(function(r){return String(r.ImageID)===next;});moState.revision=row.revision;
+      html=cmField_('moOrder','表示順',cmInput_('moOrder','number',row.DisplayOrder))+'<label class="management-field"><span>プロフィールのメイン画像</span><span><input id="moMain" type="checkbox" '+(row.IsProfileMain===true||String(row.IsProfileMain)==='TRUE'?'checked':'')+'> この画像をメインにする</span></label><button class="u-btn" onclick="moSaveImage_()">表示設定を保存</button>'+moDeleteButton_('image');
+    }
+    host.innerHTML='<section class="management-card management-operation-list">'+html+'</section>';
+  }
+  function moDeleteButton_(kind){return '<section class="management-maintenance"><p class="management-lead">取得履歴などの参照がある場合は削除できません。事前にバックアップを作成してください。</p><button class="u-btn cm-danger" onclick="moDelete_(\''+kind+'\')">参照を確認して削除</button></section>';}
+  function moAddGuest_(){if(!cmValue_('moNewGuest').trim()){moError_('ゲスト名を入力してください。');return;}moRun_({operation:'guestCreate',name:cmValue_('moNewGuest').trim()});}
+  function moMergeGuest_(){const target=cmValue_('moMergeGuest');if(!target)return;if(window.confirm('統合元ゲストの歌詞・歌唱者の参照を統合先にまとめ、統合元を削除します。続けますか？')&&window.prompt('統合元GuestID「'+moState.selected+'」を入力してください。')===moState.selected)moRun_({operation:'guest',action:'MERGE',guestId:moState.selected,targetGuestId:target,confirm:moState.selected,expectedRevision:moState.revision});}
+  function moSaveGuest_(){moRun_({operation:'guest',guestId:moState.selected,name:cmValue_('moName'),expectedRevision:moState.revision});}
+  function moSaveGroup_(){moRun_({operation:'group',groupId:moState.selected,name:cmValue_('moName'),kind:cmValue_('moKind'),color:cmValue_('moColor'),displayOrder:Number(cmValue_('moOrder')),expectedRevision:moState.revision});}
+  function moSaveField_(){moRun_({operation:'field',profileId:moState.selected,name:cmValue_('moName'),displayGroup:cmValue_('moDisplayGroup'),displayOrder:Number(cmValue_('moOrder')),expectedRevision:moState.revision});}
+  function moSaveImage_(){moRun_({operation:'image',imageId:moState.selected,displayOrder:Number(cmValue_('moOrder')),isProfileMain:cmChecked_('moMain'),expectedRevision:moState.revision});}
+  function moDelete_(kind){
+    if(moState.busy||!window.confirm('選択したデータを削除します。参照が残っている場合は中止します。続けますか？'))return;
+    if(window.prompt('削除を確定するにはID「'+moState.selected+'」を入力してください。')!==moState.selected)return;
+    const payload={operation:kind,action:'DELETE',confirm:moState.selected,expectedRevision:moState.revision};payload[{guest:'guestId',group:'groupId',image:'imageId'}[kind]]=moState.selected;moRun_(payload);
+  }
+  function moOptionsHtml_(){
+    const labels={UNIVERSE_SITE_ONLY_WRITES:'旧入力シートからの更新を停止',UNIVERSE_CATALOG_PROFILE_FIELDS_ENABLED:'プロフィール項目の追加・変更',UNIVERSE_CATALOG_MEMBER_MAINTENANCE_ENABLED:'メンバーの主所属・順番変更',UNIVERSE_CATALOG_MEMBER_DELETE_ENABLED:'安全確認付きメンバー削除',UNIVERSE_CATALOG_SONG_DELETE_ENABLED:'安全確認付き楽曲削除'};
+    return '<section class="management-card"><p class="management-lead">管理用データの初期整備とバックアップ後に変更できます。管理者の認証方式・権限は変更しません。</p>'+Object.keys(labels).map(function(key){return '<label class="management-field"><span><input id="moFlag_'+key+'" type="checkbox" '+(moState.data.flags&&moState.data.flags[key]?'checked':'')+'> '+labels[key]+'</span></label>';}).join('')+'<button class="u-btn" onclick="moSaveOptions_()">設定を確認して保存</button></section>';
+  }
+  function moSaveOptions_(){const flags={};Object.keys(moState.data.flags||{}).forEach(function(key){flags[key]=cmChecked_('moFlag_'+key);});if(window.confirm('選択した管理機能の有効／無効を変更しますか？')&&window.prompt('CONFIGURE_MANAGEMENT と入力してください。')==='CONFIGURE_MANAGEMENT')moRun_({operation:'configure',flags:flags,confirm:'CONFIGURE_MANAGEMENT'});}
+  function moBackup_(){if(window.confirm('CoreとLogのバックアップを作成しますか？'))moRun_({operation:'backup',confirm:'CREATE_BACKUP'});}
+  function moPrepare_(){if(window.confirm('バックアップを作成し、管理用の列・監査ログを準備して、廃止ロゴの登録データを取り除きます。実行しますか？')&&window.prompt('実行する場合は PREPARE_MANAGEMENT と入力してください。')==='PREPARE_MANAGEMENT')moRun_({operation:'prepare',confirm:'PREPARE_MANAGEMENT'});}
+  function moLoadHistory_(reset){
+    if(moState.busy)return;moSetBusy_(true);
+    managementRunner_().withSuccessHandler(function(result){moSetBusy_(false);moState.history=reset?result.rows:moState.history.concat(result.rows);moState.nextOffset=result.nextOffset;
+      document.getElementById('moHistory').innerHTML=moState.history.map(function(r){return '<article class="management-card"><strong>'+cmEscape_(r.EntityType+' / '+r.EntityID+' / '+r.Action)+'</strong><p class="management-lead">'+cmEscape_(r.OccurredAt+' / '+r.ActorEmail)+'</p><details><summary>変更内容</summary><pre class="management-json">'+cmEscape_(r.BeforeJSON+'\n→\n'+r.AfterJSON)+'</pre></details></article>';}).join('')+(result.nextOffset!==null?'<button class="u-btn" onclick="moLoadHistory_(false)">続きを見る</button>':'');
+    }).withFailureHandler(function(e){moSetBusy_(false);moError_(e.message||e);}).getManagementAuditHistory({userId:getUniverseUserId(),offset:reset?0:moState.nextOffset});
+  }
+  function moPreviewRepair_(){moRun_({operation:'repair',preview:true},function(result){moState.repairPlan=result;document.getElementById('moRepairPlan').innerHTML='<pre class="management-json">'+cmEscape_(JSON.stringify(result.plan,null,2))+'</pre>'+(result.plan.length?'<button class="u-btn" onclick="moConfirmRepair_()">この計画で修復</button>':'<p>修復対象はありません。</p>');});}
+  function moConfirmRepair_(){if(moState.repairPlan&&window.confirm('表示中の計画で不足データを補完しますか？'))moRun_({operation:'repair',preview:false,confirm:'REPAIR',expectedRevision:moState.repairPlan.revision});}
+  function moRestoreHtml_(){return '<section class="management-card management-maintenance"><h3 class="management-section-title">管理データを復元</h3><p class="management-lead">Coreの正本とプロフィール項目だけを復元します。ゲーム履歴・取得履歴は変更しません。</p>'+cmField_('moBackupTarget','復元するバックアップ',cmSelect_('moBackupTarget',moState.data.backups.map(function(b){return cmOption_(b.coreId,b.createdAt);}).join('')))+'<button class="u-btn" onclick="moPreviewRestore_()">復元の影響を確認</button><div id="moRestorePlan"></div></section>';}
+  function moPreviewRestore_(){moRun_({operation:'restore',preview:true,backupId:cmValue_('moBackupTarget')},function(result){moState.restorePlan=result;document.getElementById('moRestorePlan').innerHTML='<pre class="management-json">'+cmEscape_(JSON.stringify(result.counts,null,2))+'</pre><button class="u-btn cm-danger" onclick="moConfirmRestore_()">このバックアップから復元</button>';});}
+  function moConfirmRestore_(){if(!moState.restorePlan)return;if(window.confirm('現在の管理データをバックアップしてから、表示した内容で置き換えます。実行しますか？')&&window.prompt('RESTORE_MASTER_DATA と入力してください。')==='RESTORE_MASTER_DATA')moRun_({operation:'restore',preview:false,backupId:moState.restorePlan.backupId,expectedRevision:moState.restorePlan.revision,confirm:'RESTORE_MASTER_DATA'});}
+</script>

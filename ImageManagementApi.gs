@@ -139,11 +139,13 @@ function repairImageManagementData(userId) {
       imageMgmtEnsureMemberRows_(core, asId_(row.MemberID), Number(row.DisplayOrder || 9999));
     });
 
+    const retiredIds=new Set(BMSGDB.getRetiredCatalogImageFileIdsForUniverse({userId:userId}));
     const filesByKey = {};
     const allImageIds = {};
     const files = DriveApp.getFolderById(imageMgmtGetFolderId_()).getFiles();
     while (files.hasNext()) {
       const file = files.next();
+      if(retiredIds.has(file.getId()))continue;
       if (String(file.getMimeType()).indexOf('image/') !== 0) continue;
       allImageIds[file.getId()] = true;
       const match = file.getName().match(/^\[(SSR|SR|R|N)\](.*?)\(([^()]+)\)(?:\.[^.]+)?$/i);

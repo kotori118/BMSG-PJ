@@ -139,3 +139,59 @@ Google Sheets connectorでCore／Logのmetadataと必要なヘッダー行だけ
 - 修正順：A1／A4／A5→A2／A3／A6→日常管理に必要な未実装範囲の確定→独立GAS・複製DBで実保存／権限／回帰確認→必要な移行手順の別途確認→公開可否の再判定。
 
 **今回の結論は「問題があるため公開保留」。条件付きのデプロイ依頼は実行していない。**
+
+## 9. サイト完結化・ロゴ廃止・監査修正（2026-11-17）
+
+利用者の追加指示「グループ／ブランドロゴ管理を廃止」「既存ロゴも消す」「全てサイトで完結する構成を実装」「不具合修正」を受けた開発版。第8節の過去の監査記録は保持し、修正状態は本節を優先する。**公開判定は保留継続**。実Apps Scriptでの接続・保存とiPhone表示は未確認。
+
+### 9.1 最終構成・対象範囲
+
+SETTINGSの「管理ページを開く」→ MANAGEMENT → 次の5カテゴリ → 操作画面。HOME／DATA／LABナビを維持。
+
+| カテゴリ | 操作 |
+|---|---|
+| 楽曲・歌詞 | 楽曲追加（歌詞有無選択・ソロ）、楽曲編集／安全な削除、管理者のArtist訂正、ゲスト追加・名前訂正・参照統合・未使用時削除 |
+| メンバー・プロフィール | メンバー追加・編集・安全な削除、主所属・順番、プロフィール値、項目追加・非表示・再表示・項目名／分類／順番 |
+| グループ・ユニット | 追加、名前／カラー／種別／順番の編集、参照ゼロ時削除、ユニット所属追加・解除・順番 |
+| メンバー画像 | 既存の登録・差し替え・欠落修復、メイン指定・順番・未参照画像の登録データ削除 |
+| データ点検・保守（管理者のみ） | 既存監査、変更履歴閲覧、Core／Logバックアップ、管理データ復元、初期整備・移行、不足行修復、機能flag設定 |
+
+日常マスター編集にSheetsの直接入力を要求しない構成をコード実装した。ただし任意の破損データを自由編集する汎用スプレッドシートの代替ではない。既存権限を維持し、新規の高度な操作は管理者限定。一般登録ユーザーのLYRICS部分編集、プロフィール・画像の既存権限は変更しない。
+
+確定仕様による制約：制作クレジット・秒数の分析対象はBE:FIRST。BE:FIRSTのグループ名は分析キーとして固定。Artist訂正でBE:FIRST対象外へ移す際、クレジット・秒数があれば先にサイト上で内容を整理する。履歴から参照される画像・メンバー等の削除は拒否する。プロフィール項目の型／IDは変更しない。新メンバーの初期順は末尾、登録後に変更。これらは無制限編集の不足とは区別する。
+
+### 9.2 修正と依存関係
+
+A1〜A6を修正し監査7件すべて成功。対象切替の破棄確認、既存曲の選択への戻り、歌詞なし最終工程の戻り、Guest二重送信防止、schema不足時の安全な案内、Card／Coverのグループ動的選択を確認した。
+
+PROFILE・LYRICS・QUIZも実グループデータを参照する。PROFILEの追加グループキーはGroupIDから作り、同じ英数字化結果の名前でも衝突しない。従来4グループのキーは維持。グループ名変更はSongs.ArtistとクイズCourseラベルを同じロールバック対象に含める。メンバー順番変更は02_Membersと主所属04_GroupMembersを同時更新し、他ユニットを維持する。保存後にクライアントの歌詞／プロフィールキャッシュも無効化する。
+
+高度操作の画面はManagementOperations.html、PJの権限確認・明示allowlistの中継はManagementOperationsApi.gs、DBの整合性・共通Writer lock・監査・復旧はCatalogMaintenance.gsへ分離。既存のプロフィール項目追加／非表示／再表示、Guest登録、カラー重複検証、採番・既存保存APIを再利用。新たな同名関数は静的検査で検出されていない。既存Catalog APIは互換性のため維持し、旧グループ編集には新画面から遷移しない。以前撤去したEntry・モーダル外枠は復活させない。
+
+ロゴ：Card/Poker等のbrandLogoDriveFileId／logoDriveFileId参照・payloadと未使用ロゴCSSを撤去。09_ImagesのGroup／Brand行は、承認後の初期整備操作でバックアップを作成したうえで消去するコードを追加。復元でも廃止ロゴを再導入しない。**現時点では本番行は未変更。元のDrive画像ファイルの物理削除・共有設定変更は行わない。** Member画像は対象外。不要メンバー画像も登録データのみ消し、欠落修復による再登録を監査履歴で防ぐ。
+
+### 9.3 保守処理の保護
+
+- バックアップ先は指定フォルダ1YD-Df-gJPyes1fCRFYsOj5kL4YLidTyqのみ。既存バックアップは変更・削除しない。
+- 高度編集は変更前revision照合、保存失敗時の入力保持、二重送信防止。セル保存と監査失敗は既存値へ戻し照合する。
+- 復元は登録済みバックアップだけ。影響preview・再確認・実行直前バックアップ・snapshot照合が必須。Core01〜10とLog ProfileSettingsのみを書き戻し、ゲーム／取得履歴、IDRegistry、監査履歴は巻き戻さない。列違い、ID重複、孤立参照、復元による履歴参照欠落を拒否する。
+- 不足修復は根拠のあるプロフィール行・主所属行の補完のみ。重複ID等は自動削除しない。任意破損の自動修復は未実装。
+- 初期整備は明示操作時だけ既存migration APIを呼ぶ。起動時にschemaやデータを変更しない。機能flagは限定5項目のみ、管理者allowlistや認証方式を変更しない。
+
+### 9.4 変更ファイル
+
+PJ：ManagementOperations.html／ManagementOperationsApi.gs新設、ManagementPage／ManagementSystem／Indexの導線。CatalogManagement／SongLyricsManagementの不具合修正。ProfileManagement／ImageManagementのキャッシュ更新、ImageManagementApiの削除済み画像保護。CardApi／CardStyles／PokerApi／PokerScriptsのロゴ撤去、CacheInvalidationのcatalog v3化。CoverApi／ProfileApi／ProfileScripts／ProfileMembers／UserPreferences／LyricsApi／LyricsScripts／QuizApi／QuizLyricsGeneratorの動的グループ対応。tests/management-complete.test.mjs追加、既存DOM fixtureと契約試験を新導線へ整合。
+DB：CatalogMaintenance.gs新設、CatalogManagement.gsのShowMinorSavage GROUP判定維持、CatalogMemberMaintenance.gsの主所属内順番整合。tests/catalog-maintenance.test.mjs追加。
+
+### 9.5 検証結果・未実施
+
+- PJ：Node53件成功、監査7件成功。28 GAS／64 HTML静的検査成功。DB：Node74件成功、14 GAS静的検査成功。diff whitespace検査成功。
+- 新試験は実関数とメモリ上Core／Log／Driveモデル、jsdomを使い、途中失敗のrollback、参照保護、復元、権限拒否、未保存保護、操作遷移を検証した。実DBを書き換えていない。
+- デザイン：既存management-card、management-field、u-btn、共通loading/error、tokensを再利用。追加CSSはlayoutとJSON閲覧の折返しのみ。ローカルChromiumの起動制限により画面画像・Dark/Light視覚一致・iPhone safe-area／スクロールは未確認。DOM試験を実機確認とは扱わない。
+- 未実施：実GASライブラリ接続、Google権限、複製DB実保存、実ファイルupload、全登録ユーザーの実環境操作、Safari／iPhone、PROFILE／KARAOKE／QUIZ／COVER／ANALYSISの実機一巡。
+- 本番／テストDBの書込、GAS push／deploy、library版発行・固定版14の変更、main merge、旧入力タブ・11削除は行っていない。10_PerformanceMetricsと独立metrics、LYRICS直接編集、下部ナビを維持。
+
+### 9.6 公開前と切り戻し
+
+独立した検証GAS＋複製Core／Logで新DB版とPJを接続→管理者allowlist等を確認→画面から初期整備・flag設定→保存・再読込・失敗復旧・権限・iPhoneを検証する。初回ライブラリ版接続・管理者認証の基盤設定はインフラ準備であり、Sheets直接編集とは別。未確認があるため条件付き公開の条件は未達。
+公開する場合の手順は、直前のdeployment／library版とCore／Logバックアップを記録→新DB固定版→PJ参照更新→PJ公開。データ移行は別途許可範囲の確認が必要。切り戻しは直前PJ deployment／固定DB版とfeature flag OFF。保存済みデータを戻す必要がある場合は履歴参照の影響をpreviewし、対象限定復元を用いる。旧DB版に戻すだけで新規データが元に戻るとは扱わない。
