@@ -26,7 +26,7 @@ function getAnalysisBootstrap() {
 function buildAnalysisDataset_() {
   const spreadsheet = getCoreSpreadsheet_();
   const sheets = UNIVERSE_CONFIG.SHEETS;
-  const songsRows = readCoreSheetObjectsFromSpreadsheet_(spreadsheet, sheets.SONGS);
+  const songsRows = resolveUniverseSongs_(spreadsheet, readCoreSheetObjectsFromSpreadsheet_(spreadsheet, sheets.SONGS));
   const creditsRows = readCoreSheetObjectsFromSpreadsheet_(spreadsheet, sheets.SONG_CREDITS);
   const lyricsRows = readCoreSheetObjectsFromSpreadsheet_(spreadsheet, sheets.LYRICS_PARTS);
   const membersRows = readCoreSheetObjectsFromSpreadsheet_(spreadsheet, sheets.MEMBERS);

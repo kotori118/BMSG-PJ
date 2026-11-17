@@ -7,23 +7,19 @@ const SLM_FORMS_ = Object.freeze(['シングル','アルバム','デジタルリ
 
 function getSongLyricsManagementBootstrap(userId) {
   slmRequireUser_(userId);
-  const songs = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.SONGS).map(slmSongModel_).filter(function(song){return song.songId&&song.title&&song.artist;});
+  const songs = readUniverseSongs_(true).map(slmSongModel_).filter(function(song){return song.songId&&song.title;});
   const groups = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.GROUPS);
   const members = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.MEMBERS);
   const guests = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.GUESTS);
-  const artistMap = {};
-  groups.forEach(function(row){const name=String(row.GroupName||'').trim();if(name)artistMap[name]=true;});
-  members.forEach(function(row){const name=String(row.DisplayName||'').trim();if(name)artistMap[name]=true;});
-  artistMap.UNIT = true;
-  const priority={'BE:FIRST':1,'MAZZEL':2,'STARGLOW':3,'HANA':4,'UNIT':9998};
-  function artistSort(a,b){return (priority[a]||1000)-(priority[b]||1000)||a.localeCompare(b,'ja');}
+  const artists=groups.map(function(row){return {value:slmId_(row.GroupID),label:String(row.GroupName||''),archived:row.RecordStatus==='ARCHIVED'};})
+    .concat(members.map(function(row){return {value:slmId_(row.MemberID),label:String(row.DisplayName||''),archived:row.RecordStatus==='ARCHIVED'};}))
+    .filter(function(row){return row.value&&row.label&&!row.archived;});
   songs.sort(slmSongSort_);
   return {
-    artists:Object.keys(artistMap).sort(artistSort),
-    existingArtists:Array.from(new Set(songs.map(function(song){return song.artist;}))).sort(artistSort),
+    artists:artists,
+    existingArtists:Array.from(new Set(songs.map(function(song){return song.artist;}).filter(Boolean))).sort(function(a,b){return a.localeCompare(b,'ja');}),
     songs:songs,
     singerOptions:slmSingerOptions_(members,guests),
-    soloMembers:members.filter(function(m){return groups.some(function(g){return slmId_(g.GroupID)===slmId_(m.GroupID)&&g.GroupName==='BE:FIRST';});}).map(function(m){return {value:slmId_(m.MemberID),label:String(m.DisplayName||'')};}),
     forms:SLM_FORMS_.slice(),
     roles:[{value:'MAIN',label:'MAIN'},{value:'UP',label:'UP'},{value:'DOWN',label:'DOWN'},{value:'SUB',label:'SUB'}]
   };
@@ -57,11 +53,11 @@ function getSongLyricsManagementSong(userId, songId) {
   slmRequireUser_(userId);
   const id=slmId_(songId);
   if(!id)throw new Error('曲を選択してください。');
-  const songRow=readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.SONGS).find(function(row){return slmId_(row.SongID)===id;});
+  const songRow=readUniverseSongs_(true).find(function(row){return slmId_(row.SongID)===id;});
   if(!songRow)throw new Error('曲が見つかりません。');
   const credits=readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.SONG_CREDITS).find(function(row){return slmId_(row.SongID)===id;})||{};
   const singerMap=buildLyricsSingerMap_();
-  const parts=readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.LYRICS_PARTS)
+  const parts=isUniversePersonalSong_(songRow)?[]:readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.LYRICS_PARTS)
     .filter(function(row){return slmId_(row.SongID)===id;})
     .sort(function(a,b){return Number(a.PartOrder)-Number(b.PartOrder);})
     .map(function(row,index){
@@ -102,7 +98,8 @@ function slmSongModel_(row){
   const raw=row.ReleaseDate;let releaseDate='',timeValue=0;
   if(raw instanceof Date&&!isNaN(raw.getTime())){releaseDate=Utilities.formatDate(raw,'Asia/Tokyo','yyyy-MM-dd');timeValue=raw.getTime();}
   else if(String(raw||'').trim()){const d=new Date(raw);if(!isNaN(d.getTime())){releaseDate=Utilities.formatDate(d,'Asia/Tokyo','yyyy-MM-dd');timeValue=d.getTime();}else releaseDate=String(raw).trim();}
-  return {songType:String(row.SongType||'NORMAL'),soloMemberId:slmId_(row.SoloMemberID),songId:slmId_(row.SongID),title:String(row.Title||'').trim(),artist:String(row.Artist||'').trim(),releaseDate:releaseDate,form:String(row.Form||'').trim(),cdTitle:String(row.CDTitle||'').trim(),isTitleTrack:row.IsTitleTrack===true||String(row.IsTitleTrack||'').toUpperCase()==='TRUE',timeValue:timeValue};
+  return {artistId:slmId_(row.ArtistID ?? (isUniversePersonalSong_(row)?row.SoloMemberID||row.ArtistRef:row.ArtistRef)),
+    storedArtist:slmId_(row.ArtistID ?? row.StoredArtist ?? row.Artist),personal:isUniversePersonalSong_(row),songId:slmId_(row.SongID),title:String(row.Title||'').trim(),artist:String(row.Artist||'').trim(),releaseDate:releaseDate,form:String(row.Form||'').trim(),cdTitle:String(row.CDTitle||'').trim(),isTitleTrack:row.IsTitleTrack===true||String(row.IsTitleTrack||'').toUpperCase()==='TRUE',timeValue:timeValue};
 }
 function slmSongSort_(a,b){return (b.timeValue||0)-(a.timeValue||0)||(Number(b.songId)||0)-(Number(a.songId)||0)||a.title.localeCompare(b.title,'ja');}
 function slmAssignmentsFromRaw_(raw,singerMap){

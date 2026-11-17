@@ -128,9 +128,6 @@ function catalogManagementAddUnitMember(payload){
 function catalogManagementCreateSongDraft(payload){
   return catalogManagementCallWriter_('createCatalogSongDraftForUniverse',payload);
 }
-function catalogManagementSaveSongClass(payload){
-  return catalogManagementCallWriter_('saveCatalogSoloForUniverse',payload);
-}
 function getCatalogManagementDeletePreview(payload){
   payload=payload||{};catalogManagementSiteAccess_(payload.userId);
   return BMSGDB.getCatalogSongDeletePreviewForUniverse(payload);
