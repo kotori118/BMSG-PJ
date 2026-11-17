@@ -2,7 +2,7 @@
   <section class="settings-panel management-panel catalog-panel" role="dialog" aria-modal="true" aria-labelledby="catalogTitle">
     <header class="modal-head">
       <div><h2 id="catalogTitle" class="modal-title">データ管理</h2>
-        <p class="management-lead">Group / Member / Unit / Song</p></div>
+        <p class="management-lead">Group / Member / Unit / Song / Profile Fields</p></div>
       <button class="overlay-close" type="button" aria-label="閉じる" onclick="closeCatalogManagement()">×</button>
     </header>
     <div id="catalogManagementBody" aria-live="polite"></div>
@@ -10,7 +10,7 @@
 </div>
 <style>
   .catalog-panel{width:min(620px,calc(100vw - 24px));max-height:90dvh;overflow-y:auto}
-  .cm-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:12px 0 16px}
+  .cm-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:12px 0 16px}
   .cm-tabs .u-btn{min-height:44px;padding:8px 2px;font-size:12px}
   .cm-tabs .cm-selected{border-color:rgba(156,236,255,.75)}
   .cm-forms{display:grid;gap:12px}
@@ -26,7 +26,7 @@
   @media(max-width:390px){.cm-tabs .u-btn{font-size:10px}.catalog-panel{padding:14px}}
 </style>
 <script>
-  const cmState={bootstrap:null,tab:'groups',busy:false,message:'',audit:null};
+  const cmState={bootstrap:null,tab:'groups',busy:false,message:'',audit:null,profileFields:null};
   function cmEscape_(v){
     return String(v==null?'':v).replace(/[&<>"']/g,function(ch){
       return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];
@@ -68,7 +68,9 @@
     if(!uid){cmNotify_('利用ユーザーを選択してください。');return;}
     cmState.busy=true;cmState.message='読み込み中...';cmRender_();
     google.script.run.withSuccessHandler(function(v){
-      cmState.bootstrap=v;cmState.busy=false;cmState.message='';cmRender_();
+      cmState.bootstrap=v;cmState.busy=false;cmState.message='';
+      if(cmState.tab==='fields'&&v.schema&&v.schema.ready){cmState.profileFields=null;cmLoadProfileFields_();}
+      else cmRender_();
     }).withFailureHandler(function(e){
       cmState.busy=false;cmState.message='読み込み失敗: '+(e.message||e);cmRender_();
     }).getCatalogManagementBootstrap(uid);
@@ -87,7 +89,29 @@
       cmState.message='保存できませんでした: '+(e.message||e);cmRender_();
     })[name](Object.assign({userId:getUniverseUserId()},payload||{}));
   }
-  function cmTab_(name){if(cmState.busy)return;cmState.tab=name;cmState.message='';cmRender_();}
+  function cmTab_(name){
+    if(cmState.busy)return;
+    cmState.tab=name;cmState.message='';
+    if(name==='fields'&&!cmState.profileFields){
+      cmLoadProfileFields_();
+      return;
+    }
+    cmRender_();
+  }
+  function cmLoadProfileFields_(){
+    if(cmState.busy)return;
+    const uid=typeof getUniverseUserId==='function'?getUniverseUserId():'';
+    if(!uid){cmNotify_('利用ユーザーを選択してください。');return;}
+    cmState.busy=true;cmState.message='プロフィール項目を読み込み中...';cmRender_();
+    google.script.run.withSuccessHandler(function(result){
+      cmState.busy=false;cmState.message='';
+      cmState.profileFields=result&&result.ok?(result.fields||[]):null;
+      if(!cmState.profileFields)cmState.message='項目情報の読み込み結果を確認できません。';
+      cmRender_();
+    }).withFailureHandler(function(error){
+      cmState.busy=false;cmState.message='項目の読込失敗: '+(error.message||error);cmRender_();
+    }).getCatalogManagementProfileFields(uid);
+  }
   function cmAuditDatabase_(){
     if(cmState.busy)return;
     const uid=typeof getUniverseUserId==='function'?getUniverseUserId():'';
@@ -103,8 +127,8 @@
     const root=document.getElementById('catalogManagementBody');if(!root)return;
     const d=cmState.bootstrap;
     if(!d){root.innerHTML='<p class="cm-note">'+cmEscape_(cmState.message||'読み込み中...')+'</p>';return;}
-    const b=['groups','members','units','songs'];
-    const titles=['グループ','メンバー','ユニット','楽曲'];
+    const b=['groups','members','units','songs','fields'];
+    const titles=['グループ','メンバー','ユニット','楽曲','プロフィール項目'];
     let html='<div class="cm-tabs" role="tablist">'+b.map(function(tab,i){
       return '<button class="u-btn '+(tab===cmState.tab?'cm-selected':'')+'" type="button" role="tab" aria-selected="'+(tab===cmState.tab)+'" onclick="cmTab_(\''+tab+'\')">'+titles[i]+'</button>';
     }).join('')+'</div>';
@@ -125,6 +149,7 @@
     if(cmState.tab==='groups')html+=cmGroupsHtml_(d);
     else if(cmState.tab==='members')html+=cmMembersHtml_(d);
     else if(cmState.tab==='units')html+=cmUnitsHtml_(d);
+    else if(cmState.tab==='fields')html+=cmProfileFieldsHtml_();
     else html+=cmSongsHtml_(d);
     root.innerHTML='<div class="'+(cmState.busy?'cm-busy':'')+'">'+html+'</div>';
   }
@@ -137,6 +162,77 @@
     if(!window.confirm('本番DBへ列を追加します。現在のシートのバックアップは別ファイルに保管済みですか？'))return;
     cmCall_('catalogManagementMigrateSchema',{confirm:typed});
   }
+  function cmProfileFieldsHtml_(){
+    if(!cmState.profileFields){
+      return '<section class="management-card"><h3 class="cm-section">プロフィール項目</h3>'+
+        '<p class="cm-note">プロフィールの項目定義を読み込んでください。値の編集は既存の「プロフィール管理」で行います。</p>'+
+        '<button class="u-btn" type="button" onclick="cmLoadProfileFields_()">項目を再読み込み</button></section>';
+    }
+    const fields=cmState.profileFields;
+    const options=fields.map(function(f){
+      return {value:f.profileId,caption:f.label+'（'+f.profileId+'）'+(f.isActive?'':' [非表示]')};
+    });
+    const opts='<option value="">項目を選択してください</option>'+
+      options.map(function(o){return cmOption_(o.value,o.caption);}).join('');
+    const active=fields.filter(function(f){return f.isActive;}).length;
+    return '<div class="cm-forms"><section class="management-card">'+
+      '<h3 class="cm-section">新しいプロフィール項目を追加</h3>'+
+      cmField_('cmProfileFieldName','項目名',cmInput_('cmProfileFieldName','text','','例：好きな映画'))+
+      cmField_('cmProfileFieldType','値の形式',cmSelect_('cmProfileFieldType',
+        cmOption_('TEXT','文字列')+cmOption_('NUMBER','数値')+cmOption_('DATE','日付')))+
+      cmField_('cmProfileFieldGroup','表示分類',cmInput_('cmProfileFieldGroup','text','基本','例：基本・好み・活動'))+
+      '<label class="management-field cm-field"><span>複数入力</span><span>'+
+        '<input id="cmProfileFieldMulti" type="checkbox"> 文字列を複数登録できるようにする</span></label>'+
+      '<p class="cm-note">ProfileIDは自動採番。既存メンバーの新項目は空欄のまま作成し、プロフィール編集画面から入力できます。クイズへの出題は初期状態でOFFです。</p>'+
+      '<div class="cm-actions"><button class="u-btn" type="button" onclick="cmCreateProfileField_()">項目を追加</button></div>'+
+      '</section><section class="management-card">'+
+      '<h3 class="cm-section">既存項目の非表示・再表示</h3>'+
+      '<p class="cm-note">項目'+fields.length+'件（表示中 '+active+'件）。非表示にしてもプロフィール値、列、ProfileIDは消えません。</p>'+
+      cmField_('cmProfileFieldTarget','項目','<select id="cmProfileFieldTarget" onchange="cmShowProfileField_()">'+opts+'</select>')+
+      '<p id="cmProfileFieldInfo" class="cm-note" role="status">項目を選択すると現在の設定を確認できます。</p>'+
+      '<div class="cm-actions">'+
+        '<button class="u-btn" type="button" onclick="cmSetProfileFieldActive_(false)">非表示にする</button>'+
+        '<button class="u-btn" type="button" onclick="cmSetProfileFieldActive_(true)">再表示する</button>'+
+      '</div><p class="cm-note">「呼ばれ順（P000）」は基礎項目のため非表示にできません。</p>'+
+      '</section></div>';
+  }
+  function cmSelectedProfileField_(){
+    return (cmState.profileFields||[]).find(function(x){
+      return x.profileId===cmValue_('cmProfileFieldTarget');
+    });
+  }
+  function cmShowProfileField_(){
+    const p=cmSelectedProfileField_(),target=document.getElementById('cmProfileFieldInfo');
+    if(!target)return;
+    target.textContent=p?
+      p.profileId+'｜'+p.displayGroup+'｜'+p.dataType+
+      (p.isMultiValue?'・複数入力':'')+'｜'+(p.isActive?'表示中':'非表示中'):
+      '項目を選択すると現在の設定を確認できます。';
+  }
+  function cmCreateProfileField_(){
+    const name=cmValue_('cmProfileFieldName').trim();
+    const type=cmValue_('cmProfileFieldType');
+    const isMulti=cmChecked_('cmProfileFieldMulti');
+    if(!name){cmNotify_('項目名を入力してください。');return;}
+    if(isMulti&&type!=='TEXT'){cmNotify_('複数入力にできるのは文字列のみです。');return;}
+    if(!window.confirm('新しいプロフィール項目「'+name+'」を追加します。既存データの値は変更しません。続けますか？'))return;
+    cmCall_('catalogManagementCreateProfileField',{
+      name:name,dataType:type,isMultiValue:isMulti,
+      displayGroup:cmValue_('cmProfileFieldGroup')
+    });
+  }
+  function cmSetProfileFieldActive_(isActive){
+    const field=cmSelectedProfileField_();
+    if(!field){cmNotify_('対象項目を選択してください。');return;}
+    if(field.isActive===isActive){cmNotify_('すでに'+(isActive?'表示中':'非表示中')+'です。');return;}
+    if(!isActive&&field.profileId==='P000'){cmNotify_('呼ばれ順は非表示にできません。');return;}
+    const action=isActive?'再表示':'非表示';
+    if(!window.confirm('「'+field.label+'」を'+action+'にしますか？\nプロフィールの値は消しません。'))return;
+    cmCall_('catalogManagementSetProfileFieldActive',{
+      profileId:field.profileId,isActive:isActive,expectedActive:field.isActive
+    });
+  }
+
   function cmGroupsHtml_(d){
     const g=d.groups.filter(cmGroupActive_);
     return '<div class="cm-forms"><section class="management-card"><h3 class="cm-section">グループ・ユニットを追加</h3>'+
