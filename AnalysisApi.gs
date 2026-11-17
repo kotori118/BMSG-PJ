@@ -4,7 +4,7 @@
  * from BMSG_Universe_DB. The legacy ANALYSIS spreadsheet remains read-only.
  */
 
-const ANALYSIS_CACHE_KEY = 'analysis_bootstrap_v1';
+const ANALYSIS_CACHE_KEY = 'analysis_bootstrap_v2_without_part_transfers';
 const ANALYSIS_CACHE_SECONDS = 300;
 const ANALYSIS_GROUP_ID = '1';
 const ANALYSIS_KEYWORDS = ['夢','愛','涙','君','僕','未来','世界','時代','頂点','光','明日','Amazing','Crazy'];
