@@ -1,6 +1,6 @@
 /** BMSG Universe COVER MAKER */
 const COVER_ALL_ID_ = '99';
-const COVER_ALLSTARS_GROUP_ID_ = '8';
+const COVER_ALLSTARS_GROUP_ID_ = 'U8';
 
 function getCoverMakerBootstrap(userId) {
   const uid = validateCoverUser_(userId);
