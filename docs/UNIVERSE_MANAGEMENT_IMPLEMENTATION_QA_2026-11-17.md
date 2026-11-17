@@ -204,3 +204,10 @@ DB：CatalogMaintenance.gs新設、CatalogManagement.gsのShowMinorSavage GROUP�
 
 再開条件：GitHub secret `CLASPRC_JSON_KEY` のGoogle認証情報を安全に更新し、DBの失敗ジョブ再実行→新library版確認→PJ固定版更新・CI→PJ公開の順。認証情報をチャットやログへ貼らない。今回のエラーをコード不具合／公開成功とは扱わない。直前PJ公開版は25、DB参照版14。元mainはrollback branchに保存済み。
 
+
+
+## 11. 本番導入再開・DB版発行（2026-11-17）
+
+利用者がGitHub認証情報とApps Script APIを更新した後、DB Deploy to GAS run44041105303 attempt3が成功。GAS pushとlibrary version15発行をログで確認した。PJ固定参照を14→15へ更新し、対応する固定版テストを15へ整合。認証方式・公開範囲・DB IDは変更しない。直前PJ公開版25／DB参照版14とbackup/pre-management-production-20261117を切り戻し基準に保持する。
+
+同時に追加されていたANALYSIS／PerformanceTimerのキャッシュ整合修正を失わず取り込んだ最新PJはNode55件＋監査7件成功。PJ公開の成否は後続の本番導入記録・GitHub Actionsで確認する。DB schema移行、管理flag設定、09_Imagesロゴ登録行整理はコード公開と別であり、この時点では未実行。実GAS経由の登録・保存・iPhone実機確認も未実施。
