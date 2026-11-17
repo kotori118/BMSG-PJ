@@ -22,10 +22,21 @@ test('site calls BMSG-DB library and does not write Core spreadsheets',()=>{
   assert.match(src,/Session\.getActiveUser\(\)\.getEmail\(\)/);
 });
 
-test('existing site modules filter archived songs from selectable catalogs',()=>{
-  assert.match(read('CoreRepository.gs'),/RecordStatus \|\| 'ACTIVE'/);
-  assert.match(read('CoverApi.gs'),/RecordStatus\|\|'ACTIVE'/);
-  assert.match(read('PerformanceTimerApi.gs'),/RecordStatus\|\|'ACTIVE'/);
+test('song deletion uses guarded server preview and no archive/restore UI',()=>{
+  const api=read('CatalogManagementApi.gs');
+  const ui=read('CatalogManagement.html');
+  assert.match(api,/getCatalogSongDeletePreviewForUniverse/);
+  assert.match(api,/deleteCatalogSongForUniverse/);
+  assert.match(ui,/getCatalogManagementDeletePreview/);
+  assert.match(ui,/catalogManagementDeleteSong/);
+  assert.match(ui,/externalReferencesChecked:true/);
+  assert.doesNotMatch(api,/setCatalogSongArchiveForUniverse/);
+  assert.doesNotMatch(ui,/cmToggleSongArchive_|アーカイブ・復元|SongIDは維持されます/);
+});
+test('normal song reads do not rely on an archived RecordStatus column',()=>{
+  assert.doesNotMatch(read('CoreRepository.gs'),/RecordStatus \|\| 'ACTIVE'/);
+  assert.doesNotMatch(read('CoverApi.gs'),/RecordStatus\|\|'ACTIVE'/);
+  assert.doesNotMatch(read('PerformanceTimerApi.gs'),/RecordStatus\|\|'ACTIVE'/);
 });
 
 test('production library remains version-pinned and feature-flagged',()=>{
