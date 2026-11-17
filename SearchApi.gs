@@ -131,7 +131,7 @@ function getUniverseSearchIndex_() {
   const credits = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.SONG_CREDITS);
   const lyricParts = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.LYRICS_PARTS);
   const images = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.IMAGES);
-  const profileSettings = readSheetObjects_(getLogSheet_(UNIVERSE_CONFIG.SHEETS.PROFILE_SETTINGS))
+  const profileSettings = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.PROFILE_SETTINGS)
     .filter(function(row) { return asBoolean_(row.IsActive) && asId_(row.ProfileID); })
     .sort(function(a, b) { return asNumber_(a.DisplayOrder, 9999) - asNumber_(b.DisplayOrder, 9999); });
 
