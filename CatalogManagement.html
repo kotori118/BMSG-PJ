@@ -145,7 +145,7 @@
     root.querySelectorAll('button,input,select,textarea').forEach(function(el){if(cmState.busy)el.disabled=true;});
   }
   function cmGroupActive_(g){return String(g.RecordStatus||'ACTIVE').toUpperCase()!=='ARCHIVED';}
-  function cmGroupKind_(g){return String(g.GroupKind||(Number(g.GroupID)<=4?'GROUP':'UNIT'));}
+  function cmGroupKind_(g){return String(g.GroupKind||(String(g.GroupID||'').startsWith('G')?'GROUP':'UNIT'));}
   function cmMemberActive_(m){return String(m.RecordStatus||'ACTIVE').toUpperCase()!=='ARCHIVED';}
   function cmProfileFieldsHtml_(){
     if(!cmState.profileFields){

@@ -70,9 +70,43 @@ function normalizeQuizGame_(row) {
 }
 
 function getQuizQuestionRows_(gameId) {
-  return readSheetObjects_(getLogSheet_(UNIVERSE_CONFIG.SHEETS.QUIZ_QUESTIONS)).filter(function(row) { return asId_(row.QuizGameID) === gameId; }).map(function(row) {
-    return { number: Number(row.QuestionNo || 0), type: String(row.QuestionType || ''), text: String(row.QuestionText || ''), source: quizParseJson_(row.SourceRefJSON, {}), choices: quizParseJson_(row.ChoicesJSON, []), correct: quizParseJson_(row.CorrectAnswerJSON, {}) };
-  }).sort(function(a, b) { return a.number - b.number; });
+  const rows = readSheetObjects_(getLogSheet_(UNIVERSE_CONFIG.SHEETS.QUIZ_QUESTIONS)).filter(function(row) { return asId_(row.QuizGameID) === gameId; });
+  if (!rows.length) return [];
+  const memberIds = new Set(readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.MEMBERS).map(function(row){return asId_(row.MemberID);}));
+  return rows.map(function(row){
+    const source=quizParseJson_(row.SourceRefJSON, {}),choices=quizParseJson_(row.ChoicesJSON, []),correct=quizParseJson_(row.CorrectAnswerJSON, {});
+    return {number:Number(row.QuestionNo||0),type:String(row.QuestionType||''),text:String(row.QuestionText||''),
+      source:quizAdaptLegacySource_(source,memberIds),choices:quizAdaptLegacyChoices_(choices,memberIds),correct:quizAdaptLegacyCorrect_(correct,memberIds)};
+  }).sort(function(a,b){return a.number-b.number;});
+}
+function quizLegacyMemberId_(value,ids){
+  const raw=asId_(value);
+  return /^\d+$/.test(raw)&&ids.has('M'+raw)?'M'+raw:raw;
+}
+function quizLegacySingerValue_(value,ids){
+  return asId_(value).split('|').map(function(v){return quizLegacyMemberId_(v,ids);}).join('|');
+}
+function quizAdaptLegacySource_(value,ids){
+  const source=Object.assign({},value||{});
+  if(source.memberId!=null)source.memberId=quizLegacyMemberId_(source.memberId,ids);
+  if(source.singerId!=null)source.singerId=quizLegacyMemberId_(source.singerId,ids);
+  if(Array.isArray(source.memberIds))source.memberIds=source.memberIds.map(function(id){return quizLegacyMemberId_(id,ids);});
+  if(Array.isArray(source.singerIds))source.singerIds=source.singerIds.map(function(id){return quizLegacyMemberId_(id,ids);});
+  return source;
+}
+function quizAdaptLegacyChoices_(value,ids){
+  if(!value||Array.isArray(value))return value;
+  const choices=Object.assign({},value);
+  if(Array.isArray(choices.singers))choices.singers=choices.singers.map(function(item){
+    return Object.assign({},item,{value:quizLegacySingerValue_(item.value,ids)});
+  });
+  return choices;
+}
+function quizAdaptLegacyCorrect_(value,ids){
+  const correct=Object.assign({},value||{});
+  if(correct.singerValue!=null)correct.singerValue=quizLegacySingerValue_(correct.singerValue,ids);
+  if(correct.singerId!=null)correct.singerId=quizLegacyMemberId_(correct.singerId,ids);
+  return correct;
 }
 
 function getQuizResultRows_(gameId) { return readSheetObjects_(getLogSheet_(UNIVERSE_CONFIG.SHEETS.QUIZ_RESULTS)).filter(function(row) { return asId_(row.QuizGameID) === gameId; }); }

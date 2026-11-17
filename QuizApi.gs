@@ -236,7 +236,7 @@ function quizCourseMemberIds_(course, members, groups, memberships) {
 }
 
 function parseQuizSingerIds_(value, memberById) {
-  return String(value || '').split(/[^0-9]+/).map(function(id) { return id.trim(); }).filter(function(id, index, all) { return id && memberById[id] && all.indexOf(id) === index; });
+  return (String(value || '').match(/M\d+|\d+/g) || []).map(function(id) { return memberById[id] ? id : (memberById['M' + id] ? 'M' + id : id); }).filter(function(id, index, all) { return !!memberById[id] && all.indexOf(id) === index; });
 }
 
 function makeQuizSnippet_(lyrics, difficulty) {
@@ -290,7 +290,7 @@ function normalizeQuizGenre_(value) { const text = String(value || '').trim(); r
 function normalizeQuizCourse_(value) { const text = String(value || '').trim(); return text === 'ユニット' ? 'UNIT' : text === '全部' ? 'ALL' : text.toUpperCase(); }
 function normalizeQuizDifficulty_(value) { const text = String(value || '').trim(); return text === '普通' ? 'NORMAL' : text === '上級' ? 'ADVANCED' : text.toUpperCase(); }
 function getQuizUsers_() { const map = {}; readSheetObjects_(getLogSheet_(UNIVERSE_CONFIG.SHEETS.USERS)).forEach(function(row) { map[asId_(row.UserID)] = String(row.DisplayName || row.UserID); }); return UNIVERSE_CONFIG.USER_IDS.map(function(id) { return { userId: id, displayName: map[id] || id }; }); }
-function quizMainGroupNames_(groups){return groups.filter(function(g){return g.GroupKind==='GROUP'||!g.GroupKind&&['BE:FIRST','MAZZEL','STARGLOW','HANA','ShowMinorSavage'].indexOf(g.GroupName)>=0;}).map(function(g){return String(g.GroupName||'').trim();});}
+function quizMainGroupNames_(groups){return groups.filter(function(g){return String(g.GroupID||'').startsWith('G');}).map(function(g){return String(g.GroupName||'').trim();});}
 function getQuizCourses_(){
   const groups=readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.GROUPS);return groups.filter(function(g){return String(g.RecordStatus||'ACTIVE')!=='ARCHIVED';}).slice().sort(function(a,b){return Number(a.DisplayOrder||9999)-Number(b.DisplayOrder||9999);}).map(function(g){return {value:String(g.GroupName).toUpperCase(),label:String(g.GroupName)};}).filter(function(g){return g.value!=='ALL'&&g.value!=='UNIT';}).concat([{value:'UNIT',label:'ユニット'},{value:'ALL',label:'全部'}]);
 }

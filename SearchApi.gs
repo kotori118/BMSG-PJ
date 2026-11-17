@@ -214,12 +214,11 @@ function getUniverseSearchIndex_() {
   }).filter(Boolean);
 
   const cardIndex = images.filter(function(row) {
-    const type = String(row.TargetType || '').trim().toLowerCase();
     const rarity = String(row.Rarity || '').trim().toUpperCase();
-    const memberId = asId_(row.TargetID);
-    return type === 'member' && UNIVERSE_SEARCH_CARD_RARITIES_[rarity] && memberNameById[memberId] && asId_(row.ImageID);
+    const memberId = asId_(row.MemberID);
+    return UNIVERSE_SEARCH_CARD_RARITIES_[rarity] && memberNameById[memberId] && asId_(row.ImageID);
   }).map(function(row) {
-    const memberId = asId_(row.TargetID);
+    const memberId = asId_(row.MemberID);
     return {
       imageId:asId_(row.ImageID),
       memberId:memberId,
