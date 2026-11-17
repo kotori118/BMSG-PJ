@@ -3,7 +3,7 @@
  * Keep mutation-to-cache dependencies here so feature APIs do not drift apart.
  */
 const UNIVERSE_CACHE_KEYS_ = Object.freeze({
-  ANALYSIS: 'analysis_bootstrap_v1',
+  ANALYSIS: 'analysis_bootstrap_v2_without_part_transfers',
   SEARCH: 'UNIVERSE_SEARCH_INDEX_V2',
   HOME_LOOKUP: 'universe-state-lookup-v2',
   CARD_CATALOG: 'trading_card_catalog_v3',
