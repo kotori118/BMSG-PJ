@@ -1,27 +1,7 @@
-/**
- * SETTINGS > 管理 > データ管理 (staged, fail-closed)
- * The site NEVER writes Core DB rows or allocates Song/Group/Member IDs.
- * It delegates all writes to the pinned BMSG-DB library.
- *
- * Activation requires:
- *   UNIVERSE_CATALOG_ENABLED=true
- *   UNIVERSE_CATALOG_ADMIN_EMAILS=comma-separated Google Account emails
- * (in BOTH BMSG-PJ and the BMSG-DB writer's script property context).
- *
- * A client-side U001/U002/U003 selection is NOT authentication.
- */
+/** Shared management access uses the existing Universe user selection. */
 function catalogManagementSiteAccess_(userId) {
   const uid=String(userId||'').trim();
-  if(UNIVERSE_CONFIG.USER_IDS.indexOf(uid)<0)
-    throw new Error('利用ユーザーの選択が必要です。');
-  const props=PropertiesService.getScriptProperties();
-  if(props.getProperty('UNIVERSE_CATALOG_ENABLED')!=='true')
-    throw new Error('管理機能の利用設定が完了していません。');
-  const email=String(Session.getActiveUser().getEmail()||'').trim().toLowerCase();
-  const allow=String(props.getProperty('UNIVERSE_CATALOG_ADMIN_EMAILS')||'')
-    .split(',').map(function(s){return s.trim().toLowerCase();}).filter(Boolean);
-  if(!email||!allow.length||allow.indexOf(email)<0)
-    throw new Error('Googleアカウントの管理者権限が確認できません。');
+  if(UNIVERSE_CONFIG.USER_IDS.indexOf(uid)<0)throw new Error('利用ユーザーの選択が必要です。');
   return uid;
 }
 
@@ -55,7 +35,7 @@ function getCatalogManagementAccess(userId) {
     catalogManagementSiteAccess_(userId);
     return {enabled:true};
   }catch(error){
-    return {enabled:false,message:String(error.message||'管理者の利用設定を確認してください。')};
+    return {enabled:false,message:String(error.message||'利用ユーザーを選択してください。')};
   }
 }
 

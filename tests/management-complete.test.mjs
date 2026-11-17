@@ -13,13 +13,13 @@ function populate(f){
   d.backups=[{coreId:'backup-core',logId:'backup-log',createdAt:'2026-11-17'}];
   d.flags={UNIVERSE_SITE_ONLY_WRITES:false};
 }
-test('every new management operation is routed and unauthorized direct links are refused',async()=>{
+test('every management operation is routed for every selected user',async()=>{
   const f=fixture();populate(f);
   for(const [s,a] of [['songs','guests'],['groups','edit'],['members','fields'],['images','settings'],['maintenance','history'],['maintenance','backup'],['maintenance','prepare'],['maintenance','repair'],['maintenance','options']]){
     await f.go(s,a);assert.ok(f.dom.window.document.getElementById('managementOperationsHost'),`${s}/${a}`);assert.equal(f.run('managementBusy_()'),false);
     const ids=[...f.dom.window.document.querySelectorAll('[id]')].map(x=>x.id);assert.equal(ids.length,new Set(ids).size,`${s}/${a} duplicate IDs`);
   }f.dom.window.close();
-  const denied=fixture({admin:false});await denied.go('songs','guests');assert.match(denied.dom.window.document.getElementById('managementContent').textContent,/利用できません/);denied.dom.window.close();
+  for(const uid of ['U001','U002','U003']){const f=fixture({admin:false,uid});await f.go('songs','guests');assert.ok(f.dom.window.document.getElementById('managementOperationsHost'));await f.go('groups','add');assert.ok(f.dom.window.document.getElementById('cmGroupName'));f.dom.window.close();}
 });
 test('guest edits include optimistic revision, block duplicate submits and keep inputs on failure',async()=>{
   const f=fixture();populate(f);await f.go('songs','guests');
@@ -60,10 +60,10 @@ test('initial setup and runtime configuration keep explicit confirmation tokens'
   await f.go('maintenance','options');f.ctx.window.prompt=()=> 'CONFIGURE_MANAGEMENT';f.run("document.getElementById('moFlag_UNIVERSE_SITE_ONLY_WRITES').checked=true;moSaveOptions_()");await f.settle();
   const payload=f.calls.filter(x=>x.key==='runManagementOperation').at(-1).args[0];assert.equal(payload.flags.UNIVERSE_SITE_ONLY_WRITES,true);f.dom.window.close();
 });
-test('server dispatcher rejects arbitrary library functions and checks admin gate',()=>{
-  const calls=[];const env={catalogManagementSiteAccess_:uid=>{if(uid!=='U001')throw Error('admin');},catalogManagementCallWriter_:(fn,p)=>{calls.push(fn);return {ok:true};},catalogManagementRefreshProfileFieldCaches_:()=>{},clearUniverseImageRepairCaches_:()=>{},BMSGDB:{}};
+test('server dispatcher rejects arbitrary functions and unknown Universe users',()=>{
+  const calls=[];const env={catalogManagementSiteAccess_:uid=>{if(!['U001','U002','U003'].includes(uid))throw Error('user');},catalogManagementCallWriter_:(fn,p)=>{calls.push(fn);return {ok:true};},catalogManagementRefreshProfileFieldCaches_:()=>{},clearUniverseImageRepairCaches_:()=>{},BMSGDB:{}};
   vm.createContext(env);vm.runInContext(read('ManagementOperationsApi.gs'),env);
-  assert.throws(()=>env.runManagementOperation({userId:'U002',operation:'guest'}),/admin/);
+  assert.throws(()=>env.runManagementOperation({userId:'U999',operation:'guest'}),/user/);
   assert.throws(()=>env.runManagementOperation({userId:'U001',operation:'arbitraryFunction'}),/対応/);
   env.runManagementOperation({userId:'U001',operation:'guest'});assert.deepEqual(calls,['maintainCatalogGuestForUniverse']);
 });

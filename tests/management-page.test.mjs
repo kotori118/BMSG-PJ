@@ -16,15 +16,17 @@ function client(){
   const run=s=>vm.runInContext(s,env);
   return{env,nodes,events,history,toasts,run};
 }
-test('registered users see management categories; restricted operations are omitted',()=>{
+test('all registered users see every management category and operation',()=>{
   for(const uid of ['U001','U002','U003']){
     const c=client();c.env.getUniverseUserId=()=>uid;
     c.run('managementState.access={registered:true,catalog:false};renderManagementNavigation_()');
     assert.match(c.nodes.managementContent.innerHTML,/楽曲・歌詞|メンバー・プロフィール|メンバー画像/);
-    assert.doesNotMatch(c.nodes.managementContent.innerHTML,/データ点検・保守|グループ・ユニット/);
+    assert.match(c.nodes.managementContent.innerHTML,/データ点検・保守/);
+    assert.match(c.nodes.managementContent.innerHTML,/グループ・ユニット/);
     c.run("managementState.params={section:'members'};renderManagementNavigation_()");
     assert.match(c.nodes.managementContent.innerHTML,/プロフィールを編集/);
-    assert.doesNotMatch(c.nodes.managementContent.innerHTML,/メンバーを追加|プロフィール項目を管理/);
+    assert.match(c.nodes.managementContent.innerHTML,/メンバーを追加/);
+    assert.match(c.nodes.managementContent.innerHTML,/プロフィール項目を管理/);
   }
 });
 test('admin sees maintenance last, future features remain absent',()=>{
@@ -34,7 +36,7 @@ test('admin sees maintenance last, future features remain absent',()=>{
   assert.doesNotMatch(html,/動画|変更履歴を見る|バックアップ・移行|画像の表示設定|ゲストを管理/);
 });
 test('invalid or unauthorized deep links render an error without invoking an editor',()=>{
-  const c=client();c.run('managementState.access={registered:true,catalog:false}');
+  const c=client();c.run('managementState.access={registered:false,catalog:false}');
   for(const params of [{section:'members',action:'add'},{section:'songs',action:'missing'},{section:'missing',action:'edit'},{section:'maintenance',action:'audit'}]){
     c.run('managementState.params='+JSON.stringify(params)+';renderManagementNavigation_()');
     assert.match(c.nodes.managementContent.innerHTML,/利用できません/);
@@ -62,13 +64,13 @@ test('responses from an old mount or a switched user are ignored',()=>{
   c.run('managementRunner_().withSuccessHandler(function(){got++}).getData()');
   c.env.getUniverseUserId=()=> 'U002';success({});assert.equal(c.run('got'),1);
 });
-test('navigation access API validates registered users and keeps catalog admin gate',()=>{
-  const env={normalizeUniverseStateUserId_:id=>{if(!['U001','U002','U003'].includes(id))throw Error('user');},getCatalogManagementAccess:id=>({enabled:id==='U001'})};
-  vm.createContext(env);vm.runInContext(read('ManagementPageApi.gs'),env);
-  assert.throws(()=>env.getManagementPageAccess('unknown'),/user/);
-  for(const uid of ['U001','U002','U003'])assert.equal(env.getManagementPageAccess(uid).registered,true);
-  assert.equal(env.getManagementPageAccess('U002').catalog,false);
+test('navigation validates a Universe user and reports initial schema readiness',()=>{
+ const env={catalogManagementSiteAccess_:id=>{if(!['U001','U002','U003'].includes(id))throw Error('user');return id;},BMSGDB:{getCatalogManagementReadinessForUniverse:()=>({ready:false})}};
+ vm.createContext(env);vm.runInContext(read('ManagementPageApi.gs'),env);
+ assert.throws(()=>env.getManagementPageAccess('unknown'),/user/);
+ for(const uid of ['U001','U002','U003']){const r=env.getManagementPageAccess(uid);assert.equal(r.catalog,true);assert.equal(r.initialSetupRequired,true);}
 });
+
 test('single registration flow supports optional lyrics and selected-song deletion',()=>{
   const ui=read('SongLyricsManagement.html');
   assert.match(ui,/slmIncludeLyrics/);assert.match(ui,/catalogManagementCreateSongDraft':'saveNewSongLyricsManagement/);

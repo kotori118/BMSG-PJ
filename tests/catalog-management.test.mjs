@@ -19,9 +19,9 @@ test('site calls BMSG-DB library and does not write Core spreadsheets',()=>{
   assert.match(src,/BMSGDB\[name\]\(payload\)/);
   assert.doesNotMatch(src,/SpreadsheetApp\.openById/);
   assert.doesNotMatch(src, /\.setValue\(|\.setValues\(/);
-  assert.match(src,/UNIVERSE_CATALOG_ENABLED/);
-  assert.match(src,/UNIVERSE_CATALOG_ADMIN_EMAILS/);
-  assert.match(src,/Session\.getActiveUser\(\)\.getEmail\(\)/);
+  assert.doesNotMatch(src,/UNIVERSE_CATALOG_ENABLED/);
+  assert.doesNotMatch(src,/UNIVERSE_CATALOG_ADMIN_EMAILS/);
+  assert.doesNotMatch(src,/Session\.getActiveUser/);
 });
 
 test('song deletion uses guarded server preview and no archive/restore UI',()=>{
@@ -45,7 +45,7 @@ test('production library remains version-pinned and feature-flagged',()=>{
   const manifest=JSON.parse(read('appsscript.json'));
   const library=manifest.dependencies.libraries.find(x=>x.userSymbol==='BMSGDB');
   assert.equal(library.developmentMode,false);
-  assert.equal(library.version,'15');
+  assert.equal(library.version,'16');
   assert.match(read('ManagementPage.html'),/managementAllowed_/);
 });
 
@@ -64,7 +64,7 @@ test('PartTransfers analysis is absent but singing/center metrics and timer rema
   assert.match(cfg,/PERFORMANCE_METRICS: '10_PerformanceMetrics'/);
 });
 
-test('profile-field screen and server wrappers are admin-gated and isolated',()=>{
+test('profile-field screen and server wrappers validate Universe users and stay isolated',()=>{
   const ui=read('CatalogManagement.html');
   const api=read('CatalogManagementApi.gs');
   assert.match(ui,/プロフィール項目/);

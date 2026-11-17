@@ -4,16 +4,11 @@ import vm from 'node:vm';
 import fs from 'node:fs';
 import {fixture} from '../audit/management-fixture.mjs';
 const read=f=>fs.readFileSync(new URL('../'+f,import.meta.url),'utf8');
-test('management access explains the current gate without exposing emails or granting writes',()=>{
- const props={},env={UNIVERSE_CONFIG:{USER_IDS:['U001']},PropertiesService:{getScriptProperties:()=>({getProperty:k=>props[k]})},Session:{getActiveUser:()=>({getEmail:()=>env.email})},normalizeUniverseStateUserId_:()=>{}};
+test('all selected users open management without Google identity or role properties',()=>{
+ const env={UNIVERSE_CONFIG:{USER_IDS:['U001','U002','U003']},PropertiesService:{getScriptProperties:()=>{throw Error('unexpected settings read');}},Session:{getActiveUser:()=>{throw Error('unexpected Google identity read');}},BMSGDB:{getCatalogManagementReadinessForUniverse:()=>({ready:true})}};
  vm.createContext(env);vm.runInContext(read('CatalogManagementApi.gs')+'\n'+read('ManagementPageApi.gs'),env);
- assert.match(env.getManagementPageAccess('U001').catalogMessage,/利用設定/);
- props.UNIVERSE_CATALOG_ENABLED='true';props.UNIVERSE_CATALOG_ADMIN_EMAILS='admin@example.test';env.email='';
- assert.equal(env.getManagementPageAccess('U001').catalog,false);
- assert.match(env.getManagementPageAccess('U001').catalogMessage,/権限/);
- env.email='member@example.test';assert.equal(env.getManagementPageAccess('U001').catalog,false);
- assert.doesNotMatch(JSON.stringify(env.getManagementPageAccess('U001')),/example.test/);
- env.email='admin@example.test';assert.equal(env.getManagementPageAccess('U001').catalog,true);
+ for(const userId of env.UNIVERSE_CONFIG.USER_IDS)assert.equal(env.getManagementPageAccess(userId).catalog,true);
+ for(const userId of ['','U999'])assert.throws(()=>env.getManagementPageAccess(userId),/利用ユーザー/);
 });
 test('the route back button returns to its category and breadcrumbs omit the repeated operation title',async()=>{
  const f=fixture();await f.go('members','profile');
@@ -25,11 +20,11 @@ test('the route back button returns to its category and breadcrumbs omit the rep
  assert.match(doc.getElementById('managementContent').textContent,/メンバーを追加/);
  f.dom.window.close();
 });
-test('disabled management shows its reason while protected action links remain absent',async()=>{
- const f=fixture({admin:false});f.data.getManagementPageAccess.catalogMessage='<設定の確認>';
+test('schema preparation is offered to every user without hiding management operations',async()=>{
+ const f=fixture({admin:false});f.data.getManagementPageAccess.initialSetupRequired=true;
  await f.go();const doc=f.dom.window.document;
- assert.match(doc.querySelector('.management-access-note').textContent,/<設定の確認>/);
- assert.equal(doc.querySelector('.management-access-note 設定の確認'),null);
- await f.go('members');assert.equal(doc.querySelector('[onclick="managementGo_(\'members\',\'add\')"]'),null);
+ assert.match(doc.querySelector('.management-access-note').textContent,/初回のデータ準備/);
+ assert.ok(doc.querySelector('.management-access-note button'));
+ await f.go('members');assert.match(doc.getElementById('managementContent').textContent,/メンバーを追加/);
  f.dom.window.close();
 });
