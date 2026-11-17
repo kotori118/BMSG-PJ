@@ -70,3 +70,32 @@ test('cover opening and editor reads are scoped to the requested screen', () => 
   assert.match(server, /SHEETS\.SONGS, 'Artist', selected, false/);
   assert.match(client, /getCoverProjects\(getUniverseUserId\(\)\)/);
 });
+
+test('ANALYSIS uses its shared cache key for reads, song writes, and timer writes', () => {
+  const analysis = fs.readFileSync(path.join(root, 'AnalysisApi.gs'), 'utf8');
+  const cache = fs.readFileSync(path.join(root, 'CacheInvalidation.gs'), 'utf8');
+  const timer = fs.readFileSync(path.join(root, 'PerformanceTimerApi.gs'), 'utf8');
+  assert.doesNotMatch(analysis, /const\s+ANALYSIS_CACHE_KEY\s*=/);
+  assert.match(analysis, /cache\.get\(UNIVERSE_CACHE_KEYS_\.ANALYSIS\)/);
+  assert.match(analysis, /cache\.put\(UNIVERSE_CACHE_KEYS_\.ANALYSIS,/);
+  assert.match(cache, /ANALYSIS:\s*'analysis_bootstrap_v2_without_part_transfers'/);
+  assert.match(timer, /clearUniverseAnalysisMutationCaches_\(\)/);
+  assert.doesNotMatch(timer, /analysis_bootstrap_v1/);
+
+  const evicted = [];
+  const sandbox = {
+    CacheService: { getScriptCache: () => ({ removeAll: (keys) => evicted.push([...keys]) }) },
+    UNIVERSE_CONFIG: { SHEETS: { MEMBERS: '02_Members' } },
+    readCoreSheetObjects_: () => []
+  };
+  vm.runInNewContext(cache + '\nclearUniverseAnalysisMutationCaches_(); clearUniverseSongMutationCaches_();', sandbox);
+  assert.equal(evicted.length, 2);
+  for (const keys of evicted) assert.ok(keys.includes('analysis_bootstrap_v2_without_part_transfers'));
+});
+
+test('retired part-transfer analysis has no remaining UI, API, CSS, or config references', () => {
+  const forbidden = /PART_TRANSFERS|partTransferData|buildAnalysisPartTransfer_|analysisTransferSongs|パート継承分析/;
+  for (const file of ['AnalysisApi.gs', 'AnalysisScripts.html', 'AnalysisStyles.html', 'Config.gs']) {
+    assert.doesNotMatch(fs.readFileSync(path.join(root, file), 'utf8'), forbidden, file);
+  }
+});
