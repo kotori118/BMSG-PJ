@@ -244,16 +244,42 @@
       cmField_('cmEditGroup','対象',cmSelect_('cmEditGroup',cmOptions_(g,'GroupID','GroupName')))+
       cmField_('cmEditGroupName','名称',cmInput_('cmEditGroupName','text',''))+
       cmField_('cmEditGroupColor','カラー',cmInput_('cmEditGroupColor','color','#777777'))+
-      '<div class="cm-actions"><button class="u-btn" onclick="cmFillGroup_()" type="button">読込</button><button class="u-btn" onclick="cmSaveGroup_()" type="button">保存</button></div><p class="cm-note">曲などで使用中のグループ名は変更できません。カラーは更新可能です。</p></section></div>';
+      '<div class="cm-actions"><button class="u-btn" onclick="cmFillGroup_()" type="button">読込</button><button class="u-btn" onclick="cmSaveGroup_()" type="button">保存</button></div><p class="cm-note">曲などで使用中のグループ名は変更できません。カラーは更新可能です。同じカラーコードを持つ別のグループ・メンバーがいる場合は登録できません。</p></section></div>';
   }
-  function cmCreateGroup_(){cmCall_('catalogManagementCreateGroup',{name:cmValue_('cmGroupName'),kind:cmValue_('cmGroupKind'),color:cmValue_('cmGroupColor')});}
+  /** Fast feedback only. BMSG-DB performs authoritative validation under lock. */
+  function cmColorAvailable_(hex,kind,id){
+    const normalized=String(hex||'').trim().toUpperCase();
+    if(!/^#[0-9A-F]{6}$/.test(normalized)){cmNotify_('カラーは #RRGGBB 形式で指定してください。');return false;}
+    const d=cmState.bootstrap||{},g=d.groups||[],m=d.members||[];
+    const own=(kind==='GROUP'?g:m).find(function(x){
+      return String(kind==='GROUP'?x.GroupID:x.MemberID)===String(id);
+    });
+    if(own&&String(own.ColorHex||'').toUpperCase()===normalized)return true;
+    const conflicts=g.map(function(x){return {kind:'GROUP',id:x.GroupID,name:x.GroupName,hex:x.ColorHex};})
+      .concat(m.map(function(x){return {kind:'MEMBER',id:x.MemberID,name:x.DisplayName,hex:x.ColorHex};}))
+      .filter(function(x){
+        return String(x.hex||'').toUpperCase()===normalized&&
+          !(x.kind===kind&&String(x.id)===String(id));
+      });
+    if(conflicts.length){
+      cmNotify_('カラー '+normalized+' はすでに '+conflicts.map(function(x){return x.name;}).join('・')+' が使用しています。別の色を選んでください。');
+      return false;
+    }
+    return true;
+  }
+  function cmCreateGroup_(){
+    const color=cmValue_('cmGroupColor');
+    if(!cmColorAvailable_(color,'GROUP',''))return;
+    cmCall_('catalogManagementCreateGroup',{name:cmValue_('cmGroupName'),kind:cmValue_('cmGroupKind'),color:color});
+  }
   function cmFillGroup_(){
     const g=cmState.bootstrap.groups.find(x=>String(x.GroupID)===cmValue_('cmEditGroup'));if(!g)return;
     document.getElementById('cmEditGroupName').value=g.GroupName||'';
     document.getElementById('cmEditGroupColor').value=g.ColorHex||'#777777';
   }
   function cmSaveGroup_(){const id=cmValue_('cmEditGroup');if(!id){cmNotify_('グループを選択してください。');return;}
-    cmCall_('catalogManagementUpdateGroup',{groupId:id,name:cmValue_('cmEditGroupName'),color:cmValue_('cmEditGroupColor')});}
+    const color=cmValue_('cmEditGroupColor');if(!cmColorAvailable_(color,'GROUP',id))return;
+    cmCall_('catalogManagementUpdateGroup',{groupId:id,name:cmValue_('cmEditGroupName'),color:color});}
   function cmMembersHtml_(d){
     const main=d.groups.filter(x=>cmGroupActive_(x)&&cmGroupKind_(x)==='GROUP');
     const members=d.members.filter(cmMemberActive_);
@@ -261,6 +287,7 @@
       cmField_('cmMemberName','表示名',cmInput_('cmMemberName','text','','名前'))+
       cmField_('cmMemberMain','主所属グループ',cmSelect_('cmMemberMain',cmOptions_(main,'GroupID','GroupName')))+
       cmField_('cmMemberColor','カラー',cmInput_('cmMemberColor','color','#777777'))+
+      '<p class="cm-note">カラーコードは既存グループ・ユニット・メンバーと重複できません。</p>'+
       '<div class="cm-actions"><button class="u-btn" onclick="cmCreateMember_()" type="button">登録</button></div></section>'+
       '<section class="management-card"><h3 class="cm-section">既存メンバーを編集</h3>'+
       cmField_('cmEditMember','対象',cmSelect_('cmEditMember',cmOptions_(members,'MemberID','DisplayName')))+
@@ -268,13 +295,15 @@
       cmField_('cmEditMemberColor','カラー',cmInput_('cmEditMemberColor','color','#777777'))+
       '<div class="cm-actions"><button class="u-btn" onclick="cmFillMember_()" type="button">読込</button><button class="u-btn" onclick="cmSaveMember_()" type="button">保存</button></div></section></div>';
   }
-  function cmCreateMember_(){cmCall_('catalogManagementCreateMember',{name:cmValue_('cmMemberName'),primaryGroupId:cmValue_('cmMemberMain'),color:cmValue_('cmMemberColor')});}
+  function cmCreateMember_(){const color=cmValue_('cmMemberColor');if(!cmColorAvailable_(color,'MEMBER',''))return;
+    cmCall_('catalogManagementCreateMember',{name:cmValue_('cmMemberName'),primaryGroupId:cmValue_('cmMemberMain'),color:color});}
   function cmFillMember_(){const m=cmState.bootstrap.members.find(x=>String(x.MemberID)===cmValue_('cmEditMember'));if(!m)return;
     document.getElementById('cmEditMemberName').value=m.DisplayName||'';
     document.getElementById('cmEditMemberColor').value=m.ColorHex||'#777777';
   }
   function cmSaveMember_(){const id=cmValue_('cmEditMember');if(!id){cmNotify_('メンバーを選択してください。');return;}
-    cmCall_('catalogManagementUpdateMember',{memberId:id,name:cmValue_('cmEditMemberName'),color:cmValue_('cmEditMemberColor')});}
+    const color=cmValue_('cmEditMemberColor');if(!cmColorAvailable_(color,'MEMBER',id))return;
+    cmCall_('catalogManagementUpdateMember',{memberId:id,name:cmValue_('cmEditMemberName'),color:color});}
   function cmUnitsHtml_(d){
     const units=d.groups.filter(x=>cmGroupActive_(x)&&cmGroupKind_(x)==='UNIT');
     const members=d.members.filter(cmMemberActive_);
