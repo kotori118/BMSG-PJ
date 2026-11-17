@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
+import vm from 'node:vm';
 const root=path.resolve(import.meta.dirname,'..');
 const read=(p)=>fs.readFileSync(path.join(root,p),'utf8');
 
@@ -60,4 +61,33 @@ test('PartTransfers analysis is absent but singing/center metrics and timer rema
   assert.match(router,/renderPerformanceTimer\(/);
   assert.match(index,/include\('PerformanceTimerScripts'\)/);
   assert.match(cfg,/PERFORMANCE_METRICS: '10_PerformanceMetrics'/);
+});
+
+test('profile-field screen and server wrappers are admin-gated and isolated',()=>{
+  const ui=read('CatalogManagement.html');
+  const api=read('CatalogManagementApi.gs');
+  assert.match(ui,/プロフィール項目/);
+  assert.match(ui,/cmProfileFieldsHtml_/);
+  assert.match(ui,/cmCreateProfileField_/);
+  assert.match(ui,/cmSetProfileFieldActive_/);
+  assert.match(ui,/cmShowProfileField_/);
+  assert.match(ui,/getCatalogManagementProfileFields/);
+  assert.match(ui,/expectedActive:field\.isActive/);
+  assert.match(api,/function getCatalogManagementProfileFields\(userId\)/);
+  assert.match(api,/catalogManagementSiteAccess_\(userId\)/);
+  assert.match(api,/BMSGDB\.getCatalogProfileFieldsForUniverse/);
+  assert.match(api,/createCatalogProfileFieldForUniverse/);
+  assert.match(api,/setCatalogProfileFieldActiveForUniverse/);
+  assert.match(api,/catalogManagementRefreshProfileFieldCaches_/);
+  assert.doesNotMatch(api,/SpreadsheetApp\.openById/);
+});
+test('new management panel JavaScript parses and keeps existing management handlers',()=>{
+  const ui=read('CatalogManagement.html');
+  const match=ui.match(/<script>([\s\S]*?)<\/script>/);
+  assert.ok(match,'inline management JS missing');
+  assert.doesNotThrow(()=>new vm.Script(match[1]));
+  for(const symbol of ['cmDeleteSong_','cmAddUnitMember_','cmCreateSong_','cmSaveSongClass_','cmGroupsHtml_']){
+    assert.match(ui,new RegExp('function '+symbol+'\\('));
+  }
+  assert.match(ui,/grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
 });
