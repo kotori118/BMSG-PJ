@@ -55,7 +55,7 @@ function getCatalogManagementAccess(userId) {
     catalogManagementSiteAccess_(userId);
     return {enabled:true};
   }catch(error){
-    return {enabled:false};
+    return {enabled:false,message:String(error.message||'管理者の利用設定を確認してください。')};
   }
 }
 
