@@ -23,10 +23,12 @@
   .cm-actions{display:flex;gap:8px;flex-wrap:wrap}
   .cm-actions .u-btn{min-height:44px}
   .cm-field input[type=color]{min-height:48px;padding:4px 8px}
+  .cm-unit-list{margin:8px 0;padding-left:25px;font-size:13px;line-height:1.9}
+  .cm-unit-list li{padding:2px 0}
   @media(max-width:390px){.cm-tabs .u-btn{font-size:10px}.catalog-panel{padding:14px}}
 </style>
 <script>
-  const cmState={bootstrap:null,tab:'groups',busy:false,message:'',audit:null,profileFields:null};
+  const cmState={bootstrap:null,tab:'groups',busy:false,message:'',audit:null,profileFields:null,activeUnitId:''};
   function cmEscape_(v){
     return String(v==null?'':v).replace(/[&<>"']/g,function(ch){
       return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];
@@ -152,6 +154,7 @@
     else if(cmState.tab==='fields')html+=cmProfileFieldsHtml_();
     else html+=cmSongsHtml_(d);
     root.innerHTML='<div class="'+(cmState.busy?'cm-busy':'')+'">'+html+'</div>';
+    if(cmState.tab==='units')cmRenderUnitRoster_();
   }
   function cmGroupActive_(g){return String(g.RecordStatus||'ACTIVE').toUpperCase()!=='ARCHIVED';}
   function cmGroupKind_(g){return String(g.GroupKind||(Number(g.GroupID)<=4?'GROUP':'UNIT'));}
@@ -355,13 +358,88 @@
   function cmUnitsHtml_(d){
     const units=d.groups.filter(x=>cmGroupActive_(x)&&cmGroupKind_(x)==='UNIT');
     const members=d.members.filter(cmMemberActive_);
-    return '<div class="cm-forms"><section class="management-card"><h3 class="cm-section">ユニットへメンバー追加</h3>'+
-      cmField_('cmUnitTarget','ユニット',cmSelect_('cmUnitTarget',cmOptions_(units,'GroupID','GroupName')))+
-      cmField_('cmUnitMember','メンバー',cmSelect_('cmUnitMember',cmOptions_(members,'MemberID','DisplayName')))+
-      '<p class="cm-note">メンバーの主所属は変わりません。同じメンバーを複数ユニットに所属させられます。</p>'+
+    if(!units.length)return '<section class="management-card"><p class="cm-note">登録済みユニットがありません。先にグループ管理からユニットを作成してください。</p></section>';
+    if(!units.some(function(g){return String(g.GroupID)===String(cmState.activeUnitId);}))
+      cmState.activeUnitId=String(units[0].GroupID);
+    return '<div class="cm-forms"><section class="management-card">'+
+      '<h3 class="cm-section">ユニットの所属を管理</h3>'+
+      cmField_('cmUnitTarget','対象ユニット',
+        '<select id="cmUnitTarget" onchange="cmRenderUnitRoster_()">'+
+        cmOptions_(units,'GroupID','GroupName',cmState.activeUnitId)+'</select>')+
+      '<div id="cmUnitRoster" aria-live="polite"></div></section>'+
+      '<section class="management-card"><h3 class="cm-section">メンバーを追加</h3>'+
+      cmField_('cmUnitMember','追加するメンバー',
+        cmSelect_('cmUnitMember',cmOptions_(members,'MemberID','DisplayName')))+
+      '<p class="cm-note">追加・除外・並べ替えは、選択中ユニットの所属情報だけを変更します。メンバーの主所属・他ユニットの所属は変わりません。</p>'+
       '<div class="cm-actions"><button class="u-btn" onclick="cmAddUnitMember_()" type="button">所属を追加</button></div></section></div>';
   }
-  function cmAddUnitMember_(){cmCall_('catalogManagementAddUnitMember',{groupId:cmValue_('cmUnitTarget'),memberId:cmValue_('cmUnitMember')});}
+  function cmUnitRows_(){
+    const d=cmState.bootstrap||{},groupId=cmValue_('cmUnitTarget');
+    return (d.memberships||[]).filter(function(r){
+      return String(r.GroupID)===String(groupId)&&String(r.MemberID||'')!=='';
+    }).slice().sort(function(a,b){
+      return Number(a.DisplayOrder)-Number(b.DisplayOrder);
+    });
+  }
+  function cmRenderUnitRoster_(){
+    const container=document.getElementById('cmUnitRoster');
+    if(!container)return;
+    const groupId=cmValue_('cmUnitTarget');
+    cmState.activeUnitId=groupId;
+    const d=cmState.bootstrap||{},rows=cmUnitRows_();
+    if(!rows.length){
+      container.innerHTML='<p class="cm-note">現在、このユニットの所属メンバーはいません。</p>';
+      return;
+    }
+    const byId={};
+    (d.members||[]).forEach(function(m){byId[String(m.MemberID)]=m;});
+    const list='<ol class="cm-unit-list">'+rows.map(function(r){
+      const m=byId[String(r.MemberID)],name=m?m.DisplayName:'不明なメンバー ('+r.MemberID+')';
+      return '<li>'+cmEscape_(name)+' <span class="cm-note">#'+cmEscape_(r.MemberID)+'</span></li>';
+    }).join('')+'</ol>';
+    const selected=rows.map(function(r){
+      const m=byId[String(r.MemberID)];
+      return cmOption_(r.MemberID,(m?m.DisplayName:'不明')+'（'+r.DisplayOrder+'番）');
+    }).join('');
+    container.innerHTML='<p class="cm-note">現在の所属順（'+rows.length+'人）</p>'+list+
+      cmField_('cmUnitManageMember','並べ替え・除外するメンバー',
+        cmSelect_('cmUnitManageMember',selected))+
+      '<div class="cm-actions">'+
+        '<button class="u-btn" type="button" onclick="cmMoveUnitMember_(\'UP\')">上へ</button>'+
+        '<button class="u-btn" type="button" onclick="cmMoveUnitMember_(\'DOWN\')">下へ</button>'+
+        '<button class="u-btn cm-danger" type="button" onclick="cmRemoveUnitMember_()">所属を除外</button>'+
+      '</div>'+
+      '<p class="cm-note">「所属を除外」はユニットから外す操作です。メンバー自体やプロフィール・歌詞データは削除されません。</p>';
+  }
+  function cmSelectedUnitMembership_(){
+    const memberId=cmValue_('cmUnitManageMember');
+    return cmUnitRows_().find(function(r){return String(r.MemberID)===String(memberId);});
+  }
+  function cmAddUnitMember_(){
+    const groupId=cmValue_('cmUnitTarget'),memberId=cmValue_('cmUnitMember');
+    if(!groupId||!memberId){cmNotify_('ユニットとメンバーを選択してください。');return;}
+    cmCall_('catalogManagementAddUnitMember',{groupId:groupId,memberId:memberId});
+  }
+  function cmMoveUnitMember_(direction){
+    const groupId=cmValue_('cmUnitTarget'),r=cmSelectedUnitMembership_();
+    if(!groupId||!r){cmNotify_('並べ替える所属メンバーを選択してください。');return;}
+    cmCall_('catalogManagementMoveUnitMember',{
+      groupId:groupId,memberId:r.MemberID,direction:direction,
+      expectedOrder:Number(r.DisplayOrder)
+    });
+  }
+  function cmRemoveUnitMember_(){
+    const groupId=cmValue_('cmUnitTarget'),r=cmSelectedUnitMembership_();
+    if(!groupId||!r){cmNotify_('除外する所属メンバーを選択してください。');return;}
+    const d=cmState.bootstrap||{};
+    const g=(d.groups||[]).find(function(x){return String(x.GroupID)===String(groupId);});
+    const m=(d.members||[]).find(function(x){return String(x.MemberID)===String(r.MemberID);});
+    const groupName=g?g.GroupName:'このユニット',memberName=m?m.DisplayName:r.MemberID;
+    if(!window.confirm('「'+memberName+'」を「'+groupName+'」の所属から除外しますか？\nメンバー本体・主所属・他ユニットの所属は残ります。'))return;
+    cmCall_('catalogManagementRemoveUnitMember',{
+      groupId:groupId,memberId:r.MemberID,expectedOrder:Number(r.DisplayOrder)
+    });
+  }
   function cmSongsHtml_(d){
     const songs=d.songs||[],artists=d.groups.filter(cmGroupActive_).map(x=>({id:x.GroupName,label:x.GroupName}));
     d.members.filter(cmMemberActive_).forEach(x=>artists.push({id:x.DisplayName,label:x.DisplayName}));
