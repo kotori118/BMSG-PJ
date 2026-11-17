@@ -99,6 +99,7 @@
   }
 
   function openSettings() {
+    if (typeof refreshCatalogManagementSettingsAccess === 'function') refreshCatalogManagementSettingsAccess();
     const isLyricsRoute = currentRoute === 'lyrics';
     if (isLyricsRoute && typeof ensureKaraokeFavoriteSettingsEntry === 'function') ensureKaraokeFavoriteSettingsEntry();
     const karaokeFavoriteSection = document.getElementById('karaokeFavoriteSettingsSection');
