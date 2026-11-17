@@ -4,7 +4,7 @@
  * from BMSG_Universe_DB. The legacy ANALYSIS spreadsheet remains read-only.
  */
 
-const ANALYSIS_CACHE_KEY = 'analysis_bootstrap_v1';
+const ANALYSIS_CACHE_KEY = 'analysis_bootstrap_v2_no_metrics';
 const ANALYSIS_CACHE_SECONDS = 300;
 const ANALYSIS_GROUP_ID = '1';
 const ANALYSIS_KEYWORDS = ['夢','愛','涙','君','僕','未来','世界','時代','頂点','光','明日','Amazing','Crazy'];
@@ -33,7 +33,6 @@ function buildAnalysisDataset_() {
   const membersRows = readCoreSheetObjectsFromSpreadsheet_(spreadsheet, sheets.MEMBERS);
   const groupMembersRows = readCoreSheetObjectsFromSpreadsheet_(spreadsheet, sheets.GROUP_MEMBERS);
   const transfersRows = readCoreSheetObjectsFromSpreadsheet_(spreadsheet, sheets.PART_TRANSFERS);
-  const metrics = readAnalysisMetrics_(spreadsheet);
 
   const groupMemberIds = new Set(groupMembersRows
     .filter(function(row){ return asId_(row.GroupID) === ANALYSIS_GROUP_ID; })
@@ -109,54 +108,35 @@ function buildAnalysisDataset_() {
   const songDetails = {};
 
   songs.forEach(function(song){
-    const metric = metrics[song.id] || { sing:{}, center:{} };
     const lyrics = lyricsBySong[song.id] || [];
-    const singValues = memberIds.map(function(id){ return numericOrNull_(metric.sing[id]); });
-    const centerValues = memberIds.map(function(id){ return numericOrNull_(metric.center[id]); });
-    const singTotal = sumNumeric_(singValues);
-    const centerTotal = sumNumeric_(centerValues);
-    const hasSing = singTotal > 0;
-    const hasCenter = centerTotal > 0;
     const first = lyrics.length ? lyrics[0].membersArr : [];
     const last = lyrics.length ? lyrics[lyrics.length - 1].membersArr : [];
-
-    members.forEach(function(member, index){
-      const singRatio = hasSing && singValues[index] !== null ? round1_(singValues[index] / singTotal * 100) : null;
-      const centerRatio = hasCenter && centerValues[index] !== null ? round1_(centerValues[index] / centerTotal * 100) : null;
-      const hasLyric = lyrics.length > 0;
-      if (singRatio === null && centerRatio === null && !hasLyric) return;
+    members.forEach(function(member){
+      const hasPart = lyrics.some(function(line){
+        return line.membersArr.indexOf(member.name)!==-1 || line.membersArr.indexOf('ALL')!==-1;
+      });
+      if(!hasPart) return;
       memberAnalysis[member.name].songs.push({
-        songId: song.id, songName: song.name, year: song.year, timeValue: song.timeValue,
-        singRatio: singRatio, centerRatio: centerRatio, hasLyric: hasLyric,
-        isFirst: first.indexOf(member.name) !== -1, isLast: last.indexOf(member.name) !== -1
+        songId:song.id,songName:song.name,year:song.year,timeValue:song.timeValue,
+        hasLyric:true,isFirst:first.indexOf(member.name)!==-1,
+        isLast:last.indexOf(member.name)!==-1
       });
     });
-
-    const singSec = {}, centerSec = {};
-    members.forEach(function(member, index){ singSec[member.name] = singValues[index]; centerSec[member.name] = centerValues[index]; });
-
     timeline.push({
-      id: song.id, name: song.name, year: song.year, timeValue: song.timeValue,
-      singSec: singSec, singTotal: singTotal, centerSec: centerSec, centerTotal: centerTotal,
-      first: first, last: last
+      id:song.id,name:song.name,year:song.year,timeValue:song.timeValue,
+      first:first,last:last,parts:lyrics.length
     });
     otherSongs.push({
-      id: song.id, name: song.name, form: song.form, isTitleTrack: song.isTitleTrack, cdTitle: song.cdTitle,
-      timeValue: song.timeValue, lyricists: song.lyricists, composers: song.composers, choreographers: song.choreographers,
-      singSec: singSec, singTotal: singTotal, centerSec: centerSec, centerTotal: centerTotal, first: first, last: last
+      id:song.id,name:song.name,form:song.form,isTitleTrack:song.isTitleTrack,
+      cdTitle:song.cdTitle,timeValue:song.timeValue,
+      lyricists:song.lyricists,composers:song.composers,choreographers:song.choreographers,
+      first:first,last:last,parts:lyrics.length
     });
-
-    const singRatios = singValues.map(function(value){ return hasSing && value !== null ? round1_(value / singTotal * 100) : 0; });
-    const centerRatios = centerValues.map(function(value){ return hasCenter && value !== null ? round1_(value / centerTotal * 100) : 0; });
-    songDetails[song.id] = {
-      id: song.id, name: song.name,
-      singData: singRatios, centerData: centerRatios,
-      singBalance: calcAnalysisBalance_(singValues.map(function(v){ return v || 0; }), memberNames),
-      centerBalance: calcAnalysisBalance_(centerValues.map(function(v){ return v || 0; }), memberNames),
-      hasSing: hasSing, hasDance: hasCenter,
-      lyrics: lyrics.map(function(item){ return { members:item.members, text:item.text, order:item.order }; }),
-      firstSinger: first.length ? first.join(', ') : '-',
-      lastSinger: last.length ? last.join(', ') : '-'
+    songDetails[song.id]={
+      id:song.id,name:song.name,
+      lyrics:lyrics.map(function(item){return {members:item.members,text:item.text,order:item.order};}),
+      firstSinger:first.length?first.join(', '):'-',
+      lastSinger:last.length?last.join(', '):'-'
     };
   });
 
@@ -181,34 +161,6 @@ function buildAnalysisDataset_() {
   };
 }
 
-function readAnalysisMetrics_(spreadsheet) {
-  const sheetName = UNIVERSE_CONFIG.SHEETS.PERFORMANCE_METRICS;
-  const sheet = spreadsheet.getSheetByName(sheetName);
-  if (!sheet) throw new Error('Core DB sheet not found: ' + sheetName);
-  const values = sheet.getDataRange().getValues();
-  if (values.length < 3) return {};
-  const groupHeaders = values[0];
-  const memberHeaders = values[1];
-  let mode = '';
-  const descriptors = memberHeaders.map(function(memberId, index){
-    const group = String(groupHeaders[index] || '').trim();
-    if (group) mode = group === '歌唱秒数' ? 'sing' : (group === 'センター秒数' ? 'center' : mode);
-    return { index:index, mode:mode, memberId:asId_(memberId) };
-  });
-  const result = {};
-  values.slice(2).forEach(function(row){
-    const songId = asId_(row[0]);
-    if (!songId) return;
-    const entry = { sing:{}, center:{} };
-    descriptors.forEach(function(descriptor){
-      if (descriptor.index === 0 || !descriptor.mode || !descriptor.memberId) return;
-      entry[descriptor.mode][descriptor.memberId] = row[descriptor.index];
-    });
-    result[songId] = entry;
-  });
-  return result;
-}
-
 function parseAnalysisSingerIds_(rawValue, memberById) {
   let raw = String(rawValue === null || typeof rawValue === 'undefined' ? '' : rawValue).trim();
   if (!raw) return [];
@@ -228,37 +180,6 @@ function parseAnalysisSingerIds_(rawValue, memberById) {
 
 function splitAnalysisCredit_(value) {
   return String(value || '').split(',').map(function(item){ return item.trim(); }).filter(Boolean);
-}
-
-function numericOrNull_(value) {
-  if (value === '' || value === null || typeof value === 'undefined') return null;
-  const number = Number(value);
-  return Number.isFinite(number) ? number : null;
-}
-
-function sumNumeric_(values) {
-  return values.reduce(function(total, value){ return total + (typeof value === 'number' && Number.isFinite(value) ? value : 0); }, 0);
-}
-
-function round1_(value) { return Math.round(value * 10) / 10; }
-
-function calcAnalysisBalance_(values, memberNames) {
-  if (!values || !values.length) return { type:'データなし', level:null };
-  const sum = values.reduce(function(a,b){ return a + Number(b || 0); }, 0);
-  if (!sum) return { type:'データなし', level:null };
-  let maxValue = -1, maxIndex = -1;
-  values.forEach(function(value,index){ if (value > maxValue) { maxValue=value; maxIndex=index; } });
-  const sorted = values.slice().sort(function(a,b){ return a-b; });
-  const n = sorted.length;
-  let numerator = 0;
-  sorted.forEach(function(value,index){ numerator += (index+1)*value; });
-  let gini = (2*numerator)/(n*sum) - (n+1)/n;
-  if (n > 1) gini = gini / ((n-1)/n);
-  const level = Math.round(gini*100);
-  let type = 'バランス型';
-  if (level > 40) type = '超特化型 (' + memberNames[maxIndex] + ')';
-  else if (level > 20) type = '特化型 (' + memberNames[maxIndex] + ')';
-  return { type:type, level:level };
 }
 
 function buildAnalysisSequence_(songs, lyricsBySong) {
