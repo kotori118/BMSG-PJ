@@ -45,7 +45,7 @@ test('production library remains version-pinned and feature-flagged',()=>{
   const manifest=JSON.parse(read('appsscript.json'));
   const library=manifest.dependencies.libraries.find(x=>x.userSymbol==='BMSGDB');
   assert.equal(library.developmentMode,false);
-  assert.equal(library.version,'15');
+  assert.equal(library.version,'16');
   assert.match(read('ManagementPage.html'),/managementAllowed_/);
 });
 

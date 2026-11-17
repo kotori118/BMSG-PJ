@@ -235,3 +235,5 @@ DBのcatalogRequireAdmin_をcatalogRequireUser_へ置換し、メール・activa
 schema照合、採番、revision照合、共有Writer lock、Audit、rollback、依存関係・外部参照の確認、削除の二重確認、別ファイルバックアップ、復元preview等は維持する。権限設定不要と、破損／未準備データを無条件に保存することは区別する。本番DBの初期整備・実保存はこのコード変更では実行しない。
 
 PJ58件＋監査7件、DB75件が成功。3ユーザーすべてでメール／propertyなしの管理入口・Guest編集・グループ編集・readiness確認を追加検証。未知UserIDの拒否、依存関係／バックアップ要件、既存の途中失敗rollbackを維持。公開版・library版と描画CI結果はPR／Actions最新記録へ追記する。
+
+DB PR #4のmain反映後、deploy run44084160731が成功しBMSGDB version16を発行した。PJの固定参照と固定版テストを15→16へ更新。直前の公開版27／library15と両repo backup/pre-shared-management-20261117を切り戻し基準として保存。公開成否はPR #66／後続Actionsに記録する。
