@@ -53,9 +53,9 @@ test('profile selects exactly the same designated member image without 09_Images
   table.Images=other;
   const out2=env.buildProfileMembersPayload_();
   assert.match(out2.members.find(m=>m.memberId==='M101').imageUrl,/file_M101_R=/);
-  assert.match(out2.members.find(m=>m.memberId==='102').imageUrl,/file_M102_SSR=/);
+  assert.match(out2.members.find(m=>m.memberId==='M102').imageUrl,/file_M102_SSR=/);
 });
-test('image management accepts the six-column Image table and does not require DisplayOrder',()=>{
+test('image management accepts the five-column Image table and does not require DisplayOrder',()=>{
   const header=['ImageID','MemberID','Rarity','DriveFileID','IsProfileMain'];
   const values=[header,...images.filter(r=>r.MemberID==='M101').map(r=>[r.ImageID,r.MemberID,r.Rarity,r.DriveFileID,r.IsProfileMain])];
   const sheet={getDataRange:()=>({getValues:()=>values}),getMaxRows:()=>100};
@@ -68,9 +68,9 @@ test('image management accepts the six-column Image table and does not require D
   const found=env.imageMgmtFindImageRow_(core,'M101','SSR');
   assert.equal(found.record.ImageID,'1');
 });
-test('image management generates missing rarities in the six-column sheet',()=>{
-  const values=[['ImageID','TargetType','TargetID','Rarity','DriveFileID','IsProfileMain'],
-    ['4','Member','M101','SSR','file_101_SSR',true]];
+test('image management generates missing rarities in the five-column sheet',()=>{
+  const values=[['ImageID','MemberID','Rarity','DriveFileID','IsProfileMain'],
+    ['4','M101','SSR','file_M101_SSR',true]];
   const reservations=[];
   const sheet={
     getDataRange:()=>({getValues:()=>values}),
