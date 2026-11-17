@@ -135,6 +135,13 @@ function catalogManagementDeleteMember(payload){
   return result;
 }
 
+/** UNIT-only membership operations; the BMSG-DB writer enforces the shared lock. */
+function catalogManagementRemoveUnitMember(payload){
+  return catalogManagementCallWriter_('removeCatalogUnitMemberForUniverse',payload);
+}
+function catalogManagementMoveUnitMember(payload){
+  return catalogManagementCallWriter_('moveCatalogUnitMemberForUniverse',payload);
+}
 function catalogManagementAddUnitMember(payload){
   return catalogManagementCallWriter_('addCatalogUnitMemberForUniverse',payload);
 }
