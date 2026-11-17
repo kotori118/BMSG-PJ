@@ -84,8 +84,12 @@ function catalogManagementCreateSongDraft(payload){
 function catalogManagementSaveSongClass(payload){
   return catalogManagementCallWriter_('saveCatalogSoloForUniverse',payload);
 }
-function catalogManagementSetSongStatus(payload){
-  return catalogManagementCallWriter_('setCatalogSongArchiveForUniverse',payload);
+function getCatalogManagementDeletePreview(payload){
+  payload=payload||{};catalogManagementSiteAccess_(payload.userId);
+  return BMSGDB.getCatalogSongDeletePreviewForUniverse(payload);
+}
+function catalogManagementDeleteSong(payload){
+  return catalogManagementCallWriter_('deleteCatalogSongForUniverse',payload);
 }
 function catalogManagementMigrateSchema(payload){
   return catalogManagementCallWriter_('migrateCatalogManagementSchemaForUniverse',payload);
