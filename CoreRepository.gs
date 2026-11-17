@@ -23,21 +23,13 @@ function readCoreSheetObjectsFromSpreadsheet_(spreadsheet, sheetName) {
   if (lastRow < 2 || lastColumn < 1) return [];
 
   const values = sheet.getRange(1, 1, lastRow, lastColumn).getValues();
-  const records = coreRowsToObjects_(values);
-  if (sheetName === UNIVERSE_CONFIG.SHEETS.SONGS) return records.filter(function(row){
-    return String(row.RecordStatus || 'ACTIVE').trim().toUpperCase() !== 'ARCHIVED';
-  });
-  return records;
+  return coreRowsToObjects_(values);
 }
 
 function readCoreSheetDisplayObjects_(sheetName) {
   const sheet = getCoreSheetFromSpreadsheet_(getCoreSpreadsheet_(), sheetName);
   const values = sheet.getDataRange().getDisplayValues();
-  const records = coreRowsToObjects_(values);
-  if (sheetName === UNIVERSE_CONFIG.SHEETS.SONGS) return records.filter(function(row){
-    return String(row.RecordStatus || 'ACTIVE').trim().toUpperCase() !== 'ARCHIVED';
-  });
-  return records;
+  return coreRowsToObjects_(values);
 }
 
 function coreRowsToObjects_(values) {
