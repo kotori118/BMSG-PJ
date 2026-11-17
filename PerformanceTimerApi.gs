@@ -14,7 +14,6 @@ const PERFORMANCE_TIMER_TYPES = Object.freeze({
 function getPerformanceTimerBootstrap() {
   const ss = SpreadsheetApp.openById(UNIVERSE_CONFIG.CORE_DB_ID);
   const songs = readPerformanceTimerObjects_(ss, UNIVERSE_CONFIG.SHEETS.SONGS)
-    .filter(function(row){return String(row.RecordStatus||'ACTIVE').trim().toUpperCase()!=='ARCHIVED';})
     .filter(function(row){ return String(row.Artist || '').trim() === 'BE:FIRST'; })
     .map(function(row){
       const rawDate = row.ReleaseDate;
