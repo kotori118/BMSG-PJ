@@ -293,7 +293,18 @@
       cmField_('cmEditMember','対象',cmSelect_('cmEditMember',cmOptions_(members,'MemberID','DisplayName')))+
       cmField_('cmEditMemberName','名前',cmInput_('cmEditMemberName','text',''))+
       cmField_('cmEditMemberColor','カラー',cmInput_('cmEditMemberColor','color','#777777'))+
-      '<div class="cm-actions"><button class="u-btn" onclick="cmFillMember_()" type="button">読込</button><button class="u-btn" onclick="cmSaveMember_()" type="button">保存</button></div></section></div>';
+      '<div class="cm-actions"><button class="u-btn" onclick="cmFillMember_()" type="button">読込</button><button class="u-btn" onclick="cmSaveMember_()" type="button">保存</button></div></section>'+
+      '<section class="management-card"><h3 class="cm-section">主所属・表示順の変更</h3>'+
+      cmField_('cmMaintenanceMember','メンバー',cmSelect_('cmMaintenanceMember',cmOptions_(members,'MemberID','DisplayName')))+
+      cmField_('cmMaintenanceGroup','新しい主所属',cmSelect_('cmMaintenanceGroup',cmOptions_(main,'GroupID','GroupName')))+
+      '<p class="cm-note">MemberIDは変更しません。主所属の変更時は04_GroupMembersも同時に整合させます。表示順は同じ主所属グループ内の上下入替です。</p>'+
+      '<div class="cm-actions"><button class="u-btn" type="button" onclick="cmChangePrimaryGroup_()">主所属を変更</button>'+
+      '<button class="u-btn" type="button" onclick="cmMoveMember_(\'UP\')">上へ移動</button>'+
+      '<button class="u-btn" type="button" onclick="cmMoveMember_(\'DOWN\')">下へ移動</button></div></section>'+
+      '<section class="management-card"><h3 class="cm-section">メンバーを削除</h3>'+
+      '<p class="cm-note">プロフィールや歌詞、ゲーム等に参照が残る場合は削除を拒否。参照のないメンバーだけ、バックアップ確認後に完全削除できます。MemberIDは再利用しません。</p>'+
+      cmField_('cmDeleteMember','削除対象',cmSelect_('cmDeleteMember',cmOptions_(members,'MemberID','DisplayName')))+
+      '<div class="cm-actions"><button class="u-btn cm-danger" type="button" onclick="cmDeleteMember_()">参照を確認して削除</button></div></section></div>';
   }
   function cmCreateMember_(){const color=cmValue_('cmMemberColor');if(!cmColorAvailable_(color,'MEMBER',''))return;
     cmCall_('catalogManagementCreateMember',{name:cmValue_('cmMemberName'),primaryGroupId:cmValue_('cmMemberMain'),color:color});}
@@ -304,6 +315,43 @@
   function cmSaveMember_(){const id=cmValue_('cmEditMember');if(!id){cmNotify_('メンバーを選択してください。');return;}
     const color=cmValue_('cmEditMemberColor');if(!cmColorAvailable_(color,'MEMBER',id))return;
     cmCall_('catalogManagementUpdateMember',{memberId:id,name:cmValue_('cmEditMemberName'),color:color});}
+  function cmMoveMember_(direction){
+    const memberId=cmValue_('cmMaintenanceMember');
+    if(!memberId){cmNotify_('並べ替えるメンバーを選択してください。');return;}
+    cmCall_('catalogManagementMoveMemberOrder',{memberId:memberId,direction:direction});
+  }
+  function cmChangePrimaryGroup_(){
+    const memberId=cmValue_('cmMaintenanceMember'),groupId=cmValue_('cmMaintenanceGroup');
+    if(!memberId||!groupId){cmNotify_('メンバーと主所属グループを選んでください。');return;}
+    const m=(cmState.bootstrap.members||[]).find(function(x){return String(x.MemberID)===memberId;});
+    const g=(cmState.bootstrap.groups||[]).find(function(x){return String(x.GroupID)===groupId;});
+    if(!m||!g)return;
+    if(String(m.GroupID)===groupId){cmNotify_('すでにこの主所属です。');return;}
+    if(!window.confirm('「'+m.DisplayName+'」の主所属を「'+g.GroupName+'」に変更しますか？\nMemberIDは変更しません。'))return;
+    cmCall_('catalogManagementChangePrimaryGroup',{memberId:memberId,primaryGroupId:groupId});
+  }
+  function cmDeleteMember_(){
+    const id=cmValue_('cmDeleteMember');
+    const m=(cmState.bootstrap.members||[]).find(function(x){return String(x.MemberID)===id;});
+    if(!m){cmNotify_('削除するメンバーを選択してください。');return;}
+    if(cmState.busy)return;
+    cmState.busy=true;cmState.message='メンバーの関連データを確認中...';cmRender_();
+    google.script.run.withSuccessHandler(function(preview){
+      cmState.busy=false;
+      if(!preview||!preview.ok){cmNotify_('参照状況を確認できないため削除は中止しました。');return;}
+      if(!preview.canDelete){
+        cmNotify_('削除できません: '+(preview.blockers||[]).join(' / '));return;
+      }
+      if(!window.confirm('「'+m.DisplayName+'」（MemberID '+id+'）を完全削除します。\n元には戻せません。続けますか？'))return;
+      const typed=window.prompt('確定するにはMemberID「'+id+'」を入力してください。');
+      if(typed!==id)return;
+      if(!window.confirm('Universe外部のシート・サービスにこのMemberIDの参照が残っていないことを確認しましたか？'))return;
+      cmCall_('catalogManagementDeleteMember',{memberId:id,confirm:id,confirmName:m.DisplayName,externalReferencesChecked:true});
+    }).withFailureHandler(function(e){
+      cmState.busy=false;cmNotify_('参照状況の確認に失敗しました: '+(e.message||e));
+    }).getCatalogManagementMemberDeletePreview({userId:getUniverseUserId(),memberId:id});
+  }
+
   function cmUnitsHtml_(d){
     const units=d.groups.filter(x=>cmGroupActive_(x)&&cmGroupKind_(x)==='UNIT');
     const members=d.members.filter(cmMemberActive_);
