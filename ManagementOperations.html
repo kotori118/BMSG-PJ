@@ -73,10 +73,10 @@
     const payload={operation:kind,action:'DELETE',confirm:moState.selected,expectedRevision:moState.revision};payload[{guest:'guestId',group:'groupId',image:'imageId'}[kind]]=moState.selected;moRun_(payload);
   }
   function moOptionsHtml_(){
-    const labels={UNIVERSE_SITE_ONLY_WRITES:'旧入力シートからの更新を停止',UNIVERSE_CATALOG_PROFILE_FIELDS_ENABLED:'プロフィール項目の追加・変更',UNIVERSE_CATALOG_MEMBER_MAINTENANCE_ENABLED:'メンバーの主所属・順番変更',UNIVERSE_CATALOG_MEMBER_DELETE_ENABLED:'安全確認付きメンバー削除',UNIVERSE_CATALOG_SONG_DELETE_ENABLED:'安全確認付き楽曲削除'};
-    return '<section class="management-card"><p class="management-lead">管理用データの初期整備とバックアップ後に変更できます。管理者の認証方式・権限は変更しません。</p>'+Object.keys(labels).map(function(key){return '<label class="management-field"><span><input id="moFlag_'+key+'" type="checkbox" '+(moState.data.flags&&moState.data.flags[key]?'checked':'')+'> '+labels[key]+'</span></label>';}).join('')+'<button class="u-btn" onclick="moSaveOptions_()">設定を確認して保存</button></section>';
+    const labels={UNIVERSE_SITE_ONLY_WRITES:'旧入力シートからの更新を停止'};
+    return '<section class="management-card"><p class="management-lead">管理用データの初期整備とバックアップ後に変更できます。サイトの登録・編集機能は全ユーザーが利用できます。</p>'+Object.keys(labels).map(function(key){return '<label class="management-field"><span><input id="moFlag_'+key+'" type="checkbox" '+(moState.data.flags&&moState.data.flags[key]?'checked':'')+'> '+labels[key]+'</span></label>';}).join('')+'<button class="u-btn" onclick="moSaveOptions_()">設定を確認して保存</button></section>';
   }
-  function moSaveOptions_(){const flags={};Object.keys(moState.data.flags||{}).forEach(function(key){flags[key]=cmChecked_('moFlag_'+key);});if(window.confirm('選択した管理機能の有効／無効を変更しますか？')&&window.prompt('CONFIGURE_MANAGEMENT と入力してください。')==='CONFIGURE_MANAGEMENT')moRun_({operation:'configure',flags:flags,confirm:'CONFIGURE_MANAGEMENT'});}
+  function moSaveOptions_(){const flags={};Object.keys(moState.data.flags||{}).forEach(function(key){flags[key]=cmChecked_('moFlag_'+key);});if(window.confirm('旧入力シートからの更新設定を変更しますか？')&&window.prompt('CONFIGURE_MANAGEMENT と入力してください。')==='CONFIGURE_MANAGEMENT')moRun_({operation:'configure',flags:flags,confirm:'CONFIGURE_MANAGEMENT'});}
   function moBackup_(){if(window.confirm('CoreとLogのバックアップを作成しますか？'))moRun_({operation:'backup',confirm:'CREATE_BACKUP'});}
   function moPrepare_(){if(window.confirm('バックアップを作成し、管理用の列・監査ログを準備して、廃止ロゴの登録データを取り除きます。実行しますか？')&&window.prompt('実行する場合は PREPARE_MANAGEMENT と入力してください。')==='PREPARE_MANAGEMENT')moRun_({operation:'prepare',confirm:'PREPARE_MANAGEMENT'});}
   function moLoadHistory_(reset){

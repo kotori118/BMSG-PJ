@@ -222,3 +222,16 @@ DB：CatalogMaintenance.gs新設、CatalogManagement.gsのShowMinorSavage GROUP�
 追加機能が出ない条件は、UNIVERSE_CATALOG_ENABLED、管理者allowlist、Sessionメール認識による既存gate。実環境の設定値は未取得なので、未設定の断定や権限の自動拡張は行わない。getManagementPageAccessに既存拒否理由を返し、非管理者の管理トップで追加機能の利用設定が必要と表示する。allowlistの値・メールは返さない。保護された操作リンクは引き続き非表示。DBの管理者設定・schema初期整備と実保存は未実施のまま。
 
 GitHub CIにPlaywright/Chromiumで32レイアウト（4幅×2テーマ×管理トップ／楽曲追加／プロフィール／グループ追加）の実寸検証を追加。実際のCSSと、既存関数で合成fixtureを描画したDOMを使用する。外部の実データやユーザーログは使わず、本番保存も行わない。390pxの各画面スクリーンショットをworkflow artifactに残す。これはデスクトップChromiumによる合成表示であり、iPhone Safari実機・本番API認証の証明ではない。テストの実行結果・公開版はPR／Actionsの最新記録を参照。
+
+
+## 13. 管理者区分を廃止・全ユーザーで共通管理（2026-11-17）
+
+利用者の明示指示「管理者設定なんていらなくて全部誰でもできればいい」を最新確定仕様とする。登録済みUniverse UserID U001／U002／U003の全員に、全カテゴリ・追加／編集／削除・点検／バックアップ／初期整備／復元を開放する。Googleアカウントメール、管理者allowlist、機能有効化flagは操作権限に使用しない。未選択・未知UserIDは従来の利用ユーザー選択へ戻す。利用UserIDはログイン認証やセキュリティ境界ではなく、これまでの私用サイトの利用者識別として扱う。第三者のGoogle Drive／Sheets権限そのものを追加・変更する実装ではない。
+
+PJ catalogManagementSiteAccess_は既存USER_IDS選択だけを検証、getManagementPageAccessは全員catalog:true。管理トップ／操作のrole別非表示と管理者設定案内を撤去。初期schemaが未整備なら、DBの読取専用readiness APIを使って初期整備への入口を全員に表示する。起動時にDBを書き換えず、利用者が画面で確認してバックアップ・移行を実行する。
+
+DBのcatalogRequireAdmin_をcatalogRequireUser_へ置換し、メール・activation flag判定を撤去。主所属・並べ替え・項目追加／非表示／復元・曲／メンバー削除の個別有効化flagも撤去。監査の既存ActorEmail列名は変えず、新しい管理操作の操作者識別は選択UserIDを記録する。旧ログを変更しない。旧入力シートの停止flag UNIVERSE_SITE_ONLY_WRITESだけは入力方法の運用設定として保持し、画面名を「旧入力シートの設定」へ変更。これは管理権限設定ではない。
+
+schema照合、採番、revision照合、共有Writer lock、Audit、rollback、依存関係・外部参照の確認、削除の二重確認、別ファイルバックアップ、復元preview等は維持する。権限設定不要と、破損／未準備データを無条件に保存することは区別する。本番DBの初期整備・実保存はこのコード変更では実行しない。
+
+PJ58件＋監査7件、DB75件が成功。3ユーザーすべてでメール／propertyなしの管理入口・Guest編集・グループ編集・readiness確認を追加検証。未知UserIDの拒否、依存関係／バックアップ要件、既存の途中失敗rollbackを維持。公開版・library版と描画CI結果はPR／Actions最新記録へ追記する。

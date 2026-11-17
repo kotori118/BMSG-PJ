@@ -1,6 +1,6 @@
-/** Read-only navigation capabilities. Actual operations keep their existing server gates. */
+/** All Universe users share management; readiness is read-only. */
 function getManagementPageAccess(userId) {
-  normalizeUniverseStateUserId_(userId);
-  const access=getCatalogManagementAccess(userId);
-  return {registered:true,catalog:access.enabled===true,catalogMessage:access.enabled?'':access.message};
+  const uid=catalogManagementSiteAccess_(userId);
+  const schema=BMSGDB.getCatalogManagementReadinessForUniverse({userId:uid});
+  return {registered:true,catalog:true,initialSetupRequired:!schema.ready};
 }

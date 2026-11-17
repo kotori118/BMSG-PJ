@@ -5,7 +5,7 @@
     members:{title:'メンバー・プロフィール',description:'メンバーの登録とプロフィールを管理',actions:{add:['メンバーを追加','catalog'],edit:['メンバー情報を編集','catalog'],profile:['プロフィールを編集','profile'],fields:['プロフィール項目を管理','operations']}},
     groups:{title:'グループ・ユニット',description:'グループの基本情報とユニットの所属を管理',actions:{add:['グループ・ユニットを追加','catalog'],edit:['グループ・ユニットを編集','operations'],units:['ユニットのメンバーを管理','catalog']}},
     images:{title:'メンバー画像',description:'プロフィールやトレカで使う画像を設定',actions:{edit:['画像を登録・差し替え','image'],settings:['画像の表示設定','operations']}},
-    maintenance:{title:'データ点検・保守',description:'管理者向けのデータ整合性点検',actions:{audit:['データを点検','catalog'],history:['変更履歴を見る','operations'],backup:['バックアップ・復元','operations'],prepare:['初期整備・移行','operations'],repair:['不足データを修復','operations'],options:['管理機能の設定','operations']}}
+    maintenance:{title:'データ点検・保守',description:'データの整合性点検とバックアップ',actions:{audit:['データを点検','catalog'],history:['変更履歴を見る','operations'],backup:['バックアップ・復元','operations'],prepare:['初期整備・移行','operations'],repair:['不足データを修復','operations'],options:['旧入力シートの設定','operations']}}
   });
   const managementState={params:{page:'manage'},access:null,epoch:0,dirty:false,loading:false};
   const MANAGEMENT_EDITOR_IDS=['catalogManagementOverlay','songLyricsManagementOverlay','profileManagementOverlay','imageManagementOverlay'];
@@ -22,10 +22,7 @@
   function managementAllowed_(section,action){
     const access=managementState.access;
     if(!access||!access.registered)return false;
-    if(section==='maintenance')return !!access.catalog;
-    if(!MANAGEMENT_SECTIONS[section]||action&&!MANAGEMENT_SECTIONS[section].actions[action])return false;
-    if(action&&MANAGEMENT_SECTIONS[section].actions[action][1]!=='slm'&&MANAGEMENT_SECTIONS[section].actions[action][1]!=='profile'&&MANAGEMENT_SECTIONS[section].actions[action][1]!=='image')return !!access.catalog;
-    return section!=='groups'||!!access.catalog;
+    return !!MANAGEMENT_SECTIONS[section]&&(!action||!!MANAGEMENT_SECTIONS[section].actions[action]);
   }
   function managementCard_(title,description,handler){return '<button class="u-btn management-choice" type="button" onclick="'+handler+'"><span><strong>'+cmEscape_(title)+'</strong>'+(description?'<small>'+cmEscape_(description)+'</small>':'')+'</span><b aria-hidden="true">›</b></button>';}
   function initManagementPage(params){
@@ -55,7 +52,7 @@
     if(!managementState.access.registered){root.innerHTML='<p class="management-lead">利用ユーザーを選択してください。</p>';return;}
     if(p.section&&(!section||!managementAllowed_(p.section,p.action))||p.action&&!action){root.innerHTML='<p class="management-error">この操作は利用できません。</p>';return;}
     if(!p.section){
-      root.innerHTML=(!managementState.access.catalog?'<aside class="management-access-note management-card" role="status"><strong>追加の管理機能は利用設定が必要です</strong><p class="management-lead">'+cmEscape_(managementState.access.catalogMessage||'管理者の利用設定を確認してください。')+'</p></aside>':'')+'<div class="management-grid">'+Object.keys(MANAGEMENT_SECTIONS).filter(function(key){return key!=='maintenance'&&managementAllowed_(key);}).map(function(key){const s=MANAGEMENT_SECTIONS[key];return managementCard_(s.title,s.description,"managementGo_('"+key+"')");}).join('')+'</div>'+(managementAllowed_('maintenance')?'<section class="management-maintenance">'+managementCard_(MANAGEMENT_SECTIONS.maintenance.title,MANAGEMENT_SECTIONS.maintenance.description,"managementGo_('maintenance')")+'</section>':'');return;
+      root.innerHTML=(managementState.access.initialSetupRequired?'<aside class="management-access-note management-card" role="status"><strong>初回のデータ準備が必要です</strong><p class="management-lead">バックアップを作成して、登録・編集に必要なデータを準備します。</p><button class="u-btn" onclick="managementGo_(\'maintenance\',\'prepare\')">初期整備を開く</button></aside>':'')+'<div class="management-grid">'+Object.keys(MANAGEMENT_SECTIONS).filter(function(key){return key!=='maintenance'&&managementAllowed_(key);}).map(function(key){const s=MANAGEMENT_SECTIONS[key];return managementCard_(s.title,s.description,"managementGo_('"+key+"')");}).join('')+'</div>'+(managementAllowed_('maintenance')?'<section class="management-maintenance">'+managementCard_(MANAGEMENT_SECTIONS.maintenance.title,MANAGEMENT_SECTIONS.maintenance.description,"managementGo_('maintenance')")+'</section>':'');return;
     }
     if(!p.action){root.innerHTML='<h2 class="management-section-title">'+section.title+'</h2><p class="management-lead">'+section.description+'</p><div class="management-operation-list">'+Object.keys(section.actions).filter(function(key){return managementAllowed_(p.section,key);}).map(function(key){return managementCard_(section.actions[key][0],'',"managementGo_('"+p.section+"','"+key+"')");}).join('')+'</div>';return;}
     root.innerHTML='<h2 class="management-section-title">'+action[0]+'</h2><div id="managementEditorHost"></div>';
