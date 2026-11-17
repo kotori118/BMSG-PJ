@@ -99,3 +99,33 @@ test('retired part-transfer analysis has no remaining UI, API, CSS, or config re
     assert.doesNotMatch(fs.readFileSync(path.join(root, file), 'utf8'), forbidden, file);
   }
 });
+
+
+test('LYRICS keeps その他UNIT last even after dynamic unit registration', () => {
+  const source = fs.readFileSync(path.join(root, 'LyricsScripts.html'), 'utf8');
+  const match = source.match(/  function renderLyricsAllStars\(\)\{[\s\S]*?\n  \}/);
+  assert.ok(match, 'renderLyricsAllStars must exist');
+  const target = { innerHTML: '' };
+  const sandbox = {
+    lyricsState: { unit: '' },
+    LYRICS_UNITS: ['ALL', 'BMSG ALLSTARS', 'その他UNIT', 'BMSG NINE'],
+    unitSongs: (unit) => unit === 'ALL' ? [] : [{ songId: '5029', title: 'My Story', releaseDate: '2026-01-01' }],
+    document: { getElementById: () => target },
+    lyricsGroupHeader_: () => '',
+    songTime: () => 0,
+    escapeLyrics: (v) => String(v),
+    lyricArg: (v) => String(v),
+    scrollLyricsTop: () => {}
+  };
+  vm.runInNewContext(match[0] + '\nrenderLyricsAllStars();', sandbox);
+  const newUnit = target.innerHTML.indexOf('BMSG NINE</h3>');
+  const other = target.innerHTML.indexOf('その他UNIT</h3>');
+  assert.ok(newUnit >= 0 && other > newUnit, 'new units must appear before その他UNIT');
+});
+
+test('LYRICS has a persistent route to MANAGEMENT', () => {
+  const page = fs.readFileSync(path.join(root, 'LyricsPage.html'), 'utf8');
+  const css = fs.readFileSync(path.join(root, 'LyricsStyles.html'), 'utf8');
+  assert.match(page, /class="u-btn lyrics-management-access-button"[^>]*onclick="navigateTo\('manage'\)"/);
+  assert.match(css, /\.lyrics-management-access\{position:sticky;/);
+});

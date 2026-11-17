@@ -162,7 +162,8 @@
 
   function renderLyricsAllStars(){
     lyricsState.unit='';
-    const units=LYRICS_UNITS.filter(function(unit){return unit!=='ALL'&&unitSongs(unit).length;});
+    const units=LYRICS_UNITS.filter(function(unit){return unit!=='ALL'&&unit!=='その他UNIT'&&unitSongs(unit).length;});
+    if(unitSongs('その他UNIT').length)units.push('その他UNIT');
     document.getElementById('lyricsView').innerHTML=lyricsGroupHeader_('BMSG ALLSTARS','グループ選択に戻る',"showLyricsGroups()")+'<section class="lyrics-allstars-groups">'+units.map(function(unit){
       const songs=unitSongs(unit).slice().sort(function(a,b){return songTime(b)-songTime(a)||(Number(b.songId)||0)-(Number(a.songId)||0);});
       return '<section class="lyrics-allstars-section"><h3 class="'+(unit==='BMSG POSSE'?'is-posse':'')+'" style="color:var(--ink)">'+escapeLyrics(unit)+'</h3><div class="lyrics-song-list">'+songs.map(function(song){return '<button class="lyrics-song-card" type="button" onclick="openLyricsAllStarsSong(\''+lyricArg(unit)+'\',\''+lyricArg(song.songId)+'\')"><strong>'+escapeLyrics(song.title)+'</strong><b>›</b></button>';}).join('')+'</div></section>';
