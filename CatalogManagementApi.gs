@@ -25,6 +25,30 @@ function catalogManagementSiteAccess_(userId) {
   return uid;
 }
 
+function catalogManagementRefreshCaches_() {
+  try {
+    clearUniverseCacheKeys_([
+      UNIVERSE_CACHE_KEYS_.ANALYSIS,
+      UNIVERSE_CACHE_KEYS_.SEARCH,
+      UNIVERSE_CACHE_KEYS_.HOME_LOOKUP,
+      UNIVERSE_CACHE_KEYS_.PROFILE_MEMBERS,
+      UNIVERSE_CACHE_KEYS_.PROFILE_MAP,
+      UNIVERSE_CACHE_KEYS_.PROFILE_SEARCH,
+      UNIVERSE_CACHE_KEYS_.CARD_CATALOG
+    ]);
+    clearUniverseSongMutationCaches_();
+  } catch (e) {
+    console.error('Catalog mutation cache cleanup:', e);
+  }
+}
+function catalogManagementCallWriter_(name,payload) {
+  payload=payload||{};
+  catalogManagementSiteAccess_(payload.userId);
+  const result=BMSGDB[name](payload);
+  if(result&&result.ok)catalogManagementRefreshCaches_();
+  return result;
+}
+
 /** Access check for the SETTINGS link (no user-specific data returned). */
 function getCatalogManagementAccess(userId) {
   try {
@@ -40,47 +64,29 @@ function getCatalogManagementBootstrap(userId){
   return BMSGDB.getCatalogManagementBootstrapForUniverse({userId:uid});
 }
 function catalogManagementCreateGroup(payload){
-  payload=payload||{};
-  catalogManagementSiteAccess_(payload.userId);
-  return BMSGDB.createCatalogGroupForUniverse(payload);
+  return catalogManagementCallWriter_('createCatalogGroupForUniverse',payload);
 }
 function catalogManagementUpdateGroup(payload){
-  payload=payload||{};
-  catalogManagementSiteAccess_(payload.userId);
-  return BMSGDB.updateCatalogGroupForUniverse(payload);
+  return catalogManagementCallWriter_('updateCatalogGroupForUniverse',payload);
 }
 function catalogManagementCreateMember(payload){
-  payload=payload||{};
-  catalogManagementSiteAccess_(payload.userId);
-  return BMSGDB.createCatalogMemberForUniverse(payload);
+  return catalogManagementCallWriter_('createCatalogMemberForUniverse',payload);
 }
 function catalogManagementUpdateMember(payload){
-  payload=payload||{};
-  catalogManagementSiteAccess_(payload.userId);
-  return BMSGDB.updateCatalogMemberForUniverse(payload);
+  return catalogManagementCallWriter_('updateCatalogMemberForUniverse',payload);
 }
 function catalogManagementAddUnitMember(payload){
-  payload=payload||{};
-  catalogManagementSiteAccess_(payload.userId);
-  return BMSGDB.addCatalogUnitMemberForUniverse(payload);
+  return catalogManagementCallWriter_('addCatalogUnitMemberForUniverse',payload);
 }
 function catalogManagementCreateSongDraft(payload){
-  payload=payload||{};
-  catalogManagementSiteAccess_(payload.userId);
-  return BMSGDB.createCatalogSongDraftForUniverse(payload);
+  return catalogManagementCallWriter_('createCatalogSongDraftForUniverse',payload);
 }
 function catalogManagementSaveSongClass(payload){
-  payload=payload||{};
-  catalogManagementSiteAccess_(payload.userId);
-  return BMSGDB.saveCatalogSoloForUniverse(payload);
+  return catalogManagementCallWriter_('saveCatalogSoloForUniverse',payload);
 }
 function catalogManagementSetSongStatus(payload){
-  payload=payload||{};
-  catalogManagementSiteAccess_(payload.userId);
-  return BMSGDB.setCatalogSongArchiveForUniverse(payload);
+  return catalogManagementCallWriter_('setCatalogSongArchiveForUniverse',payload);
 }
 function catalogManagementMigrateSchema(payload){
-  payload=payload||{};
-  catalogManagementSiteAccess_(payload.userId);
-  return BMSGDB.migrateCatalogManagementSchemaForUniverse(payload);
+  return catalogManagementCallWriter_('migrateCatalogManagementSchemaForUniverse',payload);
 }
