@@ -5,7 +5,7 @@
  */
 
 const ANALYSIS_CACHE_SECONDS = 300;
-const ANALYSIS_GROUP_ID = '1';
+const ANALYSIS_GROUP_ID = 'G1';
 const ANALYSIS_KEYWORDS = ['夢','愛','涙','君','僕','未来','世界','時代','頂点','光','明日','Amazing','Crazy'];
 
 function getAnalysisBootstrap() {
