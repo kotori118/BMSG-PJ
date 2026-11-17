@@ -7,7 +7,7 @@ const read=f=>fs.readFileSync(new URL('../'+f,import.meta.url),'utf8');
 test('management access explains the current gate without exposing emails or granting writes',()=>{
  const props={},env={UNIVERSE_CONFIG:{USER_IDS:['U001']},PropertiesService:{getScriptProperties:()=>({getProperty:k=>props[k]})},Session:{getActiveUser:()=>({getEmail:()=>env.email})},normalizeUniverseStateUserId_:()=>{}};
  vm.createContext(env);vm.runInContext(read('CatalogManagementApi.gs')+'\n'+read('ManagementPageApi.gs'),env);
- assert.match(env.getManagementPageAccess('U001').catalogMessage,/まだ公開/);
+ assert.match(env.getManagementPageAccess('U001').catalogMessage,/利用設定/);
  props.UNIVERSE_CATALOG_ENABLED='true';props.UNIVERSE_CATALOG_ADMIN_EMAILS='admin@example.test';env.email='';
  assert.equal(env.getManagementPageAccess('U001').catalog,false);
  assert.match(env.getManagementPageAccess('U001').catalogMessage,/権限/);
