@@ -9,8 +9,9 @@ const read=(p)=>fs.readFileSync(path.join(root,p),'utf8');
 test('catalog UI is isolated and registered once',()=>{
   const index=read('Index.html');
   assert.equal(index.split("include('CatalogManagement');").length-1,1);
-  assert.equal(index.split("include('CatalogManagementEntry');").length-1,1);
-  assert.match(read('Settings.html'),/refreshCatalogManagementSettingsAccess/);
+  assert.equal(index.split("include('ManagementPage');").length-1,1);
+  assert.doesNotMatch(index,/include\('[^']+ManagementEntry'\)/);
+  assert.match(read('AppOverlays.html'),/管理ページを開く/);
 });
 
 test('site calls BMSG-DB library and does not write Core spreadsheets',()=>{
@@ -45,7 +46,7 @@ test('production library remains version-pinned and feature-flagged',()=>{
   const library=manifest.dependencies.libraries.find(x=>x.userSymbol==='BMSGDB');
   assert.equal(library.developmentMode,false);
   assert.equal(library.version,'14');
-  assert.match(read('CatalogManagementEntry.html'),/button\.hidden=true/);
+  assert.match(read('ManagementPage.html'),/managementAllowed_/);
 });
 
 test('PartTransfers analysis is absent but singing/center metrics and timer remain',()=>{
@@ -86,10 +87,10 @@ test('new management panel JavaScript parses and keeps existing management handl
   const match=ui.match(/<script>([\s\S]*?)<\/script>/);
   assert.ok(match,'inline management JS missing');
   assert.doesNotThrow(()=>new vm.Script(match[1]));
-  for(const symbol of ['cmDeleteSong_','cmAddUnitMember_','cmCreateSong_','cmSaveSongClass_','cmGroupsHtml_']){
+  for(const symbol of ['cmDeleteSong_','cmAddUnitMember_','cmGroupsHtml_']){
     assert.match(ui,new RegExp('function '+symbol+'\\('));
   }
-  assert.match(ui,/grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
+  assert.match(read('ManagementSystem.html'),/grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
 });
 
 test('color collision checks run for every catalog create/update and explain the conflict',()=>{
@@ -134,6 +135,7 @@ test('catalog UI rejects duplicate group/member colors when executed, but allows
   const script=source.match(/<script>([\s\S]*?)<\/script>/);
   assert.ok(script);
   const sandbox={
+    managementState:{params:{},access:null},
     document:{getElementById:()=>null,addEventListener:()=>{}},
     google:{script:{run:{}}},
     getUniverseUserId:()=> 'U001'
@@ -181,6 +183,7 @@ test('unit membership site controls preserve selected unit and send stale-write 
   };
   const calls=[];
   const sandbox={
+    managementState:{params:{},access:null},
     document:{getElementById:(id)=>values[id]||null,addEventListener:()=>{}},
     window:{confirm:()=>true},
     google:{script:{run:{}}},

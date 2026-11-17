@@ -9,7 +9,7 @@ function getImageManagementBootstrap() {
   const groupNameById = {};
   groups.forEach(function(row){ groupNameById[asId_(row.GroupID)] = String(row.GroupName || '').trim(); });
   const grouped = {};
-  IMAGE_MGMT_GROUPS_.forEach(function(name){ grouped[name] = []; });
+  IMAGE_MGMT_GROUPS_.concat(Object.values(groupNameById)).filter(Boolean).forEach(function(name){ grouped[name] = []; });
   members.forEach(function(row){
     const memberId = asId_(row.MemberID);
     const category = imageMgmtCategoryForMember_(memberId, row.GroupID, groupNameById);
@@ -21,7 +21,7 @@ function getImageManagementBootstrap() {
     });
   });
   return {
-    groups: IMAGE_MGMT_GROUPS_.map(function(name){
+    groups: Object.keys(grouped).map(function(name){
       return {name:name, members:grouped[name].sort(function(a,b){return a.displayOrder-b.displayOrder;})};
     }),
     rarities: IMAGE_MGMT_RARITIES_.slice(),
@@ -50,6 +50,7 @@ function getImageManagementStatus(memberId, rarity) {
 
 function saveImageManagementImage(payload) {
   payload = payload || {};
+  normalizeUniverseStateUserId_(payload.userId);
   const lock = LockService.getScriptLock();
   lock.waitLock(20000);
   let newFile = null;
@@ -119,7 +120,8 @@ function saveImageManagementImage(payload) {
   }
 }
 
-function repairImageManagementData() {
+function repairImageManagementData(userId) {
+  normalizeUniverseStateUserId_(userId);
   const lock = LockService.getScriptLock();
   lock.waitLock(20000);
   try {
@@ -194,14 +196,13 @@ function imageMgmtResolveMember_(core, memberId) {
   const member = members.find(function(row){ return asId_(row.MemberID) === id; });
   if (!member) throw new Error('メンバーが見つかりません。');
   const groupName = imageMgmtCategoryForMember_(id, member.GroupID, groupNameById);
-  if (!groupName || IMAGE_MGMT_GROUPS_.indexOf(groupName) < 0) throw new Error('画像管理の対象外メンバーです。');
+  if (!groupName) throw new Error('画像管理の対象外メンバーです。');
   return {memberId:id, memberName:String(member.DisplayName || id).trim(), groupName:groupName, displayOrder:Number(member.DisplayOrder || 9999)};
 }
 
 function imageMgmtCategoryForMember_(memberId, groupId, groupNameById) {
-  if (/^5/.test(String(memberId || ''))) return 'BMSG POSSE';
   const name = groupNameById[asId_(groupId)] || '';
-  return ['BE:FIRST','MAZZEL','STARGLOW','HANA'].indexOf(name) >= 0 ? name : '';
+  return name || (/^5/.test(String(memberId || '')) ? 'BMSG POSSE' : '');
 }
 
 function imageMgmtNormalizeRarity_(rarity) {

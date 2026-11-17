@@ -34,7 +34,7 @@ function fixture({failOnColumn=0}={}){
   const core={getSheetByName:(name)=>getSheet(name)},log={getSheetByName:(name)=>getSheet(name)};
   let locks=0,unlocks=0;
   const env={
-    UNIVERSE_CONFIG:{CORE_DB_ID:'core',LOG_DB_ID:'log',SHEETS:{
+    UNIVERSE_CONFIG:{USER_IDS:['U001','U002','U003'],CORE_DB_ID:'core',LOG_DB_ID:'log',SHEETS:{
       MEMBERS:'Members',GROUPS:'Groups',PROFILES:'Profiles',PROFILE_SETTINGS:'Settings'}},
     SpreadsheetApp:{openById:(id)=>id==='core'?core:log,flush:()=>{}},
     LockService:{getScriptLock:()=>({waitLock:()=>{locks++},releaseLock:()=>{unlocks++}})},
@@ -46,6 +46,7 @@ function fixture({failOnColumn=0}={}){
     Session:{getScriptTimeZone:()=> 'Asia/Tokyo'}
   };
   vm.createContext(env);
+  vm.runInContext(fs.readFileSync(path.join(import.meta.dirname,'..','UserStateApi.gs'),'utf8'),env);
   vm.runInContext(source,env);
   const call=(fn,p)=>vm.runInContext(fn+'('+JSON.stringify(p)+')',env);
   return{data,call,cache,errors,lockState:()=>({locks,unlocks})};
@@ -62,7 +63,7 @@ test('profile editor loads only active fields without old input sheet',()=>{
 });
 test('saving editable values retains hidden profile field and matches member id',()=>{
   const x=fixture();
-  const result=x.call('saveProfileManagementMember',{memberId:'101',groupName:'BE:FIRST',
+  const result=x.call('saveProfileManagementMember',{userId:'U001',memberId:'101',groupName:'BE:FIRST',
     values:{P000:'1',P001:'New color'}});
   assert.equal(result.ok,true);
   assert.equal(x.data.Profiles[1][2],'New color');
@@ -73,9 +74,9 @@ test('saving editable values retains hidden profile field and matches member id'
 test('profile editor rejects invalid member/group pairs and bad numeric inputs',()=>{
   const x=fixture();
   const before=JSON.stringify(x.data);
-  assert.throws(()=>x.call('saveProfileManagementMember',{memberId:'101',groupName:'HANA',
+  assert.throws(()=>x.call('saveProfileManagementMember',{userId:'U001',memberId:'101',groupName:'HANA',
     values:{P000:'1',P001:'New'}}),/組み合わせ/);
-  assert.throws(()=>x.call('saveProfileManagementMember',{memberId:'101',groupName:'BE:FIRST',
+  assert.throws(()=>x.call('saveProfileManagementMember',{userId:'U001',memberId:'101',groupName:'BE:FIRST',
     values:{P000:'not-a-number',P001:'New'}}),/数値/);
   assert.equal(JSON.stringify(x.data),before);
   assert.equal(x.lockState().locks,x.lockState().unlocks);
@@ -83,7 +84,7 @@ test('profile editor rejects invalid member/group pairs and bad numeric inputs',
 test('write failure rolls back previous profile cell changes',()=>{
   const x=fixture({failOnColumn:3});
   const before=JSON.stringify(x.data);
-  assert.throws(()=>x.call('saveProfileManagementMember',{memberId:'101',groupName:'BE:FIRST',
+  assert.throws(()=>x.call('saveProfileManagementMember',{userId:'U001',memberId:'101',groupName:'BE:FIRST',
     values:{P000:'5',P001:'Updated'}}),/simulated write failure/);
   assert.equal(JSON.stringify(x.data),before);
   assert.deepEqual(x.lockState(),{locks:1,unlocks:1});
@@ -95,7 +96,7 @@ test('new ProfileSettings fields appear in site bootstrap and value saving witho
   x.data.Settings.push(['P016','好きな映画','TEXT',false,'好み',false,'普通',16,true]);
   const boot=x.call('getProfileManagementBootstrap',undefined);
   assert.equal(boot.fields.find(f=>f.profileId==='P016')?.label,'好きな映画');
-  const saved=x.call('saveProfileManagementMember',{memberId:'101',groupName:'BE:FIRST',
+  const saved=x.call('saveProfileManagementMember',{userId:'U001',memberId:'101',groupName:'BE:FIRST',
     values:{P000:'1',P001:'Before',P016:'Test film'}});
   assert.equal(saved.ok,true);
   assert.equal(x.data.Profiles[1][4],'Test film');

@@ -1,18 +1,10 @@
-<div id="catalogManagementOverlay" class="modal-overlay catalog-overlay" onclick="cmCloseBackdrop_(event)">
-  <section class="settings-panel management-panel catalog-panel" role="dialog" aria-modal="true" aria-labelledby="catalogTitle">
-    <header class="modal-head">
-      <div><h2 id="catalogTitle" class="modal-title">データ管理</h2>
-        <p class="management-lead">Group / Member / Unit / Song / Profile Fields</p></div>
-      <button class="overlay-close" type="button" aria-label="閉じる" onclick="closeCatalogManagement()">×</button>
-    </header>
+<div id="catalogManagementOverlay" class="management-editor" hidden>
+  <section class="management-editor-panel catalog-panel">
+
     <div id="catalogManagementBody" aria-live="polite"></div>
   </section>
 </div>
 <style>
-  .catalog-panel{width:min(620px,calc(100vw - 24px));max-height:90dvh;overflow-y:auto}
-  .cm-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:12px 0 16px}
-  .cm-tabs .u-btn{min-height:44px;padding:8px 2px;font-size:12px}
-  .cm-tabs .cm-selected{border-color:rgba(156,236,255,.75)}
   .cm-forms{display:grid;gap:12px}
   .cm-note{font-size:12px;line-height:1.65;opacity:.72}
   .cm-section{margin:0 0 8px;font-size:14px}
@@ -25,7 +17,7 @@
   .cm-field input[type=color]{min-height:48px;padding:4px 8px}
   .cm-unit-list{margin:8px 0;padding-left:25px;font-size:13px;line-height:1.9}
   .cm-unit-list li{padding:2px 0}
-  @media(max-width:390px){.cm-tabs .u-btn{font-size:10px}.catalog-panel{padding:14px}}
+  @media(max-width:390px){.cm-tabs .u-btn{font-size:10px}}
 </style>
 <script>
   const cmState={bootstrap:null,tab:'groups',busy:false,message:'',audit:null,profileFields:null,activeUnitId:''};
@@ -50,26 +42,12 @@
   }
   function cmValue_(id){const e=document.getElementById(id);return e?e.value:'';}
   function cmChecked_(id){const e=document.getElementById(id);return !!(e&&e.checked);}
-  function cmNotify_(msg){cmState.message=msg;cmRender_();}
-  function openCatalogManagement(){
-    if(typeof closeSettings==='function')closeSettings();
-    const overlay=document.getElementById('catalogManagementOverlay');
-    if(!overlay)return;
-    overlay.classList.add('open');
-    document.body.style.overflow='hidden';
-    cmReload_();
-  }
-  function closeCatalogManagement(){
-    const overlay=document.getElementById('catalogManagementOverlay');
-    if(overlay)overlay.classList.remove('open');
-    document.body.style.overflow='';
-  }
-  function cmCloseBackdrop_(event){if(event.target&&event.target.id==='catalogManagementOverlay')closeCatalogManagement();}
+  function cmNotify_(msg){cmState.message=msg;if(managementState.params.section==='songs'){renderSlmInlineError_(msg);return;}cmCaptureForm_();cmRender_();}
   function cmReload_(){
     const uid=typeof getUniverseUserId==='function'?getUniverseUserId():'';
     if(!uid){cmNotify_('利用ユーザーを選択してください。');return;}
     cmState.busy=true;cmState.message='読み込み中...';cmRender_();
-    google.script.run.withSuccessHandler(function(v){
+    managementRunner_().withSuccessHandler(function(v){
       cmState.bootstrap=v;cmState.busy=false;cmState.message='';
       if(cmState.tab==='fields'&&v.schema&&v.schema.ready){cmState.profileFields=null;cmLoadProfileFields_();}
       else cmRender_();
@@ -79,33 +57,26 @@
   }
   function cmCall_(name,payload){
     if(cmState.busy)return;
-    const runner=google.script.run;
-    cmState.busy=true;cmState.message='保存中...';cmRender_();
+    cmCaptureForm_();
+    const runner=managementRunner_();
+    cmState.busy=true;cmState.message='保存中...';if(managementState.params.section==='songs')setSlmBusy_(true);else cmRender_();
     runner.withSuccessHandler(function(result){
       cmState.busy=false;
-      if(result&&!result.ok){cmNotify_('保存結果を確認してください。');return;}
-      cmReload_();
+      if(!result||!result.ok){setSlmBusy_(false);cmNotify_('保存結果を確認してください。');return;}
+      cmState.form={};managementState.dirty=false;
+      if(name==='catalogManagementCreateMember'&&result.memberId){managementState.initialMemberId=String(result.memberId);managementGo_('members','profile');}
+      else if(managementState.params.section==='songs'){setSlmBusy_(false);startSlmExisting();}else cmReload_();
       if(typeof showToast==='function')showToast('保存しました。');
     }).withFailureHandler(function(e){
-      cmState.busy=false;
-      cmState.message='保存できませんでした: '+(e.message||e);cmRender_();
+      cmState.busy=false;setSlmBusy_(false);cmNotify_('保存できませんでした: '+(e.message||e));
     })[name](Object.assign({userId:getUniverseUserId()},payload||{}));
-  }
-  function cmTab_(name){
-    if(cmState.busy)return;
-    cmState.tab=name;cmState.message='';
-    if(name==='fields'&&!cmState.profileFields){
-      cmLoadProfileFields_();
-      return;
-    }
-    cmRender_();
   }
   function cmLoadProfileFields_(){
     if(cmState.busy)return;
     const uid=typeof getUniverseUserId==='function'?getUniverseUserId():'';
     if(!uid){cmNotify_('利用ユーザーを選択してください。');return;}
     cmState.busy=true;cmState.message='プロフィール項目を読み込み中...';cmRender_();
-    google.script.run.withSuccessHandler(function(result){
+    managementRunner_().withSuccessHandler(function(result){
       cmState.busy=false;cmState.message='';
       cmState.profileFields=result&&result.ok?(result.fields||[]):null;
       if(!cmState.profileFields)cmState.message='項目情報の読み込み結果を確認できません。';
@@ -119,52 +90,56 @@
     const uid=typeof getUniverseUserId==='function'?getUniverseUserId():'';
     if(!uid){cmNotify_('利用ユーザーを選択してください。');return;}
     cmState.busy=true;cmState.message='データ構造を読み取り診断中...';cmRender_();
-    google.script.run.withSuccessHandler(function(result){
+    managementRunner_().withSuccessHandler(function(result){
       cmState.busy=false;cmState.audit=result;cmState.message='DB診断が完了しました（変更なし）。';cmRender_();
     }).withFailureHandler(function(e){
       cmState.busy=false;cmState.message='DB診断に失敗: '+(e.message||e);cmRender_();
     }).auditCatalogManagementDatabase(uid);
   }
+  function cmCaptureForm_(){
+    const root=document.getElementById('catalogManagementBody');
+    if(!root)return;
+    cmState.form={};root.querySelectorAll('input,select,textarea').forEach(function(el){if(el.id)cmState.form[el.id]={value:el.value,checked:el.checked};});
+  }
+  function cmRestoreForm_(){
+    Object.keys(cmState.form||{}).forEach(function(id){const el=document.getElementById(id),v=cmState.form[id];if(el){el.value=v.value;el.checked=v.checked;}});
+  }
+  function cmCardsHtml_(html,indices){
+    const template=document.createElement('template');template.innerHTML=html;
+    const cards=template.content.querySelectorAll('.cm-forms > .management-card');
+    return '<div class="cm-forms">'+indices.map(function(i){return cards[i]?cards[i].outerHTML:'';}).join('')+'</div>';
+  }
   function cmRender_(){
     const root=document.getElementById('catalogManagementBody');if(!root)return;
-    const d=cmState.bootstrap;
-    if(!d){root.innerHTML='<p class="cm-note">'+cmEscape_(cmState.message||'読み込み中...')+'</p>';return;}
-    const b=['groups','members','units','songs','fields'];
-    const titles=['グループ','メンバー','ユニット','楽曲','プロフィール項目'];
-    let html='<div class="cm-tabs" role="tablist">'+b.map(function(tab,i){
-      return '<button class="u-btn '+(tab===cmState.tab?'cm-selected':'')+'" type="button" role="tab" aria-selected="'+(tab===cmState.tab)+'" onclick="cmTab_(\''+tab+'\')">'+titles[i]+'</button>';
-    }).join('')+'</div>';
-    if(cmState.message)html+='<p class="cm-message">'+cmEscape_(cmState.message)+'</p>';
-    html+='<div class="cm-actions"><button class="u-btn" type="button" onclick="cmAuditDatabase_()">DB構造を診断（読み取りのみ）</button></div>';
-    if(cmState.audit){
-      const a=cmState.audit, ct=a.counts||{}, warns=a.warnings||[];
-      html+='<section class="management-card"><h3 class="cm-section">DB点検結果</h3>'+
-        '<p class="cm-note">本体 '+cmEscape_(a.coreTabCount)+'タブ／ログ '+cmEscape_(a.logTabCount)+'タブ。グループ'+cmEscape_(ct.groups)+'件、メンバー'+cmEscape_(ct.members)+'人、曲'+cmEscape_(ct.songs)+'曲、歌詞パート'+cmEscape_(ct.lyrics)+'件。</p>'+
-        '<p class="cm-note">旧入力タブ '+cmEscape_((a.legacyInputTabs||[]).length)+'件。構造上の注意 '+cmEscape_(warns.length)+'件'+(a.warningsTruncated?'（一部のみ表示）':'')+'。</p>'+
-        '<details><summary>点検の詳細</summary><ul>'+warns.map(function(w){return '<li>'+cmEscape_(w.code+'：'+w.detail)+'</li>';}).join('')+'</ul></details></section>';
-    }
-    if(d.schema&&!d.schema.ready){
-      html+='<section class="management-card"><h3 class="cm-section">データ構造の準備が必要</h3><p class="cm-note">既存データのバックアップを取得し、管理者設定を確認してから移行します。通常の利用はここで停止します。</p><p class="cm-note">'+cmEscape_(d.schema.missing.join(' / '))+'</p>'+
-        '<button class="u-btn" type="button" onclick="cmRunMigration_()">バックアップ確認後にスキーマを移行</button></section>';
-      root.innerHTML=html;return;
-    }
-    if(cmState.tab==='groups')html+=cmGroupsHtml_(d);
-    else if(cmState.tab==='members')html+=cmMembersHtml_(d);
+    const d=cmState.bootstrap,p=managementState.params;
+    if(!d){root.innerHTML=cmState.busy?renderUniverseLoading(cmState.message):'<p class="management-error">'+cmEscape_(cmState.message)+'</p><button class="u-btn" onclick="cmReload_()">再読み込み</button>';return;}
+    let html=cmState.message?'<p class="cm-message" role="status">'+cmEscape_(cmState.message)+'</p>':'';
+    if(cmState.tab==='audit'){
+      html+='<button class="u-btn" type="button" onclick="cmAuditDatabase_()">データを点検（読み取りのみ）</button>';
+      if(cmState.audit){const a=cmState.audit;html+='<section class="management-card"><h3>点検結果</h3><p>注意 '+(a.warnings||[]).length+'件'+(a.warningsTruncated?'（一部表示）':'')+'</p><ul>'+(a.warnings||[]).map(function(w){return '<li>'+cmEscape_(w.code+'：'+w.detail)+'</li>';}).join('')+'</ul></section>';}
+    }else if(d.schema&&!d.schema.ready){html+='<p class="management-error">管理データ構造の準備が必要です。移行は別作業で実施してください。</p>';}
+    else if(cmState.tab==='groups')html+=cmCardsHtml_(cmGroupsHtml_(d),p.action==='add'?[0]:[1]);
+    else if(cmState.tab==='members')html+=cmCardsHtml_(cmMembersHtml_(d),p.action==='add'?[0]:[1,2,3]);
     else if(cmState.tab==='units')html+=cmUnitsHtml_(d);
     else if(cmState.tab==='fields')html+=cmProfileFieldsHtml_();
-    else html+=cmSongsHtml_(d);
-    root.innerHTML='<div class="'+(cmState.busy?'cm-busy':'')+'">'+html+'</div>';
+    root.innerHTML=html;cmRestoreForm_();
     if(cmState.tab==='units')cmRenderUnitRoster_();
+    if(cmState.tab==='groups'&&p.action==='edit')document.getElementById('cmEditGroup').onchange=cmFillGroup_;
+    if(cmState.tab==='members'&&p.action==='edit'){
+      const selected=document.getElementById('cmEditMember');
+      ['cmMaintenanceMember','cmDeleteMember'].forEach(function(id){const el=document.getElementById(id);el.value=selected.value;el.closest('label').hidden=true;});
+      const cards=root.querySelectorAll('.management-card');
+      [cards[1],cards[2]].forEach(function(card){if(card)card.hidden=!selected.value;});
+      selected.onchange=function(){
+        cmFillMember_();['cmMaintenanceMember','cmDeleteMember'].forEach(function(id){document.getElementById(id).value=selected.value;});
+        [cards[1],cards[2]].forEach(function(card){if(card)card.hidden=!selected.value;});
+      };
+    }
+    root.querySelectorAll('button,input,select,textarea').forEach(function(el){if(cmState.busy)el.disabled=true;});
   }
   function cmGroupActive_(g){return String(g.RecordStatus||'ACTIVE').toUpperCase()!=='ARCHIVED';}
   function cmGroupKind_(g){return String(g.GroupKind||(Number(g.GroupID)<=4?'GROUP':'UNIT'));}
   function cmMemberActive_(m){return String(m.RecordStatus||'ACTIVE').toUpperCase()!=='ARCHIVED';}
-  function cmRunMigration_(){
-    const typed=window.prompt('バックアップを作成・確認した場合だけ MIGRATE_CATALOG_V1 と入力してください。');
-    if(typed!=='MIGRATE_CATALOG_V1')return;
-    if(!window.confirm('本番DBへ列を追加します。現在のシートのバックアップは別ファイルに保管済みですか？'))return;
-    cmCall_('catalogManagementMigrateSchema',{confirm:typed});
-  }
   function cmProfileFieldsHtml_(){
     if(!cmState.profileFields){
       return '<section class="management-card"><h3 class="cm-section">プロフィール項目</h3>'+
@@ -186,7 +161,7 @@
       cmField_('cmProfileFieldGroup','表示分類',cmInput_('cmProfileFieldGroup','text','基本','例：基本・好み・活動'))+
       '<label class="management-field cm-field"><span>複数入力</span><span>'+
         '<input id="cmProfileFieldMulti" type="checkbox"> 文字列を複数登録できるようにする</span></label>'+
-      '<p class="cm-note">ProfileIDは自動採番。既存メンバーの新項目は空欄のまま作成し、プロフィール編集画面から入力できます。プロフィールクイズは廃止予定のため、新項目からのクイズ出題はありません。</p>'+
+      '<p class="cm-note">ProfileIDは自動採番。既存メンバーの新項目は空欄のまま作成し、プロフィール編集画面から入力できます。</p>'+
       '<div class="cm-actions"><button class="u-btn" type="button" onclick="cmCreateProfileField_()">項目を追加</button></div>'+
       '</section><section class="management-card">'+
       '<h3 class="cm-section">既存項目の非表示・再表示</h3>'+
@@ -291,7 +266,7 @@
       cmField_('cmMemberMain','主所属グループ',cmSelect_('cmMemberMain',cmOptions_(main,'GroupID','GroupName')))+
       cmField_('cmMemberColor','カラー',cmInput_('cmMemberColor','color','#777777'))+
       '<p class="cm-note">カラーコードは既存グループ・ユニット・メンバーと重複できません。</p>'+
-      '<div class="cm-actions"><button class="u-btn" onclick="cmCreateMember_()" type="button">登録</button></div></section>'+
+      '<p class="cm-note">表示順は末尾に追加します。登録後に初期プロフィールを入力できます。並び順はメンバー情報の編集から変更できます。</p><div class="cm-actions"><button class="u-btn" onclick="cmCreateMember_()" type="button">登録してプロフィールへ</button></div></section>'+
       '<section class="management-card"><h3 class="cm-section">既存メンバーを編集</h3>'+
       cmField_('cmEditMember','対象',cmSelect_('cmEditMember',cmOptions_(members,'MemberID','DisplayName')))+
       cmField_('cmEditMemberName','名前',cmInput_('cmEditMemberName','text',''))+
@@ -338,9 +313,9 @@
     const m=(cmState.bootstrap.members||[]).find(function(x){return String(x.MemberID)===id;});
     if(!m){cmNotify_('削除するメンバーを選択してください。');return;}
     if(cmState.busy)return;
-    cmState.busy=true;cmState.message='メンバーの関連データを確認中...';cmRender_();
-    google.script.run.withSuccessHandler(function(preview){
-      cmState.busy=false;
+    cmCaptureForm_();cmState.busy=true;cmState.message='メンバーの関連データを確認中...';cmRender_();
+    managementRunner_().withSuccessHandler(function(preview){
+      cmState.busy=false;cmRender_();
       if(!preview||!preview.ok){cmNotify_('参照状況を確認できないため削除は中止しました。');return;}
       if(!preview.canDelete){
         cmNotify_('削除できません: '+(preview.blockers||[]).join(' / '));return;
@@ -440,49 +415,14 @@
       groupId:groupId,memberId:r.MemberID,expectedOrder:Number(r.DisplayOrder)
     });
   }
-  function cmSongsHtml_(d){
-    const songs=d.songs||[],artists=d.groups.filter(cmGroupActive_).map(x=>({id:x.GroupName,label:x.GroupName}));
-    d.members.filter(cmMemberActive_).forEach(x=>artists.push({id:x.DisplayName,label:x.DisplayName}));
-    artists.push({id:'UNIT',label:'UNIT'});
-    const singers=d.members.filter(x=>cmMemberActive_(x)&&d.groups.some(g=>g.GroupID==x.GroupID&&g.GroupName==='BE:FIRST'));
-    const opts=cmOptions_(songs,'SongID','Title');
-    return '<div class="cm-forms"><section class="management-card"><h3 class="cm-section">歌詞なし楽曲を新規登録</h3>'+
-      cmField_('cmNewSongTitle','曲名',cmInput_('cmNewSongTitle','text','','曲名'))+
-      cmField_('cmNewSongArtist','Artist',cmSelect_('cmNewSongArtist','<option value="">選択してください</option>'+artists.map(x=>cmOption_(x.id,x.label)).join('')))+
-      cmField_('cmNewSongDate','初回音源リリース日',cmInput_('cmNewSongDate','date',''))+
-      cmField_('cmNewSongForm','形式',cmSelect_('cmNewSongForm','<option value="">未設定</option>'+['シングル','アルバム','デジタルリリース','その他'].map(x=>cmOption_(x,x)).join('')))+
-      cmField_('cmNewSongCd','収録作品名',cmInput_('cmNewSongCd','text',''))+
-      '<label class="management-field cm-field"><span>表題曲</span><span><input type="checkbox" id="cmNewSongTitleTrack"> 表題曲</span></label>'+
-      cmField_('cmNewSongType','曲区分',cmSelect_('cmNewSongType',cmOption_('NORMAL','通常曲')+cmOption_('SOLO','ソロ曲')))+
-      cmField_('cmNewSoloMember','ソロ担当',cmSelect_('cmNewSoloMember',cmOptions_(singers,'MemberID','DisplayName')))+
-      '<p class="cm-note">ソロ曲はArtistにBE:FIRSTを選び、担当メンバーを指定。歌詞は後から楽曲・歌詞管理で入力できます。</p>'+
-      '<div class="cm-actions"><button class="u-btn" onclick="cmCreateSong_()" type="button">楽曲を登録</button></div></section>'+
-      '<section class="management-card"><h3 class="cm-section">既存曲の分類・削除</h3>'+
-      cmField_('cmSongSearch','曲名を検索',cmInput_('cmSongSearch','search','','曲名で絞り込み'))+
-      cmField_('cmSelectSong','対象曲',cmSelect_('cmSelectSong',opts))+
-      cmField_('cmSongType','曲区分',cmSelect_('cmSongType',cmOption_('NORMAL','通常曲')+cmOption_('SOLO','ソロ曲')))+
-      cmField_('cmSoloMember','ソロ担当',cmSelect_('cmSoloMember',cmOptions_(singers,'MemberID','DisplayName')))+
-      '<div class="cm-actions"><button class="u-btn" onclick="cmSaveSongClass_()" type="button">分類を保存</button><button class="u-btn cm-danger" onclick="cmDeleteSong_()" type="button">楽曲を削除</button></div><p class="cm-note">削除すると曲と紐付いた歌詞・クレジット・秒数等のデータも消え、サイトから復元はできません。事前に依存関係を検査し、他機能から参照される曲は削除を止めます。SongIDは再利用しません。YouTube・セットリスト等の外部参照は事前に別途確認してください。</p></section></div>';
-  }
-  function cmCreateSong_(){
-    cmCall_('catalogManagementCreateSongDraft',{
-      song:{title:cmValue_('cmNewSongTitle'),artist:cmValue_('cmNewSongArtist'),
-        releaseDate:cmValue_('cmNewSongDate'),form:cmValue_('cmNewSongForm'),cdTitle:cmValue_('cmNewSongCd'),
-        isTitleTrack:cmChecked_('cmNewSongTitleTrack')},
-      songType:cmValue_('cmNewSongType'),soloMemberId:cmValue_('cmNewSoloMember')});
-  }
-  function cmSaveSongClass_(){
-    const songId=cmValue_('cmSelectSong');if(!songId){cmNotify_('曲を選択してください。');return;}
-    cmCall_('catalogManagementSaveSongClass',{songId:songId,songType:cmValue_('cmSongType'),soloMemberId:cmValue_('cmSoloMember')});
-  }
   function cmDeleteSong_(){
-    const songId=cmValue_('cmSelectSong');
+    const songId=String(songLyricsManagementState.existingSongId||'');
     const song=(cmState.bootstrap&&cmState.bootstrap.songs||[]).find(function(x){return String(x.SongID)===songId;});
     if(!song){cmNotify_('削除する曲を選択してください。');return;}
     if(cmState.busy)return;
-    cmState.busy=true;cmState.message='関連データを確認中...';cmRender_();
-    google.script.run.withSuccessHandler(function(preview){
-      cmState.busy=false;
+    cmState.busy=true;setSlmBusy_(true);
+    managementRunner_().withSuccessHandler(function(preview){
+      cmState.busy=false;setSlmBusy_(false);
       if(!preview||!preview.ok){cmNotify_('依存関係を確認できません。削除は中止します。');return;}
       if(!preview.canDelete){
         cmNotify_('削除できません。先に参照関係を整理してください: '+(preview.blockers||[]).join(' / '));
@@ -498,15 +438,7 @@
         songId:songId,confirm:songId,confirmTitle:song.Title,externalReferencesChecked:true
       });
     }).withFailureHandler(function(e){
-      cmState.busy=false;cmNotify_('関連データの確認に失敗しました: '+(e.message||e));
+      cmState.busy=false;setSlmBusy_(false);cmNotify_('関連データの確認に失敗しました: '+(e.message||e));
     }).getCatalogManagementDeletePreview({userId:getUniverseUserId(),songId:songId});
   }
-  // Dedicated event delegation, scoped to the catalog overlay.
-  document.addEventListener('input',function(ev){
-    if(ev.target&&ev.target.id==='cmSongSearch'){
-      const v=ev.target.value.toLowerCase(),select=document.getElementById('cmSelectSong');
-      if(!select)return;
-      select.innerHTML=cmOptions_((cmState.bootstrap.songs||[]).filter(x=>String(x.Title||'').toLowerCase().includes(v)),'SongID','Title');
-    }
-  });
 </script>

@@ -23,6 +23,7 @@ function getSongLyricsManagementBootstrap(userId) {
     existingArtists:Array.from(new Set(songs.map(function(song){return song.artist;}))).sort(artistSort),
     songs:songs,
     singerOptions:slmSingerOptions_(members,guests),
+    soloMembers:members.filter(function(m){return groups.some(function(g){return slmId_(g.GroupID)===slmId_(m.GroupID)&&g.GroupName==='BE:FIRST';});}).map(function(m){return {value:slmId_(m.MemberID),label:String(m.DisplayName||'')};}),
     forms:SLM_FORMS_.slice(),
     roles:[{value:'MAIN',label:'MAIN'},{value:'UP',label:'UP'},{value:'DOWN',label:'DOWN'},{value:'SUB',label:'SUB'}]
   };
@@ -101,7 +102,7 @@ function slmSongModel_(row){
   const raw=row.ReleaseDate;let releaseDate='',timeValue=0;
   if(raw instanceof Date&&!isNaN(raw.getTime())){releaseDate=Utilities.formatDate(raw,'Asia/Tokyo','yyyy-MM-dd');timeValue=raw.getTime();}
   else if(String(raw||'').trim()){const d=new Date(raw);if(!isNaN(d.getTime())){releaseDate=Utilities.formatDate(d,'Asia/Tokyo','yyyy-MM-dd');timeValue=d.getTime();}else releaseDate=String(raw).trim();}
-  return {songId:slmId_(row.SongID),title:String(row.Title||'').trim(),artist:String(row.Artist||'').trim(),releaseDate:releaseDate,form:String(row.Form||'').trim(),cdTitle:String(row.CDTitle||'').trim(),isTitleTrack:row.IsTitleTrack===true||String(row.IsTitleTrack||'').toUpperCase()==='TRUE',timeValue:timeValue};
+  return {songType:String(row.SongType||'NORMAL'),soloMemberId:slmId_(row.SoloMemberID),songId:slmId_(row.SongID),title:String(row.Title||'').trim(),artist:String(row.Artist||'').trim(),releaseDate:releaseDate,form:String(row.Form||'').trim(),cdTitle:String(row.CDTitle||'').trim(),isTitleTrack:row.IsTitleTrack===true||String(row.IsTitleTrack||'').toUpperCase()==='TRUE',timeValue:timeValue};
 }
 function slmSongSort_(a,b){return (b.timeValue||0)-(a.timeValue||0)||(Number(b.songId)||0)-(Number(a.songId)||0)||a.title.localeCompare(b.title,'ja');}
 function slmAssignmentsFromRaw_(raw,singerMap){

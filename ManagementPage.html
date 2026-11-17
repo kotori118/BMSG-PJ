@@ -1,0 +1,86 @@
+<script>
+  // Navigation and lifecycle only. Editors and their APIs retain ownership of data and saves.
+  const MANAGEMENT_SECTIONS=Object.freeze({
+    songs:{title:'楽曲・歌詞',description:'曲の登録、クレジット、歌詞・歌割りを編集',actions:{add:['楽曲を追加','slm'],edit:['楽曲を編集','slm']}},
+    members:{title:'メンバー・プロフィール',description:'メンバーの登録とプロフィールを管理',actions:{add:['メンバーを追加','catalog'],edit:['メンバー情報を編集','catalog'],profile:['プロフィールを編集','profile'],fields:['プロフィール項目を管理','catalog']}},
+    groups:{title:'グループ・ユニット',description:'グループの基本情報とユニットの所属を管理',actions:{add:['グループ・ユニットを追加','catalog'],edit:['グループ・ユニットを編集','catalog'],units:['ユニットのメンバーを管理','catalog']}},
+    images:{title:'メンバー画像',description:'プロフィールやトレカで使う画像を設定',actions:{edit:['画像を登録・差し替え','image']}},
+    maintenance:{title:'データ点検・保守',description:'管理者向けのデータ整合性点検',actions:{audit:['データを点検','catalog']}}
+  });
+  const managementState={params:{page:'manage'},access:null,epoch:0,dirty:false,loading:false};
+  const MANAGEMENT_EDITOR_IDS=['catalogManagementOverlay','songLyricsManagementOverlay','profileManagementOverlay','imageManagementOverlay'];
+  function parkManagementEditors_(){
+    let store=document.getElementById('managementEditorStore');
+    if(!store){store=document.createElement('div');store.id='managementEditorStore';store.hidden=true;document.body.appendChild(store);}
+    MANAGEMENT_EDITOR_IDS.forEach(function(id){const editor=document.getElementById(id);if(editor){editor.hidden=true;store.appendChild(editor);}});
+    ['slmGuestConfirm','imageReplaceOverlay'].forEach(function(id){const el=document.getElementById(id);if(el)el.classList.remove('open');});document.body.style.overflow='';
+    managementState.epoch++;
+  }
+  function renderManagementPage(){return '<section class="view management-page"><header class="category-header"><h1 class="category-title">MANAGEMENT</h1><p class="management-lead">管理ページ</p></header><div id="managementNavigation"></div><div id="managementContent" aria-live="polite"></div></section>';}
+  function openManagementPage(){closeSettings();navigateTo('manage');}
+  function managementGo_(section,action){navigateToWithParams('manage',Object.assign({},section?{section:section}:{},action?{action:action}:{}));}
+  function managementAllowed_(section,action){
+    const access=managementState.access;
+    if(!access||!access.registered)return false;
+    if(section==='maintenance')return !!access.catalog;
+    if(!MANAGEMENT_SECTIONS[section]||action&&!MANAGEMENT_SECTIONS[section].actions[action])return false;
+    if(action&&MANAGEMENT_SECTIONS[section].actions[action][1]==='catalog')return !!access.catalog;
+    return section!=='groups'||!!access.catalog;
+  }
+  function managementCard_(title,description,handler){return '<button class="u-btn management-choice" type="button" onclick="'+handler+'"><span><strong>'+cmEscape_(title)+'</strong>'+(description?'<small>'+cmEscape_(description)+'</small>':'')+'</span><b aria-hidden="true">›</b></button>';}
+  function initManagementPage(params){
+    managementState.params={page:'manage'};
+    if(params.section)managementState.params.section=params.section;
+    if(params.action)managementState.params.action=params.action;
+    songLyricsManagementState.dirty={info:false,credits:false,lyrics:false};profileManagementState.dirty=false;
+    managementState.dirty=false;managementState.access=null;managementState.loading=true;
+    const epoch=managementState.epoch,uid=getUniverseUserId(),root=document.getElementById('managementContent');
+    root.innerHTML=renderUniverseLoading('管理ページを読み込み中');
+    google.script.run.withSuccessHandler(function(access){
+      if(epoch!==managementState.epoch||uid!==getUniverseUserId())return;
+      managementState.loading=false;managementState.access=access;renderManagementNavigation_();
+    }).withFailureHandler(function(error){
+      if(epoch!==managementState.epoch)return;
+      managementState.loading=false;root.innerHTML='<p class="management-error">'+cmEscape_(error.message||error)+'</p><button class="u-btn" onclick="initManagementPage(managementState.params)">再読み込み</button>';
+    }).getManagementPageAccess(uid);
+  }
+  function renderManagementNavigation_(){
+    const p=managementState.params,section=MANAGEMENT_SECTIONS[p.section],action=section&&section.actions[p.action];
+    const nav=document.getElementById('managementNavigation'),root=document.getElementById('managementContent');
+    const back=p.action?"managementGo_('"+p.section+"')":p.section?'managementGo_()':"navigateTo('home')";
+    nav.innerHTML='<nav class="management-breadcrumb" aria-label="管理ページの階層"><button class="u-btn" onclick="'+back+'">‹ 戻る</button><button class="u-btn" onclick="managementGo_()">管理ページ</button>'+(section?'<span>›</span><button class="u-btn" onclick="managementGo_(\''+p.section+'\')">'+section.title+'</button>':'')+(action?'<span>›</span><span aria-current="page">'+action[0]+'</span>':'')+'</nav>';
+    if(!managementState.access.registered){root.innerHTML='<p class="management-lead">利用ユーザーを選択してください。</p>';return;}
+    if(p.section&&(!section||!managementAllowed_(p.section,p.action))||p.action&&!action){root.innerHTML='<p class="management-error">この操作は利用できません。</p>';return;}
+    if(!p.section){
+      root.innerHTML='<div class="management-grid">'+Object.keys(MANAGEMENT_SECTIONS).filter(function(key){return key!=='maintenance'&&managementAllowed_(key);}).map(function(key){const s=MANAGEMENT_SECTIONS[key];return managementCard_(s.title,s.description,"managementGo_('"+key+"')");}).join('')+'</div>'+(managementAllowed_('maintenance')?'<section class="management-maintenance">'+managementCard_(MANAGEMENT_SECTIONS.maintenance.title,MANAGEMENT_SECTIONS.maintenance.description,"managementGo_('maintenance')")+'</section>':'');return;
+    }
+    if(!p.action){root.innerHTML='<h2 class="management-section-title">'+section.title+'</h2><p class="management-lead">'+section.description+'</p><div class="management-operation-list">'+Object.keys(section.actions).filter(function(key){return managementAllowed_(p.section,key);}).map(function(key){return managementCard_(section.actions[key][0],'',"managementGo_('"+p.section+"','"+key+"')");}).join('')+'</div>';return;}
+    root.innerHTML='<h2 class="management-section-title">'+action[0]+'</h2><div id="managementEditorHost"></div>';
+    const type=action[1],id={slm:'songLyricsManagementOverlay',catalog:'catalogManagementOverlay',profile:'profileManagementOverlay',image:'imageManagementOverlay'}[type];
+    const editor=document.getElementById(id);document.getElementById('managementEditorHost').appendChild(editor);editor.hidden=false;
+    if(type==='slm'){
+      resetSlmNewState_();songLyricsManagementState.dirty={info:false,credits:false,lyrics:false};songLyricsManagementState.bootstrap=null;
+      songLyricsManagementState.view=p.action==='add'?'new':'existingSelect';songLyricsManagementState.existing=null;openSongLyricsManagement();
+    }else if(type==='profile'){profileManagementState.bootstrap=null;profileManagementState.dirty=false;profileManagementState.memberId='';openProfileManagement();}
+    else if(type==='image'){resetImageManagementForm();imageManagementState.bootstrap=null;openImageManagement();}
+    else{cmState.form={};cmState.bootstrap=null;cmState.profileFields=null;cmState.audit=null;cmState.message='';cmState.tab=p.section==='members'?(p.action==='fields'?'fields':'members'):p.section==='groups'?(p.action==='units'?'units':'groups'):'audit';cmReload_();}
+  }
+  function managementBusy_(){return !!(managementState.loading||cmState.busy||songLyricsManagementState.busy||profileManagementState.busy||imageManagementState.busy);}
+  function managementDirty_(){return !!(managementState.dirty||hasSlmDirty_()||profileManagementState.dirty||imageManagementState.pendingFile);}
+  function managementCanLeave_(){
+    if(managementBusy_()){showToast('処理中です。完了までお待ちください。');return false;}
+    if(managementDirty_()&&!window.confirm('保存していない変更があります。破棄して移動しますか？'))return false;
+    managementState.dirty=false;songLyricsManagementState.dirty={info:false,credits:false,lyrics:false};profileManagementState.dirty=false;resetImageManagementForm();
+    return true;
+  }
+  function restoreManagementHistory_(){google.script.history.replace(managementState.params,managementState.params,'');}
+  // Drop responses from an editor that has been unmounted or whose user context changed.
+  function managementRunner_(){
+    const epoch=managementState.epoch,uid=getUniverseUserId();
+    function wrap(runner){return new Proxy(runner,{get:function(target,key){return function(){const args=Array.from(arguments);if(key==='withSuccessHandler'||key==='withFailureHandler'){const callback=args[0];args[0]=function(result){if(epoch===managementState.epoch&&uid===getUniverseUserId())callback(result);};return wrap(target[key].apply(target,args));}return target[key].apply(target,args);};}});}
+    return wrap(google.script.run);
+  }
+  document.addEventListener('input',function(event){if(currentRoute==='manage'&&event.target.closest('#managementEditorHost')&&!['search','file','select-one'].includes(event.target.type))managementState.dirty=true;});
+  document.addEventListener('change',function(event){if(currentRoute==='manage'&&event.target.closest('#managementEditorHost')&&!['cmEditMember','cmEditGroup','cmUnitTarget','cmUnitManageMember','cmUnitMember','cmProfileFieldTarget','profileManagementGroup','profileManagementMember','imageManagementGroup','imageManagementMember','imageManagementRarity','slmExistingArtist','slmExistingSong'].includes(event.target.id))managementState.dirty=true;});
+  window.addEventListener('beforeunload',function(event){if(currentRoute==='manage'&&(managementBusy_()||managementDirty_())){event.preventDefault();event.returnValue='';}});
+</script>

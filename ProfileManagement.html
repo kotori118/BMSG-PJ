@@ -1,12 +1,6 @@
-<div id="profileManagementOverlay" class="modal-overlay profile-management-overlay" onclick="closeProfileManagementOnBackdrop(event)">
-  <section class="settings-panel management-panel profile-management-panel" role="dialog" aria-modal="true" aria-labelledby="profileManagementTitle">
-    <header class="modal-head">
-      <div>
-        <h2 id="profileManagementTitle" class="modal-title">プロフィール管理</h2>
-        <p class="management-lead profile-management-lead">既存メンバーのプロフィールを編集</p>
-      </div>
-      <button class="overlay-close" type="button" onclick="closeProfileManagement()" aria-label="プロフィール管理を閉じる">×</button>
-    </header>
+<div id="profileManagementOverlay" class="management-editor" hidden>
+  <section class="management-editor-panel profile-management-panel">
+
 
     <div id="profileManagementLoading" class="management-loading profile-management-loading">LOADING...</div>
 
@@ -37,15 +31,15 @@
 </div>
 
 <style>
-  .profile-management-overlay{z-index:1250}
-  
-  
+
+
+
     .profile-management-selectors{display:grid;gap:14px;margin-top:12px;padding-bottom:20px;border-bottom:1px solid rgba(156,236,255,.12)}
   .profile-management-form{display:grid;gap:18px;margin-top:20px}
-  
-  
-  
-  
+
+
+
+
   .profile-management-section{display:grid;gap:15px;padding-top:2px}
   .profile-management-section+.profile-management-section{padding-top:22px;border-top:1px solid rgba(156,236,255,.12)}
   .profile-management-section-title{margin:0;color:var(--cyan);font:700 12px "Exo 2","Zen Kaku Gothic New",sans-serif;letter-spacing:.08em}
@@ -57,9 +51,9 @@
   .profile-management-tag button{width:22px;height:22px;padding:0;border:0;background:transparent;color:rgba(255,255,255,.58);font-size:17px;line-height:1;cursor:pointer}
   .profile-management-tag-add{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
   .profile-management-add-button{min-width:76px}
-      
-  
-  
+
+
+
   body.theme-light .profile-management-tag{color:var(--ink);background:rgba(75,165,184,.08)}
   body.theme-light .profile-management-tag button{color:rgba(21,24,32,.5)}
   @media(max-width:520px){.profile-management-tag-add{grid-template-columns:minmax(0,1fr) 78px}}
@@ -72,7 +66,7 @@
     memberId:'',
     values:{},
     baseline:'',
-    dirty:false,
+    dirty:false,busy:false,
     loadToken:0
   };
 
@@ -80,26 +74,20 @@
     closeSettings();
     const overlay=document.getElementById('profileManagementOverlay');
     if(!overlay)return;
-    overlay.classList.add('open');
-    document.body.style.overflow='hidden';
+    overlay.hidden=false;
     clearProfileManagementError();
     if(profileManagementState.bootstrap){
       renderProfileManagementBootstrap(profileManagementState.bootstrap);
       return;
     }
-    setProfileManagementLoading(true);
-    google.script.run
-      .withSuccessHandler(function(data){profileManagementState.bootstrap=data;renderProfileManagementBootstrap(data);})
-      .withFailureHandler(function(error){showProfileManagementError(readProfileManagementError(error));setProfileManagementLoading(false);})
+    profileManagementState.busy=true;setProfileManagementLoading(true);
+    managementRunner_()
+      .withSuccessHandler(function(data){profileManagementState.busy=false;profileManagementState.bootstrap=data;renderProfileManagementBootstrap(data);
+        const id=managementState.initialMemberId;
+        if(id){const group=(data.groups||[]).find(function(g){return g.members.some(function(m){return String(m.memberId)===id;});});if(group){document.getElementById('profileManagementGroup').value=group.name;changeProfileManagementGroup();document.getElementById('profileManagementMember').value=id;changeProfileManagementMember();}managementState.initialMemberId='';}})
+      .withFailureHandler(function(error){profileManagementState.busy=false;showProfileManagementError(readProfileManagementError(error));setProfileManagementLoading(false);})
       .getProfileManagementBootstrap();
   }
-
-  function closeProfileManagement(){
-    const overlay=document.getElementById('profileManagementOverlay');
-    if(overlay)overlay.classList.remove('open');
-    document.body.style.overflow='';
-  }
-  function closeProfileManagementOnBackdrop(event){if(event.target&&event.target.id==='profileManagementOverlay')closeProfileManagement();}
 
   function setProfileManagementLoading(loading){
     const loadingNode=document.getElementById('profileManagementLoading');
@@ -123,6 +111,7 @@
   }
 
   function changeProfileManagementGroup(){
+    if(profileManagementState.busy)return;
     const select=document.getElementById('profileManagementGroup');
     const next=select.value;
     if(profileManagementState.dirty&&!window.confirm('変更内容が保存されていません。\nこのまま移動しますか？')){
@@ -174,11 +163,11 @@
     const form=document.getElementById('profileManagementForm');
     if(loading)loading.hidden=false;
     if(form)form.hidden=true;
-    google.script.run
+    managementRunner_()
       .withSuccessHandler(function(data){
         if(token!==profileManagementState.loadToken||memberId!==profileManagementState.memberId)return;
         profileManagementState.values=data&&data.values?data.values:{};
-        setProfileManagementBaseline_();
+        profileManagementState.busy=false;managementState.dirty=false;document.querySelectorAll('#profileManagementOverlay select').forEach(function(el){el.disabled=false;});setProfileManagementBaseline_();
         if(loading)loading.hidden=true;
         renderProfileManagementForm();
       })
@@ -284,25 +273,28 @@
 
   function updateProfileManagementSubmit_(){
     const button=document.getElementById('profileManagementSubmit');
-    if(button)button.disabled=!profileManagementState.memberId||!profileManagementState.dirty;
+    if(button)button.disabled=profileManagementState.busy||!profileManagementState.memberId||!profileManagementState.dirty;
   }
 
   function submitProfileManagement(event){
     if(event)event.preventDefault();
-    if(!profileManagementState.memberId||!profileManagementState.dirty)return false;
+    if(profileManagementState.busy||!profileManagementState.memberId||!profileManagementState.dirty)return false;
+    profileManagementState.busy=true;
     clearProfileManagementError();
     const button=document.getElementById('profileManagementSubmit');
+    document.querySelectorAll('#profileManagementOverlay input,#profileManagementOverlay select,#profileManagementOverlay button').forEach(function(el){el.disabled=true;});
     button.disabled=true;
-    google.script.run
+    managementRunner_()
       .withSuccessHandler(function(result){
-        setProfileManagementBaseline_();
+        profileManagementState.busy=false;managementState.dirty=false;document.querySelectorAll('#profileManagementOverlay select').forEach(function(el){el.disabled=false;});setProfileManagementBaseline_();
+        changeProfileManagementMember();
         showProfileManagementToast((result&&result.message)||'プロフィールを保存しました。');
       })
       .withFailureHandler(function(error){
-        updateProfileManagementSubmit_();
+        profileManagementState.busy=false;document.querySelectorAll('#profileManagementOverlay input,#profileManagementOverlay select,#profileManagementOverlay button').forEach(function(el){el.disabled=false;});updateProfileManagementSubmit_();
         showProfileManagementError(readProfileManagementError(error));
       })
-      .saveProfileManagementMember({groupName:profileManagementState.groupName,memberId:profileManagementState.memberId,values:profileManagementState.values});
+      .saveProfileManagementMember({userId:getUniverseUserId(),groupName:profileManagementState.groupName,memberId:profileManagementState.memberId,values:profileManagementState.values});
     return false;
   }
 
