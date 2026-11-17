@@ -41,5 +41,5 @@ test('quiz APIs no longer depend on ProfileSettings, but historical data stays',
   const api=read('QuizApi.gs');
   assert.doesNotMatch(api,/PROFILE_SETTINGS|readAnalysisProfile|buildProfileQuizQuestions_/);
   assert.match(read('QuizRepository.gs'),/saveQuizUserResult_/);
-  assert.match(read('QuizRepository.gs'),/getQuizScoreboard_/);
+  assert.match(read('QuizApi.gs'),/function buildQuizScoreboard_\(/);
 });
