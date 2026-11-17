@@ -94,3 +94,8 @@ function catalogManagementDeleteSong(payload){
 function catalogManagementMigrateSchema(payload){
   return catalogManagementCallWriter_('migrateCatalogManagementSchemaForUniverse',payload);
 }
+/** Read-only DB integrity scan; no Sheet writes, schema migration or deployment. */
+function auditCatalogManagementDatabase(userId) {
+  const uid=catalogManagementSiteAccess_(userId);
+  return BMSGDB.auditCatalogDatabaseForUniverse({userId:uid});
+}
