@@ -207,9 +207,11 @@ function profileMgmtResolveMember_(core, memberId) {
 }
 
 function profileMgmtCategoryForMember_(memberId, groupId, groupNameById) {
-  if (/^5/.test(String(memberId || ''))) return 'BMSG POSSE';
   const name = groupNameById[asId_(groupId)] || '';
-  return PROFILE_MGMT_GROUPS_.slice(0,4).indexOf(name) >= 0 ? name : '';
+  if (PROFILE_MGMT_GROUPS_.slice(0,4).indexOf(name) >= 0) return name;
+  // A 5xx MemberID is historically a solo member, but an explicit main
+  // GroupID now takes precedence when moving a member through site admin.
+  return /^5/.test(String(memberId || '')) ? 'BMSG POSSE' : '';
 }
 
 function profileMgmtReadObjects_(sheet) {
