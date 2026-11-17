@@ -26,7 +26,7 @@
   @media(max-width:390px){.cm-tabs .u-btn{font-size:10px}.catalog-panel{padding:14px}}
 </style>
 <script>
-  const cmState={bootstrap:null,tab:'groups',busy:false,message:''};
+  const cmState={bootstrap:null,tab:'groups',busy:false,message:'',audit:null};
   function cmEscape_(v){
     return String(v==null?'':v).replace(/[&<>"']/g,function(ch){
       return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];
@@ -88,6 +88,17 @@
     })[name](Object.assign({userId:getUniverseUserId()},payload||{}));
   }
   function cmTab_(name){if(cmState.busy)return;cmState.tab=name;cmState.message='';cmRender_();}
+  function cmAuditDatabase_(){
+    if(cmState.busy)return;
+    const uid=typeof getUniverseUserId==='function'?getUniverseUserId():'';
+    if(!uid){cmNotify_('利用ユーザーを選択してください。');return;}
+    cmState.busy=true;cmState.message='データ構造を読み取り診断中...';cmRender_();
+    google.script.run.withSuccessHandler(function(result){
+      cmState.busy=false;cmState.audit=result;cmState.message='DB診断が完了しました（変更なし）。';cmRender_();
+    }).withFailureHandler(function(e){
+      cmState.busy=false;cmState.message='DB診断に失敗: '+(e.message||e);cmRender_();
+    }).auditCatalogManagementDatabase(uid);
+  }
   function cmRender_(){
     const root=document.getElementById('catalogManagementBody');if(!root)return;
     const d=cmState.bootstrap;
@@ -98,6 +109,14 @@
       return '<button class="u-btn '+(tab===cmState.tab?'cm-selected':'')+'" type="button" role="tab" aria-selected="'+(tab===cmState.tab)+'" onclick="cmTab_(\''+tab+'\')">'+titles[i]+'</button>';
     }).join('')+'</div>';
     if(cmState.message)html+='<p class="cm-message">'+cmEscape_(cmState.message)+'</p>';
+    html+='<div class="cm-actions"><button class="u-btn" type="button" onclick="cmAuditDatabase_()">DB構造を診断（読み取りのみ）</button></div>';
+    if(cmState.audit){
+      const a=cmState.audit, ct=a.counts||{}, warns=a.warnings||[];
+      html+='<section class="management-card"><h3 class="cm-section">DB点検結果</h3>'+
+        '<p class="cm-note">本体 '+cmEscape_(a.coreTabCount)+'タブ／ログ '+cmEscape_(a.logTabCount)+'タブ。グループ'+cmEscape_(ct.groups)+'件、メンバー'+cmEscape_(ct.members)+'人、曲'+cmEscape_(ct.songs)+'曲、歌詞パート'+cmEscape_(ct.lyrics)+'件。</p>'+
+        '<p class="cm-note">旧入力タブ '+cmEscape_((a.legacyInputTabs||[]).length)+'件。構造上の注意 '+cmEscape_(warns.length)+'件'+(a.warningsTruncated?'（一部のみ表示）':'')+'。</p>'+
+        '<details><summary>点検の詳細</summary><ul>'+warns.map(function(w){return '<li>'+cmEscape_(w.code+'：'+w.detail)+'</li>';}).join('')+'</ul></details></section>';
+    }
     if(d.schema&&!d.schema.ready){
       html+='<section class="management-card"><h3 class="cm-section">データ構造の準備が必要</h3><p class="cm-note">既存データのバックアップを取得し、管理者設定を確認してから移行します。通常の利用はここで停止します。</p><p class="cm-note">'+cmEscape_(d.schema.missing.join(' / '))+'</p>'+
         '<button class="u-btn" type="button" onclick="cmRunMigration_()">バックアップ確認後にスキーマを移行</button></section>';
