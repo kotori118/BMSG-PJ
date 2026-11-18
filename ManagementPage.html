@@ -7,7 +7,7 @@
     images:{title:'メンバー画像',description:'プロフィールやトレカで使う画像を設定',actions:{edit:['画像を登録・差し替え','image'],settings:['画像の表示設定','operations']}},
     maintenance:{title:'データ点検・保守',description:'データの整合性点検とバックアップ',actions:{audit:['データを点検','catalog'],history:['変更履歴を見る','operations'],backup:['バックアップ・復元','operations'],prepare:['初期整備・移行','operations'],repair:['不足データを修復','operations']}}
   });
-  const managementState={params:{page:'manage'},access:null,epoch:0,dirty:false,loading:false};
+  const managementState={params:{page:'manage'},access:null,epoch:0,dirty:false};
   const MANAGEMENT_EDITOR_IDS=['catalogManagementOverlay','songLyricsManagementOverlay','profileManagementOverlay','imageManagementOverlay'];
   function parkManagementEditors_(){
     let store=document.getElementById('managementEditorStore');
@@ -30,15 +30,18 @@
     if(params.section)managementState.params.section=params.section;
     if(params.action)managementState.params.action=params.action;
     songLyricsManagementState.dirty={info:false,credits:false,lyrics:false};profileManagementState.dirty=false;
-    managementState.dirty=false;managementState.access=null;managementState.loading=true;
-    const epoch=managementState.epoch,uid=getUniverseUserId(),root=document.getElementById('managementContent');
-    root.innerHTML=renderUniverseLoading('管理ページを読み込み中');
-    google.script.run.withSuccessHandler(function(access){
-      if(epoch!==managementState.epoch||uid!==getUniverseUserId())return;
-      managementState.loading=false;managementState.access=access;renderManagementNavigation_();
+    const uid=getUniverseUserId();
+    managementState.dirty=false;
+    managementState.access={registered:!!uid,catalog:!!uid};
+    renderManagementNavigation_();
+    const status=document.getElementById('managementSetupStatus');
+    if(!status)return;
+
+    managementRunner_().withSuccessHandler(function(access){
+      if(!access||!access.initialSetupRequired)return;
+      status.innerHTML='<aside class="management-access-note management-card" role="status"><strong>初回のデータ準備が必要です</strong><p class="management-lead">バックアップを作成して、登録・編集に必要なデータを準備します。</p><button class="u-btn" onclick="managementGo_(\'maintenance\',\'prepare\')">初期整備を開く</button></aside>';
     }).withFailureHandler(function(error){
-      if(epoch!==managementState.epoch)return;
-      managementState.loading=false;root.innerHTML='<p class="management-error">'+cmEscape_(error.message||error)+'</p><button class="u-btn" onclick="initManagementPage(managementState.params)">再読み込み</button>';
+      status.innerHTML='<p class="management-error">'+cmEscape_(error.message||error)+'</p><button class="u-btn" onclick="initManagementPage(managementState.params)">再読み込み</button>';
     }).getManagementPageAccess(uid);
   }
   function renderManagementNavigation_(){
@@ -52,7 +55,7 @@
     if(!managementState.access.registered){root.innerHTML='<p class="management-lead">利用ユーザーを選択してください。</p>';return;}
     if(p.section&&(!section||!managementAllowed_(p.section,p.action))||p.action&&!action){root.innerHTML='<p class="management-error">この操作は利用できません。</p>';return;}
     if(!p.section){
-      root.innerHTML=(managementState.access.initialSetupRequired?'<aside class="management-access-note management-card" role="status"><strong>初回のデータ準備が必要です</strong><p class="management-lead">バックアップを作成して、登録・編集に必要なデータを準備します。</p><button class="u-btn" onclick="managementGo_(\'maintenance\',\'prepare\')">初期整備を開く</button></aside>':'')+'<div class="management-grid">'+Object.keys(MANAGEMENT_SECTIONS).filter(function(key){return key!=='maintenance'&&managementAllowed_(key);}).map(function(key){const s=MANAGEMENT_SECTIONS[key];return managementCard_(s.title,s.description,"managementGo_('"+key+"')");}).join('')+'</div>'+(managementAllowed_('maintenance')?'<section class="management-maintenance">'+managementCard_(MANAGEMENT_SECTIONS.maintenance.title,MANAGEMENT_SECTIONS.maintenance.description,"managementGo_('maintenance')")+'</section>':'');return;
+      root.innerHTML='<div id="managementSetupStatus"></div>' +'<div class="management-grid">'+Object.keys(MANAGEMENT_SECTIONS).filter(function(key){return key!=='maintenance'&&managementAllowed_(key);}).map(function(key){const s=MANAGEMENT_SECTIONS[key];return managementCard_(s.title,s.description,"managementGo_('"+key+"')");}).join('')+'</div>'+(managementAllowed_('maintenance')?'<section class="management-maintenance">'+managementCard_(MANAGEMENT_SECTIONS.maintenance.title,MANAGEMENT_SECTIONS.maintenance.description,"managementGo_('maintenance')")+'</section>':'');return;
     }
     if(!p.action){root.innerHTML='<h2 class="management-section-title">'+section.title+'</h2><p class="management-lead">'+section.description+'</p><div class="management-operation-list">'+Object.keys(section.actions).filter(function(key){return managementAllowed_(p.section,key);}).map(function(key){return managementCard_(section.actions[key][0],'',"managementGo_('"+p.section+"','"+key+"')");}).join('')+'</div>';return;}
     root.innerHTML='<h2 class="management-section-title">'+action[0]+'</h2><div id="managementEditorHost"></div>';
@@ -67,7 +70,7 @@
     else if(type==='image'){resetImageManagementForm();imageManagementState.bootstrap=null;openImageManagement();}
     else{cmState.form={};cmState.bootstrap=null;cmState.profileFields=null;cmState.audit=null;cmState.message='';cmState.tab=p.section==='members'?(p.action==='fields'?'fields':'members'):p.section==='groups'?(p.action==='units'?'units':'groups'):'audit';cmReload_();}
   }
-  function managementBusy_(){return !!((typeof moState!=='undefined'&&moState.busy)||managementState.loading||cmState.busy||songLyricsManagementState.busy||profileManagementState.busy||imageManagementState.busy);}
+  function managementBusy_(){return !!((typeof moState!=='undefined'&&moState.busy)||cmState.busy||songLyricsManagementState.busy||profileManagementState.busy||imageManagementState.busy);}
   function managementDirty_(){return !!(managementState.dirty||hasSlmDirty_()||profileManagementState.dirty||imageManagementState.pendingFile);}
   function managementCanLeave_(){
     if(managementBusy_()){showToast('処理中です。完了までお待ちください。');return false;}
