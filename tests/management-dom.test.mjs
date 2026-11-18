@@ -25,6 +25,22 @@ function fixture({admin=true,uid='U001'}={}){
   const go=async(section,action)=>{run('navigateToWithParams("manage",'+JSON.stringify({section,action})+')');await settle();};
   return{dom,ctx,run,calls,data,history,go,settle,change:(p)=>change({location:{parameter:p}})};
 }
+test('management menus and maintenance actions do not wait on unrelated data',async()=>{
+  const f=fixture();
+  f.data.getManagementPageAccess={registered:true,catalog:true,initialSetupRequired:true};
+  const top=f.go();
+  assert.ok(f.dom.window.document.querySelector('.management-grid'));
+  assert.equal(f.dom.window.document.querySelector('.management-access-note'),null);
+  await top;
+  assert.ok(f.dom.window.document.querySelector('.management-access-note'));
+  await f.go('maintenance');
+  await f.go('maintenance','history');
+  assert.match(f.dom.window.document.getElementById('managementOperationsHost').textContent,/変更履歴を読み込む/);
+  await f.go('maintenance','repair');
+  assert.match(f.dom.window.document.getElementById('managementOperationsHost').textContent,/修復計画を確認/);
+  assert.deepEqual(f.calls.map(call=>call.key),['getManagementPageAccess']);
+  f.dom.window.close();
+});
 test('all live operations mount exactly one full-page editor, without a management modal',async()=>{
   const f=fixture();
   for(const [s,a] of [['songs','add'],['songs','edit'],['members','add'],['members','edit'],['members','profile'],['members','fields'],['groups','add'],['groups','edit'],['groups','units'],['images','edit'],['maintenance','audit']]){
