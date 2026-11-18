@@ -1,5 +1,4 @@
 const LYRICS_CATEGORIES_ = Object.freeze(['ALL', 'BE:FIRST', 'MAZZEL', 'STARGLOW', 'HANA', 'UNIT']);
-const LYRICS_SINGER_ROLES_ = Object.freeze(['MAIN','UP','DOWN','SUB']);
 
 function getLyricsCatalog() {
   const songs = readUniverseSongs_();
