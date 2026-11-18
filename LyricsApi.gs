@@ -7,7 +7,7 @@ function getLyricsCatalog() {
   const singerMap = buildLyricsSingerMap_();
   const groups=readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.GROUPS);
   const mainGroups=groups.filter(function(g){return String(g.GroupID||'').startsWith('G')&&String(g.RecordStatus||'ACTIVE')!=='ARCHIVED';}).sort(function(a,b){return Number(a.DisplayOrder||9999)-Number(b.DisplayOrder||9999);}).map(function(g){return String(g.GroupName);});
-  const groupColors = readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.GROUPS).reduce(function(map,row){
+  const groupColors = groups.reduce(function(map,row){
     const name=String(row.GroupName||'').trim();
     const color=String(row.ColorHex||'').trim();
     if(name&&/^#[0-9a-f]{6}$/i.test(color))map[name]=color;
@@ -26,7 +26,7 @@ function getLyricsCatalog() {
     categories:['ALL'].concat(mainGroups,['UNIT']),mainGroups:mainGroups,groupColors:groupColors,partsBySong:partsBySong,
     songs:songs.filter(function(row){return counts[asId_(row.SongID)]>0;}).map(function(row){
       const artist=String(row.Artist||'').trim();
-      return {songId:asId_(row.SongID),title:String(row.Title||'').trim(),artist:artist,releaseDate:row.ReleaseDate instanceof Date?row.ReleaseDate.toISOString():String(row.ReleaseDate||''),category:mainGroups.includes(artist)?artist:'UNIT',unitCategory:asId_(row.ArtistID)?artist:groups.some(function(g){return g.GroupName===artist;})?artist:lyricsUnitCategory_(String(row.Title||'').trim(),artist),partCount:counts[asId_(row.SongID)]||0};
+      return {songId:asId_(row.SongID),title:String(row.Title||'').trim(),artist:artist,releaseDate:row.ReleaseDate instanceof Date?row.ReleaseDate.toISOString():String(row.ReleaseDate||''),category:mainGroups.includes(artist)?artist:'UNIT',unitCategory:artist,partCount:counts[asId_(row.SongID)]||0};
     })
   };
 }
@@ -61,7 +61,6 @@ function lyricsRequireUser_(userId) {
   return id;
 }
 
-function lyricsUnitCategory_(title,artist){if(artist==='BMSG ALLSTARS'||['New Chapter','Grand Champ',"Grand Champ -from BMSG FES'2025-"].indexOf(title)>=0)return'BMSG ALLSTARS';const units=['ShowMinorSavage','BMSG POSSE','BMSG EAST','BMSG WEST','BMSG SKY','BMSG GAIA','BMSG MARINE','BMSG STRIKERS'];return units.indexOf(artist)>=0||artist==='その他ユニット'?artist:'その他ユニット';}
 function buildLyricsSingerMap_(){
   const map={'99':{name:'ALL',color:'#777777'},'109':{name:'その他',color:'#777777'}};
   readCoreSheetObjects_(UNIVERSE_CONFIG.SHEETS.MEMBERS).forEach(function(row){const id=asId_(row.MemberID);if(id)map[id]={name:String(row.DisplayName||id),color:String(row.ColorHex||'#777777')};});

@@ -132,16 +132,18 @@ test('LYRICS uses the global SETTINGS route to MANAGEMENT without a duplicate sh
   assert.match(overlays, /管理ページを開く/);
 });
 
-test('song readers resolve typed artists and exclude personal songs in either schema',()=>{
+test('song readers resolve ArtistID and load solo names only for management',()=>{
   const source=fs.readFileSync(path.join(root,'CoreRepository.gs'),'utf8');
   const masters={groups:[{GroupID:'G1',GroupName:'BE:FIRST'},{GroupID:'U17',GroupName:'その他ユニット'}],members:[{MemberID:'M102',DisplayName:'SHUNTO'}]};
   const sandbox={UNIVERSE_CONFIG:{SHEETS:{GROUPS:'groups',MEMBERS:'members'}}};
   vm.createContext(sandbox);
   vm.runInContext(source,sandbox);
-  sandbox.readCoreSheetObjectsFromSpreadsheet_=(_,name)=>masters[name];
+  const reads=[];
+  sandbox.readCoreSheetObjectsFromSpreadsheet_=(_,name)=>{reads.push(name);return masters[name];};
   const songs=[{SongID:'1001',ArtistID:'G1'},{SongID:'1068',ArtistID:'M102'},{SongID:'5001',ArtistID:'U17'},{SongID:'5030',ArtistID:''}];
   const resolved=sandbox.resolveUniverseSongs_({},songs,false);
   assert.equal(JSON.stringify(resolved.map(song=>[song.SongID,song.Artist])),JSON.stringify([['1001','BE:FIRST'],['5001','その他ユニット'],['5030','']]));
+  assert.deepEqual(reads.splice(0),['groups']);
   assert.equal(sandbox.resolveUniverseSongs_({},songs,true)[1].Artist,'SHUNTO');
-  assert.equal(sandbox.resolveUniverseSongs_({},[{SongID:'1068',SongType:'SOLO',ArtistRef:'G1'}],false).length,0);
+  assert.deepEqual(reads,['groups','members']);
 });
