@@ -34,29 +34,24 @@ function resolveUniverseSongs_(spreadsheet, songs, includePersonal) {
   const visible = songs.filter(function(song) {
     return includePersonal || !isUniversePersonalSong_(song);
   });
-  if (!visible.some(function(song) {
-    return Object.prototype.hasOwnProperty.call(song, 'ArtistID') ||
-      (includePersonal && isUniversePersonalSong_(song));
-  })) return visible;
+  if (!visible.length) return visible;
 
   const labels = Object.create(null);
   readCoreSheetObjectsFromSpreadsheet_(spreadsheet, UNIVERSE_CONFIG.SHEETS.GROUPS).forEach(function(group) {
     labels[asId_(group.GroupID)] = String(group.GroupName || '');
   });
-  readCoreSheetObjectsFromSpreadsheet_(spreadsheet, UNIVERSE_CONFIG.SHEETS.MEMBERS).forEach(function(member) {
-    labels[asId_(member.MemberID)] = String(member.DisplayName || '');
-  });
+  if (includePersonal && visible.some(isUniversePersonalSong_)) {
+    readCoreSheetObjectsFromSpreadsheet_(spreadsheet, UNIVERSE_CONFIG.SHEETS.MEMBERS).forEach(function(member) {
+      labels[asId_(member.MemberID)] = String(member.DisplayName || '');
+    });
+  }
   return visible.map(function(song) {
-    const typed = Object.prototype.hasOwnProperty.call(song, 'ArtistID');
-    if (!typed && !isUniversePersonalSong_(song)) return song;
-    const artistId = asId_(typed ? song.ArtistID : song.SoloMemberID || song.ArtistRef);
-    return Object.assign({}, song, {Artist: labels[artistId] || '', StoredArtist: song.Artist});
+    return Object.assign({}, song, {Artist: labels[asId_(song.ArtistID)] || ''});
   });
 }
 
 function isUniversePersonalSong_(song) {
-  if (Object.prototype.hasOwnProperty.call(song, 'ArtistID')) return /^M\d+$/.test(asId_(song.ArtistID));
-  return asId_(song.SongType) === 'SOLO' || /^M\d+$/.test(asId_(song.ArtistRef));
+  return /^M\d+$/.test(asId_(song.ArtistID));
 }
 
 function readUniverseSongs_(includePersonal) {
