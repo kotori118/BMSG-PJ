@@ -4,6 +4,13 @@
   function moHost_(){return document.getElementById('managementOperationsHost');}
   function moInit_(){
     moState.data=null;moState.selected='';moState.revision='';moState.repairPlan=null;moState.history=[];moState.nextOffset=null;moState.busy=true;
+    const p=managementState.params;
+    if(p.section==='maintenance'&&(p.action==='history'||p.action==='repair')){
+      moState.data={};
+      moState.busy=false;
+      moRender_();
+      return;
+    }
     moHost_().innerHTML=renderUniverseLoading('管理情報を読み込み中');
     managementRunner_().withSuccessHandler(function(data){moState.busy=false;moState.data=data;moRender_();}).withFailureHandler(function(e){moState.busy=false;moError_(e.message||e);}).getManagementOperationsBootstrap(getUniverseUserId());
   }
