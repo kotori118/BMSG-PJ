@@ -1,5 +1,4 @@
 const LYRICS_CATEGORIES_ = Object.freeze(['ALL', 'BE:FIRST', 'MAZZEL', 'STARGLOW', 'HANA', 'UNIT']);
-const LYRICS_SINGER_ROLES_ = Object.freeze(['MAIN','UP','DOWN','SUB']);
 
 function getLyricsCatalog() {
   const songs = readUniverseSongs_();
@@ -62,11 +61,6 @@ function lyricsRequireUser_(userId) {
   return id;
 }
 
-function encodeLyricsSingerAssignments_(items,singerMap){
-  if(!Array.isArray(items)||!items.length)return '';
-  return items.map(function(item){const id=asId_(item&&item.id);const role=String(item&&item.role||'MAIN').trim().toUpperCase();if(!id||!singerMap[id])throw new Error('未登録の歌唱者です: '+id);if(LYRICS_SINGER_ROLES_.indexOf(role)<0)throw new Error('歌唱役割が不正です: '+role);return id+(role==='MAIN'?'':'_'+role.toLowerCase());}).join(',');
-}
-function lyricsCategory_(artist){if(['BE:FIRST','MAZZEL','STARGLOW','HANA'].indexOf(artist)>=0)return artist;return'UNIT';}
 function lyricsUnitCategory_(title,artist){if(artist==='BMSG ALLSTARS'||['New Chapter','Grand Champ',"Grand Champ -from BMSG FES'2025-"].indexOf(title)>=0)return'BMSG ALLSTARS';const units=['ShowMinorSavage','BMSG POSSE','BMSG EAST','BMSG WEST','BMSG SKY','BMSG GAIA','BMSG MARINE','BMSG STRIKERS'];return units.indexOf(artist)>=0||artist==='その他ユニット'?artist:'その他ユニット';}
 function buildLyricsSingerMap_(){
   const map={'99':{name:'ALL',color:'#777777'},'109':{name:'その他',color:'#777777'}};
