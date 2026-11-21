@@ -13,18 +13,18 @@ deploy前に `node scripts/validate-gas-sources.mjs` と `node --test tests/conf
 【現行Authority】
 - サイト／Client／Service APIの実装正本: GitHub `kotori118/BMSG-PJ` main
 - 共通マスターWriter・採番・整合検証GASの正本: GitHub `kotori118/BMSG-DB` main
-- **Universeの唯一の仕様正本**: [04_BMSG Universe_統合仕様書](https://docs.google.com/document/d/1pgttqIlZ8pZtBNBpKt90U_nr4ZVZyeCtJyYvBhu8QFk/edit)
+- **Universeの唯一の仕様正本**: [BMSG Universe｜統合仕様書](https://docs.google.com/document/d/1pgttqIlZ8pZtBNBpKt90U_nr4ZVZyeCtJyYvBhu8QFk/edit)
 - 統合仕様書は運用原則、DB・ID、UIデザイン、各機能、GAS責務、管理、検証・判断待ちを1冊にまとめる。現行実装との不一致は仕様書内で明示する。
 - 旧02「プロジェクト実務指示書」・03「変更履歴」・05「GAS一括実装仕様書」・06「PHASE3デザイン・アプリ基盤仕様書」は正本ではない。移行照合とユーザーの削除前承認が済むまでDriveに保全する。
 
 【開発原則】
-- コード変更前に既存04統合仕様書の該当章、最新のGitHub mainとCore／Logの実データを確認する。旧文書だけを根拠に現行コードを変更しない。
-- 仕様が変わったら既存04統合仕様書の該当箇所を直接更新し、古い仕様・日付別追補・時系列の変更履歴を本文に蓄積しない。コードの変更記録はGitコミット／PR、文書はGoogle Docs版履歴、サイト運用操作はLog CATALOG_Auditで追跡する。
+- コード変更前に統合仕様書の該当章、最新のGitHub mainとCore／Logの実データを確認する。旧文書だけを根拠に現行コードを変更しない。
+- 仕様が変わったら統合仕様書の該当箇所を直接更新し、古い仕様・日付別追補・時系列の変更履歴を本文に蓄積しない。コードの変更記録はGitコミット／PR、文書はGoogle Docs版履歴、サイト運用操作はLog CATALOG_Auditで追跡する。
 - 現行機能・UI・文言・Motion・保存挙動を壊さない非破壊変更を原則とする。
 - Runtimeには最終版だけを残し、Fixes / Polish / V2 / V3 / Final等の一時的Override層は、Source Ownerへ最終挙動を吸収・検証後に削除する。
 - 現行の責務分割を構成の基準とし、個別変更の都合だけでOwnerやService境界を混在・統合しない。
 - 各Runtime関数の正本は1つのSource Ownerに限定する。実装前にRepository全体を検索し、同名関数・同等責務・後勝ち再代入・Wrapper Overrideを残さず、Owner本体を直接変更する。
-- 新規ファイルは、独立した責務・規模・拡張性から分離が妥当な場合に追加してよい。その際はIndexのinclude順、READMEに示したOwner責務、既存04統合仕様書の該当章を同時に整合させる。
+- 新規ファイルは、独立した責務・規模・拡張性から分離が妥当な場合に追加してよい。その際はIndexのinclude順、READMEに示したOwner責務、統合仕様書の該当章を同時に整合させる。
 - Shared LoadingはStateUI、Typographyの基礎はStyles、共通Button／46px NavigationはButtonSystemを正式Ownerとする。
 - 動的DOMは生成元が最初から正しい文言・class・styleを出力し、完成形でMutationObserverによる表示後補正に依存しない。
 - 修正履歴はGitに残す。
@@ -62,4 +62,4 @@ deploy前に `node scripts/validate-gas-sources.mjs` と `node --test tests/conf
 - 英字Role Fontは Orbitron / Exo 2 / Roboto。
 - 共通Motionと機能固有Effectを分離し、prefers-reduced-motionを尊重する。
 
-※ 過去のPrototype ZIP名・個別Fix手順はGit履歴や削除前の旧資料で確認する。現在の仕様は既存04統合仕様書、実装の実態はGitHub mainを優先し、このREADMEを仕様正本の代替にしない。
+※ 過去のPrototype ZIP名・個別Fix手順はGit履歴や削除前の旧資料で確認する。現在の仕様は統合仕様書、実装の実態はGitHub mainを優先し、このREADMEを仕様正本の代替にしない。
