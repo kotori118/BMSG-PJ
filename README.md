@@ -15,7 +15,7 @@ deploy前に `node scripts/validate-gas-sources.mjs` と `node --test tests/conf
 - 共通マスターWriter・採番・整合検証GASの正本: GitHub `kotori118/BMSG-DB` main
 - **Universeの唯一の仕様正本**: [BMSG Universe｜統合仕様書](https://docs.google.com/document/d/1pgttqIlZ8pZtBNBpKt90U_nr4ZVZyeCtJyYvBhu8QFk/edit)
 - 統合仕様書は運用原則、DB・ID、UIデザイン、各機能、GAS責務、管理、検証・判断待ちを1冊にまとめる。現行実装との不一致は仕様書内で明示する。
-- 旧02「プロジェクト実務指示書」・03「変更履歴」・05「GAS一括実装仕様書」・06「PHASE3デザイン・アプリ基盤仕様書」は正本ではない。移行照合とユーザーの削除前承認が済むまでDriveに保全する。
+- 旧00「正本運用ルール」・01「プロジェクト指示書」・02「プロジェクト実務指示書」・03「変更履歴」・05「GAS一括実装仕様書」・06「PHASE3デザイン・アプリ基盤仕様書」は現行仕様の正本ではない。6冊ともDriveで【削除対象・旧資料】と改名済み。旧02・03・05・06は削除承認済みだがゴミ箱移動が権限エラーで未完了。旧00・01は識別改名のみ完了しており、削除実行していない。
 
 【開発原則】
 - コード変更前に統合仕様書の該当章、最新のGitHub mainとCore／Logの実データを確認する。旧文書だけを根拠に現行コードを変更しない。
